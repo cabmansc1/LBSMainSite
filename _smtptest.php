@@ -9,6 +9,22 @@ if (($_GET['key'] ?? '') !== 'lbs-smtp-check-9f3c1a7b42') {
     exit("forbidden\n");
 }
 
+// --- outbound connectivity probe: which ports does Railway allow? ---
+$probes = [
+    'smtp.gmail.com:465', 'smtp.gmail.com:587', 'smtp.gmail.com:25',
+    'api.resend.com:443', 'smtp.resend.com:465', 'smtp.resend.com:587', 'smtp.resend.com:2587',
+];
+echo "=== outbound connectivity probe ===\n";
+foreach ($probes as $hp) {
+    [$h, $p] = explode(':', $hp);
+    $t0 = microtime(true);
+    $fp = @fsockopen($h, (int)$p, $errno, $errstr, 8);
+    $ms = round((microtime(true) - $t0) * 1000);
+    if ($fp) { echo "OPEN   $hp  ({$ms}ms)\n"; fclose($fp); }
+    else     { echo "BLOCKED $hp  ($errstr)\n"; }
+}
+echo "\n";
+
 $to = $_GET['to'] ?? (getenv('SMTP_FROM') ?: 'hello@lbspotlight.com');
 echo "SMTP_HOST = " . (getenv('SMTP_HOST') ?: '(unset)') . "\n";
 echo "SMTP_PORT = " . (getenv('SMTP_PORT') ?: '(unset)') . "\n";
