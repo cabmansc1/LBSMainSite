@@ -17,9 +17,11 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
-// Load secure database configuration
+// Load config: secure DB on cPanel, env vars on Railway (via config.php).
 define('DB_CONFIG_LOADED', true);
-require_once dirname(__FILE__) . '/../secure/db_config.php';
+$__db_config = dirname(__FILE__) . '/../secure/db_config.php';
+if (is_file($__db_config)) { require_once $__db_config; }
+require_once dirname(__FILE__) . '/config.php';
 
 // Get database connection
 try {

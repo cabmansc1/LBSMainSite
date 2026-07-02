@@ -12,157 +12,6 @@ $phone = '';
 $area = '';
 $email_opt_in = 1;
 
-/**
- * Send registration data to Pipedrive via API
- */
-function sendToPipedrive($firstName, $lastName, $email, $phone, $postcard, $emailOptIn) {
-    $apiToken = '7c088066b4456ca79306d7124b9357d7ff2a7a22';
-
-    // Clean phone
-    $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
-    if (strlen($cleanPhone) === 10) {
-        $cleanPhone = '+1' . $cleanPhone;
-    } elseif (strlen($cleanPhone) === 11 && $cleanPhone[0] === '1') {
-        $cleanPhone = '+' . $cleanPhone;
-    }
-
-    // Build person data for Pipedrive
-    // Label ID 48 = "GC Register" (purple)
-    // Custom field key for "Lead Source" = 3a5e186174ecf4e8eddb2834271d6f7983db0e66
-    $personData = [
-        'name' => $firstName . ' ' . $lastName,
-        'email' => [['value' => $email, 'primary' => true, 'label' => 'work']],
-        'phone' => [['value' => $cleanPhone, 'primary' => true, 'label' => 'mobile']],
-        'label' => 48,
-        '3a5e186174ecf4e8eddb2834271d6f7983db0e66' => 'Gift Card: ' . $postcard,
-    ];
-
-    // Step 1: Search for existing person by email
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => 'https://api.pipedrive.com/v1/persons/search?term=' . urlencode($email) . '&fields=email&api_token=' . $apiToken,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 10,
-    ]);
-
-    $searchResponse = curl_exec($ch);
-    $searchHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    $personId = null;
-    $existingLeadSource = '';
-
-    if ($searchHttpCode === 200) {
-        $searchData = json_decode($searchResponse, true);
-        if (!empty($searchData['data']['items'][0]['item']['id'])) {
-            $personId = $searchData['data']['items'][0]['item']['id'];
-
-            // Get existing person details to retrieve current Lead Source
-            $ch2 = curl_init();
-            curl_setopt_array($ch2, [
-                CURLOPT_URL => 'https://api.pipedrive.com/v1/persons/' . $personId . '?api_token=' . $apiToken,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 10,
-            ]);
-            $personResponse = curl_exec($ch2);
-            curl_close($ch2);
-
-            $personDetails = json_decode($personResponse, true);
-            $existingLeadSource = $personDetails['data']['3a5e186174ecf4e8eddb2834271d6f7983db0e66'] ?? '';
-        }
-    }
-
-    // Build Lead Source - append if exists, don't duplicate
-    $newCampaign = 'Gift Card: ' . $postcard;
-    if (!empty($existingLeadSource)) {
-        // Check if this campaign is already in the Lead Source
-        if (strpos($existingLeadSource, $newCampaign) === false) {
-            $personData['3a5e186174ecf4e8eddb2834271d6f7983db0e66'] = $existingLeadSource . ', ' . $newCampaign;
-        } else {
-            // Already registered for this campaign, keep existing
-            $personData['3a5e186174ecf4e8eddb2834271d6f7983db0e66'] = $existingLeadSource;
-        }
-    }
-
-    // Step 2: Create or update person
-    $ch = curl_init();
-
-    if ($personId) {
-        // Update existing person
-        curl_setopt_array($ch, [
-            CURLOPT_URL => 'https://api.pipedrive.com/v1/persons/' . $personId . '?api_token=' . $apiToken,
-            CURLOPT_CUSTOMREQUEST => 'PUT',
-            CURLOPT_POSTFIELDS => json_encode($personData),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        ]);
-    } else {
-        // Create new person
-        curl_setopt_array($ch, [
-            CURLOPT_URL => 'https://api.pipedrive.com/v1/persons?api_token=' . $apiToken,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($personData),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        ]);
-    }
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
-
-    if ($httpCode < 200 || $httpCode >= 300 || $error) {
-        error_log("Pipedrive API person error: HTTP $httpCode - $error - Response: $response");
-        return false;
-    }
-
-    // Get person ID from response
-    $responseData = json_decode($response, true);
-    $personId = $responseData['data']['id'] ?? $personId;
-
-    if (!$personId) {
-        error_log("Pipedrive API error: No person ID in response - $response");
-        return false;
-    }
-
-    // Step 3: Add a note with campaign details
-    $noteContent = "Gift Card Registration\n";
-    $noteContent .= "----------------------\n";
-    $noteContent .= "Campaign: {$postcard}\n";
-    $noteContent .= "Email Opt-In: " . ($emailOptIn ? 'Yes' : 'No') . "\n";
-    $noteContent .= "Source: Website Registration Form\n";
-    $noteContent .= "Date: " . date('Y-m-d H:i:s');
-
-    $noteData = [
-        'content' => $noteContent,
-        'person_id' => $personId,
-    ];
-
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => 'https://api.pipedrive.com/v1/notes?api_token=' . $apiToken,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($noteData),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    ]);
-
-    $noteResponse = curl_exec($ch);
-    $noteHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $noteError = curl_error($ch);
-    curl_close($ch);
-
-    if ($noteHttpCode < 200 || $noteHttpCode >= 300 || $noteError) {
-        error_log("Pipedrive API note error: HTTP $noteHttpCode - $noteError - Response: $noteResponse");
-        // Don't return false - person was created, just note failed
-    }
-
-    return true;
-}
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
@@ -243,18 +92,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST)) {
                 ]);
 
                 if ($result) {
-                    // Also send to Pipedrive
-                    $pipedriveResult = sendToPipedrive(
-                        $first_name,
-                        $last_name,
-                        $email,
-                        $phone,
-                        $campaign['campaign_name'],
-                        $email_opt_in
-                    );
-
-                    if (!$pipedriveResult) {
-                        error_log("Pipedrive sync failed for: $email - Campaign: {$campaign['campaign_name']}");
+                    // Also send to GoHighLevel
+                    if (!ghlSend([
+                        'firstName'    => $first_name,
+                        'lastName'     => $last_name,
+                        'name'         => trim("$first_name $last_name"),
+                        'email'        => $email,
+                        'phone'        => $phone,
+                        'source'       => 'Gift Card: ' . $campaign['campaign_name'],
+                        'campaign'     => $campaign['campaign_name'],
+                        'email_opt_in' => $email_opt_in,
+                        'signup_type'  => 'gift_card_register',
+                        'submitted_at' => date('c'),
+                    ], 'gcregister')) {
+                        error_log("GHL sync failed for gc register: $email - Campaign: {$campaign['campaign_name']}");
                     }
 
                     $success_message = 'Thank you! Your registration has been submitted successfully for: ' . htmlspecialchars($campaign['campaign_name']) . '.';

@@ -111,6 +111,11 @@ define('ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/webp']);
 // Database table prefix
 define('TABLE_PREFIX', 'directory_');
 
+// Committed integration helpers (GHL webhook + reCAPTCHA). These defer to the
+// cPanel secure/ helpers when those are already loaded, and read env vars on Railway.
+require_once __DIR__ . '/includes/ghl.php';
+require_once __DIR__ . '/includes/recaptcha.php';
+
 // Database wrapper
 function getDB() {
     if (function_exists('getSecureDBConnection')) {

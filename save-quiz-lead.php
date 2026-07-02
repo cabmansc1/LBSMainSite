@@ -28,18 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Load secure database configuration
+// Load config: secure DB on cPanel, env vars on Railway (both via config.php,
+// which also provides appSendMail() and ghlSend()).
 define('DB_CONFIG_LOADED', true);
 $db_config_path = dirname(__FILE__) . '/../secure/db_config.php';
-$pipedrive_path = dirname(__FILE__) . '/../secure/pipedrive_helper.php';
-if (file_exists($db_config_path)) {
-    require_once $db_config_path;
-    require_once $pipedrive_path;
-} else {
-    error_log('Quiz Lead: db_config.php not found');
-    echo json_encode(['success' => false, 'message' => 'Configuration error']);
-    exit();
-}
+if (file_exists($db_config_path)) { require_once $db_config_path; }
+require_once dirname(__FILE__) . '/config.php';
 
 try {
     // Get JSON input
@@ -247,30 +241,20 @@ try {
 
     appSendMail('exumandrew@gmail.com', $adminSubject, $adminMessage, $adminHeaders);
 
-    // Send to Pipedrive
-    $pipedriveNote = "Find Your Perfect Ad Quiz\n";
-    $pipedriveNote .= "--------------------------\n";
-    $pipedriveNote .= "Business Type: {$businessLabel}\n";
-    $pipedriveNote .= "Goal: {$goalLabel}\n";
-    $pipedriveNote .= "Mailing Size: " . number_format($mailingSize) . " households\n";
-    $pipedriveNote .= "Budget: $" . number_format($budget) . "\n";
-    if (!empty($recommendation)) {
-        $pipedriveNote .= "Recommended Ad: " . ($recommendation['adSize'] ?? 'N/A') . "\n";
-        $pipedriveNote .= "Recommended Price: $" . number_format($recommendation['price'] ?? 0) . "\n";
-    }
-    $pipedriveNote .= "Date: " . date('Y-m-d H:i:s');
-
-    $pipedriveResult = sendToPipedrive(
-        '',
-        $email,
-        '',
-        PIPEDRIVE_LABEL_QUIZ_LEAD,
-        "Quiz Lead: " . $businessLabel,
-        $pipedriveNote
-    );
-
-    if (!$pipedriveResult) {
-        error_log("Pipedrive sync failed for quiz lead: $email");
+    // Send lead to GoHighLevel
+    $ghlOk = ghlSend([
+        'email'             => $email,
+        'source'            => 'Quiz Lead: ' . $businessLabel,
+        'business_type'     => $businessLabel,
+        'goal'              => $goalLabel,
+        'mailing_size'      => $mailingSize,
+        'budget'            => $budget,
+        'recommended_ad'    => $recommendation['adSize'] ?? '',
+        'recommended_price' => $recommendation['price'] ?? '',
+        'submitted_at'      => date('c'),
+    ], 'quiz');
+    if (!$ghlOk) {
+        error_log("GHL sync failed for quiz lead: $email");
     }
 
     $conn->close();

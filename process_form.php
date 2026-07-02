@@ -9,14 +9,14 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
-// Load secure database configuration
+// Load secure config (cPanel). On Railway these files are absent; config.php
+// supplies the DB connection, GHL helper, and reCAPTCHA verify from env vars.
 define('DB_CONFIG_LOADED', true);
-require_once dirname(__FILE__) . '/../secure/db_config.php';
-require_once dirname(__FILE__) . '/../secure/pipedrive_helper.php';
-require_once dirname(__FILE__) . '/../secure/ghl_helper.php';
+$__secure = dirname(__FILE__) . '/../secure/';
+if (is_file($__secure . 'db_config.php'))        { require_once $__secure . 'db_config.php'; }
+if (is_file($__secure . 'ghl_helper.php'))       { require_once $__secure . 'ghl_helper.php'; }
 require_once dirname(__FILE__) . '/config.php';
-require_once dirname(__FILE__) . '/../secure/recaptcha_config.php';
-require_once dirname(__FILE__) . '/../secure/recaptcha_helper.php';
+if (is_file($__secure . 'recaptcha_config.php')) { require_once $__secure . 'recaptcha_config.php'; }
 
 // Get database connection
 try {
@@ -140,34 +140,9 @@ try {
         
         appSendMail($to, $subject, $message, $headers, '-f no-reply@lowcountrybusinessspotlight.com');
 
-        // Send to Pipedrive
-        $pipedriveNote = "Advertising Lead\n";
-        $pipedriveNote .= "----------------\n";
-        $pipedriveNote .= "Company: {$company_name}\n";
-        $pipedriveNote .= "Category: {$notes}\n";
-        if ($package_description) {
-            $pipedriveNote .= "Location: {$location}\n";
-            $pipedriveNote .= "Package: {$package_description}\n";
-        }
-        $pipedriveNote .= "Date: " . date('Y-m-d H:i:s');
-
         $leadSourceText = "Ad Lead";
         if ($location) {
             $leadSourceText .= ": " . $location;
-        }
-
-        $pipedriveResult = sendToPipedrive(
-            $contact_name,
-            $email,
-            $phone,
-            PIPEDRIVE_LABEL_AD_LEAD,
-            $leadSourceText,
-            $pipedriveNote,
-            $company_name
-        );
-
-        if (!$pipedriveResult) {
-            error_log("Pipedrive sync failed for ad lead: $email");
         }
 
         // Send to GoHighLevel
@@ -188,7 +163,7 @@ try {
             'ad_price'    => $ad_price,
             'submitted_at' => date('c'),
         ];
-        if (!sendToGHL(GHL_WEBHOOK_AD_LEAD, $ghlPayload)) {
+        if (!ghlSend($ghlPayload, 'advertise')) {
             error_log("GHL sync failed for ad lead: $email");
         }
 

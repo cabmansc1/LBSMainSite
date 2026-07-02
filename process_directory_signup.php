@@ -9,10 +9,12 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
-// Load secure database configuration
+// Load config: secure DB on cPanel, env vars on Railway (via config.php, which
+// also provides appSendMail() and ghlSend()).
 define('DB_CONFIG_LOADED', true);
-require_once dirname(__FILE__) . '/../secure/db_config.php';
-require_once dirname(__FILE__) . '/../secure/pipedrive_helper.php';
+$__secure = dirname(__FILE__) . '/../secure/';
+if (is_file($__secure . 'db_config.php')) { require_once $__secure . 'db_config.php'; }
+require_once dirname(__FILE__) . '/config.php';
 
 // Get database connection
 try {
@@ -92,20 +94,13 @@ function handleDirectoryNotification($conn) {
         
         appSendMail($admin_to, $admin_subject, $admin_message, $headers);
 
-        // Send to Pipedrive
-        $pipedriveNote = "Directory Launch Notification\n";
-        $pipedriveNote .= "-----------------------------\n";
-        $pipedriveNote .= "Signed up for directory launch updates\n";
-        $pipedriveNote .= "Date: " . date('Y-m-d H:i:s');
-
-        sendToPipedrive(
-            '',
-            $email,
-            '',
-            PIPEDRIVE_LABEL_DIRECTORY_SIGNUP,
-            "Directory: Launch Notification",
-            $pipedriveNote
-        );
+        // Send to GoHighLevel
+        ghlSend([
+            'email'        => $email,
+            'source'       => 'Directory: Launch Notification',
+            'signup_type'  => 'directory_notification',
+            'submitted_at' => date('c'),
+        ], 'directory_notification');
 
         header('Location: directory-coming-soon.php?success=1');
         exit();
@@ -232,27 +227,24 @@ function handleDirectorySignup($conn) {
         // Send customer confirmation
         appSendMail($email, 'Thank you for joining our directory', "Dear $contact_name,\n\nThank you for signing up! We'll contact you within 1-2 business days.", $headers);
 
-        // Send to Pipedrive
-        $pipedriveNote = "Directory Signup\n";
-        $pipedriveNote .= "-----------------\n";
-        $pipedriveNote .= "Business: {$business_name}\n";
-        $pipedriveNote .= "Category: {$business_category}\n";
-        $pipedriveNote .= "Address: {$street_address}, {$city} {$zip_code}\n";
-        $pipedriveNote .= "Service Areas: {$service_areas}\n";
-        $pipedriveNote .= "Plan: {$preferred_plan}\n";
-        $pipedriveNote .= "Years in Business: {$years_in_business}\n";
-        $pipedriveNote .= "Website: {$website}\n";
-        $pipedriveNote .= "Date: " . date('Y-m-d H:i:s');
-
-        sendToPipedrive(
-            $contact_name,
-            $email,
-            $phone,
-            PIPEDRIVE_LABEL_DIRECTORY_SIGNUP,
-            "Directory: " . $preferred_plan,
-            $pipedriveNote,
-            $business_name
-        );
+        // Send to GoHighLevel
+        $ghlNameParts = preg_split('/\s+/', trim($contact_name), 2);
+        ghlSend([
+            'firstName'    => $ghlNameParts[0] ?? '',
+            'lastName'     => $ghlNameParts[1] ?? '',
+            'name'         => $contact_name,
+            'email'        => $email,
+            'phone'        => $phone,
+            'companyName'  => $business_name,
+            'source'       => 'Directory: ' . $preferred_plan,
+            'category'     => $business_category,
+            'address'      => trim("{$street_address}, {$city} {$zip_code}"),
+            'service_areas'=> $service_areas,
+            'plan'         => $preferred_plan,
+            'website'      => $website,
+            'signup_type'  => 'directory_signup',
+            'submitted_at' => date('c'),
+        ], 'directory_signup');
 
         header('Location: directory-thank-you.php');
         exit();

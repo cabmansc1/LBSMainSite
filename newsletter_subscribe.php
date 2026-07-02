@@ -1,6 +1,5 @@
 <?php
 require_once 'config.php';
-require_once dirname(__FILE__) . '/../secure/pipedrive_helper.php';
 
 header('Content-Type: application/json');
 
@@ -44,18 +43,15 @@ try {
         $stmt = $db->prepare("INSERT INTO directory_newsletter_subscribers (email, source) VALUES (?, ?)");
         $stmt->execute([$email, $source]);
 
-        // Send to Pipedrive
-        $pipedriveResult = sendToPipedrive(
-            $email,
-            $email,
-            '',
-            PIPEDRIVE_LABEL_NEWSLETTER,
-            'Newsletter: ' . $source,
-            "Newsletter Signup\n----------------\nEmail: {$email}\nSource: {$source}\nDate: " . date('Y-m-d H:i:s')
-        );
-
-        if (!$pipedriveResult) {
-            error_log("Pipedrive sync failed for newsletter subscriber: $email");
+        // Send to GoHighLevel
+        if (!ghlSend([
+            'email'        => $email,
+            'source'       => 'Newsletter: ' . $source,
+            'signup_type'  => 'newsletter',
+            'origin'       => $source,
+            'submitted_at' => date('c'),
+        ], 'newsletter')) {
+            error_log("GHL sync failed for newsletter subscriber: $email");
         }
 
         echo json_encode(['success' => true, 'message' => 'Thanks for subscribing! You\'ll hear from us soon.']);
