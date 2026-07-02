@@ -54,7 +54,9 @@ if (file_exists($db_config_path)) {
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET . ", time_zone = '-05:00'",
+                    // Match cPanel MariaDB's permissive grouping (Railway's MySQL 9
+                    // enables ONLY_FULL_GROUP_BY by default, which breaks the app's GROUP BY queries).
+                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET . ", time_zone = '-05:00', SESSION sql_mode = (SELECT REPLACE(@@SESSION.sql_mode, 'ONLY_FULL_GROUP_BY', ''))",
                     PDO::ATTR_PERSISTENT => false,
                 ];
                 return new PDO($dsn, DB_USER, DB_PASS, $options);
@@ -71,6 +73,8 @@ if (file_exists($db_config_path)) {
                 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
                 $conn->set_charset(DB_CHARSET);
                 $conn->query("SET time_zone = '-05:00'");
+                // Match cPanel MariaDB's permissive grouping (see PDO note above).
+                $conn->query("SET SESSION sql_mode = (SELECT REPLACE(@@SESSION.sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
                 return $conn;
             } catch (Exception $e) {
                 error_log("MySQLi connection failed: " . $e->getMessage());
