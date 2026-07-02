@@ -1,0 +1,882 @@
+<?php
+// Load pricing configuration with error handling
+if (file_exists('pricing_config.php')) {
+    require_once 'pricing_config.php';
+} else {
+    die('Error: pricing_config.php not found');
+}
+
+require_once __DIR__ . '/config.php';
+$location = 'moncks-corner';
+$csrf_token = generateCSRFToken();
+
+$seo = [
+    'title'           => 'Moncks Corner Direct Mail | 9x12 Postcards | LBS',
+    'description'    => 'Moncks Corner direct mail targeting 5,000–10,000 homes per mailing in zip code 29461. Exclusive 9x12 billboard-style postcards — no competitors on the same mailing. 12,000+ total households available across Moncks Corner, Berkeley County & the Foxbank area. Starting at 5¢ per household.',
+    'canonical'      => SITE_URL . '/moncks-corner-direct-mail-marketing.php',
+    'og_title'       => 'Moncks Corner Direct Mail | Target 5,000–10,000 Homes Per Mailing',
+    'og_description' => 'Exclusive 9x12 billboard-style postcards targeting 5,000–10,000 Moncks Corner households per mailing. 12,000+ total homes available in the zone. No competitors on the same mailing. Starting at 5¢ per household.',
+    'extra_jsonld'   => [
+        <<<'JSON'
+{
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Moncks Corner Direct Mail",
+    "description": "Direct mail service delivering 9x12 billboard-style postcards to 5,000–10,000 targeted households per mailing in Moncks Corner and Berkeley County, SC zip code 29461. Over 12,000 total homes available in the zone. Exclusive category placement with no competitors on the same mailing.",
+    "provider": {
+        "@type": "LocalBusiness",
+        "name": "Lowcountry Business Spotlight",
+        "telephone": "843-212-2969",
+        "email": "hello@lbspotlight.com",
+        "url": "https://www.lowcountrybusinessspotlight.com"
+    },
+    "areaServed": {
+        "@type": "City",
+        "name": "Moncks Corner",
+        "containedInPlace": {"@type": "State", "name": "South Carolina"}
+    },
+    "serviceType": "Direct Mail Advertising",
+    "url": "https://www.lowcountrybusinessspotlight.com/moncks-corner-direct-mail-marketing.php"
+}
+JSON,
+        <<<'JSON'
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {"@type": "Question", "name": "How many households receive the postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Each mailing targets 5,000–10,000 households in Moncks Corner and Berkeley County (29461 zip code). The full zone covers 12,000+ homes that can be reached over multiple mailings."}},
+        {"@type": "Question", "name": "Is my category exclusive?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Only one business per category appears on each card."}},
+        {"@type": "Question", "name": "Do you design my ad?", "acceptedAnswer": {"@type": "Answer", "text": "Yes—ad design is included at no additional cost."}},
+        {"@type": "Question", "name": "How do we measure results?", "acceptedAnswer": {"@type": "Answer", "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls."}},
+        {"@type": "Question", "name": "When is the next print date?", "acceptedAnswer": {"@type": "Answer", "text": "We print on a regular cadence. Submit the form above for current availability and deadlines."}}
+    ]
+}
+JSON,
+    ],
+];
+include __DIR__ . '/seo_head.php';
+?>
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        padding: 60px 0;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.04)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        color: white;
+        line-height: 1.1;
+        margin-bottom: 30px;
+    }
+
+    .hero-content p {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 40px;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    .cta-hero {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ff8c00, #ff6b00);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 18px;
+        box-shadow: 0 8px 25px rgba(234, 88, 12, 0.4);
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(234, 88, 12, 0.5);
+        background: linear-gradient(135deg, #e07800, #e05500);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ===== SECTION STYLES ===== */
+    .section {
+        padding: 100px 0;
+    }
+
+    .section.light {
+        background: #f8fafc;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .section-header h2 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .section-header p {
+        font-size: 1.2rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #38b6ff;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #38b6ff;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .stat-card p {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* ===== ZIP CODES GRID ===== */
+    .zip-codes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .zip-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .zip-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .zip-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .zip-card ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .zip-card li {
+        padding: 8px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .zip-card li::before {
+        content: "\2713";
+        color: #ff8c00;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    /* ===== BLUE SECTION STYLES ===== */
+    .section.blue {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+    }
+
+    .section.blue .section-header h2 {
+        color: #000000;
+    }
+
+    .section.blue .section-header p {
+        color: #1a202c;
+    }
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 30px 25px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .feature-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .feature-card p {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* ===== BUSINESS TYPES GRID ===== */
+    .business-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .business-type {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .business-type:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .business-type h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 12px;
+    }
+
+    .business-type p {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* ===== FORM STYLES ===== */
+    .form-container {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #38b6ff;
+        box-shadow: 0 0 0 3px rgba(56, 182, 255, 0.1);
+    }
+
+    /* ===== FAQ STYLES ===== */
+    .faq-item {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        padding: 20px;
+        font-weight: 700;
+        color: #000000;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: #f8fafc;
+    }
+
+    .faq-answer {
+        padding: 0 20px 20px;
+        color: #64748b;
+        line-height: 1.6;
+    }
+
+    /* ===== CONTACT BANNER ===== */
+    .contact-banner {
+        background: rgba(255, 255, 255, 0.1);
+        color: #000000;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        margin: 60px auto 0;
+        max-width: 600px;
+        border: 2px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .contact-banner:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #38b6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(56, 182, 255, 0.2);
+    }
+
+    .contact-banner h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #000000;
+    }
+
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #000000;
+    }
+
+    .contact-item a {
+        color: #000000;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        padding: 8px 16px;
+        border-radius: 8px;
+    }
+
+    .contact-item a:hover {
+        background: #38b6ff;
+        color: white;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+        background: #000000;
+        color: #94a3b8;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .footer-left {
+        text-align: left;
+    }
+
+    .footer-left p {
+        margin-bottom: 0;
+    }
+
+    .footer-right {
+        text-align: right;
+    }
+
+    .footer-right img {
+        width: 100px;
+        height: auto;
+    }
+
+    .footer a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+        color: white;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .hero-container {
+            padding: 0 20px;
+        }
+
+        .container {
+            padding: 0 20px;
+        }
+
+        .cta-hero {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            text-align: center;
+        }
+
+        .stats-grid, .features-grid, .zip-codes, .business-types {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-info {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-content {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .footer-left, .footer-right {
+            text-align: center;
+        }
+    }
+    </style>
+</head>
+
+<body>
+    <?php include 'header.php'; ?>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1><span style="color: #000000; font-weight: 900;">Moncks Corner</span> Direct Mail Marketing for Local Businesses</h1>
+                <p>Connect with Berkeley County's Tight-Knit Community</p>
+
+                <div class="cta-hero">
+                    <a href="tel:843-212-2969" class="btn-primary">Call Now: 843-212-2969</a>
+                    <a href="#reserve" class="btn-secondary">Get Started Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Moncks Corner -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Moncks Corner is Perfect for Direct Mail Marketing</h2>
+                <p>As the county seat of Berkeley County, Moncks Corner is a close-knit community where word of mouth and local reputation matter. With over 12,000 residents and strong community engagement, direct mail delivers exceptional results in this market.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">12,000+</span>
+                    <p>Town Population</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">$55,000+</span>
+                    <p>Median Household Income</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">35.4</span>
+                    <p>Median Age</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">30 mi</span>
+                    <p>From Charleston</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Direct Mail Works in Moncks Corner -->
+    <section class="section">
+        <div class="container">
+            <div style="max-width: 800px; margin: 0 auto;">
+
+                <h2 style="font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 800; color: #000000; margin-bottom: 20px;">Why Direct Mail Works in Moncks Corner</h2>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Moncks Corner is the county seat of Berkeley County and one of the fastest-growing small towns in the Charleston metro area. Once a quiet rural community, Moncks Corner has evolved into a thriving bedroom community for Charleston-area workers who want affordable housing without sacrificing quality of life. That growth has brought thousands of new families into the area over the past decade, and those families need local services -- from HVAC contractors and plumbers to dentists, restaurants, and daycare centers.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">What makes Moncks Corner especially receptive to direct mail is its strong community identity. Unlike sprawling suburban areas where residents may not feel connected to a single town center, Moncks Corner residents identify with their town. They shop local, they support local businesses, and they pay attention to what arrives in their mailbox. A bold, oversized 9x12 postcard does not get ignored here -- it gets pinned to the refrigerator, passed to a spouse, or mentioned to a neighbor.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 30px;">With a median age of 35 and a median household income above $55,000, Moncks Corner households have both the disposable income and the homeownership responsibilities that drive demand for local services. Whether you are a landscaper looking to fill your spring schedule or a real estate agent building name recognition, direct mail puts your business directly in front of the people most likely to call.</p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000000; margin-bottom: 15px;">Areas We Cover in the 29461 Zip Code</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Our Moncks Corner mailing zone covers the entire 29461 zip code, with over 12,000 homes available across a wide range of neighborhoods and communities. Each mailing targets 5,000–10,000 of those households. That includes downtown Moncks Corner and the historic core around Main Street, the rapidly expanding Foxbank development and its surrounding residential areas, the Old Santee Canal corridor near the state park, and established neighborhoods near the Berkeley County government center. We also reach homes along the US-52 corridor heading toward Goose Creek, as well as the lakeside communities near Lake Moultrie that attract both year-round residents and weekend visitors.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 30px;">This broad coverage means your postcard reaches not just one pocket of Moncks Corner, but the full cross-section of the community -- new construction homeowners, established families, retirees on the lake, and young professionals who commute to Charleston or the naval facilities nearby.</p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000000; margin-bottom: 15px;">Direct Mail vs. Digital Advertising in a Small Market</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">One of the biggest advantages of advertising in Moncks Corner rather than a large metro area is the speed at which brand recognition builds. In Charleston proper, you are competing with hundreds of businesses running Facebook ads, Google campaigns, and sponsored posts. The digital noise is deafening. In Moncks Corner, the advertising landscape is far less crowded. A single well-designed postcard that lands in thousands of mailboxes across town can make your business a household name within a few mailings.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Digital ads disappear with a scroll. A physical postcard sits on a kitchen counter for days or even weeks. Studies consistently show that direct mail generates higher response rates than digital advertising, and the effect is amplified in tight-knit communities like Moncks Corner where residents trust tangible, local-feeling marketing over anonymous online ads. When someone in Moncks Corner needs a roofer or a pest control company, they are more likely to reach for the postcard on the fridge than to scroll through a feed full of ads from companies they have never heard of.</p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000000; margin-bottom: 15px;">How the Program Works</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Our Moncks Corner direct mail program is designed to be turnkey. You reserve an exclusive spot in your business category -- meaning no competitor in your industry will appear on the same postcard. We handle the ad design at no extra cost, working with you to create a bold, eye-catching layout that includes your logo, offer, contact information, and a trackable QR code. The finished 9x12 postcard is printed on heavy-stock cardstock and mailed via USPS Every Door Direct Mail (EDDM) to targeted residential routes in the 29461 zip code.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Because the postcard is oversized -- the same dimensions as a standard sheet of paper -- it cannot be hidden inside an envelope or shuffled behind smaller mail pieces. It arrives face-up and impossible to miss. Each mailing targets 5,000 to 10,000 households, with over 12,000 total homes available across the Moncks Corner zone that can be covered over multiple mailings. With pricing starting at just 5 cents per household, it is one of the most cost-effective ways to reach the Moncks Corner market.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Most of our advertisers see the best results when they commit to multiple mailings throughout the year. Repetition builds familiarity, and familiarity builds trust. By the second or third mailing, Moncks Corner residents start to recognize your brand before they even need your services -- and when the need arises, you are the first business that comes to mind.</p>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Coverage -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Moncks Corner & Berkeley County Coverage</h2>
+                <p>Our 9"x12" billboard-style postcards reach households throughout the Moncks Corner area</p>
+            </div>
+
+            <div class="zip-codes">
+                <div class="zip-card">
+                    <h3>29461 - Moncks Corner</h3>
+                    <ul>
+                        <li>Historic downtown Moncks Corner and surrounding neighborhoods</li>
+                        <li>Berkeley County government and civic center area</li>
+                        <li>Growing residential developments along US-52</li>
+                        <li>Lake Moultrie and Santee Cooper recreation communities</li>
+                    </ul>
+                </div>
+                <div class="zip-card">
+                    <h3>Greater Berkeley County Reach</h3>
+                    <ul>
+                        <li>Established family neighborhoods with deep community roots</li>
+                        <li>New housing developments attracting young families</li>
+                        <li>Strong local business support and community loyalty</li>
+                        <li>Rapidly growing area with increasing household density</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section blue">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Makes Our Moncks Corner Direct Mail Different</h2>
+                <p>Exclusive placement and maximum impact for your business</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎯</span>
+                    <h3>Exclusive Market Position</h3>
+                    <p>No competitors allowed on the same postcard! When Moncks Corner residents see your 9"x12" billboard-style ad, you're the ONLY business in your category they'll remember.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📬</span>
+                    <h3>Maximum Mailbox Impact</h3>
+                    <p>Our oversized 9"x12" postcards don't get lost in the mail. They stand out like billboards in every Moncks Corner mailbox, ensuring your message gets noticed.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🏘️</span>
+                    <h3>Community-Focused Reach</h3>
+                    <p>In a tight-knit community like Moncks Corner, direct mail is personal. Reach thousands of households who value and support local businesses.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💰</span>
+                    <h3>Unbeatable Value</h3>
+                    <p>Starting at just 5¢ per household, you can target 5,000–10,000 Moncks Corner homes per mailing for less than the cost of a single newspaper ad.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Types -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Perfect for Moncks Corner's Business Community</h2>
+                <p>Ideal for local businesses looking to reach their target audience</p>
+            </div>
+
+            <div class="business-types">
+                <div class="business-type">
+                    <h3>Home Services</h3>
+                    <p>HVAC, plumbing, landscaping, pressure washing</p>
+                </div>
+                <div class="business-type">
+                    <h3>Restaurants & Food</h3>
+                    <p>Local eateries, BBQ, catering, food trucks</p>
+                </div>
+                <div class="business-type">
+                    <h3>Professional Services</h3>
+                    <p>Real estate, insurance, legal, accounting</p>
+                </div>
+                <div class="business-type">
+                    <h3>Outdoor & Recreation</h3>
+                    <p>Boat services, fishing charters, outdoor equipment</p>
+                </div>
+                <div class="business-type">
+                    <h3>Health & Wellness</h3>
+                    <p>Medical practices, dental offices, veterinary care</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing and Form Section -->
+    <?php include 'pricing_form_section.php'; ?>
+
+    <!-- FAQ -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Moncks Corner Postcard FAQs</h2>
+                <p>Common questions about our direct mail service</p>
+            </div>
+
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How many households receive the postcard?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Each mailing targets 5,000–10,000 households in Moncks Corner and Berkeley County (29461 zip code). The full zone covers 12,000+ homes that can be reached over multiple mailings.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is my category exclusive?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. Only one business per category appears on each card.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you design my ad?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes—ad design is included at no additional cost.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do we measure results?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        When is the next print date?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We print on a regular cadence. Submit the form above for current availability and deadlines.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Zones -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Explore Nearby Zones</h2>
+                <p>Expand your reach across the Lowcountry with targeted direct mail</p>
+            </div>
+
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="display: grid; gap: 15px;">
+                    <a href="/summerville-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Summerville Direct Mail</strong>
+                    </a>
+                    <a href="/north-charleston-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>North Charleston Direct Mail</strong>
+                    </a>
+                    <a href="/daniel-island-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Daniel Island & Clements Ferry Direct Mail</strong>
+                    </a>
+                    <a href="/mount-pleasant-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Mount Pleasant Direct Mail</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Neighborhood Cards Cross-Sell -->
+    <section style="background: #f1f5f9; padding: 50px 20px; text-align: center; font-family: 'Inter', sans-serif; border-top: 1px solid #e2e8f0;">
+        <div style="max-width: 700px; margin: 0 auto;">
+            <p style="color: #0ea5e9; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Also Available</p>
+            <h2 style="color: #1e293b; font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 800; margin-bottom: 12px;">Looking for Something Smaller?</h2>
+            <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 24px;">Our <strong style="color: #1e293b;">Neighborhood Cards</strong> reach ~2,500 homes in specific neighborhoods starting at just $79 per spot. A great way to test direct mail on a budget.</p>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="/neighborhood-cards/" style="display: inline-block; padding: 12px 28px; background: #38b6ff; color: white; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.95rem;">Browse Neighborhood Cards</a>
+                <a href="/compare/" style="display: inline-block; padding: 12px 28px; background: white; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Compare Products</a>
+            </div>
+        </div>
+    </section>
+
+    <?php include 'footer.php'; ?>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', function() {
+                    const answer = this.nextElementSibling;
+                    const isOpen = answer.style.display === 'block';
+
+                    document.querySelectorAll('.faq-answer').forEach(a => {
+                        a.style.display = 'none';
+                    });
+
+                    answer.style.display = isOpen ? 'none' : 'block';
+
+                    const icon = this.querySelector('span:last-child');
+                    icon.textContent = isOpen ? '+' : '\u2212';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

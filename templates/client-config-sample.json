@@ -1,0 +1,15 @@
+{
+  "business_name": "Charleston Coffee Co.",
+  "tagline": "Locally Roasted Since 2015",
+  "image_file": "charleston-coffee-logo.jpg",
+  "phone_display": "(843) 555-1234",
+  "phone_link": "+18435551234",
+  "email": "hello@charlestoncoffee.com",
+  "address": "123 King Street, Charleston, SC 29401",
+  "hours": "Mon–Fri: 7am–6pm | Sat–Sun: 8am–5pm",
+  "accent_color": "#e8c272",
+  "facebook_url": "https://facebook.com/charlestoncoffeeco",
+  "instagram_url": "https://instagram.com/charlestoncoffeeco",
+  "yelp_url": "https://yelp.com/biz/charleston-coffee-co",
+  "google_url": "https://g.page/charleston-coffee-co"
+}

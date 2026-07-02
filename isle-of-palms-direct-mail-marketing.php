@@ -1,0 +1,890 @@
+<?php
+require_once __DIR__ . '/config.php';
+$location = 'isle-of-palms';
+
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
+?>
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        padding: 60px 0;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.04)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        color: white;
+        line-height: 1.1;
+        margin-bottom: 30px;
+    }
+
+    .hero-content p {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 40px;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    .cta-hero {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ff8c00, #ff6b00);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 18px;
+        box-shadow: 0 8px 25px rgba(234, 88, 12, 0.4);
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(234, 88, 12, 0.5);
+        background: linear-gradient(135deg, #e07800, #e05500);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ===== SECTION STYLES ===== */
+    .section {
+        padding: 100px 0;
+    }
+
+    .section.light {
+        background: #f8fafc;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .section-header h2 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .section-header p {
+        font-size: 1.2rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #38b6ff;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #38b6ff;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .stat-card p {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* ===== ZIP CODES GRID ===== */
+    .zip-codes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .zip-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .zip-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .zip-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .zip-card ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .zip-card li {
+        padding: 8px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .zip-card li::before {
+        content: "\2713";
+        color: #ff8c00;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    /* ===== BLUE SECTION STYLES ===== */
+    .section.blue {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+    }
+
+    .section.blue .section-header h2 {
+        color: #000000;
+    }
+
+    .section.blue .section-header p {
+        color: #1a202c;
+    }
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 30px 25px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .feature-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .feature-card p {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* ===== BUSINESS TYPES GRID ===== */
+    .business-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .business-type {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .business-type:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .business-type h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 12px;
+    }
+
+    .business-type p {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* ===== PRICING SECTION ===== */
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .pricing-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        position: relative;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .pricing-card h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .price {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #ff8c00;
+        margin-bottom: 20px;
+    }
+
+    .pricing-card ul {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 30px;
+    }
+
+    .pricing-card li {
+        padding: 8px 0;
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* ===== FORM STYLES ===== */
+    .form-container {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #38b6ff;
+        box-shadow: 0 0 0 3px rgba(56, 182, 255, 0.1);
+    }
+
+    /* ===== FAQ STYLES ===== */
+    .faq-item {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        padding: 20px;
+        font-weight: 700;
+        color: #000000;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: #f8fafc;
+    }
+
+    .faq-answer {
+        padding: 0 20px 20px;
+        color: #64748b;
+        line-height: 1.6;
+    }
+
+    /* ===== CONTACT BANNER ===== */
+    .contact-banner {
+        background: rgba(255, 255, 255, 0.1);
+        color: #000000;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        margin: 60px auto 0;
+        max-width: 600px;
+        border: 2px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .contact-banner:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #38b6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(56, 182, 255, 0.2);
+    }
+
+    .contact-banner h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #000000;
+    }
+
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #000000;
+    }
+
+    .contact-item a {
+        color: #000000;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        padding: 8px 16px;
+        border-radius: 8px;
+    }
+
+    .contact-item a:hover {
+        background: #38b6ff;
+        color: white;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+        background: #000000;
+        color: #94a3b8;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .footer-left {
+        text-align: left;
+    }
+
+    .footer-left p {
+        margin-bottom: 0;
+    }
+
+    .footer-right {
+        text-align: right;
+    }
+
+    .footer-right img {
+        width: 100px;
+        height: auto;
+    }
+
+    .footer a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+        color: white;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .hero-container {
+            padding: 0 20px;
+        }
+
+        .container {
+            padding: 0 20px;
+        }
+
+        .cta-hero {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            text-align: center;
+        }
+
+        .stats-grid, .features-grid, .zip-codes, .business-types, .pricing-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-info {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-content {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .footer-left, .footer-right {
+            text-align: center;
+        }
+    }
+    </style>
+</head>
+
+<body>
+    <?php include 'header.php'; ?>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>Isle of Palms Direct Mail <span style="color: #000000; font-weight: 900;"><br>Reach an Affluent Beach Community</span></h1>
+                <p>Reach 5,000–10,000 Isle of Palms and East Cooper households per mailing with oversized 9"x12" postcards — no competitors on the same card</p>
+
+                <div class="cta-hero">
+                    <a href="tel:843-212-2969" class="btn-primary">Call Now: 843-212-2969</a>
+                    <a href="#reserve" class="btn-secondary">Get Started Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Isle of Palms -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Isle of Palms Is a Premium Market for Direct Mail</h2>
+                <p>Isle of Palms is one of the most affluent beach communities in the Lowcountry. With high-income homeowners, a thriving tourism economy, and a unique mix of full-time residents and vacation property owners, IOP offers an exceptional audience for direct mail.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">4,500+</span>
+                    <p>Residents (Year-Round)</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">$120K+</span>
+                    <p>Median Household Income</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">2M+</span>
+                    <p>Annual Beach Visitors</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">20 Min</span>
+                    <p>From Downtown Charleston</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- In-Depth Content Section -->
+    <section class="section">
+        <div class="container">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <h2 style="font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 800; color: #000; margin-bottom: 20px;">Why Direct Mail Works on Isle of Palms, SC</h2>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Isle of Palms is not your average Lowcountry market. This barrier island community sits just 20 minutes from downtown Charleston, yet it operates with the feel of an exclusive beach enclave. With a median household income above $120,000, IOP residents are affluent homeowners who invest heavily in their properties, dine at quality restaurants, and hire premium service providers. For local businesses, this is one of the highest-value audiences you can reach — and direct mail puts your brand directly in their hands, inside their mailbox, where there is far less competition for attention than in any digital channel.
+                </p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    What makes Isle of Palms uniquely effective for direct mail is its dual audience. On one side, you have full-time residents — families and retirees who live on the island year-round and need reliable local services for everything from HVAC maintenance and pest control to landscaping and home renovations. On the other side, you have vacation rental property owners. Isle of Palms has one of the highest concentrations of short-term rental properties in the Charleston metro area, and those property owners need a steady roster of service providers: cleaning companies, property managers, handymen, plumbers, and contractors who can respond quickly when a rental unit needs attention between guests. A single direct mail postcard reaches both audiences at once.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">Areas We Reach Across Isle of Palms</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Our Isle of Palms direct mail campaigns blanket the entire island through zip code <strong>29451</strong>. That includes <strong>Isle of Palms proper</strong> — the residential heart of the island along Palm Boulevard, where beachfront and second-row homes line the coast from Breach Inlet to the Wild Dunes gates. It covers the <strong>Wild Dunes Resort area</strong>, home to some of the island's most valuable real estate, including resort villas, golf course properties, and oceanfront estates. The <strong>Breach Inlet area</strong> at the island's southwestern tip connects IOP to Sullivans Island and draws a steady flow of foot traffic and fishing activity. Near the base of the island, the <strong>IOP Marina area</strong> serves as a commercial hub for dining, charter fishing, and boating — a natural gathering point for residents and visitors alike. And the <strong>IOP Connector (SC-517)</strong> corridor links the island to Mount Pleasant, ensuring every household along this gateway receives your message.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">A Small Community with Less Mailbox Competition</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    One of the biggest advantages of direct mail on Isle of Palms is the lack of competition in the mailbox. In larger markets like Charleston or Mount Pleasant, homeowners may receive multiple direct mail pieces each week. On Isle of Palms, the mailbox is far less cluttered. A 9"x12" oversized postcard arriving at an IOP home commands attention — it is not buried under a stack of competing offers. For a beach community where word-of-mouth and personal recommendations carry significant weight, a physical postcard feels like a trusted referral rather than unsolicited advertising. And because we guarantee exclusive category placement, you are the only business in your industry on the card.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">The Tourism-Driven Local Economy</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Isle of Palms draws over two million visitors annually to its beaches, and the local economy revolves around serving both those visitors and the homeowners who welcome them. Restaurants, beach rental companies, marine services, real estate agents, and property management firms all depend on reaching the people who own and manage properties on the island. Direct mail is especially powerful here because it targets the decision-makers — the homeowners and property managers who choose which businesses to hire, not the transient tourists scrolling through review sites. When a property owner receives your postcard offering HVAC service, pressure washing, or vacation rental management, that message arrives at the exact right moment: when they are at home making decisions about their property.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">How Our Isle of Palms Direct Mail Program Works</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Getting started is straightforward. Each mailing targets 5,000 to 10,000 households — and because Isle of Palms is a smaller community, you can combine it with <strong>Mount Pleasant</strong> or <strong>Sullivans Island</strong> zones to hit your desired volume across the East Cooper corridor. We handle everything: ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there is zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to reach Isle of Palms homeowners and property owners.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Coverage -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Isle of Palms Zip Code Coverage</h2>
+                <p>Target one of the Lowcountry's most affluent beach communities</p>
+            </div>
+
+            <div class="zip-codes" style="max-width: 600px; margin: 0 auto;">
+                <div class="zip-card">
+                    <h3>29451 - Isle of Palms</h3>
+                    <ul>
+                        <li>Palm Boulevard beachfront and second-row homes</li>
+                        <li>Wild Dunes Resort — villas, golf course, oceanfront</li>
+                        <li>Breach Inlet area connecting to Sullivans Island</li>
+                        <li>IOP Marina — dining, charters, boating hub</li>
+                        <li>IOP Connector (SC-517) corridor</li>
+                        <li>Mix of full-time residents and vacation rental properties</li>
+                        <li>Affluent homeowners with $120K+ median income</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section blue">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Makes Our Isle of Palms Direct Mail Different</h2>
+                <p>Premium placement for a premium beach market</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎯</span>
+                    <h3>Exclusive Category Placement</h3>
+                    <p>No competitors allowed on the same postcard. When Isle of Palms homeowners see your 9"x12" billboard-style ad, you are the ONLY business in your category they will remember.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🏖️</span>
+                    <h3>Premium Beach Audience</h3>
+                    <p>Reach affluent homeowners and vacation property owners in one of the Lowcountry's most desirable communities. Median household income exceeds $120,000.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🗺️</span>
+                    <h3>Combine Nearby Zones</h3>
+                    <p>Pair Isle of Palms with Mount Pleasant or Sullivans Island to reach 5,000–10,000 households across the East Cooper corridor — all with exclusive category placement.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💰</span>
+                    <h3>Affordable & Trackable</h3>
+                    <p>Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Types -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Ideal for Isle of Palms Business Categories</h2>
+                <p>From beachfront services to home maintenance, direct mail works for businesses serving this island community</p>
+            </div>
+
+            <div class="business-types">
+                <div class="business-type">
+                    <h3>Property Management</h3>
+                    <p>Vacation rental management, short-term rental services, property oversight, turnover cleaning coordination</p>
+                </div>
+                <div class="business-type">
+                    <h3>Home Maintenance</h3>
+                    <p>HVAC, plumbing, pressure washing, roofing, hurricane shutters, painting, handyman services</p>
+                </div>
+                <div class="business-type">
+                    <h3>Real Estate</h3>
+                    <p>Residential sales, luxury listings, investment properties, vacation home buyers, relocation services</p>
+                </div>
+                <div class="business-type">
+                    <h3>Restaurants & Dining</h3>
+                    <p>Waterfront dining, casual beachside eateries, catering, private chef services, takeout and delivery</p>
+                </div>
+                <div class="business-type">
+                    <h3>Beach & Marine Services</h3>
+                    <p>Boat maintenance, charter fishing, paddleboard and kayak rentals, dock repair, marine detailing</p>
+                </div>
+                <div class="business-type">
+                    <h3>Pest Control & Landscaping</h3>
+                    <p>Mosquito control, termite protection, lawn care, irrigation, palmetto and palm tree maintenance</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Pricing and Form Section -->
+    <?php include 'pricing_form_section.php'; ?>
+
+    <!-- FAQ -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Isle of Palms Direct Mail FAQs</h2>
+                <p>Common questions about our direct mail service</p>
+            </div>
+
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How many households receive the postcard?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Each mailing targets 5,000 to 10,000 households. Because Isle of Palms is a smaller community, you can combine it with Mount Pleasant or Sullivans Island zones to reach your desired volume across the East Cooper corridor.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Can I combine Isle of Palms with nearby zones for a larger mailing?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Absolutely. Isle of Palms pairs naturally with Mount Pleasant and Sullivans Island. Many businesses combine two or three zones to reach 5,000–10,000 households across the East Cooper corridor while keeping their exclusive category placement on every card.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is my category exclusive?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. Only one business per category appears on each card. No competitors on the same mailing.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Does the mailing reach vacation rental properties?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. Our EDDM mailings are delivered to every residential address on qualifying postal routes, which includes vacation rental properties and second homes. Your ad reaches both full-time residents and the property owners who manage vacation rentals — a valuable dual audience for service businesses.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you design my ad?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes — ad design is included at no additional cost.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        When is the next print date?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We print on a regular cadence. Submit the form above for current availability and deadlines.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Zones -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Explore Nearby Zones</h2>
+                <p>Expand your reach across the Lowcountry with targeted direct mail</p>
+            </div>
+
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="display: grid; gap: 15px;">
+                    <a href="/sullivans-island-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Sullivans Island Direct Mail</strong>
+                    </a>
+                    <a href="/mount-pleasant-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Mount Pleasant Direct Mail</strong>
+                    </a>
+                    <a href="/daniel-island-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Daniel Island & Clements Ferry Direct Mail</strong>
+                    </a>
+                    <a href="/charleston-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Charleston Direct Mail</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <?php include 'footer.php'; ?>
+
+    <script>
+        // Simple FAQ toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', function() {
+                    const answer = this.nextElementSibling;
+                    const isOpen = answer.style.display === 'block';
+
+                    // Close all other answers
+                    document.querySelectorAll('.faq-answer').forEach(a => {
+                        a.style.display = 'none';
+                    });
+
+                    // Toggle current answer
+                    answer.style.display = isOpen ? 'none' : 'block';
+
+                    // Update icon
+                    const icon = this.querySelector('span:last-child');
+                    icon.textContent = isOpen ? '+' : '−';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

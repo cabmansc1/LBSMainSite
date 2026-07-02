@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>North Mount Pleasant Direct Mail | 9x12 Postcards to 10,000+ Homes (29466)</title>
+  <meta name="description" content="Put your North Mount Pleasant business in 10,000+ local homes & businesses (29466) with our exclusive 9x12 postcard. One business per category, free ad design, and trackable QR. From $299.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="canonical" href="https://www.lowcountrybusinessspotlight.com/north-mount-pleasant-direct-mail/">
+  <meta property="og:title" content="North Mount Pleasant Direct Mail | 9x12 Postcards (29466)">
+  <meta property="og:description" content="Exclusive 9x12 postcard to 10,000+ North Mount Pleasant homes & businesses. One business per category. From $299.">
+  <meta property="og:url" content="https://www.lowcountrybusinessspotlight.com/north-mount-pleasant-direct-mail/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://www.lowcountrybusinessspotlight.com/assets/nmtp-postcard-og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="North Mount Pleasant Direct Mail | 9x12 Postcards (29466)">
+  <meta name="twitter:description" content="Reach 10,000+ North Mount Pleasant homes & businesses (29466). From $299.">
+  <meta name="twitter:image" content="https://www.lowcountrybusinessspotlight.com/assets/nmtp-postcard-og.jpg">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="https://www.lowcountrybusinessspotlight.com/assets/postcard-mockup-nmtp.webp">
+  <style>
+    :root{--brand:#38b6ff;--dark:#111;--muted:#f6f8fb}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--dark);line-height:1.55}
+    .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+    header{background:linear-gradient(180deg,#eaf6ff 0%,#fff 100%)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;font-size:14px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand span{color:var(--brand)}
+    .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:32px;align-items:center;padding:40px 0}
+    h1{font-size:clamp(28px,3.4vw,44px);margin:0 0 10px}
+    .sub{font-size:18px;margin:0 0 16px}
+    .badges{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 20px}
+    .badge{background:var(--muted);padding:6px 10px;border-radius:999px;font-size:13px}
+    .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+    .btn{border:0;border-radius:10px;padding:14px 18px;font-weight:700;text-decoration:none;display:inline-block}
+    .btn-primary{background:var(--brand);color:#00213a}
+    .btn-outline{background:transparent;border:2px solid var(--brand);color:#111}
+    .hero img{width:100%;height:auto;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+    section{padding:56px 0}
+    h2{font-size:clamp(22px,2.2vw,32px);margin:0 0 24px}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .card{background:var(--muted);border-radius:14px;padding:18px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+    .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .price-card{border:1px solid #e5e7eb;border-radius:14px;padding:18px}
+    .price{font-size:28px;font-weight:800;margin:8px 0}
+    .list{list-style:none;padding:0;margin:12px 0}
+    .list li{margin:6px 0}
+    .scarcity{background:#0b1220;color:#e6f4ff;border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .faq details{border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;background:#fff}
+    .faq summary{font-weight:700;cursor:pointer}
+    .kicker{font-size:14px;color:#6b7280;margin-top:6px}
+    footer{background:#0b1220;color:#c9d6e8}
+    footer a{color:#c9e6ff;text-decoration:none}
+    @media (max-width:960px){.hero{grid-template-columns:1fr}.steps,.grid-2,.pricing{grid-template-columns:1fr}}
+    .sr-only{position:absolute;left:-9999px}
+  </style>
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@graph":[
+      {
+        "@type":"Organization",
+        "@id":"https://www.lowcountrybusinessspotlight.com/#org",
+        "name":"Lowcountry Business Spotlight",
+        "url":"https://www.lowcountrybusinessspotlight.com/",
+        "logo":"https://www.lowcountrybusinessspotlight.com/assets/lbs-logo.png",
+        "telephone":"+1-843-367-1364",
+        "email":"Andrew@LowcountryBusinessSpotlight.com"
+      },
+      {
+        "@type":"Service",
+        "@id":"https://www.lowcountrybusinessspotlight.com/north-mount-pleasant-direct-mail/#service",
+        "serviceType":"Direct Mail Advertising (9x12 Postcard)",
+        "provider":{"@id":"https://www.lowcountrybusinessspotlight.com/#org"},
+        "areaServed":{"@type":"City","name":"Mount Pleasant"},
+        "offers":{"@type":"AggregateOffer","lowPrice":"299.00","highPrice":"799.00","priceCurrency":"USD"}
+      },
+      {
+        "@type":"WebPage",
+        "@id":"https://www.lowcountrybusinessspotlight.com/north-mount-pleasant-direct-mail/#webpage",
+        "name":"North Mount Pleasant Direct Mail | 9x12 Postcards (29466)",
+        "url":"https://www.lowcountrybusinessspotlight.com/north-mount-pleasant-direct-mail/",
+        "breadcrumb":{
+          "@type":"BreadcrumbList",
+          "itemListElement":[
+            {"@type":"ListItem","position":1,"name":"Home","item":"https://www.lowcountrybusinessspotlight.com/"},
+            {"@type":"ListItem","position":2,"name":"Direct Mail","item":"https://www.lowcountrybusinessspotlight.com/direct-mail/"},
+            {"@type":"ListItem","position":3,"name":"North Mount Pleasant"}
+          ]
+        }
+      },
+      {
+        "@type":"FAQPage",
+        "@id":"https://www.lowcountrybusinessspotlight.com/north-mount-pleasant-direct-mail/#faq",
+        "mainEntity":[
+          {"@type":"Question","name":"How many households receive the postcard?","acceptedAnswer":{"@type":"Answer","text":"10,000+ North Mount Pleasant homes & businesses across 29466."}},
+          {"@type":"Question","name":"Is my category exclusive?","acceptedAnswer":{"@type":"Answer","text":"Yes, one business per category per card."}},
+          {"@type":"Question","name":"Do you include ad design?","acceptedAnswer":{"@type":"Answer","text":"Yes, ad design is included at no additional cost."}},
+          {"@type":"Question","name":"How can I track results?","acceptedAnswer":{"@type":"Answer","text":"We offer trackable QR codes, unique URLs, and call tracking."}}
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<header>
+  <div class="wrap topbar">
+    <div class="brand">
+      <img src="https://www.lowcountrybusinessspotlight.com/assets/lbs-logo.png" alt="Lowcountry Business Spotlight logo" width="36" height="36" loading="lazy">
+      <div>Lowcountry <span>Business Spotlight</span></div>
+    </div>
+    <nav><a class="kicker" href="tel:+18433671364">(843) 367-1364</a> · <a class="kicker" href="mailto:Andrew@LowcountryBusinessSpotlight.com">Email Us</a></nav>
+  </div>
+
+  <div class="wrap hero">
+    <div>
+      <h1>Reach 10,000+ North Mount Pleasant Homes & Businesses — From $299</h1>
+      <p class="sub">Exclusive 9x12 postcard delivered across <strong>29466</strong>. One business per category. Free ad design + QR tracking.</p>
+      <div class="badges">
+        <span class="badge">Exclusivity: 1 per category</span>
+        <span class="badge">ZIP: 29466</span>
+        <span class="badge">Free Ad Design</span>
+      </div>
+      <div class="cta">
+        <a class="btn btn-primary" href="#reserve">Reserve Your Spot</a>
+        <a class="btn btn-outline" href="#pricing">See Ad Sizes & Pricing</a>
+      </div>
+      <p class="kicker">16 total businesses per card. First come, first served.</p>
+    </div>
+    <aside><img src="https://www.lowcountrybusinessspotlight.com/assets/postcard-mockup-nmtp.webp" alt="North Mount Pleasant postcard mockup" decoding="async" loading="eager"></aside>
+  </div>
+</header>
+
+<main id="content">
+  <section>
+    <div class="wrap">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="card"><h3>1) We Design Your Ad</h3><p>Send assets or let us create it—no extra charge.</p></div>
+        <div class="card"><h3>2) Your Ad Hits Mailboxes</h3><p>Delivered to <strong>10,000+ North Mount Pleasant</strong> homes & businesses in 29466.</p></div>
+        <div class="card"><h3>3) You Get Local Attention</h3><p>No competing ads in your category + optional QR tracking.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap grid-2">
+      <div>
+        <h2>Why North Mount Pleasant Businesses Choose Us</h2>
+        <ul class="list">
+          <li>✓ Category exclusivity</li>
+          <li>✓ Massive local reach at a fraction of solo mailers</li>
+          <li>✓ Free creative & conversion-focused layout</li>
+          <li>✓ QR/URL/call tracking for measurable ROI</li>
+          <li>✓ Optional multi-zone bundles</li>
+        </ul>
+        <div class="cta">
+          <a class="btn btn-primary" href="#reserve">Claim Your Category</a>
+          <a class="btn btn-outline" href="#faq">See FAQs</a>
+        </div>
+      </div>
+      <aside class="card">
+        <h3>Recent Highlights</h3>
+        <p>Strong engagement via QR and direct inquiries. Ask about our latest scan stats.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <h2>Ad Sizes & Pricing</h2>
+      <div class="pricing">
+        <div class="price-card">
+          <h3>3×2 Ad</h3><div class="price">$299</div>
+          <ul class="list"><li>Logo + offer + QR</li><li>Free ad design</li></ul>
+          <a class="btn btn-primary" href="#reserve">Reserve 3×2</a>
+        </div>
+        <div class="price-card" style="border-color:var(--brand)">
+          <h3>3×4 Ad</h3><div class="price">$499</div>
+          <ul class="list"><li>More space for visuals</li><li>Featured placement options</li></ul>
+          <a class="btn btn-primary" href="#reserve">Reserve 3×4</a>
+        </div>
+        <div class="price-card">
+          <h3>4×6 Ad</h3><div class="price">$799</div>
+          <ul class="list"><li>Maximum impact</li><li>Best for strong offer + CTA</li></ul>
+          <a class="btn btn-primary" href="#reserve">Reserve 4×6</a>
+        </div>
+      </div>
+      <p class="kicker">Bundle with Mount Pleasant (29464) or Daniel Island/Clements Ferry for added reach.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="scarcity">
+        <div>
+          <h2 style="margin:0">Only 16 Spots Per Card — First Come, First Served</h2>
+          <p style="margin:6px 0 0">Reserve before the print deadline for 29466.</p>
+        </div>
+        <a class="btn btn-primary" href="#reserve">Reserve Now</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="reserve">
+    <div class="wrap grid-2">
+      <div>
+        <h2>Reserve Your Spot</h2>
+        <p>We’ll confirm availability for your category in North Mount Pleasant (29466).</p>
+        <form action="YOUR_CMS_FORM_ACTION" method="post">
+          <label class="sr-only" for="business">Business Name</label>
+          <input id="business" name="business" type="text" placeholder="Business Name *" required style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px">
+          <label class="sr-only" for="name">Your Name</label>
+          <input id="name" name="name" type="text" placeholder="Your Name *" required style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px">
+          <label class="sr-only" for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="Email *" required style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px">
+          <label class="sr-only" for="phone">Phone</label>
+          <input id="phone" name="phone" type="tel" placeholder="Phone" style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px">
+          <select name="size" style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px">
+            <option value="3x2">3×2 ($299)</option>
+            <option value="3x4">3×4 ($499)</option>
+            <option value="4x6">4×6 ($799)</option>
+          </select>
+          <input name="category" type="text" placeholder="Your Category (e.g., HVAC, Dental, Landscaping)" style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px">
+          <input type="hidden" name="zone" value="North Mount Pleasant 29466">
+          <button class="btn btn-primary" type="submit">Check Availability</button>
+        </form>
+      </div>
+      <aside class="card">
+        <h3>What You Get</h3>
+        <ul class="list">
+          <li><strong>Exclusive placement</strong> in your category</li>
+          <li><strong>Free ad design</strong> (copy + layout)</li>
+          <li><strong>10,000+ deliveries</strong> in 29466</li>
+          <li><strong>QR/URL tracking</strong> available</li>
+          <li><strong>Spotlight post</strong> on our socials</li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <section id="faq" class="faq">
+    <div class="wrap">
+      <h2>North Mount Pleasant FAQs</h2>
+      <details><summary>How many households receive the postcard?</summary><p>10,000+ North Mount Pleasant homes & businesses across 29466.</p></details>
+      <details><summary>Is my category exclusive?</summary><p>Yes. One business per category per card.</p></details>
+      <details><summary>Do you design the ad?</summary><p>Yes. Ad design is included at no additional cost.</p></details>
+      <details><summary>How do we measure results?</summary><p>Use a trackable QR code, unique URL and optional call tracking.</p></details>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Explore Nearby Zones</h2>
+      <p class="kicker">Expand your reach across the Lowcountry.</p>
+      <ul class="list">
+        <li><a href="https://www.lowcountrybusinessspotlight.com/mount-pleasant-direct-mail/">Mount Pleasant Direct Mail</a></li>
+        <li><a href="https://www.lowcountrybusinessspotlight.com/daniel-island-direct-mail/">Daniel Island &amp; Clements Ferry Direct Mail</a></li>
+        <li><a href="https://www.lowcountrybusinessspotlight.com/summerville-direct-mail/">Summerville Direct Mail</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap" style="padding:28px 0">
+    <p><strong>Lowcountry Business Spotlight</strong> · (843) 367-1364 · <a href="mailto:Andrew@LowcountryBusinessSpotlight.com">Andrew@LowcountryBusinessSpotlight.com</a></p>
+    <p class="kicker">© <span id="yr"></span> Lowcountry Business Spotlight. All rights reserved.</p>
+  </div>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body>
+</html>

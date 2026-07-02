@@ -1,0 +1,65 @@
+============================================
+HOW TO CREATE A NEW CLIENT LANDING PAGE
+============================================
+
+1. CREATE THE FOLDER
+   - Create a new folder in public_html with the client's name (lowercase, no spaces)
+   - Example: /home/cabmansc1/public_html/clientname/
+
+2. COPY THE TEMPLATE
+   - Copy LinkTreeTemplate.html to the new folder as index.html
+   - Copy client-config-sample.json as config.json
+
+3. GATHER CLIENT INFO
+   Required:
+   - Business Name
+   - Tagline
+   - Phone Number (display format and link format)
+   - Email Address
+   - Logo Image (upload as logo.png or logo.jpg)
+
+   Optional:
+   - Address (can be hidden)
+   - Hours (can be hidden)
+   - Facebook URL
+   - Instagram URL
+   - Yelp URL
+   - Google Business URL
+   - Accent Color (default is gold #e8c272)
+
+4. UPDATE THE HTML FILE
+   Replace these placeholders in index.html:
+
+   {{BUSINESS_NAME}}     -> Business name
+   {{TAGLINE}}           -> Tagline
+   {{IMAGE_FILE}}        -> logo.png or logo.jpg
+   {{PHONE_DISPLAY}}     -> (843) 555-1234
+   {{PHONE_LINK}}        -> +18435551234
+   {{EMAIL}}             -> email@example.com
+   {{ADDRESS}}           -> Full address (or remove section)
+   {{HOURS}}             -> Business hours (or remove section)
+   {{ACCENT_COLOR}}      -> Hex color like #e8c272
+   {{FACEBOOK_URL}}      -> Full Facebook URL (or remove link)
+   {{INSTAGRAM_URL}}     -> Full Instagram URL (or remove link)
+   {{YELP_URL}}          -> Full Yelp URL (or remove link)
+   {{GOOGLE_URL}}        -> Full Google URL (or remove link)
+
+5. OPTIONAL SECTIONS
+   To hide Address/Hours: Delete the entire <div class="business-details">...</div> section
+   To hide a social link: Delete that <a href="..." class="link-button">...</a> block
+
+6. UPLOAD LOGO
+   Client uploads their logo to: /home/cabmansc1/public_html/clientname/logo.png
+
+7. FIX PERMISSIONS
+   Run: chown -R cabmansc1:cabmansc1 /home/cabmansc1/public_html/clientname/
+
+8. TEST THE PAGE
+   Visit: yourdomain.com/clientname/
+
+============================================
+EXAMPLE CLIENTS CREATED:
+============================================
+- /dreamsanddrinks/ - Drinks and Dreams Event Solutions
+
+============================================

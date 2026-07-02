@@ -1,0 +1,1038 @@
+<?php
+$location = 'goose-creek';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38313KT3XE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-38313KT3XE');
+    </script>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5ZP4TT23');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '629481023248934');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=629481023248934&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goose Creek Direct Mail | 9x12 Postcards | LBS</title>
+    <meta name="description" content="Goose Creek direct mail covering zip code 29445 — 5,000–10,000 homes per mailing. Exclusive 9x12 billboard-style postcards with no competitors on the same card. Crowfield Plantation, Carnes Crossroads, Liberty Hall, Boulder Bluff & more. Starting at 5¢ per household.">
+    <link rel="canonical" href="https://www.lowcountrybusinessspotlight.com/goose-creek-direct-mail-marketing.php">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.lowcountrybusinessspotlight.com/goose-creek-direct-mail-marketing.php">
+    <meta property="og:title" content="Goose Creek Direct Mail | Targeted Postcard Mailings">
+    <meta property="og:description" content="Exclusive 9x12 billboard-style postcards targeting 5,000–10,000 Goose Creek households per mailing. No competitors on the same card. Starting at 5¢ per household.">
+    <meta property="og:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://www.lowcountrybusinessspotlight.com/goose-creek-direct-mail-marketing.php">
+    <meta name="twitter:title" content="Goose Creek Direct Mail | Targeted Postcard Mailings">
+    <meta name="twitter:description" content="Exclusive 9x12 billboard-style postcards targeting 5,000–10,000 Goose Creek households per mailing. Starting at 5¢ per household.">
+    <meta name="twitter:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light+Two&display=swap" rel="stylesheet">
+
+    <!-- Schema Markup -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "Goose Creek Direct Mail",
+        "description": "Direct mail service delivering 9x12 billboard-style postcards to 5,000–10,000 households per mailing in Goose Creek, SC zip code 29445. Covering Crowfield Plantation, Carnes Crossroads, Liberty Hall Plantation, Boulder Bluff, Howe Hall, downtown Goose Creek, and the Naval Weapons Station area. Exclusive category placement with no competitors on the same mailing.",
+        "provider": {
+            "@type": "LocalBusiness",
+            "name": "Lowcountry Business Spotlight",
+            "telephone": "843-212-2969",
+            "email": "hello@lbspotlight.com",
+            "url": "https://www.lowcountrybusinessspotlight.com"
+        },
+        "areaServed": {
+            "@type": "City",
+            "name": "Goose Creek",
+            "containedInPlace": {
+                "@type": "State",
+                "name": "South Carolina"
+            }
+        },
+        "serviceType": "Direct Mail Advertising",
+        "url": "https://www.lowcountrybusinessspotlight.com/goose-creek-direct-mail-marketing.php"
+    }
+    </script>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "How many Goose Creek households receive the postcard?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Each Goose Creek mailing targets 5,000 to 10,000 households within the 29445 zip code. You choose the volume that fits your budget and market."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is my business category exclusive on the Goose Creek direct mail postcard?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. Only one business per category appears on each card. No competitors will be on the same mailing."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Do you design my direct mail ad?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes — ad design is included at no additional cost."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Which Goose Creek neighborhoods can I target?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "We cover the entire Goose Creek 29445 zip code, including Crowfield Plantation, Carnes Crossroads, Liberty Hall Plantation, Boulder Bluff, Howe Hall, downtown Goose Creek along US-176, and neighborhoods near Naval Weapons Station Charleston."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can I combine Goose Creek with other nearby zones?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Absolutely. Many businesses pair Goose Creek mailings with North Charleston, Summerville, or Moncks Corner to expand their reach across the Tri-County area."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "When is the next Goose Creek direct mail print date?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "We print on a regular cadence. Submit the inquiry form for current availability and deadlines."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        padding: 60px 0;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.04)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        color: white;
+        line-height: 1.1;
+        margin-bottom: 30px;
+    }
+
+    .hero-content p {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 40px;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    .cta-hero {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ff8c00, #ff6b00);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 18px;
+        box-shadow: 0 8px 25px rgba(234, 88, 12, 0.4);
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(234, 88, 12, 0.5);
+        background: linear-gradient(135deg, #e07800, #e05500);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ===== SECTION STYLES ===== */
+    .section {
+        padding: 100px 0;
+    }
+
+    .section.light {
+        background: #f8fafc;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .section-header h2 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .section-header p {
+        font-size: 1.2rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #38b6ff;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #38b6ff;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .stat-card p {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* ===== ZIP CODES GRID ===== */
+    .zip-codes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .zip-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .zip-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .zip-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .zip-card ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .zip-card li {
+        padding: 8px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .zip-card li::before {
+        content: "\2713";
+        color: #ff8c00;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    /* ===== BLUE SECTION STYLES ===== */
+    .section.blue {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+    }
+
+    .section.blue .section-header h2 {
+        color: #000000;
+    }
+
+    .section.blue .section-header p {
+        color: #1a202c;
+    }
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 30px 25px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .feature-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .feature-card p {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* ===== BUSINESS TYPES GRID ===== */
+    .business-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .business-type {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .business-type:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .business-type h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 12px;
+    }
+
+    .business-type p {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* ===== PRICING SECTION ===== */
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .pricing-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        position: relative;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .pricing-card h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .price {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #ff8c00;
+        margin-bottom: 20px;
+    }
+
+    .pricing-card ul {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 30px;
+    }
+
+    .pricing-card li {
+        padding: 8px 0;
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* ===== FORM STYLES ===== */
+    .form-container {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #38b6ff;
+        box-shadow: 0 0 0 3px rgba(56, 182, 255, 0.1);
+    }
+
+    /* ===== FAQ STYLES ===== */
+    .faq-item {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        padding: 20px;
+        font-weight: 700;
+        color: #000000;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: #f8fafc;
+    }
+
+    .faq-answer {
+        padding: 0 20px 20px;
+        color: #64748b;
+        line-height: 1.6;
+    }
+
+    /* ===== CONTACT BANNER ===== */
+    .contact-banner {
+        background: rgba(255, 255, 255, 0.1);
+        color: #000000;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        margin: 60px auto 0;
+        max-width: 600px;
+        border: 2px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .contact-banner:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #38b6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(56, 182, 255, 0.2);
+    }
+
+    .contact-banner h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #000000;
+    }
+
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #000000;
+    }
+
+    .contact-item a {
+        color: #000000;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        padding: 8px 16px;
+        border-radius: 8px;
+    }
+
+    .contact-item a:hover {
+        background: #38b6ff;
+        color: white;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+        background: #000000;
+        color: #94a3b8;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .footer-left {
+        text-align: left;
+    }
+
+    .footer-left p {
+        margin-bottom: 0;
+    }
+
+    .footer-right {
+        text-align: right;
+    }
+
+    .footer-right img {
+        width: 100px;
+        height: auto;
+    }
+
+    .footer a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+        color: white;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .hero-container {
+            padding: 0 20px;
+        }
+
+        .container {
+            padding: 0 20px;
+        }
+
+        .cta-hero {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            text-align: center;
+        }
+
+        .stats-grid, .features-grid, .zip-codes, .business-types, .pricing-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-info {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-content {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .footer-left, .footer-right {
+            text-align: center;
+        }
+    }
+    </style>
+</head>
+
+<body>
+    <?php include 'header.php'; ?>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>Goose Creek Direct Mail <span style="color: #000000; font-weight: 900;"><br>Reach Families Where They Live</span></h1>
+                <p>Reach 5,000–10,000 Goose Creek households per mailing with oversized 9"x12" postcards — no competitors on the same card</p>
+
+                <div class="cta-hero">
+                    <a href="tel:843-212-2969" class="btn-primary">Call Now: 843-212-2969</a>
+                    <a href="#reserve" class="btn-secondary">Get Started Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Goose Creek -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Goose Creek Is a Prime Market for Direct Mail</h2>
+                <p>Goose Creek is one of the fastest-growing suburban communities in the Lowcountry, with a strong military presence, young families, and affordable housing driving steady population growth.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">45,000+</span>
+                    <p>City Population</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">$62,000+</span>
+                    <p>Median Household Income</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">29445</span>
+                    <p>Primary Zip Code</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">5K–10K</span>
+                    <p>Households Per Mailing</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- In-Depth Content Section -->
+    <section class="section">
+        <div class="container">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <h2 style="font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 800; color: #000; margin-bottom: 20px;">Why Direct Mail Works in Goose Creek, SC</h2>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Goose Creek has quietly become one of the most attractive suburban markets in the Charleston metro area. Fueled by its proximity to Naval Weapons Station Charleston, affordable housing prices compared to Charleston proper, and a wave of new residential development, the city has grown to more than 45,000 residents — and it keeps expanding. The population here skews younger, with active-duty military families, first-time homebuyers, and dual-income households all settling into neighborhoods that range from master-planned communities to established subdivisions along US-176. For local businesses, that translates to a dense, reachable audience of homeowners who are actively spending on services, dining, healthcare, and home improvement.
+                </p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    What makes Goose Creek particularly effective for direct mail is the nature of the community itself. Many residents are newer to the area — military families on rotation, young couples buying their first home in Crowfield Plantation or Carnes Crossroads, and transplants drawn by the lower cost of living. These households don't have an established go-to plumber, dentist, or auto mechanic yet. A well-timed 9"x12" postcard arriving in their mailbox isn't an interruption — it's a welcome introduction to the businesses that serve their community. And because our program guarantees exclusive category placement, your ad stands alone in your industry on every card. No competitor clutter. No shared attention.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">Neighborhoods We Reach Across Goose Creek</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Our Goose Creek direct mail campaigns blanket the 29445 zip code, reaching households across the city's most established and fastest-growing neighborhoods. <strong>Crowfield Plantation</strong> is one of the largest planned communities in the area, with thousands of single-family homes, townhomes, and an active homeowner base that spends on lawn care, home renovation, and family services. <strong>Carnes Crossroads</strong> is a newer mixed-use development attracting young professionals and families who value walkability and modern design. <strong>Liberty Hall Plantation</strong> and <strong>Boulder Bluff</strong> offer established neighborhoods with mature trees and long-time homeowners who rely on local contractors, medical providers, and restaurants.
+                </p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Along <strong>US-176 (St. James Avenue)</strong>, downtown Goose Creek's commercial corridor connects residents to local shops, services, and dining. The <strong>Howe Hall</strong> area and neighborhoods surrounding <strong>Naval Weapons Station Charleston</strong> are home to military families who cycle in every few years — a constantly refreshing audience of new customers looking for everything from pediatric dentists to oil change shops. Whether you're targeting the newer developments on the west side or the established neighborhoods closer to the base, our EDDM routes let you focus your mailing exactly where your ideal customers live.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">Direct Mail vs. Digital Advertising in Goose Creek</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Goose Creek residents are busy — juggling work, kids, and the pace of suburban life. They scroll past digital ads on autopilot, and many military households rotate devices and accounts frequently, making online retargeting unreliable. Direct mail solves that problem. The Data & Marketing Association reports direct mail response rates of 2.7% to 4.4%, compared to just 0.6% for email and 0.1% for display ads. A physical postcard sits on the kitchen counter, gets pinned to the fridge, and stays visible for days. In a community where word-of-mouth still drives decisions, putting your business physically into the home is the most direct path to earning a new customer.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">How Our Goose Creek Direct Mail Program Works</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Getting started is straightforward. Each Goose Creek mailing targets 5,000 to 10,000 households within the 29445 zip code — this is not blanket coverage of the entire city, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Goose Creek families.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Coverage -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Goose Creek Zip Code Coverage</h2>
+                <p>Target the neighborhoods that matter most to your business</p>
+            </div>
+
+            <div class="zip-codes" style="max-width: 600px; margin: 0 auto;">
+                <div class="zip-card">
+                    <h3>29445 - Goose Creek</h3>
+                    <ul>
+                        <li>Crowfield Plantation and Carnes Crossroads</li>
+                        <li>Liberty Hall Plantation and Boulder Bluff</li>
+                        <li>Howe Hall and downtown Goose Creek (US-176)</li>
+                        <li>Naval Weapons Station Charleston area</li>
+                        <li>Growing suburban community with 45,000+ residents</li>
+                        <li>Strong mix of military families and first-time homebuyers</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section blue">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Makes Our Goose Creek Direct Mail Different</h2>
+                <p>Exclusive placement and maximum impact for your business</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎯</span>
+                    <h3>Exclusive Market Position</h3>
+                    <p>No competitors allowed on the same postcard! When Goose Creek residents see your 9"x12" billboard-style ad, you're the ONLY business in your category they'll remember.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📬</span>
+                    <h3>Maximum Mailbox Impact</h3>
+                    <p>Our oversized 9"x12" postcards don't get lost in the mail. They stand out like billboards in every Goose Creek mailbox, ensuring your message gets noticed.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🗺️</span>
+                    <h3>Focused Route Selection</h3>
+                    <p>Target 5,000 to 10,000 households across Goose Creek's 29445 zip code. Focus on Crowfield, Carnes Crossroads, the base area, or combine routes for broader reach.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💰</span>
+                    <h3>Affordable & Trackable</h3>
+                    <p>Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Types -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Ideal for Goose Creek's Growing Business Community</h2>
+                <p>From Crowfield to the base gate, direct mail works for local businesses of all kinds</p>
+            </div>
+
+            <div class="business-types">
+                <div class="business-type">
+                    <h3>Home Services</h3>
+                    <p>HVAC, plumbing, roofing, landscaping, cleaning, pest control, pressure washing</p>
+                </div>
+                <div class="business-type">
+                    <h3>Family Dining</h3>
+                    <p>Casual restaurants, pizza, BBQ, family-friendly eateries, takeout, catering</p>
+                </div>
+                <div class="business-type">
+                    <h3>Auto Repair & Services</h3>
+                    <p>Oil changes, tire shops, auto body, detailing, brake and transmission repair</p>
+                </div>
+                <div class="business-type">
+                    <h3>Dental & Medical</h3>
+                    <p>Family dentistry, pediatrics, urgent care, chiropractic, physical therapy</p>
+                </div>
+                <div class="business-type">
+                    <h3>Fitness & Recreation</h3>
+                    <p>Gyms, martial arts, dance studios, personal training, youth sports programs</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Pricing and Form Section -->
+    <?php include 'pricing_form_section.php'; ?>
+
+    <!-- FAQ -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Goose Creek Direct Mail FAQs</h2>
+                <p>Common questions about our direct mail service</p>
+            </div>
+
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How many households receive the postcard?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Each Goose Creek mailing targets 5,000 to 10,000 households within the 29445 zip code. You choose the volume that fits your budget and market.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Which neighborhoods can I target?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We cover the entire Goose Creek 29445 zip code, including Crowfield Plantation, Carnes Crossroads, Liberty Hall Plantation, Boulder Bluff, Howe Hall, downtown Goose Creek along US-176, and neighborhoods near Naval Weapons Station Charleston. You select the EDDM carrier routes that match your ideal customer base.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is my category exclusive?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. Only one business per category appears on each card. No competitors on the same mailing.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you design my ad?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes — ad design is included at no additional cost.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Can I combine Goose Creek with other zones?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Absolutely. Many businesses pair Goose Creek mailings with North Charleston, Summerville, or Moncks Corner to expand their reach across the Tri-County area. You can mix and match zones to match your service area.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        When is the next print date?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We print on a regular cadence. Submit the form above for current availability and deadlines.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Zones -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Explore Nearby Zones</h2>
+                <p>Expand your reach across the Lowcountry with targeted direct mail</p>
+            </div>
+
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="display: grid; gap: 15px;">
+                    <a href="/north-charleston-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>North Charleston Direct Mail</strong>
+                    </a>
+                    <a href="/summerville-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Summerville Direct Mail</strong>
+                    </a>
+                    <a href="/moncks-corner-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Moncks Corner Direct Mail</strong>
+                    </a>
+                    <a href="/charleston-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Charleston Direct Mail</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Neighborhood Cards Cross-Sell -->
+    <section style="background: #f1f5f9; padding: 50px 20px; text-align: center; font-family: 'Inter', sans-serif; border-top: 1px solid #e2e8f0;">
+        <div style="max-width: 700px; margin: 0 auto;">
+            <p style="color: #0ea5e9; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Also Available</p>
+            <h2 style="color: #1e293b; font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 800; margin-bottom: 12px;">Looking for Something Smaller?</h2>
+            <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 24px;">Our <strong style="color: #1e293b;">Neighborhood Cards</strong> reach ~2,500 homes in specific neighborhoods starting at just $79 per spot. A great way to test direct mail on a budget.</p>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="/neighborhood-cards/" style="display: inline-block; padding: 12px 28px; background: #38b6ff; color: white; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.95rem;">Browse Neighborhood Cards</a>
+                <a href="/compare/" style="display: inline-block; padding: 12px 28px; background: white; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Compare Products</a>
+            </div>
+        </div>
+    </section>
+
+    <?php include 'footer.php'; ?>
+
+    <script>
+        // Simple FAQ toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', function() {
+                    const answer = this.nextElementSibling;
+                    const isOpen = answer.style.display === 'block';
+
+                    // Close all other answers
+                    document.querySelectorAll('.faq-answer').forEach(a => {
+                        a.style.display = 'none';
+                    });
+
+                    // Toggle current answer
+                    answer.style.display = isOpen ? 'none' : 'block';
+
+                    // Update icon
+                    const icon = this.querySelector('span:last-child');
+                    icon.textContent = isOpen ? '+' : '−';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

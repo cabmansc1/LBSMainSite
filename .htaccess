@@ -1,0 +1,146 @@
+
+# Custom error page
+ErrorDocument 404 /404.php
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
+# Clean URL rewrites
+RewriteEngine On
+RewriteBase /
+
+# Force HTTPS (must come before host/slash rules so the redirect lands on https://)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# Force www
+RewriteCond %{HTTP_HOST} ^lowcountrybusinessspotlight\.com$ [NC]
+RewriteRule ^(.*)$ https://www.lowcountrybusinessspotlight.com/$1 [R=301,L]
+
+# Remove trailing slash (only for URLs that aren't real directories on disk)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/$
+RewriteRule ^(.+)/$ /$1 [R=301,L]
+
+# 301 redirects from old URLs to clean URLs (must come before internal rewrites)
+RewriteCond %{THE_REQUEST} \s/business\.php\?slug=([^\s&]+) [NC]
+RewriteRule ^ /business/%1? [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/directory\.php\?category=([^\s&]+) [NC]
+RewriteRule ^ /directory/category/%1? [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/directory\.php\?tag=([^\s&]+) [NC]
+RewriteRule ^ /directory/tag/%1? [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/directory\.php\?location=([^\s&]+) [NC]
+RewriteRule ^ /directory/location/%1? [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/directory\.php[\s?] [NC]
+RewriteRule ^ /directory/? [R=301,L]
+
+# Internal rewrites (only for non-existing files/dirs)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^business/([a-z0-9-]+)/?$ business.php?slug=$1 [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^directory/?$ directory.php [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^directory/category/([a-z0-9-]+)/?$ directory.php?category=$1 [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^directory/tag/([a-z0-9-]+)/?$ directory.php?tag=$1 [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^directory/location/([a-z0-9-]+)/?$ directory.php?location=$1 [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^blog/([a-z0-9-]+)/?$ blog-post.php?slug=$1 [L,QSA]
+
+RewriteCond %{THE_REQUEST} \s/blog-post\.php\?slug=([^\s&]+) [NC]
+RewriteRule ^ /blog/%1? [R=301,L]
+
+# Compare products clean URL
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^compare/?$ compare-products.php [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^pricing/?$ pricing.php [L,QSA]
+
+# Neighborhood cards clean URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^neighborhood-cards/?$ neighborhood-cards.php [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^neighborhood-card/([a-z0-9-]+)/?$ neighborhood-card.php?slug=$1 [L,QSA]
+
+# 301 redirects from old community-card URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^community-cards/?$ /neighborhood-cards/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^community-card/([a-z0-9-]+)/?$ /neighborhood-card/$1/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+# Enable gzip compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# Browser caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    ExpiresByType text/html "access plus 1 day"
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+</IfModule>
+
+# Cache-Control headers for static assets
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|jpg|jpeg|png|webp|gif|svg|ico|woff2|woff)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(html|php)$">
+        Header set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+    Header append Vary: Accept-Encoding
+</IfModule>
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the "ea-php81" package as the default "PHP" programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php81 .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit

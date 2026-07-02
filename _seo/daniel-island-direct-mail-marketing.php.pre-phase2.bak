@@ -1,0 +1,932 @@
+<?php
+require_once __DIR__ . '/config.php';
+$location = 'daniel-island';
+
+$seo = [
+    'title'           => 'Daniel Island Direct Mail | 9x12 Postcards | LBS',
+    'description'    => 'Daniel Island direct mail targeting 5,000–10,000 households per mailing across 15,000+ homes in zip code 29492. Exclusive 9x12 billboard-style postcards — no competitors on the same mailing. Covering Daniel Island, Clements Ferry & Cainhoy. Starting at 5¢ per household.',
+    'canonical'      => SITE_URL . '/daniel-island-direct-mail-marketing.php',
+    'og_title'       => 'Daniel Island Direct Mail | Target 5,000–10,000 Homes Per Mailing',
+    'og_description' => 'Exclusive 9x12 billboard-style postcards targeting 5,000–10,000 households per mailing across Daniel Island & Clements Ferry. 15,000+ homes available in the zone. No competitors on the same mailing. Starting at 5¢ per household.',
+    'extra_jsonld'   => [
+        <<<'JSON'
+{
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": "Daniel Island Direct Mail",
+    "description": "Direct mail service delivering 9x12 billboard-style postcards to 5,000–10,000 targeted households per mailing across Daniel Island and Clements Ferry, SC zip code 29492. Over 15,000 homes available in the total zone. Exclusive category placement with no competitors on the same mailing.",
+    "provider": {
+        "@type": "LocalBusiness",
+        "name": "Lowcountry Business Spotlight",
+        "telephone": "843-212-2969",
+        "email": "hello@lbspotlight.com",
+        "url": "https://www.lowcountrybusinessspotlight.com"
+    },
+    "areaServed": {
+        "@type": "City",
+        "name": "Daniel Island",
+        "containedInPlace": {"@type": "State", "name": "South Carolina"}
+    },
+    "serviceType": "Direct Mail Advertising",
+    "url": "https://www.lowcountrybusinessspotlight.com/daniel-island-direct-mail-marketing.php"
+}
+JSON,
+        <<<'JSON'
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {"@type": "Question", "name": "How many Daniel Island households receive the postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Each mailing targets 5,000–10,000 households in ZIP code 29492, with over 15,000 total homes available across Daniel Island, The Waterfront, Captain's Island, Cainhoy, and the Clements Ferry Road corridor. You can cover the full zone over multiple mailings."}},
+        {"@type": "Question", "name": "Is my business category exclusive on the Daniel Island mailing?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Only one business per category appears on each card. This means no competitors will be on the same mailing reaching Daniel Island households."}},
+        {"@type": "Question", "name": "Do you design my ad for the Daniel Island direct mail?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — professional ad design is included at no additional cost. Our designers create eye-catching 9x12 billboard-style postcard ads optimized for the Daniel Island market."}},
+        {"@type": "Question", "name": "How do we measure results from Daniel Island direct mail?", "acceptedAnswer": {"@type": "Answer", "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls from Daniel Island and Clements Ferry residents."}},
+        {"@type": "Question", "name": "When is the next Daniel Island print date?", "acceptedAnswer": {"@type": "Answer", "text": "We print on a regular cadence for the Daniel Island and Clements Ferry area. Contact us for current availability and deadlines."}}
+    ]
+}
+JSON,
+    ],
+];
+include __DIR__ . '/seo_head.php';
+?>
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        padding: 60px 0;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.04)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        color: white;
+        line-height: 1.1;
+        margin-bottom: 30px;
+    }
+
+    .hero-content p {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 40px;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    .cta-hero {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ff8c00, #ff6b00);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 18px;
+        box-shadow: 0 8px 25px rgba(234, 88, 12, 0.4);
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(234, 88, 12, 0.5);
+        background: linear-gradient(135deg, #e07800, #e05500);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ===== SECTION STYLES ===== */
+    .section {
+        padding: 100px 0;
+    }
+
+    .section.light {
+        background: #f8fafc;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .section-header h2 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .section-header p {
+        font-size: 1.2rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #38b6ff;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #38b6ff;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .stat-card p {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* ===== ZIP CODES GRID ===== */
+    .zip-codes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .zip-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .zip-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .zip-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .zip-card ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .zip-card li {
+        padding: 8px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .zip-card li::before {
+        content: "✓";
+        color: #ff8c00;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    /* ===== BLUE SECTION STYLES ===== */
+    .section.blue {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+    }
+
+    .section.blue .section-header h2 {
+        color: #000000;
+    }
+
+    .section.blue .section-header p {
+        color: #1a202c;
+    }
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 30px 25px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .feature-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .feature-card p {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* ===== BUSINESS TYPES GRID ===== */
+    .business-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .business-type {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .business-type:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .business-type h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 12px;
+    }
+
+    .business-type p {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* ===== PRICING SECTION ===== */
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .pricing-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        position: relative;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .pricing-card h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .price {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #ff8c00;
+        margin-bottom: 20px;
+    }
+
+    .pricing-card ul {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 30px;
+    }
+
+    .pricing-card li {
+        padding: 8px 0;
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* ===== FORM STYLES ===== */
+    .form-container {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #38b6ff;
+        box-shadow: 0 0 0 3px rgba(56, 182, 255, 0.1);
+    }
+
+    /* ===== FAQ STYLES ===== */
+    .faq-item {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        padding: 20px;
+        font-weight: 700;
+        color: #000000;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: #f8fafc;
+    }
+
+    .faq-answer {
+        padding: 0 20px 20px;
+        color: #64748b;
+        line-height: 1.6;
+    }
+
+    /* ===== CONTACT BANNER ===== */
+    .contact-banner {
+        background: rgba(255, 255, 255, 0.1);
+        color: #000000;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        margin: 60px auto 0;
+        max-width: 600px;
+        border: 2px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .contact-banner:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #38b6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(56, 182, 255, 0.2);
+    }
+
+    .contact-banner h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #000000;
+    }
+
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #000000;
+    }
+
+    .contact-item a {
+        color: #000000;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        padding: 8px 16px;
+        border-radius: 8px;
+    }
+
+    .contact-item a:hover {
+        background: #38b6ff;
+        color: white;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+        background: #000000;
+        color: #94a3b8;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .footer-left {
+        text-align: left;
+    }
+
+    .footer-left p {
+        margin-bottom: 0;
+    }
+
+    .footer-right {
+        text-align: right;
+    }
+
+    .footer-right img {
+        width: 100px;
+        height: auto;
+    }
+
+    .footer a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+        color: white;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .hero-container {
+            padding: 0 20px;
+        }
+
+        .container {
+            padding: 0 20px;
+        }
+
+        .cta-hero {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            text-align: center;
+        }
+
+        .stats-grid, .features-grid, .zip-codes, .business-types, .pricing-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-info {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-content {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .footer-left, .footer-right {
+            text-align: center;
+        }
+    }
+    </style>
+</head>
+
+<body>
+    <?php include 'header.php'; ?>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>Daniel Island Direct Mail <span style="color: #000000; font-weight: 900;"><br>Target 5,000–10,000 Homes</span> Per Mailing</h1>
+                <p>15,000+ households across Daniel Island & Clements Ferry — cover the full zone over multiple mailings</p>
+                
+                <div class="cta-hero">
+                    <a href="tel:843-212-2969" class="btn-primary">Call Now: 843-212-2969</a>
+                    <a href="#reserve" class="btn-secondary">Get Started Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Daniel Island & Clements Ferry -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Daniel Island & Clements Ferry are Perfect for Direct Mail Marketing</h2>
+                <p>Daniel Island and the surrounding Clements Ferry corridor represent Charleston's newest growth area. With over 15,000 households across the zone and a median household income of $94,000, this master-planned community attracts educated professionals and families seeking quality local services. Target 5,000–10,000 homes per mailing and cover the full area over multiple sends.</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">15,000+</span>
+                    <p>Total Homes in Zone</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">$94,000</span>
+                    <p>Median Household Income</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">40</span>
+                    <p>Median Age (Professional Years)</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">15 mi</span>
+                    <p>From Downtown Charleston</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Direct Mail Works on Daniel Island -->
+    <section class="section">
+        <div class="container">
+            <div style="max-width: 860px; margin: 0 auto;">
+
+                <h2 style="font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 800; color: #0f172a; margin-bottom: 24px; line-height: 1.25;">Why Direct Mail Works on Daniel Island</h2>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Daniel Island is not a typical Charleston suburb. Developed as a master-planned community beginning in the late 1990s, it has grown into one of the most sought-after residential addresses in the Lowcountry. The island sits between the Cooper and Wando Rivers, connected to the mainland by a single boulevard, creating a self-contained community where residents live, shop, and socialize within a well-defined footprint. That geographic focus is exactly what makes direct mail so effective here: every household shares a single zip code (29492), and every mailbox is reachable through a single USPS carrier route cluster.</p>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Household incomes on Daniel Island skew well above regional averages. The median sits near $94,000, but large pockets of the island exceed $150,000 or more. Residents tend to be dual-income professionals, many commuting to downtown Charleston, the Medical University campus, or the growing tech and finance hubs along the I-526 corridor. These are consumers who value convenience, quality, and local expertise. They hire lawn-care companies, financial advisors, home-renovation contractors, pediatric dentists, and personal trainers, and they prefer to choose those providers from a trusted, curated source rather than scrolling through anonymous online ads.</p>
+
+                <h3 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 16px; margin-top: 36px;">Neighborhoods We Cover</h3>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Our Daniel Island mailing targets 5,000–10,000 households per send across zip code 29492, with over 15,000 total homes available in the zone. That includes Daniel Island proper, from the established streets around Daniel Island Drive to the newer construction in the southern sections near Guggenheim Terrace. It covers The Waterfront, the luxury mixed-use district along the river with condominiums, townhomes, and high-end retail. It reaches Captain's Island, the gated enclave of custom homes on the island's eastern shore. And it extends across the Clements Ferry Road corridor, where neighborhoods like Point Hope, Cainhoy Plantation, and the developments along Clements Ferry continue to add hundreds of new rooftops each year. The Cainhoy area, once primarily rural, is now one of Berkeley County's fastest-growing residential zones, giving advertisers access to brand-new homeowners actively seeking local service providers.</p>
+
+                <h3 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 16px; margin-top: 36px;">Direct Mail vs. Digital Advertising on Daniel Island</h3>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Digital ads have their place, but they face steep headwinds in affluent markets. Daniel Island residents are tech-savvy enough to use ad blockers, skip pre-roll video, and scroll past sponsored posts without a second glance. A Google search ad disappears the moment someone clicks away; a social-media impression lasts fractions of a second. An oversized 9-by-12-inch postcard, on the other hand, lands on a kitchen counter and stays there. Research from the Data & Marketing Association consistently shows that direct mail earns higher response rates than email, display, or paid social, and the gap widens in higher-income households where consumers receive less junk mail and pay more attention to what does arrive.</p>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Our postcards are designed to look and feel like a neighborhood billboard rather than a coupon flyer. They are printed on heavy card stock, full color on both sides, and large enough that they cannot be hidden behind a stack of envelopes. When a Daniel Island homeowner pulls it from the mailbox, they see a curated collection of local businesses, each one occupying an exclusive category slot. There is no visual clutter from competing ads in the same industry, and no algorithm deciding whether the card gets "served." Each mailing reaches 5,000–10,000 targeted households, and you can cover all 15,000+ homes in the zone over multiple mailings.</p>
+
+                <h3 style="font-size: 1.35rem; font-weight: 700; color: #0f172a; margin-bottom: 16px; margin-top: 36px;">How the Program Works</h3>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">We use Every Door Direct Mail (EDDM) through the United States Postal Service to deliver our postcards to targeted carrier routes in the 29492 zip code, reaching 5,000–10,000 households per mailing. The full zone covers over 15,000 homes that you can reach across multiple mailings. EDDM eliminates the need for a mailing list or individual postage, which keeps the per-household cost remarkably low, starting at roughly five cents per home. You select your business category, and once reserved, no other business in that category can appear on the same card. That exclusivity is the cornerstone of the program: your roofing company, dental practice, or fitness studio stands alone.</p>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Professional ad design is included at no extra charge. Our design team builds your panel from scratch, incorporating your logo, offer, and call to action in a layout optimized for print readability at arm's length. If you want to measure performance, we can embed a unique QR code, a dedicated landing-page URL, or a tracked phone number so you can see exactly how many scans, site visits, and calls the mailing generates. Many of our Daniel Island advertisers run on a recurring schedule, mailing every four to six weeks to maintain consistent visibility in the community. Over time, that repetition builds the kind of brand familiarity that digital impressions rarely achieve.</p>
+
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Whether you are an established Daniel Island business looking to deepen market share or a Lowcountry company expanding into the 29492 zip code for the first time, our direct mail program puts your brand in front of 5,000–10,000 affluent, engaged households per mailing — with 15,000+ total homes reachable across multiple sends — at a fraction of the cost of traditional advertising. Category spots are limited and fill quickly, so the best time to reserve yours is now.</p>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Coverage -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Complete Daniel Island & Clements Ferry Coverage</h2>
+                <p>Target 5,000–10,000 homes per mailing across 15,000+ households in the 29492 zip code area</p>
+            </div>
+            
+            <div class="zip-codes">
+                <div class="zip-card">
+                    <h3>Daniel Island Proper</h3>
+                    <ul>
+                        <li>Master-planned community with new construction</li>
+                        <li>Family-oriented neighborhoods and amenities</li>
+                        <li>High-quality schools and recreational facilities</li>
+                        <li>Professional families and young executives</li>
+                    </ul>
+                </div>
+                <div class="zip-card">
+                    <h3>Clements Ferry Road Corridor</h3>
+                    <ul>
+                        <li>Rapidly growing suburban developments</li>
+                        <li>New shopping and business districts</li>
+                        <li>Easy highway access to Charleston</li>
+                        <li>Mix of families and working professionals</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section blue">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Makes Our Daniel Island & Clements Ferry Direct Mail Different</h2>
+                <p>Exclusive placement and maximum impact for your business</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎯</span>
+                    <h3>Exclusive Market Position</h3>
+                    <p>No competitors allowed on the same postcard! When Daniel Island and Clements Ferry residents see your 9"x12" billboard-style ad, you're the ONLY business in your category they'll remember.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📬</span>
+                    <h3>Maximum Mailbox Impact</h3>
+                    <p>Our oversized 9"x12" postcards don't get lost in the mail. They stand out like billboards in every mailbox, ensuring your message gets noticed.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🏠</span>
+                    <h3>Growing Community</h3>
+                    <p>Target 5,000–10,000 households per mailing across 15,000+ homes in this rapidly expanding area. Perfect for businesses looking to establish themselves in Charleston's newest growth corridor.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💰</span>
+                    <h3>Professional Market</h3>
+                    <p>Target educated professionals and families who value quality services and have the income to invest in premium local businesses.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Types -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Perfect for Daniel Island & Clements Ferry's Business Community</h2>
+                <p>Ideal for businesses targeting educated professionals and growing families</p>
+            </div>
+            
+            <div class="business-types">
+                <div class="business-type">
+                    <h3>Family Services</h3>
+                    <p>Childcare, tutoring, youth sports, family entertainment</p>
+                </div>
+                <div class="business-type">
+                    <h3>Home & Garden</h3>
+                    <p>Landscaping, interior design, home improvement, cleaning</p>
+                </div>
+                <div class="business-type">
+                    <h3>Professional Services</h3>
+                    <p>Financial planning, real estate, legal services, consulting</p>
+                </div>
+                <div class="business-type">
+                    <h3>Health & Fitness</h3>
+                    <p>Medical practices, fitness centers, wellness services, nutrition</p>
+                </div>
+                <div class="business-type">
+                    <h3>Dining & Events</h3>
+                    <p>Restaurants, catering, event planning, specialty food services</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+     <!-- Pricing and Form Section -->
+    <?php include 'pricing_form_section.php'; ?>
+
+    <!-- FAQ -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Daniel Island & Clements Ferry Postcard FAQs</h2>
+                <p>Common questions about our direct mail service</p>
+            </div>
+            
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How many households receive the postcard?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Each mailing targets 5,000–10,000 households in ZIP 29492, with 15,000+ total homes available across Daniel Island & Clements Ferry. Cover the full zone over multiple mailings.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is my category exclusive?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. Only one business per category appears on each card.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you design my ad?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes—ad design is included at no additional cost.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do we measure results?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        When is the next print date?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We print on a regular cadence. Submit the form above for current availability and deadlines.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Zones -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Explore Nearby Zones</h2>
+                <p>Expand your reach across the Lowcountry with targeted direct mail</p>
+            </div>
+            
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="display: grid; gap: 15px;">
+                    <a href="/mount-pleasant-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Mount Pleasant Direct Mail</strong>
+                    </a>
+                    <a href="/summerville-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Summerville Direct Mail</strong>
+                    </a>
+                    <a href="/charleston-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Charleston Metro Direct Mail</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Neighborhood Cards Cross-Sell -->
+    <section style="background: #f1f5f9; padding: 50px 20px; text-align: center; font-family: 'Inter', sans-serif; border-top: 1px solid #e2e8f0;">
+        <div style="max-width: 700px; margin: 0 auto;">
+            <p style="color: #0ea5e9; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Also Available</p>
+            <h2 style="color: #1e293b; font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 800; margin-bottom: 12px;">Looking for Something Smaller?</h2>
+            <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 24px;">Our <strong style="color: #1e293b;">Neighborhood Cards</strong> reach ~2,500 homes in specific neighborhoods starting at just $79 per spot. A great way to test direct mail on a budget.</p>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="/neighborhood-cards/" style="display: inline-block; padding: 12px 28px; background: #38b6ff; color: white; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.95rem;">Browse Neighborhood Cards</a>
+                <a href="/compare/" style="display: inline-block; padding: 12px 28px; background: white; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Compare Products</a>
+            </div>
+        </div>
+    </section>
+
+    <?php include 'footer.php'; ?>
+
+    <script>
+        // Simple FAQ toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+            
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', function() {
+                    const answer = this.nextElementSibling;
+                    const isOpen = answer.style.display === 'block';
+                    
+                    // Close all other answers
+                    document.querySelectorAll('.faq-answer').forEach(a => {
+                        a.style.display = 'none';
+                    });
+                    
+                    // Toggle current answer
+                    answer.style.display = isOpen ? 'none' : 'block';
+                    
+                    // Update icon
+                    const icon = this.querySelector('span:last-child');
+                    icon.textContent = isOpen ? '+' : '−';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

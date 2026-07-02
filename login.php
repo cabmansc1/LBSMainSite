@@ -1,0 +1,335 @@
+<?php
+// login.php - Business owner login page
+require_once 'config.php';
+require_once 'User.php';
+
+// Redirect if already logged in
+if (isLoggedIn()) {
+    header('Location: dashboard.php');
+    exit;
+}
+
+$error = '';
+$success = '';
+$userObj = new User();
+$csrfToken = generateCSRFToken();
+
+// Show success message after registration
+if (isset($_GET['registered']) && $_GET['registered'] == 1) {
+    $success = 'Account created successfully! Please sign in.';
+}
+
+// Show success message after a completed password reset
+if (isset($_GET['reset']) && $_GET['reset'] == 1) {
+    $success = 'Your password has been updated. Please sign in with your new password.';
+}
+
+// Handle login form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+            throw new Exception('Invalid form submission. Please try again.');
+        }
+
+        $email = sanitizeInput($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            throw new Exception('Please enter both email and password.');
+        }
+
+        $userObj->login($email, $password);
+
+        // Redirect to dashboard on success
+        header('Location: dashboard.php');
+        exit;
+
+    } catch (Exception $e) {
+        $error = $e->getMessage();
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Sign In - <?= SITE_NAME ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38313KT3XE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-38313KT3XE');
+        gtag('config', 'AW-18077746446');
+    </script>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5ZP4TT23');</script>
+
+    <!-- Meta Pixel -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '629481023248934');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=629481023248934&ev=PageView&noscript=1"
+    /></noscript>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-top {
+            background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+            padding: 24px 20px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .login-top-brand {
+            font-size: 1rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+        }
+
+        .login-top-back {
+            color: rgba(255,255,255,.85);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 6px 14px;
+            border-radius: 6px;
+            background: rgba(255,255,255,.15);
+            transition: background 0.2s;
+        }
+
+        .login-top-back:hover { background: rgba(255,255,255,.25); }
+
+        .login-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px 40px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.08);
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+        }
+
+        .login-header {
+            padding: 32px 24px 24px;
+            text-align: center;
+        }
+
+        .login-header h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .login-header p {
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+
+        .login-form {
+            padding: 0 24px 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #38b6ff;
+            box-shadow: 0 0 0 3px rgba(56,182,255,.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #38b6ff, #0ea5e9);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+            -webkit-appearance: none;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(56,182,255,.3);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .form-links {
+            text-align: center;
+        }
+
+        .form-links p {
+            margin-bottom: 8px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .form-links a {
+            color: #38b6ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .form-links a:hover {
+            color: #0ea5e9;
+        }
+
+        .alert {
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .alert.success {
+            background: #dcfce7;
+            border: 1px solid #22c55e;
+            color: #166534;
+        }
+
+        @media (max-width: 480px) {
+            .login-wrap { padding: 20px 12px 32px; align-items: flex-start; padding-top: 24px; }
+            .login-container { border-radius: 14px; }
+            .login-header { padding: 28px 20px 20px; }
+            .login-header h1 { font-size: 1.35rem; }
+            .login-form { padding: 0 20px 28px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- GTM noscript -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5ZP4TT23"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+    <div class="login-top">
+        <a href="/" class="login-top-brand"><?= SITE_NAME ?></a>
+        <a href="/" class="login-top-back">&larr; Back to Site</a>
+    </div>
+
+    <div class="login-wrap">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Advertiser Login</h1>
+            <p>Sign in to manage your ads and listings</p>
+        </div>
+
+        <div class="login-form">
+            <?php if ($success): ?>
+                <div class="alert success"><?= htmlspecialchars($success) ?></div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="alert error"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+
+            <form method="POST" id="loginForm">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required
+                           value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                           autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required
+                           autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn-login">Sign In</button>
+
+                <div class="form-links">
+                    <p><a href="forgot-password.php">Forgot your password?</a></p>
+                    <p>Don't have an account? <a href="register.php">Create one here</a></p>
+                    <p><a href="/directory/">Browse the Directory</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

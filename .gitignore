@@ -1,0 +1,29 @@
+# --- Secrets: never commit ---
+config.php
+.env
+.env.*
+*_config.php.bak
+
+# --- User-uploaded content (98MB of photos; back up separately) ---
+uploads/
+
+# --- Composer installer artifacts (kept vendor/, but not these) ---
+composer.phar
+composer-setup.php
+
+# --- Logs ---
+*.log
+error_log
+php-errors.log
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# --- Empty/stray ---
+public_html/
+
+# --- Composer dependencies (restore with: composer install) ---
+vendor/

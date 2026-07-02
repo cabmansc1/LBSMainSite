@@ -1,0 +1,1027 @@
+<?php
+$location = 'mount-pleasant';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38313KT3XE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-38313KT3XE');
+    </script>
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-5ZP4TT23');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '629481023248934');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=629481023248934&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mt. Pleasant Direct Mail | 9x12 Postcards | LBS</title>
+    <meta name="description" content="Mount Pleasant direct mail targeting 5,000–10,000 homes per mailing across zip codes 29464 & 29466. Exclusive 9x12 billboard-style postcards — no competitors on the same mailing. Serving Old Village, I'On, Park West, Dunes West & more. Starting at 5¢ per household.">
+    <link rel="canonical" href="https://www.lowcountrybusinessspotlight.com/mount-pleasant-direct-mail-marketing.php">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.lowcountrybusinessspotlight.com/mount-pleasant-direct-mail-marketing.php">
+    <meta property="og:title" content="Mount Pleasant Direct Mail | 9x12 Postcards">
+    <meta property="og:description" content="Target 5,000–10,000 Mount Pleasant households per mailing with exclusive 9x12 billboard-style postcards. No competitors on the same card. Starting at 5¢ per household.">
+    <meta property="og:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://www.lowcountrybusinessspotlight.com/mount-pleasant-direct-mail-marketing.php">
+    <meta name="twitter:title" content="Mount Pleasant Direct Mail | 9x12 Postcards">
+    <meta name="twitter:description" content="Target 5,000–10,000 Mount Pleasant households per mailing with exclusive 9x12 postcards. No competitors on the same card. Starting at 5¢ per household.">
+    <meta name="twitter:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light+Two&display=swap" rel="stylesheet">
+
+    <!-- Schema Markup -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "Mount Pleasant Direct Mail",
+        "description": "Direct mail service delivering 9x12 billboard-style postcards to 5,000–10,000 households per mailing across Mount Pleasant, SC zip codes 29464 and 29466. Exclusive category placement with no competitors on the same mailing.",
+        "provider": {
+            "@type": "LocalBusiness",
+            "name": "Lowcountry Business Spotlight",
+            "telephone": "843-212-2969",
+            "email": "hello@lbspotlight.com",
+            "url": "https://www.lowcountrybusinessspotlight.com"
+        },
+        "areaServed": {
+            "@type": "City",
+            "name": "Mount Pleasant",
+            "containedInPlace": {
+                "@type": "State",
+                "name": "South Carolina"
+            }
+        },
+        "serviceType": "Direct Mail Advertising",
+        "url": "https://www.lowcountrybusinessspotlight.com/mount-pleasant-direct-mail-marketing.php"
+    }
+    </script>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "How many Mount Pleasant households receive the postcard?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Each mailing targets 5,000 to 10,000 households across Mount Pleasant ZIP codes 29464 and 29466, with the ability to cover the entire zone of 38,000+ homes over multiple mailings."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is my business category exclusive on the Mount Pleasant direct mail postcard?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. Only one business per category appears on each card. No competitors will be on the same mailing."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Do you design my direct mail ad?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes — ad design is included at no additional cost."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do we measure direct mail results in Mount Pleasant?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "When is the next Mount Pleasant direct mail print date?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "We print on a regular cadence. Submit the inquiry form for current availability and deadlines."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* ===== HERO SECTION ===== */
+    .hero {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        padding: 60px 0;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.04)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 800;
+        color: white;
+        line-height: 1.1;
+        margin-bottom: 30px;
+    }
+
+    .hero-content p {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 40px;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    .cta-hero {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ff8c00, #ff6b00);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 18px;
+        box-shadow: 0 8px 25px rgba(234, 88, 12, 0.4);
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(234, 88, 12, 0.5);
+        background: linear-gradient(135deg, #e07800, #e05500);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 18px 35px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ===== SECTION STYLES ===== */
+    .section {
+        padding: 100px 0;
+    }
+
+    .section.light {
+        background: #f8fafc;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 80px;
+    }
+
+    .section-header h2 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .section-header p {
+        font-size: 1.2rem;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #38b6ff;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #38b6ff;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .stat-card p {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    /* ===== ZIP CODES GRID ===== */
+    .zip-codes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .zip-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .zip-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .zip-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .zip-card ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .zip-card li {
+        padding: 8px 0;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .zip-card li::before {
+        content: "✓";
+        color: #ff8c00;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    /* ===== BLUE SECTION STYLES ===== */
+    .section.blue {
+        background: linear-gradient(135deg, #38b6ff 0%, #0ea5e9 50%, #0284c7 100%);
+    }
+
+    .section.blue .section-header h2 {
+        color: #000000;
+    }
+
+    .section.blue .section-header p {
+        color: #1a202c;
+    }
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 30px 25px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .feature-card h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .feature-card p {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    /* ===== BUSINESS TYPES GRID ===== */
+    .business-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .business-type {
+        background: white;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .business-type:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .business-type h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 12px;
+    }
+
+    .business-type p {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* ===== PRICING SECTION ===== */
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .pricing-card {
+        background: white;
+        padding: 40px 30px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        position: relative;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .pricing-card h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .price {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #ff8c00;
+        margin-bottom: 20px;
+    }
+
+    .pricing-card ul {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 30px;
+    }
+
+    .pricing-card li {
+        padding: 8px 0;
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* ===== FORM STYLES ===== */
+    .form-container {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #38b6ff;
+        box-shadow: 0 0 0 3px rgba(56, 182, 255, 0.1);
+    }
+
+    /* ===== FAQ STYLES ===== */
+    .faq-item {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .faq-question {
+        padding: 20px;
+        font-weight: 700;
+        color: #000000;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .faq-question:hover {
+        background-color: #f8fafc;
+    }
+
+    .faq-answer {
+        padding: 0 20px 20px;
+        color: #64748b;
+        line-height: 1.6;
+    }
+
+    /* ===== CONTACT BANNER ===== */
+    .contact-banner {
+        background: rgba(255, 255, 255, 0.1);
+        color: #000000;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        margin: 60px auto 0;
+        max-width: 600px;
+        border: 2px solid #e2e8f0;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .contact-banner:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #38b6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(56, 182, 255, 0.2);
+    }
+
+    .contact-banner h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #000000;
+    }
+
+    .contact-info {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #000000;
+    }
+
+    .contact-item a {
+        color: #000000;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        padding: 8px 16px;
+        border-radius: 8px;
+    }
+
+    .contact-item a:hover {
+        background: #38b6ff;
+        color: white;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+        background: #000000;
+        color: #94a3b8;
+        padding: 20px 0;
+        text-align: center;
+    }
+
+    .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 40px;
+    }
+
+    .footer-left {
+        text-align: left;
+    }
+
+    .footer-left p {
+        margin-bottom: 0;
+    }
+
+    .footer-right {
+        text-align: right;
+    }
+
+    .footer-right img {
+        width: 100px;
+        height: auto;
+    }
+
+    .footer a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+        color: white;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .hero-container {
+            padding: 0 20px;
+        }
+
+        .container {
+            padding: 0 20px;
+        }
+
+        .cta-hero {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+            text-align: center;
+        }
+
+        .stats-grid, .features-grid, .zip-codes, .business-types, .pricing-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-info {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-content {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .footer-left, .footer-right {
+            text-align: center;
+        }
+    }
+    </style>
+</head>
+
+<body>
+    <?php include 'header.php'; ?>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>Mount Pleasant Direct Mail <span style="color: #000000; font-weight: 900;"><br>That Actually Gets Noticed</span></h1>
+                <p>Target 5,000–10,000 Mount Pleasant homes per mailing with oversized 9"x12" postcards — no competitors on the same card</p>
+                
+                <div class="cta-hero">
+                    <a href="tel:843-212-2969" class="btn-primary">Call Now: 843-212-2969</a>
+                    <a href="#reserve" class="btn-secondary">Get Started Today</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Mount Pleasant -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Mount Pleasant is Perfect for Direct Mail Marketing</h2>
+                <p>Mount Pleasant isn't just growing—it's thriving as one of South Carolina's most affluent communities. With over 92,600 residents and a median household income of $121,364, this waterfront town represents the Charleston area's premier market for local businesses.</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">92,600+</span>
+                    <p>Growing Population</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">$121,364</span>
+                    <p>Median Household Income</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">42.8</span>
+                    <p>Median Age (Peak Earning Years)</p>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">10 mi</span>
+                    <p>From Charleston</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- In-Depth Content Section -->
+    <section class="section">
+        <div class="container">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <h2 style="font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 800; color: #000; margin-bottom: 20px;">Why Direct Mail Works in Mount Pleasant, SC</h2>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Mount Pleasant is one of the fastest-growing cities in South Carolina and the largest suburb in the Charleston metro area. With a population that has nearly doubled since 2000, this East Cooper community is home to families, professionals, and retirees with significant spending power. The median household income of $121,364 is well above the national average, making Mount Pleasant an ideal market for local businesses looking to grow through direct mail.
+                </p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Unlike digital ads that get scrolled past or filtered into spam folders, a 9"x12" postcard arriving in a Mount Pleasant mailbox demands attention. It's the size of a small billboard — impossible to miss when sorting through the day's mail. And because we guarantee exclusive category placement, your business is the only one in your industry on the card. No competing with three other HVAC companies or five other restaurants on the same mailer.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">Neighborhoods We Reach Across Mount Pleasant</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Our direct mail postcards are delivered to every residential mailbox in Mount Pleasant's two zip codes — 29464 and 29466. That includes established neighborhoods like <strong>Old Village</strong>, <strong>The Old Mount Pleasant Historic District</strong>, and <strong>Hobcaw</strong>, as well as newer planned communities like <strong>I'On</strong>, <strong>Park West</strong>, <strong>Dunes West</strong>, <strong>Rivertowne</strong>, <strong>Carolina Park</strong>, and <strong>Seaside Farms</strong>. Whether your customers live in a historic cottage off Pitt Street or a new build in Carolina Park, your ad lands in their mailbox.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">Direct Mail vs. Digital Advertising for Mount Pleasant Businesses</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Digital ads have their place, but the average American sees over 6,000 digital ads per day. Most are ignored. Direct mail, on the other hand, has a response rate of 2.7% to 4.4% — compared to just 0.6% for email and 0.1% for display ads, according to the Data & Marketing Association. In an affluent market like Mount Pleasant, where residents actively seek quality local services for their homes and families, a physical postcard builds trust in a way a Facebook ad simply can't.
+                </p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Our Mount Pleasant direct mail campaigns are especially effective for home service providers (HVAC, plumbing, roofing, landscaping), restaurants along Coleman Boulevard and Highway 17, medical and dental practices, real estate agents, and any business that depends on local customers. You're not paying to reach people three states away — every postcard goes to a real household within minutes of your business.
+                </p>
+
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">How Our Mount Pleasant Direct Mail Program Works</h3>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    Getting started is simple. You choose your target area within Mount Pleasant — whether that's specific carrier routes in 29464, 29466, or both — and we handle everything else. Ad design, printing, and delivery of 5,000 to 10,000 postcards per mailing via USPS Every Door Direct Mail (EDDM). Each postcard features local businesses with exclusive category placement, so there's zero competition for attention in your industry. Want to cover the entire Mount Pleasant zone? We can build a campaign that reaches all 38,000+ households across multiple mailings. We also offer trackable QR codes and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates.
+                </p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
+                    With rates starting at just 5¢ per household, our Mount Pleasant direct mail postcards are one of the most affordable ways to put your brand in front of high-income homeowners. Most of our advertisers see a return within the first mailing — and our repeat advertiser rate speaks for itself.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Coverage -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Complete Mount Pleasant Coverage</h2>
+                <p>Our 9"x12" billboard-style postcards reach households across both Mount Pleasant zip codes</p>
+            </div>
+            
+            <div class="zip-codes">
+                <div class="zip-card">
+                    <h3>29464 - Mount Pleasant</h3>
+                    <ul>
+                        <li>Established neighborhoods near Coleman Boulevard</li>
+                        <li>Mix of historic charm and modern amenities</li>
+                        <li>Strong local business corridor support</li>
+                        <li>Family-oriented community with deep roots</li>
+                    </ul>
+                </div>
+                <div class="zip-card">
+                    <h3>29466 - North Mount Pleasant</h3>
+                    <ul>
+                        <li>Higher-income residential developments</li>
+                        <li>Waterfront and marsh-view properties</li>
+                        <li>Professional families and executives</li>
+                        <li>Premium service and luxury market focus</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section blue">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Makes Our Mount Pleasant Direct Mail Different</h2>
+                <p>Exclusive placement and maximum impact for your business</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🎯</span>
+                    <h3>Exclusive Market Position</h3>
+                    <p>No competitors allowed on the same postcard! When Mount Pleasant residents see your 9"x12" billboard-style ad, you're the ONLY business in your category they'll remember.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📬</span>
+                    <h3>Maximum Mailbox Impact</h3>
+                    <p>Our oversized 9"x12" postcards don't get lost in the mail. They stand out like billboards in every Mount Pleasant mailbox, ensuring your message gets noticed.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🏠</span>
+                    <h3>Comprehensive Coverage</h3>
+                    <p>Target 5,000–10,000 households per mailing across both Mount Pleasant zip codes, with the ability to cover all 38,000+ homes over a full campaign.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💰</span>
+                    <h3>Premium Market Value</h3>
+                    <p>Target Charleston's most affluent suburb where residents have the highest disposable income and demand quality services from local businesses.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Business Types -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Perfect for Mount Pleasant's Business Community</h2>
+                <p>Ideal for businesses targeting affluent homeowners and professionals</p>
+            </div>
+            
+            <div class="business-types">
+                <div class="business-type">
+                    <h3>Premium Home Services</h3>
+                    <p>HVAC, luxury landscaping, pool services, high-end cleaning</p>
+                </div>
+                <div class="business-type">
+                    <h3>Upscale Dining</h3>
+                    <p>Fine dining, specialty catering, wine services</p>
+                </div>
+                <div class="business-type">
+                    <h3>Professional Services</h3>
+                    <p>Wealth management, premium real estate, legal services</p>
+                </div>
+                <div class="business-type">
+                    <h3>Luxury Retail</h3>
+                    <p>High-end boutiques, jewelry, specialty services</p>
+                </div>
+                <div class="business-type">
+                    <h3>Health & Wellness</h3>
+                    <p>Concierge medicine, medical spas, premium fitness</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Pricing and Form Section -->
+    <?php include 'pricing_form_section.php'; ?>
+
+    <!-- FAQ -->
+    <section class="section light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Mount Pleasant Postcard FAQs</h2>
+                <p>Common questions about our direct mail service</p>
+            </div>
+            
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How many households receive the postcard?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Each mailing targets 5,000 to 10,000 households across Mount Pleasant ZIPs 29464 and 29466, with the ability to cover the entire zone of 38,000+ homes over multiple mailings.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Is my category exclusive?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes. Only one business per category appears on each card.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you design my ad?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        Yes—ad design is included at no additional cost.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do we measure results?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        When is the next print date?
+                        <span style="font-size: 1.2rem;">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        We print on a regular cadence. Submit the form above for current availability and deadlines.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Zones -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Explore Nearby Zones</h2>
+                <p>Expand your reach across the Lowcountry with targeted direct mail</p>
+            </div>
+            
+            <div style="max-width: 600px; margin: 0 auto;">
+                <div style="display: grid; gap: 15px;">
+                    <a href="/summerville-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Summerville Direct Mail</strong>
+                    </a>
+                    <a href="/daniel-island-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Daniel Island & Clements Ferry Direct Mail</strong>
+                    </a>
+                    <a href="/charleston-direct-mail-marketing.php" style="display: block; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #000; border: 1px solid #e2e8f0; transition: all 0.3s ease;">
+                        <strong>Charleston Metro Direct Mail</strong>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Neighborhood Cards Cross-Sell -->
+    <section style="background: #f1f5f9; padding: 50px 20px; text-align: center; font-family: 'Inter', sans-serif; border-top: 1px solid #e2e8f0;">
+        <div style="max-width: 700px; margin: 0 auto;">
+            <p style="color: #0ea5e9; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Also Available</p>
+            <h2 style="color: #1e293b; font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 800; margin-bottom: 12px;">Looking for Something Smaller?</h2>
+            <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 24px;">Our <strong style="color: #1e293b;">Neighborhood Cards</strong> reach ~2,500 homes in specific neighborhoods starting at just $79 per spot. A great way to test direct mail on a budget.</p>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="/neighborhood-cards/" style="display: inline-block; padding: 12px 28px; background: #38b6ff; color: white; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.95rem;">Browse Neighborhood Cards</a>
+                <a href="/compare/" style="display: inline-block; padding: 12px 28px; background: white; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Compare Products</a>
+            </div>
+        </div>
+    </section>
+
+    <?php include 'footer.php'; ?>
+
+    <script>
+        // Simple FAQ toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+            
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', function() {
+                    const answer = this.nextElementSibling;
+                    const isOpen = answer.style.display === 'block';
+                    
+                    // Close all other answers
+                    document.querySelectorAll('.faq-answer').forEach(a => {
+                        a.style.display = 'none';
+                    });
+                    
+                    // Toggle current answer
+                    answer.style.display = isOpen ? 'none' : 'block';
+                    
+                    // Update icon
+                    const icon = this.querySelector('span:last-child');
+                    icon.textContent = isOpen ? '+' : '−';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
