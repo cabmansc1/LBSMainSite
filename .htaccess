@@ -17,6 +17,9 @@ RewriteEngine On
 RewriteBase /
 
 # Force HTTPS (must come before host/slash rules so the redirect lands on https://)
+# Behind a TLS-terminating proxy (Railway) trust X-Forwarded-Proto so we don't
+# redirect-loop; on cPanel that header is absent, so behavior is unchanged.
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 

@@ -1,5 +1,7 @@
 # --- Secrets: never commit ---
-config.php
+# NOTE: config.php IS committed (private repo). It holds only client-exposed
+# keys (Google Maps, reCAPTCHA site key); the DB password lives in the separate
+# secure/db_config.php (cPanel) or in environment variables (Railway).
 .env
 .env.*
 *_config.php.bak
