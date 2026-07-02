@@ -29,3 +29,6 @@ public_html/
 
 # --- Composer dependencies (restore with: composer install) ---
 vendor/
+
+# temporary uploads seed archive (not for git)
+_seed_uploads_*.tgz
