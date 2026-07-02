@@ -415,16 +415,20 @@ function appSendMail($to, $subject, $body, $headers = '', $params = '') {
     }
 
     // Parse the raw header string that call sites already build.
-    $from     = getenv('SMTP_FROM') ?: 'no-reply@lowcountrybusinessspotlight.com';
+    $forcedFrom = getenv('SMTP_FROM');   // when set, authoritative (single verified sender)
+    $from     = $forcedFrom ?: 'no-reply@lowcountrybusinessspotlight.com';
     $fromName = getenv('SMTP_FROM_NAME') ?: (defined('SITE_NAME') ? SITE_NAME : '');
-    $replyTo  = null; $cc = []; $bcc = []; $isHtml = false;
+    $replyTo  = null; $cc = []; $bcc = []; $isHtml = false; $headerFrom = null;
     foreach (preg_split('/\r\n|\r|\n/', (string)$headers) as $line) {
-        if (stripos($line, 'From:') === 0)              { $from = trim(substr($line, 5)); }
+        if (stripos($line, 'From:') === 0)              { $headerFrom = trim(substr($line, 5)); }
         elseif (stripos($line, 'Reply-To:') === 0)      { $replyTo = trim(substr($line, 9)); }
         elseif (stripos($line, 'Cc:') === 0)            { $cc[] = trim(substr($line, 3)); }
         elseif (stripos($line, 'Bcc:') === 0)           { $bcc[] = trim(substr($line, 4)); }
         elseif (stripos($line, 'Content-Type:') === 0 && stripos($line, 'text/html') !== false) { $isHtml = true; }
     }
+    // A verified SMTP_FROM keeps every message on one verified domain; otherwise
+    // honor the From the call site built.
+    if (!$forcedFrom && $headerFrom) { $from = $headerFrom; }
     // Split an optional display name out of the From header.
     $fromEmail = $from; $fromDisplay = $fromName;
     if (preg_match('/^(.*)<([^>]+)>\s*$/', $from, $m)) { $fromDisplay = trim($m[1]) ?: $fromName; $fromEmail = trim($m[2]); }
