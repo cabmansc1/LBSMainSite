@@ -138,7 +138,7 @@ try {
         $headers .= "Reply-To: {$email}\r\n";
         $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
         
-        mail($to, $subject, $message, $headers, '-f no-reply@lowcountrybusinessspotlight.com');
+        appSendMail($to, $subject, $message, $headers, '-f no-reply@lowcountrybusinessspotlight.com');
 
         // Send to Pipedrive
         $pipedriveNote = "Advertising Lead\n";

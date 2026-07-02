@@ -404,6 +404,72 @@ function logActivity($action, $details = null) {
     @file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
 }
 
+// Central mail sender. Uses SMTP (PHPMailer) when SMTP_HOST is set (Railway),
+// otherwise falls back to PHP mail() (cPanel). Signature mirrors mail() so it
+// is a drop-in replacement at every call site.
+function appSendMail($to, $subject, $body, $headers = '', $params = '') {
+    $smtpHost = getenv('SMTP_HOST');
+    if (!$smtpHost) {
+        // No SMTP configured -> native mail() (cPanel behavior, unchanged).
+        return mail($to, $subject, $body, $headers, $params);
+    }
+
+    // Parse the raw header string that call sites already build.
+    $from     = getenv('SMTP_FROM') ?: 'no-reply@lowcountrybusinessspotlight.com';
+    $fromName = getenv('SMTP_FROM_NAME') ?: (defined('SITE_NAME') ? SITE_NAME : '');
+    $replyTo  = null; $cc = []; $bcc = []; $isHtml = false;
+    foreach (preg_split('/\r\n|\r|\n/', (string)$headers) as $line) {
+        if (stripos($line, 'From:') === 0)              { $from = trim(substr($line, 5)); }
+        elseif (stripos($line, 'Reply-To:') === 0)      { $replyTo = trim(substr($line, 9)); }
+        elseif (stripos($line, 'Cc:') === 0)            { $cc[] = trim(substr($line, 3)); }
+        elseif (stripos($line, 'Bcc:') === 0)           { $bcc[] = trim(substr($line, 4)); }
+        elseif (stripos($line, 'Content-Type:') === 0 && stripos($line, 'text/html') !== false) { $isHtml = true; }
+    }
+    // Split an optional display name out of the From header.
+    $fromEmail = $from; $fromDisplay = $fromName;
+    if (preg_match('/^(.*)<([^>]+)>\s*$/', $from, $m)) { $fromDisplay = trim($m[1]) ?: $fromName; $fromEmail = trim($m[2]); }
+
+    if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+        $autoload = __DIR__ . '/vendor/autoload.php';
+        if (is_file($autoload)) { require_once $autoload; }
+    }
+    if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+        error_log('appSendMail: PHPMailer unavailable; falling back to mail()');
+        return mail($to, $subject, $body, $headers, $params);
+    }
+
+    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = $smtpHost;
+        $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
+        $mail->SMTPAuth   = true;
+        $mail->Username   = getenv('SMTP_USER');
+        $mail->Password   = getenv('SMTP_PASS');
+        $mail->SMTPSecure = ((getenv('SMTP_ENCRYPTION') ?: 'tls') === 'ssl')
+            ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+            : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->CharSet    = 'UTF-8';
+
+        $mail->setFrom($fromEmail, $fromDisplay);
+        foreach (preg_split('/\s*,\s*/', (string)$to) as $addr) { if ($addr) { $mail->addAddress($addr); } }
+        if ($replyTo) { $mail->addReplyTo($replyTo); }
+        foreach ($cc as $c)  { if ($c)  { $mail->addCC($c); } }
+        foreach ($bcc as $b) { if ($b)  { $mail->addBCC($b); } }
+
+        $mail->Subject = $subject;
+        $mail->isHTML($isHtml);
+        $mail->Body = $body;
+        if ($isHtml) { $mail->AltBody = strip_tags($body); }
+
+        $mail->send();
+        return true;
+    } catch (\Throwable $e) {
+        error_log('appSendMail SMTP error: ' . $e->getMessage());
+        return false;
+    }
+}
+
 // Secure email sending
 function sendSecureEmail($to, $subject, $body, $replyTo = null) {
     $to = sanitizeEmail($to);
@@ -426,7 +492,7 @@ function sendSecureEmail($to, $subject, $body, $replyTo = null) {
         }
     }
     
-    return mail($to, $subject, $body, $headers, '-f no-reply@lowcountrybusinessspotlight.com');
+    return appSendMail($to, $subject, $body, $headers, '-f no-reply@lowcountrybusinessspotlight.com');
 }
 
 // Format phone number

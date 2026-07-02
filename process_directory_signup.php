@@ -83,14 +83,14 @@ function handleDirectoryNotification($conn) {
         $headers .= "Reply-To: exumandrew@gmail.com\r\n";
         $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
         
-        mail($to, $subject, $message, $headers);
+        appSendMail($to, $subject, $message, $headers);
         
         // Notify admin
         $admin_to = 'exumandrew@gmail.com';
         $admin_subject = 'New Directory Launch Notification Signup';
         $admin_message = "Someone signed up for directory launch notifications:\n\nEmail: $email\nDate: " . date('Y-m-d H:i:s');
         
-        mail($admin_to, $admin_subject, $admin_message, $headers);
+        appSendMail($admin_to, $admin_subject, $admin_message, $headers);
 
         // Send to Pipedrive
         $pipedriveNote = "Directory Launch Notification\n";
@@ -227,10 +227,10 @@ function handleDirectorySignup($conn) {
         $headers = "From: no-reply@lowcountrybusinessspotlight.com\r\n";
         $headers .= "Reply-To: $email\r\n";
         
-        mail($to, $subject, $message, $headers);
+        appSendMail($to, $subject, $message, $headers);
         
         // Send customer confirmation
-        mail($email, 'Thank you for joining our directory', "Dear $contact_name,\n\nThank you for signing up! We'll contact you within 1-2 business days.", $headers);
+        appSendMail($email, 'Thank you for joining our directory', "Dear $contact_name,\n\nThank you for signing up! We'll contact you within 1-2 business days.", $headers);
 
         // Send to Pipedrive
         $pipedriveNote = "Directory Signup\n";

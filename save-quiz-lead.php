@@ -216,7 +216,7 @@ try {
     $userHeaders .= "Content-Type: text/plain; charset=UTF-8\r\n";
     $userHeaders .= "X-Mailer: PHP/" . phpversion();
 
-    mail($email, $userSubject, $userMessage, $userHeaders);
+    appSendMail($email, $userSubject, $userMessage, $userHeaders);
 
     // Send notification to admin
     $adminSubject = "New Quiz Lead: {$businessLabel}";
@@ -245,7 +245,7 @@ try {
     $adminHeaders .= "Reply-To: {$email}\r\n";
     $adminHeaders .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
-    mail('exumandrew@gmail.com', $adminSubject, $adminMessage, $adminHeaders);
+    appSendMail('exumandrew@gmail.com', $adminSubject, $adminMessage, $adminHeaders);
 
     // Send to Pipedrive
     $pipedriveNote = "Find Your Perfect Ad Quiz\n";
