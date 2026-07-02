@@ -17,8 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # --- Composer (for stripe/stripe-php) ---
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# --- Apache: enable mod_rewrite and allow the site's .htaccess to take effect ---
-RUN a2enmod rewrite \
+# --- Apache: keep only mpm_prefork (mod_php needs it; the base image enables an
+#     extra MPM which triggers "More than one MPM loaded"), enable mod_rewrite,
+#     and allow the site's .htaccess to take effect ---
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true; \
+    a2enmod mpm_prefork rewrite \
     && sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
 WORKDIR /var/www/html
