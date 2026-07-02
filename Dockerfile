@@ -32,10 +32,9 @@ COPY . /var/www/html
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress || true \
     && chown -R www-data:www-data /var/www/html
 
-# Railway routes to $PORT if set, otherwise to the EXPOSEd port (8080).
-# Apache honors $PORT, defaulting to 8080 so both paths line up.
-RUN printf '#!/bin/sh\nset -e\nPORT="${PORT:-8080}"\necho "Starting Apache on port ${PORT}"\nsed -ri "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf\nsed -ri "s/:80>/:${PORT}>/" /etc/apache2/sites-available/000-default.conf\nexec apache2-foreground\n' > /usr/local/bin/start.sh \
-    && chmod +x /usr/local/bin/start.sh
+# Startup script forces mpm_prefork and binds Apache to $PORT (default 8080).
+COPY docker-start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 EXPOSE 8080
 
