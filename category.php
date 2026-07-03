@@ -20,13 +20,18 @@ if(!$stmt) {
 $stmt->bind_param("s", $category);
 $stmt->execute();
 $result = $stmt->get_result();
+
+// Shared SEO head include — dynamic per-category values override the config fallback
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+if (!empty($category)) {
+    $seo['title']       = $category . ' - Business Directory';
+    $seo['description'] = 'Browse ' . $category . ' businesses in the Charleston Lowcountry area in the Lowcountry Business Spotlight directory.';
+    $seo['canonical']   = SITE_URL . '/category.php?category=' . urlencode($category);
+    $seo['h1']          = $category . ' Businesses';
+}
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo htmlspecialchars($category); ?> - Business Directory</title>
   <link rel="stylesheet" href="css/main.css">
   <style>
     /* Additional styles specific to the category page */

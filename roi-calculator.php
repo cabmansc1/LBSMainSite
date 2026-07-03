@@ -1,65 +1,11 @@
 <?php
 require_once 'config.php';
 require_once 'pricing_config.php';
+
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROI Calculator - Lowcountry Business Spotlight</title>
-    <meta name="description" content="Calculate your direct mail advertising ROI. See how Lowcountry Business Spotlight postcards compare to Google Ads, Facebook, and newspaper advertising.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://www.lowcountrybusinessspotlight.com/roi-calculator.php">
-
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.lowcountrybusinessspotlight.com/roi-calculator.php">
-    <meta property="og:title" content="ROI Calculator - Lowcountry Business Spotlight">
-    <meta property="og:description" content="Calculate your direct mail advertising ROI. See how postcards compare to Google Ads, Facebook, and newspaper advertising.">
-    <meta property="og:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://www.lowcountrybusinessspotlight.com/roi-calculator.php">
-    <meta name="twitter:title" content="ROI Calculator - Lowcountry Business Spotlight">
-    <meta name="twitter:description" content="Calculate your direct mail advertising ROI. See how postcards compare to Google Ads, Facebook, and newspaper advertising.">
-    <meta name="twitter:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
-
-    <!-- Google Analytics (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38313KT3XE"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-38313KT3XE');
-        gtag('config', 'AW-18077746446');
-    </script>
-
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-5ZP4TT23');</script>
-
-    <!-- Meta Pixel -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '629481023248934');
-    fbq('track', 'PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=629481023248934&ev=PageView&noscript=1"
-    /></noscript>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; color: #334155; background: #f8fafc; }
@@ -350,9 +296,6 @@ require_once 'pricing_config.php';
     </style>
 </head>
 <body>
-    <!-- GTM noscript -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5ZP4TT23"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <?php include 'header.php'; ?>
 

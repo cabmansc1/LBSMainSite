@@ -158,15 +158,11 @@ try {
     error_log("my-cards error: " . $e->getMessage());
     $orders = [];
 }
+
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <title>My Neighborhood Cards - <?= SITE_NAME ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }

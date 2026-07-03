@@ -58,7 +58,9 @@ $GSC_VERIFICATION = ''; // e.g. 'abc123XYZ_yourVerificationCode'
 
 <title><?= htmlspecialchars($seo['title'], ENT_QUOTES, 'UTF-8') ?></title>
 <meta name="description" content="<?= htmlspecialchars($seo['description'], ENT_QUOTES, 'UTF-8') ?>">
+<?php if (!empty($seo['canonical'])): // null = deliberately no canonical (noindex pages) ?>
 <link rel="canonical" href="<?= htmlspecialchars($seo['canonical'], ENT_QUOTES, 'UTF-8') ?>">
+<?php endif; ?>
 <meta name="robots" content="<?= htmlspecialchars($seo['robots'], ENT_QUOTES, 'UTF-8') ?>">
 
 <?php if ($GSC_VERIFICATION): ?>
@@ -76,7 +78,9 @@ $GSC_VERIFICATION = ''; // e.g. 'abc123XYZ_yourVerificationCode'
 
 <!-- Open Graph -->
 <meta property="og:type" content="<?= htmlspecialchars($seo['og_type'], ENT_QUOTES, 'UTF-8') ?>">
+<?php if (!empty($seo['canonical'])): ?>
 <meta property="og:url" content="<?= htmlspecialchars($seo['canonical'], ENT_QUOTES, 'UTF-8') ?>">
+<?php endif; ?>
 <meta property="og:title" content="<?= htmlspecialchars($_seo_og_title, ENT_QUOTES, 'UTF-8') ?>">
 <meta property="og:description" content="<?= htmlspecialchars($_seo_og_desc, ENT_QUOTES, 'UTF-8') ?>">
 <meta property="og:image" content="<?= htmlspecialchars($seo['og_image'], ENT_QUOTES, 'UTF-8') ?>">
@@ -93,7 +97,9 @@ $GSC_VERIFICATION = ''; // e.g. 'abc123XYZ_yourVerificationCode'
 
 <!-- Twitter -->
 <meta name="twitter:card" content="<?= htmlspecialchars($seo['twitter_card'], ENT_QUOTES, 'UTF-8') ?>">
+<?php if (!empty($seo['canonical'])): ?>
 <meta name="twitter:url" content="<?= htmlspecialchars($seo['canonical'], ENT_QUOTES, 'UTF-8') ?>">
+<?php endif; ?>
 <meta name="twitter:title" content="<?= htmlspecialchars($_seo_tw_title, ENT_QUOTES, 'UTF-8') ?>">
 <meta name="twitter:description" content="<?= htmlspecialchars($_seo_tw_desc, ENT_QUOTES, 'UTF-8') ?>">
 <meta name="twitter:image" content="<?= htmlspecialchars($_seo_tw_image, ENT_QUOTES, 'UTF-8') ?>">

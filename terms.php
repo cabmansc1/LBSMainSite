@@ -1,13 +1,9 @@
-<?php require_once 'config.php'; ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms and Conditions - <?= SITE_NAME ?></title>
-    <meta name="description" content="Terms and Conditions for Lowcountry Business Spotlight directory and advertising services.">
-    <link rel="canonical" href="<?= SITE_URL ?>/terms.php">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<?php
+require_once __DIR__ . '/config.php';
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
+?>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; color: #334155; background: #f8fafc; line-height: 1.7; }

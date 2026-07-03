@@ -106,15 +106,11 @@ try {
 }
 
 $amountFormatted = number_format(($order['price_cents'] ?? 0) / 100, 2);
+
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Confirmed - <?= SITE_NAME ?></title>
-    <meta name="robots" content="noindex,nofollow">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }

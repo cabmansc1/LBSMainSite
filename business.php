@@ -91,51 +91,35 @@ try {
 } catch (Exception $e) {
     // silently skip related businesses
 }
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($business['business_name']) ?> - <?= SITE_NAME ?></title>
-    <meta name="robots" content="index, follow">
-    <meta name="description" content="<?= htmlspecialchars($business['business_name']) ?> - <?= htmlspecialchars($catLabel) ?> in the Charleston Lowcountry area. View details, hours, and contact information.">
-    <link rel="canonical" href="<?= htmlspecialchars(businessUrl($business['slug'])) ?>">
 
-    <?php
-    // Pick the best OG image — prefer a larger non-primary photo, fall back to primary
-    $ogPhoto = null;
-    foreach ($business['photos'] ?? [] as $p) {
-        if (!$p['is_primary']) { $ogPhoto = $p; break; }
+// Pick the best OG image — prefer a larger non-primary photo, fall back to primary
+$ogPhoto = null;
+foreach ($business['photos'] ?? [] as $p) {
+    if (!$p['is_primary']) { $ogPhoto = $p; break; }
+}
+if (!$ogPhoto && !empty($business['photos'][0])) $ogPhoto = $business['photos'][0];
+
+// Shared SEO head include — per-business values from the $business record
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+$seo['title']          = $business['business_name'] . ' - ' . SITE_NAME;
+$seo['description']    = $business['business_name'] . ' - ' . $catLabel . ' in the Charleston Lowcountry area. View details, hours, and contact information.';
+$seo['canonical']      = businessUrl($business['slug']);
+$seo['og_type']        = 'business.business';
+$seo['og_title']       = $business['business_name'] . ' - ' . SITE_NAME;
+$seo['og_description'] = !empty($business['description']) ? $business['description'] : ($business['business_name'] . ' - ' . $catLabel);
+$seo['twitter_title']  = $business['business_name'];
+$seo['twitter_card']   = ($ogPhoto && !empty($ogPhoto['width']) && $ogPhoto['width'] >= 600) ? 'summary_large_image' : 'summary';
+if ($ogPhoto) {
+    $seo['og_image'] = $ogPhoto['url'];
+    if (!empty($ogPhoto['width'])) {
+        $seo['og_image_width']  = (int)$ogPhoto['width'];
+        $seo['og_image_height'] = (int)$ogPhoto['height'];
     }
-    if (!$ogPhoto && !empty($business['photos'][0])) $ogPhoto = $business['photos'][0];
-    $ogDesc = htmlspecialchars($business['description'] ?? ($business['business_name'] . ' - ' . $catLabel));
-    ?>
-
-    <!-- Open Graph -->
-    <meta property="og:title" content="<?= htmlspecialchars($business['business_name']) ?> - <?= SITE_NAME ?>">
-    <meta property="og:description" content="<?= $ogDesc ?>">
-    <meta property="og:url" content="<?= htmlspecialchars(businessUrl($business['slug'])) ?>">
-    <meta property="og:type" content="business.business">
-    <meta property="og:site_name" content="<?= SITE_NAME ?>">
-    <?php if ($ogPhoto): ?>
-    <meta property="og:image" content="<?= htmlspecialchars($ogPhoto['url']) ?>">
-    <?php if (!empty($ogPhoto['width'])): ?>
-    <meta property="og:image:width" content="<?= (int)$ogPhoto['width'] ?>">
-    <meta property="og:image:height" content="<?= (int)$ogPhoto['height'] ?>">
-    <?php endif; ?>
-    <meta property="og:image:alt" content="<?= htmlspecialchars($ogPhoto['alt_text'] ?: $business['business_name']) ?>">
-    <?php endif; ?>
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="<?= ($ogPhoto && !empty($ogPhoto['width']) && $ogPhoto['width'] >= 600) ? 'summary_large_image' : 'summary' ?>">
-    <meta name="twitter:title" content="<?= htmlspecialchars($business['business_name']) ?>">
-    <meta name="twitter:description" content="<?= $ogDesc ?>">
-    <?php if ($ogPhoto): ?>
-    <meta name="twitter:image" content="<?= htmlspecialchars($ogPhoto['url']) ?>">
-    <meta name="twitter:image:alt" content="<?= htmlspecialchars($ogPhoto['alt_text'] ?: $business['business_name']) ?>">
-    <?php endif; ?>
-
+    $seo['og_image_alt'] = $ogPhoto['alt_text'] ?: $business['business_name'];
+}
+include __DIR__ . '/seo_head.php';
+?>
     <?php
     // JSON-LD LocalBusiness Schema
     $schemaTypeMap = [
@@ -217,42 +201,6 @@ try {
     ?>
     <script type="application/ld+json"><?= json_encode($localBusiness, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?></script>
     <script type="application/ld+json"><?= json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?></script>
-
-    <!-- Google Analytics (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38313KT3XE"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-38313KT3XE');
-        gtag('config', 'AW-18077746446');
-    </script>
-
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-5ZP4TT23');</script>
-
-    <!-- Meta Pixel -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '629481023248934');
-    fbq('track', 'PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=629481023248934&ev=PageView&noscript=1"
-    /></noscript>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -485,10 +433,6 @@ try {
     </style>
 </head>
 <body>
-    <!-- GTM noscript -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5ZP4TT23"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
     <?php include 'header.php'; ?>
 
     <!-- Breadcrumb -->
