@@ -8,5 +8,6 @@ Disallow: /_seo/
 Disallow: /_archived/
 Disallow: /templates/
 Disallow: /process_*
+Disallow: /bulk_import.php
 
 Sitemap: https://www.lowcountrybusinessspotlight.com/sitemap.xml

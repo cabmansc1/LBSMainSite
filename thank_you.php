@@ -4,55 +4,21 @@ $submission = $_SESSION['form_submission'] ?? null;
 $justSubmitted = (bool)$submission;
 // Clear after reading so refresh doesn't show stale data
 if ($submission) unset($_SESSION['form_submission']);
+
+require_once __DIR__ . '/config.php';
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-38313KT3XE"></script>
+  <!-- Page-specific conversion tracking (gtag/fbq defined by seo_head.php) -->
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-38313KT3XE');
-    gtag('config', 'AW-18077746446');
 <?php if ($justSubmitted): ?>
     gtag('event', 'conversion', {
       'send_to': 'AW-18077746446/XxKsCMijt68cEI6KkqxD'
     });
 <?php endif; ?>
+    fbq('track', 'Lead');
   </script>
-
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-5ZP4TT23');</script>
-
-  <!-- Meta Pixel Code -->
-  <script>
-  !function(f,b,e,v,n,t,s)
-  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window, document,'script',
-  'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '629481023248934');
-  fbq('track', 'PageView');
-  fbq('track', 'Lead');
-  </script>
-  <noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=629481023248934&ev=Lead&noscript=1"
-  /></noscript>
-
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Thank You - Lowcountry Business Spotlight</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #334155; }
@@ -153,10 +119,6 @@ if ($submission) unset($_SESSION['form_submission']);
   </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5ZP4TT23"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
   <?php include 'nav.php'; ?>
 
   <section class="hero">

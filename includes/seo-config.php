@@ -51,9 +51,9 @@ return [
     'directory.php' => [
         // Title is built dynamically per category/search; leaving structural defaults.
         'title'       => 'Business Directory - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — currently the page emits an empty <meta name="description"> tag (worse than missing).',
+        'description' => 'Browse trusted local businesses across Charleston, Summerville, Mount Pleasant, Goose Creek and the greater Lowcountry. Restaurants, home services, health, retail and more in our verified directory.',
         'canonical'   => SITE_URL . '/directory',
-        'h1'          => 'TODO: Andrew to write — page currently renders an empty <h1>',
+        'h1'          => 'Find Trusted Local Businesses in the Lowcountry',
         'priority'    => 0.8,
     ],
 
@@ -69,7 +69,7 @@ return [
         // Per-business page — title, description, canonical, og_image are dynamic
         // from the $business record. This entry only sets defaults.
         'title'       => 'Business Listing - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — used only as a fallback; per-listing values come from the DB.',
+        'description' => 'Verified local business listing in the Lowcountry Business Spotlight directory serving Charleston, Summerville, Mount Pleasant and the surrounding Lowcountry.', // fallback only; per-listing values come from the DB
         'canonical'   => SITE_URL . '/business',
         'h1'          => null, // dynamic — uses $business[business_name]
         'priority'    => 0.7,
@@ -77,7 +77,7 @@ return [
 
     'category.php' => [
         'title'       => 'Category - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — page currently has no <meta name="description"> at all.',
+        'description' => 'Browse local Charleston-area businesses by category in the Lowcountry Business Spotlight directory — find restaurants, contractors, health providers and more near you.', // fallback; page should append the category name dynamically
         'canonical'   => SITE_URL . '/category',
         'h1'          => null, // dynamic — uses category name
         'priority'    => 0.6,
@@ -94,7 +94,7 @@ return [
     'blog-post.php' => [
         // Per-post page — values overridden by post data.
         'title'       => 'Blog Post - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — page currently emits empty <meta name="description">; consider rendering the post excerpt instead.',
+        'description' => 'Direct mail marketing tips and local business insights from Lowcountry Business Spotlight in Charleston, SC.', // fallback; pages should prefer the post excerpt when available
         'canonical'   => SITE_URL . '/blog',
         'h1'          => null, // dynamic — uses post title
         'priority'    => 0.6,
@@ -118,7 +118,7 @@ return [
 
     'pricing.php' => [
         'title'       => 'Pricing - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — page currently emits empty <meta name="description">. Should mention starting price (5¢/household) and tiers.',
+        'description' => 'Direct mail advertising starting at 5¢ per household. Compare shared 9x12 Spotlight Postcard tiers and Neighborhood Cards — transparent pricing with professional ad design included.',
         'canonical'   => SITE_URL . '/pricing',
         'h1'          => 'Simple, Transparent Pricing',
         'priority'    => 0.9,
@@ -126,7 +126,7 @@ return [
 
     'compare-products.php' => [
         'title'       => 'Compare Products - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — page currently emits empty <meta name="description">. Should compare 9x12 postcards vs neighborhood cards.',
+        'description' => 'Compare 9x12 Spotlight Postcards and Neighborhood Cards side by side — reach, pricing and exclusivity — to pick the right direct mail option for your Charleston-area business.',
         'canonical'   => SITE_URL . '/compare-products',
         'h1'          => 'Two Ways to Reach Local Homes',
         'priority'    => 0.7,
@@ -136,7 +136,7 @@ return [
         'title'       => 'Find Your Perfect Ad - Lowcountry Business Spotlight',
         'description' => 'Answer a few quick questions to find the perfect direct mail advertising package for your business. Get personalized recommendations.',
         'canonical'   => SITE_URL . '/find-your-ad',
-        'h1'          => 'TODO: Andrew to write — page has NO <h1> in the source (see _seo/02-h1-audit.md). Suggested: "Find Your Perfect Direct Mail Ad" or similar matching the title.',
+        'h1'          => 'Find Your Perfect Direct Mail Ad',
         'priority'    => 0.8,
     ],
 
@@ -190,7 +190,7 @@ return [
 
     '404.php' => [
         'title'       => 'Page Not Found | Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — page currently has no meta description. Suggested: "The page you\'re looking for can\'t be found. Browse the Lowcountry Business Spotlight directory for local businesses or get in touch."',
+        'description' => 'The page you\'re looking for can\'t be found. Browse the Lowcountry Business Spotlight directory for local businesses or get in touch.',
         'canonical'   => null, // 404s should not be canonicalised
         'robots'      => 'noindex,follow',
         'h1'          => 'Page Not Found',
@@ -540,7 +540,7 @@ JSON,
     ],
 
     'mount-pleasant-direct-mail-marketing.php' => [
-        'title'           => 'Mt. Pleasant Direct Mail | 9x12 Postcards | LBS', // TODO: Andrew — Phase 0 flagged "Mt." vs "Mount Pleasant" inconsistency. Full city name likely better for search.
+        'title'           => 'Mount Pleasant Direct Mail | 9x12 Postcards | LBS',
         'description'     => 'Mount Pleasant direct mail targeting 5,000–10,000 homes per mailing across zip codes 29464 & 29466. Exclusive 9x12 billboard-style postcards — no competitors on the same mailing. Serving Old Village, I\'On, Park West, Dunes West & more. Starting at 5¢ per household.',
         'canonical'       => SITE_URL . '/mount-pleasant-direct-mail-marketing.php',
         'og_title'        => 'Mount Pleasant Direct Mail | 9x12 Postcards',
@@ -588,7 +588,7 @@ JSON,
     ],
 
     'north-charleston-direct-mail-marketing.php' => [
-        'title'           => 'N. Charleston Direct Mail | 9x12 Postcards | LBS', // TODO: Andrew — Phase 0 flagged "N." abbreviation; "North Charleston" likely better for search.
+        'title'           => 'North Charleston Direct Mail | 9x12 Postcards | LBS',
         'description'     => 'North Charleston direct mail targeting 5,000–10,000 households per mailing across zip codes 29405, 29406, 29418 & 29420. 45,000+ homes available across multiple mailings. Exclusive 9x12 billboard-style postcards — no competitors on the same mailing. Starting at 5¢ per household.',
         'canonical'       => SITE_URL . '/north-charleston-direct-mail-marketing.php',
         'og_title'        => 'North Charleston Direct Mail | Target 5,000–10,000 Homes Per Mailing',
@@ -635,7 +635,7 @@ JSON,
     ],
 
     'sullivans-island-direct-mail-marketing.php' => [
-        'title'           => 'Sullivans Island Direct Mail | Postcards | LBS', // TODO: Andrew — Phase 0 flagged missing "9x12" qualifier vs other service-area titles.
+        'title'           => 'Sullivans Island Direct Mail | 9x12 Postcards | LBS',
         'description'     => 'Sullivans Island direct mail targeting 29482 — 5,000–10,000 households per mailing with nearby zones. Exclusive 9x12 billboard-style postcards reaching one of South Carolina\'s most affluent beach communities. No competitors on the same card. Starting at 5¢ per household.',
         'canonical'       => SITE_URL . '/sullivans-island-direct-mail-marketing.php',
         'og_title'        => 'Sullivans Island Direct Mail | Targeted Postcard Mailings',
@@ -736,7 +736,7 @@ JSON,
 
     'neighborhood-cards.php' => [
         'title'       => 'Neighborhood Cards - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — page currently emits empty <meta name="description">.',
+        'description' => 'Sponsor a postcard mailed to homes in your Charleston-area neighborhood. Exclusive community advertising — one business per card, design included.',
         'canonical'   => null,
         'robots'      => 'noindex,nofollow',
         'h1'          => 'Neighborhood Cards',
@@ -745,7 +745,7 @@ JSON,
 
     'neighborhood-card.php' => [
         'title'       => 'Community Card - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — page currently emits empty <meta name="description">.',
+        'description' => 'Sponsor this neighborhood card and put your business in front of local Charleston-area homes with an exclusive community mailing.',
         'canonical'   => null,
         'robots'      => 'noindex,nofollow',
         'h1'          => null, // dynamic — uses card name
@@ -754,39 +754,19 @@ JSON,
 
     'neighborhood-card-checkout.php' => [
         'title'       => 'Checkout - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — checkout page; usually noindex is fine.',
+        'description' => 'Complete your neighborhood card sponsorship checkout.',
         'canonical'   => null,
         'robots'      => 'noindex,follow',
-        'h1'          => 'TODO: Andrew to write — page has NO <h1> in source (see _seo/02-h1-audit.md).',
+        'h1'          => 'Complete Your Sponsorship',
         'priority'    => null,
     ],
 
     'neighborhood-card-success.php' => [
         'title'       => 'Purchase Confirmed - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — confirmation page; usually noindex is fine.',
+        'description' => 'Your neighborhood card sponsorship is confirmed. Thanks for supporting your local community!',
         'canonical'   => null,
         'robots'      => 'noindex,follow',
         'h1'          => 'Purchase Confirmed!',
-        'priority'    => null,
-    ],
-
-    'neighborhood-card-legacy.php' => [
-        // Phase 0 flagged for removal (legacy version of neighborhood-card.php).
-        'title'       => 'Community Card - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to write — Phase 0 flagged this file for removal; until then, noindex.',
-        'canonical'   => null,
-        'robots'      => 'noindex,follow',
-        'h1'          => null,
-        'priority'    => null,
-    ],
-
-    'neighborhood-card-test.php' => [
-        // Phase 0 flagged for removal (test page publicly accessible).
-        'title'       => 'Community Card (Test) - Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to delete this file or restrict access — Phase 0 flagged it as a publicly accessible test page.',
-        'canonical'   => null,
-        'robots'      => 'noindex,nofollow',
-        'h1'          => null,
         'priority'    => null,
     ],
 
@@ -808,7 +788,7 @@ JSON,
         'description' => 'Create a Lowcountry Business Spotlight account.',
         'canonical'   => null,
         'robots'      => 'noindex,follow',
-        'h1'          => 'TODO: Andrew to write — page renders an empty <h1>. Suggested: "Create Your Account".',
+        'h1'          => 'Create Your Account',
         'priority'    => null,
     ],
 
@@ -817,7 +797,7 @@ JSON,
         'description' => 'Account dashboard.',
         'canonical'   => null,
         'robots'      => 'noindex,follow',
-        'h1'          => 'TODO: Andrew to fix — page currently renders "Welcome, !" (broken PHP variable).',
+        'h1'          => null, // dynamic — greets the logged-in user by name
         'priority'    => null,
     ],
 
@@ -854,16 +834,6 @@ JSON,
         'canonical'   => SITE_URL . '/gcregister',
         'robots'      => 'noindex,follow', // lead-capture entry; not a primary SEO page
         'h1'          => 'Enter to Win!', // see _seo/02-h1-audit.md — keep this, demote brand wordmark on line 440
-        'priority'    => null,
-    ],
-
-    'gcregister_mobile_fix.php' => [
-        // Phase 0 flagged this as a duplicate of gcregister.php — should be removed.
-        'title'       => 'Gift Card Registration | Lowcountry Business Spotlight',
-        'description' => 'TODO: Andrew to delete this file — Phase 0 flagged it as a duplicate of gcregister.php.',
-        'canonical'   => null,
-        'robots'      => 'noindex,nofollow',
-        'h1'          => 'Enter to Win!',
         'priority'    => null,
     ],
 

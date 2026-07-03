@@ -363,7 +363,7 @@ foreach ($positions as $p) {
             </div>
             <div style="display: flex; gap: 8px;">
                 <a href="manage_cards.php" class="btn btn-outline">Back to Cards</a>
-                <a href="/neighborhood-card-test.php?slug=<?= htmlspecialchars($card['slug']) ?>" target="_blank" class="btn btn-outline">Preview</a>
+                <a href="/neighborhood-card.php?slug=<?= htmlspecialchars($card['slug']) ?>" target="_blank" class="btn btn-outline">Preview</a>
             </div>
         </div>
 

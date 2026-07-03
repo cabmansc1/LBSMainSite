@@ -36,55 +36,26 @@ $pageTitle = 'Blog';
 if ($categoryFilter) {
     foreach ($categories as $cat) {
         if ($cat['slug'] === $categoryFilter) {
-            $pageTitle = htmlspecialchars($cat['name']) . ' - Blog';
+            $pageTitle = $cat['name'] . ' - Blog';
             break;
         }
     }
 }
+
+// Shared SEO head include — dynamic title/canonical for category filter and pagination
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+$seo['title']     = $pageTitle . ' | ' . SITE_NAME;
+$seo['canonical'] = SITE_URL . '/blog.php'
+    . ($categoryFilter ? '?category=' . urlencode($categoryFilter) : '')
+    . ($page > 1 ? ($categoryFilter ? '&' : '?') . 'page=' . $page : '');
+$seo['og_title']        = $pageTitle . ' | ' . SITE_NAME;
+$seo['og_description']  = 'Direct mail marketing tips, local business insights, and community news from Lowcountry Business Spotlight.';
+$seo['og_image_width']  = 1200;
+$seo['og_image_height'] = 630;
+$seo['og_image_alt']    = $pageTitle . ' | ' . SITE_NAME;
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-38313KT3XE"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-38313KT3XE');
-    gtag('config', 'AW-18077746446');
-  </script>
-
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-5ZP4TT23');</script>
-
-  <!-- Meta Pixel Code -->
-  <script>
-  !function(f,b,e,v,n,t,s)
-  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window, document,'script',
-  'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '629481023248934');
-  fbq('track', 'PageView');
-  </script>
-  <noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=629481023248934&ev=PageView&noscript=1"
-  /></noscript>
-
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo $pageTitle; ?> | <?php echo SITE_NAME; ?></title>
-  <meta name="robots" content="index, follow">
-  <meta name="description" content="Direct mail marketing tips, local business insights, and community news from Lowcountry Business Spotlight serving Charleston, Summerville, and Mount Pleasant.">
-  <link rel="canonical" href="<?php echo SITE_URL; ?>/blog.php<?php echo $categoryFilter ? '?category=' . urlencode($categoryFilter) : ''; ?><?php echo $page > 1 ? ($categoryFilter ? '&' : '?') . 'page=' . $page : ''; ?>">
 <?php
   $paginationBase = SITE_URL . '/blog.php' . ($categoryFilter ? '?category=' . urlencode($categoryFilter) : '');
   $pageSep = $categoryFilter ? '&' : '?';
@@ -94,26 +65,6 @@ if ($categoryFilter) {
   if ($page < $totalPages): ?>
   <link rel="next" href="<?php echo $paginationBase . $pageSep . 'page=' . ($page + 1); ?>">
 <?php endif; ?>
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="<?php echo $pageTitle; ?> | <?php echo SITE_NAME; ?>">
-  <meta property="og:description" content="Direct mail marketing tips, local business insights, and community news from Lowcountry Business Spotlight.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="<?php echo SITE_URL; ?>/blog.php">
-  <meta property="og:site_name" content="<?php echo SITE_NAME; ?>">
-  <meta property="og:image" content="<?php echo SITE_URL; ?>/images/og-image.jpg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="<?php echo $pageTitle; ?> | <?php echo SITE_NAME; ?>">
-  <meta name="twitter:description" content="Direct mail marketing tips, local business insights, and community news from Lowcountry Business Spotlight.">
-  <meta name="twitter:image" content="<?php echo SITE_URL; ?>/images/og-image.jpg">
-  <meta name="twitter:image:alt" content="<?php echo $pageTitle; ?> | <?php echo SITE_NAME; ?>">
-  <meta name="twitter:url" content="<?php echo SITE_URL; ?>/blog.php">
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Blog Schema -->
   <script type="application/ld+json">
@@ -212,9 +163,6 @@ if ($categoryFilter) {
   </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5ZP4TT23" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
   <?php include 'header.php'; ?>
 
   <section class="blog-hero">

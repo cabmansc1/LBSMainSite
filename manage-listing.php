@@ -1,16 +1,12 @@
 <?php
 // A2P 10DLC: page has phone-shaped fields, suppress chat widget to avoid scanner false positives
 $hideChatWidget = true;
+
+require_once __DIR__ . '/config.php';
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Business Dashboard - Lowcountry Business Spotlight</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
   <style>
     * {
       margin: 0;

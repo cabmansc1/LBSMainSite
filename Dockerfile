@@ -23,7 +23,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 #     extra MPM which triggers "More than one MPM loaded"), enable mod_rewrite,
 #     and allow the site's .htaccess to take effect ---
 RUN a2dismod mpm_event mpm_worker 2>/dev/null || true; \
-    a2enmod mpm_prefork rewrite \
+    a2enmod mpm_prefork rewrite headers expires \
     && sed -ri 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf
 
 WORKDIR /var/www/html

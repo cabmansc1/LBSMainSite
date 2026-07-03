@@ -178,7 +178,7 @@
   .main-nav .nav-contact{order:1;width:100%;justify-content:center;padding:8px 0;border-bottom:1px solid #333;}
   .main-nav .contact-link{font-size:.85rem;}
   .main-nav .contact-text{display:none;} /* Hide text on mobile, show icons only */
-  .main-nav .hamburger{display:block;order:2;}
+  .main-nav .hamburger{display:block;order:2;margin-left:auto;}
   .main-nav .nav-links{
     order:3;position:absolute; left:0; right:0; top:100%;
     background:#000; border-top:1px solid #222;

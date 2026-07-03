@@ -1,30 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Charleston Business Directory - Lowcountry Business Spotlight</title>
-  <meta name="description" content="Find local businesses in Charleston, Summerville, Mount Pleasant and Daniel Island. Browse the Lowcountry Business Spotlight directory for trusted local services.">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://www.lowcountrybusinessspotlight.com/directory-landing.php">
-
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://www.lowcountrybusinessspotlight.com/directory-landing.php">
-  <meta property="og:title" content="Charleston Business Directory - Lowcountry Business Spotlight">
-  <meta property="og:description" content="Find local businesses in Charleston, Summerville, Mount Pleasant and Daniel Island. Browse our directory for trusted local services.">
-  <meta property="og:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
-
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://www.lowcountrybusinessspotlight.com/directory-landing.php">
-  <meta name="twitter:title" content="Charleston Business Directory - Lowcountry Business Spotlight">
-  <meta name="twitter:description" content="Find local businesses in Charleston, Summerville, Mount Pleasant and Daniel Island.">
-  <meta name="twitter:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light+Two&display=swap" rel="stylesheet">
-
+<?php
+require_once __DIR__ . '/config.php';
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
+?>
   <style>
     * {
       margin: 0;

@@ -1,34 +1,12 @@
 <?php
-require_once 'config.php';
+require_once __DIR__ . '/config.php';
 $csrf_token = generateCSRFToken();
 $hideChatWidget = true; // A2P 10DLC: form collects phone, suppress competing chat widget opt-in
+
+$seoConfig = require __DIR__ . '/includes/seo-config.php';
+$seo = $seoConfig[basename(__FILE__)] ?? [];
+include __DIR__ . '/seo_head.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join Our Business Directory | Lowcountry Business Spotlight</title>
-    <meta name="description" content="List your business in the Lowcountry Business Spotlight directory. Get discovered by local customers in Charleston, Summerville, Mount Pleasant and Daniel Island.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://www.lowcountrybusinessspotlight.com/directory-signup.php">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.lowcountrybusinessspotlight.com/directory-signup.php">
-    <meta property="og:title" content="Join Our Business Directory | Lowcountry Business Spotlight">
-    <meta property="og:description" content="List your business in the Lowcountry Business Spotlight directory. Get discovered by local customers in Charleston.">
-    <meta property="og:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://www.lowcountrybusinessspotlight.com/directory-signup.php">
-    <meta name="twitter:title" content="Join Our Business Directory | Lowcountry Business Spotlight">
-    <meta name="twitter:description" content="List your business in the Lowcountry Business Spotlight directory. Get discovered by local customers.">
-    <meta name="twitter:image" content="https://www.lowcountrybusinessspotlight.com/images/og-image.jpg">
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light+Two&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
