@@ -32,6 +32,15 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} !^/$
 RewriteRule ^(.+)/$ /$1 [R=301,L]
 
+# Serve pre-generated WebP to browsers that support it.
+# Every images/foo.png|jpg has a smaller foo.png.webp sibling (see repo docs);
+# the rewrite is internal, content-type is forced, and Vary: Accept is set below
+# so caches don't hand WebP to non-supporting clients.
+RewriteCond %{HTTP_ACCEPT} image/webp
+RewriteCond %{REQUEST_FILENAME} \.(jpe?g|png)$ [NC]
+RewriteCond %{REQUEST_FILENAME}.webp -f
+RewriteRule ^(.+)$ $1.webp [T=image/webp,L]
+
 # 301 redirects from old URLs to clean URLs (must come before internal rewrites)
 RewriteCond %{THE_REQUEST} \s/business\.php\?slug=([^\s&]+) [NC]
 RewriteRule ^ /business/%1? [R=301,L]
@@ -139,6 +148,10 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
         Header set Cache-Control "public, max-age=86400"
     </FilesMatch>
     Header append Vary: Accept-Encoding
+    # WebP negotiation: responses for .png/.jpg URLs differ by Accept header
+    <FilesMatch "\.(jpe?g|png|webp)$">
+        Header append Vary "Accept"
+    </FilesMatch>
 </IfModule>
 
 # php -- BEGIN cPanel-generated handler, do not edit
