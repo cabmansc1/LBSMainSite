@@ -116,10 +116,17 @@ define('TABLE_PREFIX', 'directory_');
 require_once __DIR__ . '/includes/ghl.php';
 require_once __DIR__ . '/includes/recaptcha.php';
 
-// Database wrapper
+// Database wrapper — memoized: one connection per request. Previously every
+// call opened a fresh PDO connection (TCP + auth handshake), and pages like
+// the directory make half a dozen getDB() calls per view.
 function getDB() {
+    static $db = null;
+    if ($db instanceof PDO) {
+        return $db;
+    }
     if (function_exists('getSecureDBConnection')) {
-        return getSecureDBConnection();
+        $db = getSecureDBConnection();
+        return $db;
     }
     throw new Exception('Database connection not available');
 }
@@ -249,8 +256,15 @@ function generateSlug($string) {
     return trim($slug, '-');
 }
 
-// Ensure directory taxonomy tables exist and seed defaults
+// Ensure directory taxonomy tables exist and seed defaults.
+// Runs at most once per request; callers invoke it lazily (only when a
+// SELECT comes back empty/failing), so steady-state requests do no DDL.
 function ensureDirectoryTaxonomyTables() {
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $ensured = true;
     $db = getDB();
 
     $db->exec("CREATE TABLE IF NOT EXISTS directory_categories (
@@ -362,10 +376,18 @@ function ensureDirectoryTaxonomyTables() {
 
 // Get categories list
 function getCategories() {
+    $sql = "SELECT slug, display_name FROM directory_categories WHERE is_active = 1 ORDER BY display_order, display_name";
     try {
         $db = getDB();
-        ensureDirectoryTaxonomyTables();
-        $result = $db->query("SELECT slug, display_name FROM directory_categories WHERE is_active = 1 ORDER BY display_order, display_name")->fetchAll(PDO::FETCH_KEY_PAIR);
+        try {
+            $result = $db->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
+        } catch (PDOException $e) {
+            $result = []; // table missing — provision below
+        }
+        if (!$result) {
+            ensureDirectoryTaxonomyTables();
+            $result = $db->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
+        }
         return $result ?: [];
     } catch (Exception $e) {
         return [];
@@ -374,10 +396,18 @@ function getCategories() {
 
 // Get location areas list
 function getLocationAreas() {
+    $sql = "SELECT slug, display_name FROM directory_locations WHERE is_active = 1 ORDER BY display_order, display_name";
     try {
         $db = getDB();
-        ensureDirectoryTaxonomyTables();
-        $result = $db->query("SELECT slug, display_name FROM directory_locations WHERE is_active = 1 ORDER BY display_order, display_name")->fetchAll(PDO::FETCH_KEY_PAIR);
+        try {
+            $result = $db->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
+        } catch (PDOException $e) {
+            $result = []; // table missing — provision below
+        }
+        if (!$result) {
+            ensureDirectoryTaxonomyTables();
+            $result = $db->query($sql)->fetchAll(PDO::FETCH_KEY_PAIR);
+        }
         return $result ?: [];
     } catch (Exception $e) {
         return [];

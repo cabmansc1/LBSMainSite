@@ -13,8 +13,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
     && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
-    && docker-php-ext-install -j"$(nproc)" gd pdo_mysql mysqli \
+    && docker-php-ext-install -j"$(nproc)" gd pdo_mysql mysqli opcache \
     && rm -rf /var/lib/apt/lists/*
+
+# OPcache: without it every request re-parses every PHP file. Code only
+# changes on image rebuild, so a 60s revalidation window is safe.
+RUN { \
+      echo 'opcache.enable=1'; \
+      echo 'opcache.memory_consumption=128'; \
+      echo 'opcache.interned_strings_buffer=16'; \
+      echo 'opcache.max_accelerated_files=10000'; \
+      echo 'opcache.validate_timestamps=1'; \
+      echo 'opcache.revalidate_freq=60'; \
+    } > /usr/local/etc/php/conf.d/zz-opcache.ini
 
 # --- Composer (for stripe/stripe-php) ---
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
