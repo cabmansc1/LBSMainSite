@@ -283,7 +283,7 @@ include __DIR__ . '/seo_head.php';
                 <div class="form-links">
                     <p><a href="forgot-password.php">Forgot your password?</a></p>
                     <p>Don't have an account? <a href="register.php">Create one here</a></p>
-                    <p><a href="/directory/">Browse the Directory</a></p>
+                    <p><a href="/directory">Browse the Directory</a></p>
                 </div>
             </form>
         </div>

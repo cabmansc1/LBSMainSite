@@ -227,7 +227,7 @@ include __DIR__ . '/seo_head.php';
 
     <!-- Header -->
     <header class="dashboard-header">
-        <a href="/directory/" class="header-brand"><?= SITE_NAME ?></a>
+        <a href="/directory" class="header-brand"><?= SITE_NAME ?></a>
         <nav class="header-nav">
             <a href="dashboard.php" class="active">Dashboard</a>
             <?php if ($hasCards): ?>
@@ -296,7 +296,7 @@ include __DIR__ . '/seo_head.php';
                         </div>
 
                         <div class="action-buttons">
-                            <a href="/business/<?= htmlspecialchars($business['slug']) ?>/" class="btn btn-primary">View Listing</a>
+                            <a href="/business/<?= htmlspecialchars($business['slug']) ?>" class="btn btn-primary">View Listing</a>
                             <a href="create-listing.php" class="btn btn-secondary">Edit Listing</a>
                         </div>
                     </div>

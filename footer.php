@@ -34,7 +34,7 @@
         <ul>
           <li><a href="/index.php">Home</a></li>
           <li><a href="/advertise.php">Spotlight Postcards</a></li>
-          <li><a href="/directory/">Business Directory</a></li>
+          <li><a href="/directory">Business Directory</a></li>
           <li><a href="/directory-signup.php">List Your Business</a></li>
           <li><a href="/blog.php">Blog</a></li>
           <li><a href="/contact.php">Contact</a></li>

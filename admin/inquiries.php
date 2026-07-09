@@ -241,7 +241,7 @@ $currentPage = 'inquiries';
                         </td>
                         <td>
                             <?php if ($inq['slug']): ?>
-                                <a href="/business/<?= htmlspecialchars($inq['slug']) ?>/" class="biz-link" target="_blank"><?= htmlspecialchars($inq['business_name']) ?></a>
+                                <a href="/business/<?= htmlspecialchars($inq['slug']) ?>" class="biz-link" target="_blank"><?= htmlspecialchars($inq['business_name']) ?></a>
                             <?php else: ?>
                                 <span style="color:#94a3b8">Deleted business #<?= $inq['business_id'] ?></span>
                             <?php endif; ?>
