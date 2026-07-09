@@ -167,7 +167,7 @@ include __DIR__ . '/seo_head.php';
 
         <div class="actions">
             <a href="my-cards.php" class="btn btn-primary">Submit Your Ad Content</a>
-            <a href="/neighborhood-cards/" class="btn btn-secondary">Browse More Cards</a>
+            <a href="/neighborhood-cards" class="btn btn-secondary">Browse More Cards</a>
         </div>
 
         <p class="note">A confirmation email has been sent. You can upload your ad content (logo, promo text, phone, URL) from your dashboard. Please do so before the print deadline.</p>

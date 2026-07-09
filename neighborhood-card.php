@@ -300,7 +300,7 @@ include __DIR__ . '/seo_head.php';
     </div>
 
     <div class="breadcrumb">
-        <a href="/neighborhood-cards/">Neighborhood Cards</a> &rsaquo; <?= htmlspecialchars($card['neighborhood_name']) ?>
+        <a href="/neighborhood-cards">Neighborhood Cards</a> &rsaquo; <?= htmlspecialchars($card['neighborhood_name']) ?>
     </div>
 
     <div class="container">

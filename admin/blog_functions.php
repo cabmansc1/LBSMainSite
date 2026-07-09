@@ -7,7 +7,27 @@ require_once __DIR__ . '/../config.php';
  * Ensure blog tables exist, seed default categories
  */
 function ensureBlogTables() {
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $ensured = true;
+
     $db = getDB();
+
+    // Fast path: schema already provisioned and seeded — skip all DDL.
+    // (The one-time 'scheduled' ENUM upgrade below only runs when this
+    // probe fails, i.e. on fresh databases; existing DBs were upgraded
+    // long ago by the previous always-run version of this function.)
+    try {
+        $db->query("SELECT status FROM " . getTable('blog_posts') . " LIMIT 1");
+        $seeded = (int)$db->query("SELECT COUNT(*) FROM " . getTable('blog_categories'))->fetchColumn() > 0;
+        if ($seeded) {
+            return;
+        }
+    } catch (PDOException $e) {
+        // Tables missing — create them below.
+    }
 
     $db->exec("CREATE TABLE IF NOT EXISTS " . getTable('blog_categories') . " (
         id INT AUTO_INCREMENT PRIMARY KEY,

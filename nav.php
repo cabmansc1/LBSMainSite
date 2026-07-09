@@ -73,14 +73,14 @@
           </svg>
         </button>
         <ul class="dropdown" aria-label="Advertise submenu">
-          <li><a href="/pricing/" class="<?php echo active('pricing.php',$currentPage); ?>">Pricing</a></li>
+          <li><a href="/pricing" class="<?php echo active('pricing.php',$currentPage); ?>">Pricing</a></li>
           <li><a href="/advertise.php" class="<?php echo active('advertise.php',$currentPage); ?>">Spotlight Postcards</a></li>
           <li><a href="/roi-calculator.php" class="<?php echo active('roi-calculator.php',$currentPage); ?>">ROI Calculator</a></li>
         </ul>
       </li>
 
       <!-- Directory -->
-      <li><a href="/directory/" class="<?php echo active('directory.php',$currentPage); ?>">Directory</a></li>
+      <li><a href="/directory" class="<?php echo active('directory.php',$currentPage); ?>">Directory</a></li>
 
       <!-- Blog -->
       <li><a href="/blog.php" class="<?php echo active('blog.php',$currentPage) ?: active('blog-post.php',$currentPage); ?>">Blog</a></li>

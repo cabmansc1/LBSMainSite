@@ -318,7 +318,7 @@ include __DIR__ . '/seo_head.php';
     </div>
 
     <div style="background: #fff7ed; border-bottom: 1px solid #fed7aa; padding: 12px 20px; text-align: center; font-size: 0.9rem; color: #9a3412;">
-        Need bigger reach? Our <a href="/advertise.php" style="color: #9a3412; font-weight: 700; text-decoration: underline;">Spotlight Postcards</a> reach 5,000-10,000 homes with exclusive placement and free ad design. <a href="/compare/" style="color: #9a3412; font-weight: 600;">Compare products &rarr;</a>
+        Need bigger reach? Our <a href="/advertise.php" style="color: #9a3412; font-weight: 700; text-decoration: underline;">Spotlight Postcards</a> reach 5,000-10,000 homes with exclusive placement and free ad design. <a href="/compare" style="color: #9a3412; font-weight: 600;">Compare products &rarr;</a>
     </div>
 
     <div class="container">
@@ -442,7 +442,7 @@ include __DIR__ . '/seo_head.php';
                         </div>
                         <div class="card-footer">
                             <?php if ($remaining > 0 && $daysLeft > 0): ?>
-                                <a href="/neighborhood-card/<?= htmlspecialchars($card['slug']) ?>/" class="btn-buy">
+                                <a href="/neighborhood-card/<?= htmlspecialchars($card['slug']) ?>" class="btn-buy">
                                     Buy a Spot
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                                 </a>

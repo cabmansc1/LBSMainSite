@@ -1,31 +1,40 @@
 <?php
 require_once 'config.php';
-// Load homepage stats
+// Load homepage stats. Steady state is a single SELECT; the CREATE/seed
+// below only runs when the table is missing or empty (first boot).
 $_homeStats = [];
+$_homeStatsSql = "SELECT stat_value, stat_label, stat_icon FROM site_stats WHERE is_active = 1 ORDER BY display_order ASC";
 try {
     $db = getDB();
-    $db->exec("CREATE TABLE IF NOT EXISTS site_stats (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        stat_key VARCHAR(50) NOT NULL UNIQUE,
-        stat_value VARCHAR(100) NOT NULL DEFAULT '',
-        stat_label VARCHAR(100) NOT NULL DEFAULT '',
-        stat_icon VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '',
-        display_order INT NOT NULL DEFAULT 0,
-        is_active TINYINT(1) NOT NULL DEFAULT 1
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    // Seed defaults if table is empty
-    $statCount = (int)$db->query("SELECT COUNT(*) FROM site_stats")->fetchColumn();
-    if ($statCount === 0) {
-        $defaults = [
-            ['postcards_mailed', '50,000+', 'Postcards Mailed', '&#x1F4EC;', 1],
-            ['businesses_served', '75+', 'Local Businesses Served', '&#x1F3E2;', 2],
-            ['households_reached', '5,000+', 'Households Per Mailing', '&#x1F3E0;', 3],
-            ['service_areas', '6', 'Service Areas', '&#x1F4CD;', 4],
-        ];
-        $ins = $db->prepare("INSERT INTO site_stats (stat_key, stat_value, stat_label, stat_icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, 1)");
-        foreach ($defaults as $row) { $ins->execute($row); }
+    try {
+        $_homeStats = $db->query($_homeStatsSql)->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $_homeStats = []; // table missing — provision below
     }
-    $_homeStats = $db->query("SELECT stat_value, stat_label, stat_icon FROM site_stats WHERE is_active = 1 ORDER BY display_order ASC")->fetchAll(PDO::FETCH_ASSOC);
+    if (empty($_homeStats)) {
+        $db->exec("CREATE TABLE IF NOT EXISTS site_stats (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            stat_key VARCHAR(50) NOT NULL UNIQUE,
+            stat_value VARCHAR(100) NOT NULL DEFAULT '',
+            stat_label VARCHAR(100) NOT NULL DEFAULT '',
+            stat_icon VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '',
+            display_order INT NOT NULL DEFAULT 0,
+            is_active TINYINT(1) NOT NULL DEFAULT 1
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        // Seed defaults if table is empty
+        $statCount = (int)$db->query("SELECT COUNT(*) FROM site_stats")->fetchColumn();
+        if ($statCount === 0) {
+            $defaults = [
+                ['postcards_mailed', '50,000+', 'Postcards Mailed', '&#x1F4EC;', 1],
+                ['businesses_served', '75+', 'Local Businesses Served', '&#x1F3E2;', 2],
+                ['households_reached', '5,000+', 'Households Per Mailing', '&#x1F3E0;', 3],
+                ['service_areas', '6', 'Service Areas', '&#x1F4CD;', 4],
+            ];
+            $ins = $db->prepare("INSERT INTO site_stats (stat_key, stat_value, stat_label, stat_icon, display_order, is_active) VALUES (?, ?, ?, ?, ?, 1)");
+            foreach ($defaults as $row) { $ins->execute($row); }
+        }
+        $_homeStats = $db->query($_homeStatsSql)->fetchAll(PDO::FETCH_ASSOC);
+    }
 } catch (Exception $e) {
     // Stats bar will simply not render
 }

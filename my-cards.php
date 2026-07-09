@@ -294,11 +294,11 @@ include __DIR__ . '/seo_head.php';
 </head>
 <body>
     <header class="dashboard-header">
-        <a href="/directory/" class="header-brand"><?= SITE_NAME ?></a>
+        <a href="/directory" class="header-brand"><?= SITE_NAME ?></a>
         <nav class="header-nav">
             <a href="dashboard.php">Dashboard</a>
             <a href="my-cards.php" class="active">Neighborhood Cards</a>
-            <a href="/neighborhood-cards/">Browse Cards</a>
+            <a href="/neighborhood-cards">Browse Cards</a>
             <a href="logout.php" class="btn-logout">Logout</a>
         </nav>
     </header>
@@ -352,7 +352,7 @@ include __DIR__ . '/seo_head.php';
                 <?php else: ?>
                     <h2>No active neighborhood card orders</h2>
                     <p>Browse available neighborhood cards and buy an ad spot to reach local homes.</p>
-                    <a href="/neighborhood-cards/" class="btn btn-primary">Browse Cards</a>
+                    <a href="/neighborhood-cards" class="btn btn-primary">Browse Cards</a>
                 <?php endif; ?>
             </div>
         <?php else: ?>

@@ -48,7 +48,7 @@ include __DIR__ . '/seo_head.php';
             <p>Sorry, the page you're looking for doesn't exist or has been moved. Try one of the links below to get back on track.</p>
             <div class="error-links">
                 <a href="/" class="btn-primary">Go Home</a>
-                <a href="/directory/" class="btn-secondary">Business Directory</a>
+                <a href="/directory" class="btn-secondary">Business Directory</a>
                 <a href="/advertise.php" class="btn-secondary">Advertise With Us</a>
                 <a href="/contact.php" class="btn-secondary">Contact Us</a>
             </div>

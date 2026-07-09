@@ -437,7 +437,7 @@ include __DIR__ . '/seo_head.php';
 
     <!-- Breadcrumb -->
     <div class="breadcrumb">
-        <a href="/directory/">Directory</a>
+        <a href="/directory">Directory</a>
         <span>›</span>
         <a href="<?= htmlspecialchars(categoryUrl($business['category'])) ?>"><?= htmlspecialchars($catLabel) ?></a>
         <span>›</span>

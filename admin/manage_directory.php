@@ -1257,7 +1257,7 @@ if ($duplicate_warning) {
                                 <?php foreach ($topByViews as $i => $biz): ?>
                                 <tr style="border-bottom:1px solid #f1f5f9;">
                                     <td style="padding:6px 4px; color:#94a3b8; width:20px;"><?= $i+1 ?></td>
-                                    <td style="padding:6px 4px;"><a href="/business/<?= htmlspecialchars($biz['slug']) ?>/" target="_blank" style="color:#1e293b; text-decoration:none; font-weight:500;"><?= htmlspecialchars($biz['business_name']) ?></a></td>
+                                    <td style="padding:6px 4px;"><a href="/business/<?= htmlspecialchars($biz['slug']) ?>" target="_blank" style="color:#1e293b; text-decoration:none; font-weight:500;"><?= htmlspecialchars($biz['business_name']) ?></a></td>
                                     <td style="padding:6px 4px; text-align:right; font-weight:700; color:#38b6ff;"><?= number_format($biz['views_count']) ?></td>
                                     <td style="padding:6px 4px; text-align:right; color:#64748b;"><?= number_format($biz['inquiries_count']) ?> inq</td>
                                 </tr>
@@ -1274,7 +1274,7 @@ if ($duplicate_warning) {
                                 <?php foreach ($topByInquiries as $i => $biz): ?>
                                 <tr style="border-bottom:1px solid #f1f5f9;">
                                     <td style="padding:6px 4px; color:#94a3b8; width:20px;"><?= $i+1 ?></td>
-                                    <td style="padding:6px 4px;"><a href="/business/<?= htmlspecialchars($biz['slug']) ?>/" target="_blank" style="color:#1e293b; text-decoration:none; font-weight:500;"><?= htmlspecialchars($biz['business_name']) ?></a></td>
+                                    <td style="padding:6px 4px;"><a href="/business/<?= htmlspecialchars($biz['slug']) ?>" target="_blank" style="color:#1e293b; text-decoration:none; font-weight:500;"><?= htmlspecialchars($biz['business_name']) ?></a></td>
                                     <td style="padding:6px 4px; text-align:right; font-weight:700; color:#10b981;"><?= number_format($biz['inquiries_count']) ?></td>
                                     <td style="padding:6px 4px; text-align:right; color:#64748b;"><?= number_format($biz['views_count']) ?> views</td>
                                 </tr>
