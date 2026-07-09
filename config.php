@@ -486,6 +486,10 @@ function appSendMail($to, $subject, $body, $headers = '', $params = '') {
     $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
     try {
         $mail->isSMTP();
+        // PHPMailer's default SMTP timeout is 300s; a dead/unreachable SMTP host
+        // would hang requests past PHP's 30s execution limit and kill the page
+        // mid-action (e.g. admin listing conversion). Fail fast instead.
+        $mail->Timeout    = (int)(getenv('SMTP_TIMEOUT') ?: 10);
         $mail->Host       = $smtpHost;
         $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
         $mail->SMTPAuth   = true;
