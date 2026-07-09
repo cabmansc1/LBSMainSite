@@ -5,8 +5,12 @@
 > Based on The 9x12 Method's "Virtual Postcards" feature (video `fwTqOYHbGm8`).
 
 Status: **proposal / for review** — no code written yet.
-Scope decisions locked with owner: **email‑only capture** (no SMS in MVP) and
-**per‑advertiser attribution** (every lead ties to the ad spot it came from).
+Scope decisions locked with owner:
+- **email‑only capture** (no SMS in MVP)
+- **per‑advertiser attribution** (every lead ties to the ad spot it came from)
+- **consumer page ships on LBS first** (`/c/{code}` on lowcountrybusinessspotlight.com),
+  with a `.json` feed so lowcodeals.com can render the same offers later (Option A)
+- **one shared master subscriber list** across LBS virtual postcards and lowcodeals deals
 
 ---
 
@@ -277,10 +281,11 @@ New section `admin/virtual_cards.php` (list) + extend `admin/card_detail.php`, g
 
 ## 9. Decisions needed before/at build time
 
-1. **Consumer domain** — ship on lowcountrybusinessspotlight.com now (Option A) and add the
-   lowcodeals render later? (Recommended.)
-2. **Shared list?** — one master subscriber list across LBS + lowcodeals, or separate lists
-   per property?
+1. ~~**Consumer domain**~~ — **LOCKED: Option A.** Ship `/c/{code}` on LBS now; expose
+   `/c/{code}.json` for a later lowcodeals render.
+2. ~~**Shared list?**~~ — **LOCKED: one shared master subscriber list** across both
+   properties. `directory_card_subscribers` is the single source of truth; lowcodeals reads
+   and writes the same table (or via a shared endpoint) rather than keeping its own.
 3. **Code model** — one shared code per offer (simple) vs a unique code per redemption
    (better fraud/redemption tracking)? Spec supports both via `code_mode`.
 4. **Who owns the advertiser's leads** — always exportable to the advertiser, or only when
