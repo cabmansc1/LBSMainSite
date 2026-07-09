@@ -54,6 +54,10 @@ if (file_exists($db_config_path)) {
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => false,
+                    // Fail fast when the DB host is unreachable (e.g. stale DB_HOST
+                    // after a host migration) instead of hanging for the OS-level
+                    // TCP timeout on every request.
+                    PDO::ATTR_TIMEOUT => 5,
                     // Match cPanel MariaDB's permissive grouping (Railway's MySQL 9
                     // enables ONLY_FULL_GROUP_BY by default, which breaks the app's GROUP BY queries).
                     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET . ", time_zone = '-05:00', SESSION sql_mode = (SELECT REPLACE(@@SESSION.sql_mode, 'ONLY_FULL_GROUP_BY', ''))",
@@ -70,7 +74,9 @@ if (file_exists($db_config_path)) {
         function getSecureMySQLiConnection() {
             mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
             try {
-                $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+                $conn = mysqli_init();
+                $conn->options(MYSQLI_OPT_CONNECT_TIMEOUT, 5); // fail fast on dead host
+                $conn->real_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
                 $conn->set_charset(DB_CHARSET);
                 $conn->query("SET time_zone = '-05:00'");
                 // Match cPanel MariaDB's permissive grouping (see PDO note above).
