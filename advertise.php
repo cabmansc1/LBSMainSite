@@ -549,12 +549,23 @@ include __DIR__ . '/seo_head.php';
         form.addEventListener('submit', function (e) {
           if (form.dataset.recaptchaDone === '1') return;
           e.preventDefault();
+          // In-flight lock: ignore extra clicks/Enter while reCAPTCHA runs, so a
+          // fast double-click can't fire two submissions (duplicate lead + emails).
+          if (form.dataset.submitting === '1') return;
+          form.dataset.submitting = '1';
+          var btn = form.querySelector('[type="submit"]');
+          if (btn) { btn.dataset.orig = btn.innerHTML; btn.disabled = true; btn.innerHTML = 'Submitting…'; }
           grecaptcha.ready(function () {
             grecaptcha.execute('<?php echo RECAPTCHA_SITE_KEY; ?>', { action: 'advertise_submit' })
               .then(function (token) {
                 document.getElementById('recaptcha_token').value = token;
                 form.dataset.recaptchaDone = '1';
                 form.submit();
+              })
+              .catch(function () {
+                // Don't leave the form permanently locked if reCAPTCHA fails.
+                form.dataset.submitting = '0';
+                if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.orig; }
               });
           });
         });

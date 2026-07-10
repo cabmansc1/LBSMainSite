@@ -1086,7 +1086,24 @@ include __DIR__ . '/seo_head.php';
 
     function saveRecommendation(e) {
       e.preventDefault();
-      const email = document.getElementById('userEmail').value;
+      const form = e.target;
+      const btn = form.querySelector('button[type="submit"]');
+
+      // Guard against double-submits: a second click while the first request is
+      // in flight would create a duplicate lead and a second set of emails.
+      if (form.dataset.submitting === '1') return;
+
+      const email = document.getElementById('userEmail').value.trim();
+      if (!email) { alert('Please enter your email.'); return; }
+
+      form.dataset.submitting = '1';
+      let originalText;
+      if (btn) { originalText = btn.textContent; btn.disabled = true; btn.textContent = 'Sending…'; }
+
+      const reset = () => {
+        form.dataset.submitting = '0';
+        if (btn) { btn.disabled = false; btn.textContent = originalText; }
+      };
 
       // Send to backend
       fetch('save-quiz-lead.php', {
@@ -1096,10 +1113,17 @@ include __DIR__ . '/seo_head.php';
           email: email,
           quizData: quizData
         })
-      }).then(() => {
+      }).then(async (res) => {
+        let data = {};
+        try { data = await res.json(); } catch (_) {}
+        if (!res.ok || !data.success) throw new Error(data.message || 'Request failed');
+        // Success: leave the button disabled so it can't be re-submitted.
+        if (btn) { btn.textContent = 'Sent ✓'; }
         alert('Thanks! Check your email for your personalized recommendation.');
       }).catch(() => {
-        alert('Thanks! We\'ll be in touch soon.');
+        // Only a real failure re-enables the form so the user can retry.
+        reset();
+        alert('Sorry, something went wrong. Please try again.');
       });
     }
 
