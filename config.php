@@ -482,6 +482,11 @@ function appSendMail($to, $subject, $body, $headers = '', $params = '') {
         $mail->isSMTP();
         $mail->Host       = $smtpHost;
         $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
+        // Bound the SMTP socket. PHPMailer's default Timeout is 300s, so a slow or
+        // blocked SMTP host (cloud platforms often throttle outbound SMTP) would hang
+        // the whole request for minutes per send until the edge proxy closed the
+        // connection (ERR_CONNECTION_CLOSED) and users re-submitted. Fail fast instead.
+        $mail->Timeout    = (int)(getenv('SMTP_TIMEOUT') ?: 8);
         $mail->SMTPAuth   = true;
         $mail->Username   = getenv('SMTP_USER');
         $mail->Password   = getenv('SMTP_PASS');
