@@ -514,6 +514,39 @@ function appSendMail($to, $subject, $body, $headers = '', $params = '') {
     }
 }
 
+/**
+ * Flush the response the caller has already produced to the browser, then let
+ * the request keep running so slow post-processing (SMTP email, GHL webhooks)
+ * no longer makes the user wait. Works under Apache/mod_php (prefork) and PHP-FPM.
+ *
+ * Caller contract: buffer the FULL response body with a single ob_start() before
+ * calling this, set any status/redirect headers first, and echo NOTHING after.
+ * Fallback is safe: if the SAPI ignores the early close, the response is still
+ * correct and complete — the user just waits as they did before.
+ */
+function finishRequestAndContinue() {
+    @ignore_user_abort(true);
+    // Persist and release the session lock so the browser's next request
+    // (e.g. a thank-you page) isn't blocked while we finish emailing.
+    if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE) {
+        @session_write_close();
+    }
+    // PHP-FPM fast path: hands the connection back cleanly.
+    if (function_exists('fastcgi_finish_request')) {
+        @fastcgi_finish_request();
+        return;
+    }
+    // Apache/mod_php: declare the body length and ask Apache to close the
+    // socket, then flush every buffer level to the client.
+    if (!headers_sent()) {
+        $len = ob_get_length();
+        if ($len !== false) { header('Content-Length: ' . $len); }
+        header('Connection: close');
+    }
+    while (ob_get_level() > 0) { @ob_end_flush(); }
+    @flush();
+}
+
 // Secure email sending
 function sendSecureEmail($to, $subject, $body, $replyTo = null) {
     $to = sanitizeEmail($to);

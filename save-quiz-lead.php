@@ -153,7 +153,16 @@ try {
     }
 
     $stmt->close();
+    $conn->close();
 
+    // Respond to the browser immediately, then do the slow work (SMTP email +
+    // GHL webhook) after the connection closes so the submit doesn't wait ~5s
+    // on network I/O. appSendMail() and ghlSend() both swallow their own errors.
+    ob_start();
+    echo json_encode(['success' => true, 'message' => 'Lead saved']);
+    finishRequestAndContinue();
+
+    // ---- deferred: the user already has their success response ----
     // Send email to the lead with their recommendation
     $userSubject = "Your Perfect Ad Recommendation - Lowcountry Business Spotlight";
 
@@ -256,14 +265,7 @@ try {
     if (!$ghlOk) {
         error_log("GHL sync failed for quiz lead: $email");
     }
-
-    $conn->close();
-
-    // Return success
-    echo json_encode([
-        'success' => true,
-        'message' => 'Lead saved and email sent successfully'
-    ]);
+    exit;
 
 } catch (Exception $e) {
     error_log("Quiz Lead Error: " . $e->getMessage());

@@ -58,6 +58,13 @@ function handleDirectoryNotification($conn) {
     $stmt->bind_param("s", $email);
     
     if ($stmt->execute()) {
+        // Redirect the browser immediately, then email + push to GHL after the
+        // connection closes so the user isn't held on SMTP/webhook I/O.
+        ob_start();
+        header('Location: directory-coming-soon.php?success=1');
+        finishRequestAndContinue();
+
+        // ---- deferred: the browser already got the redirect ----
         // Send confirmation email
         $to = $email;
         $subject = 'Thank you for your interest in Lowcountry Business Spotlight Directory';
@@ -101,8 +108,6 @@ function handleDirectoryNotification($conn) {
             'signup_type'  => 'directory_notification',
             'submitted_at' => date('c'),
         ], 'directory_notification');
-
-        header('Location: directory-coming-soon.php?success=1');
         exit();
     } else {
         error_log("Error saving notification: " . $stmt->error);
@@ -214,6 +219,13 @@ function handleDirectorySignup($conn) {
     );
     
     if ($stmt->execute()) {
+        // Redirect the browser immediately, then email + push to GHL after the
+        // connection closes so the user isn't held on SMTP/webhook I/O.
+        ob_start();
+        header('Location: directory-thank-you.php');
+        finishRequestAndContinue();
+
+        // ---- deferred: the browser already got the redirect ----
         // Send admin notification
         $to = 'exumandrew@gmail.com';
         $subject = 'New Business Directory Signup - ' . $business_name;
@@ -245,8 +257,6 @@ function handleDirectorySignup($conn) {
             'signup_type'  => 'directory_signup',
             'submitted_at' => date('c'),
         ], 'directory_signup');
-
-        header('Location: directory-thank-you.php');
         exit();
     } else {
         error_log("Error during signup: " . $stmt->error);

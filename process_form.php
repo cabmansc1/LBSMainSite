@@ -112,6 +112,24 @@ try {
     );
     
     if ($stmt->execute()) {
+        // Store submission data for the thank-you page, then redirect the
+        // browser immediately and do the slow email + GHL work after the
+        // connection closes so the user isn't held on SMTP/webhook I/O.
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $_SESSION['form_submission'] = [
+            'company_name' => $company_name,
+            'contact_name' => $contact_name,
+            'email' => $email,
+            'phone' => $phone,
+            'package_description' => $package_description,
+            'location' => $location,
+        ];
+
+        ob_start();
+        header('Location: thank_you.php');
+        finishRequestAndContinue();
+
+        // ---- deferred: the browser already got the redirect ----
         // Send notification email to admin
         $to = 'exumandrew@gmail.com';
         $subject = 'New Lead: ' . $company_name;
@@ -167,21 +185,8 @@ try {
             error_log("GHL sync failed for ad lead: $email");
         }
 
-        // Store submission data in session for thank you page
-        if (session_status() === PHP_SESSION_NONE) session_start();
-        $_SESSION['form_submission'] = [
-            'company_name' => $company_name,
-            'contact_name' => $contact_name,
-            'email' => $email,
-            'phone' => $phone,
-            'package_description' => $package_description,
-            'location' => $location,
-        ];
-
-        // Redirect to thank you page
-        header('Location: thank_you.php');
         exit();
-        
+
     } else {
         error_log("Error inserting lead: " . $stmt->error);
         die("Error processing your request. Please try again.");
