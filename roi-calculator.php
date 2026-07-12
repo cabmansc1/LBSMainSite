@@ -346,15 +346,15 @@ include __DIR__ . '/seo_head.php';
                 <div class="toggle-group" id="size-toggles">
                     <button class="toggle-btn active" data-size="small" onclick="setSize(this)">
                         Small (3&times;2)
-                        <span class="price-tag" id="price-small">$199</span>
+                        <span class="price-tag" id="price-small">$249</span>
                     </button>
                     <button class="toggle-btn" data-size="medium" onclick="setSize(this)">
                         Medium (3&times;4)
-                        <span class="price-tag" id="price-medium">$299</span>
+                        <span class="price-tag" id="price-medium">$349</span>
                     </button>
                     <button class="toggle-btn" data-size="large" onclick="setSize(this)">
                         Large (4&times;6)
-                        <span class="price-tag" id="price-large">$549</span>
+                        <span class="price-tag" id="price-large">$599</span>
                     </button>
                 </div>
             </div>
@@ -378,7 +378,7 @@ include __DIR__ . '/seo_head.php';
             <div class="results-grid">
                 <div class="result-item">
                     <div class="label">Your Investment</div>
-                    <div class="value" id="r-investment">$199</div>
+                    <div class="value" id="r-investment">$249</div>
                 </div>
                 <div class="result-item">
                     <div class="label">Households Reached</div>

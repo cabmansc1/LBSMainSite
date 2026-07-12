@@ -6,7 +6,7 @@ require_once 'config.php';
 require_once 'pricing_config.php';
 
 $pageTitle = 'Pricing - ' . SITE_NAME;
-$pageDesc = 'Transparent pricing for all Lowcountry Business Spotlight products: Spotlight Postcards from $199 and free directory listings. No hidden fees.';
+$pageDesc = 'Transparent pricing for all Lowcountry Business Spotlight products: Spotlight Postcards from $249 and free directory listings. No hidden fees.';
 
 $seoConfig = require __DIR__ . '/includes/seo-config.php';
 $seo = $seoConfig[basename(__FILE__)] ?? [];
@@ -433,7 +433,7 @@ include __DIR__ . '/seo_head.php';
                     What's the cheapest way to get started?
                     <span class="faq-arrow">&#9660;</span>
                 </div>
-                <div class="faq-a">A free Basic directory listing costs nothing. For direct mail, Spotlight Postcards start at $199 for 5,000 homes.</div>
+                <div class="faq-a">A free Basic directory listing costs nothing. For direct mail, Spotlight Postcards start at $249 for 5,000 homes.</div>
             </div>
 
             <div class="faq-item">
