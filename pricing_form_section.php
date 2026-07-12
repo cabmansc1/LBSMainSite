@@ -120,7 +120,7 @@ $bundle = $bundle_text[$location];
                     <!-- Hidden fields that will be populated by the pricing toggle -->
                     <input type="hidden" name="distribution_reach" id="selected-reach" value="5k">
                     <input type="hidden" name="ad_size" id="selected-size" value="3×2">
-                    <input type="hidden" name="ad_price" id="selected-price" value="199">
+                    <input type="hidden" name="ad_price" id="selected-price" value="249">
                     
                     <div class="form-group">
                         <input class="form-control" name="company_name" type="text" placeholder="Business Name *" required>

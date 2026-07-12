@@ -141,7 +141,7 @@ include __DIR__ . '/seo_head.php';
                     <span class="product-label">Premium Reach</span>
                     <h2>Spotlight Postcards</h2>
                     <p class="product-tagline">9x12 oversized postcards mailed to thousands of homes</p>
-                    <div class="product-price">From $199 <small>per mailing</small></div>
+                    <div class="product-price">From $249 <small>per mailing</small></div>
                 </div>
                 <div class="product-card-body">
                     <div class="product-best">

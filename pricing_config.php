@@ -76,17 +76,17 @@ $pricing = [
     '5k' => [
         'small' => [
             'size' => '3×2',
-            'price' => 199,
+            'price' => 249,
             'description' => 'Business card size'
         ],
         'medium' => [
-            'size' => '3×4', 
-            'price' => 299,
+            'size' => '3×4',
+            'price' => 349,
             'description' => '~3 inches x 4 inches'
         ],
         'large' => [
             'size' => '4×6',
-            'price' => 549,
+            'price' => 599,
             'description' => '~4 inches x 6 inches'
         ]
     ],
