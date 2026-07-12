@@ -720,12 +720,7 @@ include __DIR__ . '/seo_head.php';
           <p class="step-subtitle">More homes = more potential customers</p>
         </div>
 
-        <div class="options-grid three-col">
-          <div class="option-btn mailing-option" data-value="2500" onclick="selectOption(this, 'mailingSize')">
-            <div class="mailing-number">2,500</div>
-            <div class="mailing-label">Households</div>
-            <div class="mailing-price">Starting at $<?php echo $pricing['2.5k']['small']['price']; ?></div>
-          </div>
+        <div class="options-grid two-col">
           <div class="option-btn mailing-option" data-value="5000" onclick="selectOption(this, 'mailingSize')">
             <div class="mailing-number">5,000</div>
             <div class="mailing-label">Households</div>
@@ -754,14 +749,14 @@ include __DIR__ . '/seo_head.php';
 
         <div class="slider-container">
           <div class="budget-display">
-            <div class="budget-amount" id="budgetAmount">$299</div>
+            <div class="budget-amount" id="budgetAmount">$349</div>
             <div class="budget-label">per mailing</div>
           </div>
 
           <div class="slider-wrapper">
-            <input type="range" id="budgetSlider" min="<?php echo $pricing['2.5k']['small']['price']; ?>" max="<?php echo $pricing['10k']['large']['price']; ?>" value="299" step="1" oninput="updateBudget(this.value)">
+            <input type="range" id="budgetSlider" min="<?php echo $pricing['5k']['small']['price']; ?>" max="<?php echo $pricing['10k']['large']['price']; ?>" value="349" step="1" oninput="updateBudget(this.value)">
             <div class="slider-labels">
-              <span>$<?php echo $pricing['2.5k']['small']['price']; ?></span>
+              <span>$<?php echo $pricing['5k']['small']['price']; ?></span>
               <span>$<?php echo $pricing['10k']['large']['price']; ?></span>
             </div>
           </div>
@@ -790,7 +785,7 @@ include __DIR__ . '/seo_head.php';
           <div class="recommendation-label">Recommended Package</div>
           <div class="recommendation-title" id="resultAdSize">Medium Ad</div>
           <div class="recommendation-subtitle" id="resultMailingSize">5,000 Households</div>
-          <div class="recommendation-price" id="resultPrice">$299</div>
+          <div class="recommendation-price" id="resultPrice">$349</div>
           <div class="recommendation-details" id="resultDetails">3" × 4" ad space on our shared postcard</div>
         </div>
 
@@ -867,12 +862,11 @@ include __DIR__ . '/seo_head.php';
       businessType: null,
       goal: null,
       mailingSize: null,
-      budget: 299
+      budget: 349
     };
 
     // Pricing table from pricing_config.php
     const pricing = {
-      '2500': { small: <?php echo $pricing['2.5k']['small']['price']; ?>, medium: <?php echo $pricing['2.5k']['medium']['price']; ?>, large: <?php echo $pricing['2.5k']['large']['price']; ?> },
       '5000': { small: <?php echo $pricing['5k']['small']['price']; ?>, medium: <?php echo $pricing['5k']['medium']['price']; ?>, large: <?php echo $pricing['5k']['large']['price']; ?> },
       '10000': { small: <?php echo $pricing['10k']['small']['price']; ?>, medium: <?php echo $pricing['10k']['medium']['price']; ?>, large: <?php echo $pricing['10k']['large']['price']; ?> }
     };
