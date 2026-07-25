@@ -20,6 +20,7 @@ export type SessionUser = {
   id: number;
   email: string;
   firstName: string;
+  role?: "admin";
 };
 
 const secret = () => process.env.AUTH_SECRET ?? "dev-only-secret-change-me";
@@ -44,7 +45,12 @@ export function decodeSession(token: string): SessionUser | null {
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString());
     if (typeof data.exp !== "number" || data.exp < Date.now()) return null;
-    return { id: data.id, email: data.email, firstName: data.firstName };
+    return {
+      id: data.id,
+      email: data.email,
+      firstName: data.firstName,
+      role: data.role === "admin" ? "admin" : undefined,
+    };
   } catch {
     return null;
   }
@@ -78,6 +84,38 @@ const PREVIEW_USER = {
   password: "demo1234",
   user: { id: 0, email: "demo@lbspotlight.com", firstName: "Demo" },
 };
+
+/**
+ * Admin verification against campaign_admins (the same table the PHP
+ * admin uses), so existing admin credentials keep working. Preview mode
+ * uses a demo admin. This replaces the legacy hardcoded email-allowlist
+ * authorization from bulk_import.php with a real credential check.
+ */
+export async function verifyAdminCredentials(
+  email: string,
+  password: string,
+): Promise<SessionUser | null> {
+  if (!process.env.DB_HOST) {
+    return email.toLowerCase() === "admin@lbspotlight.com" &&
+      password === "admin1234"
+      ? { id: 0, email, firstName: "Admin", role: "admin" }
+      : null;
+  }
+
+  const { db } = await import("@/lib/db");
+  const { sql } = await import("drizzle-orm");
+  const rows = (await db.execute(
+    sql`SELECT id, email, password_hash, name FROM campaign_admins WHERE email = ${email} LIMIT 1`,
+  )) as unknown as Array<
+    { id: number; email: string; password_hash: string; name: string }[]
+  >;
+  const admin = rows[0]?.[0];
+  if (!admin) return null;
+  const ok = await bcrypt.compare(password, admin.password_hash);
+  return ok
+    ? { id: admin.id, email: admin.email, firstName: admin.name ?? "Admin", role: "admin" }
+    : null;
+}
 
 export async function verifyCredentials(
   email: string,
