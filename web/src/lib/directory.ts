@@ -283,6 +283,37 @@ export async function getBusinesses(
       tagsByBiz.set(l.businessId, list);
     }
   }
+  // Coordinates for the map view. The legacy geocoder populated columns
+  // literally named lat/lng (directory.php reads $b['lat'] off SELECT
+  // b.*), while newer write paths use latitude/longitude. Probe both so
+  // pins show regardless of which pair this install carries.
+  const coordsByBiz = new Map<number, { lat: number; lng: number }>();
+  {
+    const { sql } = await import("drizzle-orm");
+    const candidates = [
+      "SELECT id, COALESCE(lat, latitude) AS la, COALESCE(lng, longitude) AS ln FROM directory_businesses",
+      "SELECT id, lat AS la, lng AS ln FROM directory_businesses",
+      "SELECT id, latitude AS la, longitude AS ln FROM directory_businesses",
+    ];
+    for (const q of candidates) {
+      try {
+        const [coordRows] = (await db.execute(sql.raw(q))) as unknown as [
+          { id: number; la: unknown; ln: unknown }[],
+        ];
+        for (const c of coordRows) {
+          if (c.la != null && c.ln != null) {
+            const lat = Number(c.la);
+            const lng = Number(c.ln);
+            if (!isNaN(lat) && !isNaN(lng)) coordsByBiz.set(c.id, { lat, lng });
+          }
+        }
+        break;
+      } catch {
+        // column pair not present on this install; try the next shape
+      }
+    }
+  }
+
   const photosByBiz = new Map<number, { url: string; alt: string; type: string }[]>();
   if (rows.length > 0) {
     const photoRows = await db
@@ -341,8 +372,12 @@ export async function getBusinesses(
       ? `${r.address}, ${r.city ?? ""}, ${r.state ?? "SC"} ${r.zipCode ?? ""}`
       : undefined,
     tags: tagsByBiz.get(r.id),
-    lat: r.latitude != null ? Number(r.latitude) : undefined,
-    lng: r.longitude != null ? Number(r.longitude) : undefined,
+    lat:
+      coordsByBiz.get(r.id)?.lat ??
+      (r.latitude != null ? Number(r.latitude) : undefined),
+    lng:
+      coordsByBiz.get(r.id)?.lng ??
+      (r.longitude != null ? Number(r.longitude) : undefined),
     logoUrl: photosByBiz.get(r.id)?.[0]?.url,
     photos: photosByBiz
       .get(r.id)
