@@ -11,7 +11,8 @@ import { readFileSync, writeFileSync } from "fs";
 const VIEW_W = 760;
 const VIEW_H = 640;
 const PAD = 26;
-const TOLERANCE = 1.4; // Douglas-Peucker, in projected px
+const TOLERANCE = 1.0; // Douglas-Peucker, in projected px
+const MIN_RING_AREA = 140; // px^2; drops sliver fragments that read as noise
 
 // Zone -> ZIPs. Specific zones own overlapping ZIPs (James Island keeps
 // 29412, Johns Island keeps 29455); Charleston keeps the rest of its list.
@@ -112,15 +113,21 @@ function simplify(points, tol) {
 
 const r1 = (n) => Math.round(n * 10) / 10;
 
+const ringArea = (ring) => {
+  let area = 0;
+  for (let i = 0; i < ring.length - 1; i++)
+    area += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+  return Math.abs(area / 2);
+};
+
 const shapes = [];
 for (const [zone, rings] of Object.entries(zoneRings)) {
-  const projected = rings.map((ring) => simplify(ring.map(project), TOLERANCE));
-  const paths = projected
-    .filter((ring) => ring.length >= 4)
-    .map(
-      (ring) =>
-        "M" + ring.map(([x, y]) => `${r1(x)} ${r1(y)}`).join("L") + "Z",
-    );
+  const projected = rings
+    .map((ring) => simplify(ring.map(project), TOLERANCE))
+    .filter((ring) => ring.length >= 4 && ringArea(ring) >= MIN_RING_AREA);
+  const paths = projected.map(
+    (ring) => "M" + ring.map(([x, y]) => `${r1(x)} ${r1(y)}`).join("L") + "Z",
+  );
 
   // Label anchor: centroid of the largest ring by area
   let best = null, bestArea = 0;

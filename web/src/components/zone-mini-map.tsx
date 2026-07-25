@@ -13,6 +13,18 @@ export function ZoneMiniMap({ highlight }: { highlight: string }) {
       className="w-full h-auto rounded-[10px]"
     >
       <rect width={MAP_VIEW.w} height={MAP_VIEW.h} fill="#0e1d2e" rx="12" />
+      <g aria-hidden="true">
+        {ZONE_SHAPES.map((s) => (
+          <path
+            key={s.slug}
+            d={s.d}
+            fill="#182c42"
+            stroke="#182c42"
+            strokeWidth="8"
+            strokeLinejoin="round"
+          />
+        ))}
+      </g>
       {ZONE_SHAPES.map((s) => {
         const sel = s.slug === highlight;
         return (

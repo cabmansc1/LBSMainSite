@@ -52,6 +52,20 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
           <text x={MAP_VIEW.w - 130} y={MAP_VIEW.h - 24} fill="#2e4459" fontSize="13" fontStyle="italic">
             Atlantic Ocean
           </text>
+          {/* Land underlay: thick same-color strokes fuse adjacent zones
+              into one continuous landmass and hide simplification cracks */}
+          <g aria-hidden="true">
+            {ZONE_SHAPES.map((s) => (
+              <path
+                key={s.slug}
+                d={s.d}
+                fill="#182c42"
+                stroke="#182c42"
+                strokeWidth="8"
+                strokeLinejoin="round"
+              />
+            ))}
+          </g>
           {ZONE_SHAPES.map((s) => {
             const z = ZONES.find((x) => x.slug === s.slug);
             if (!z) return null;
