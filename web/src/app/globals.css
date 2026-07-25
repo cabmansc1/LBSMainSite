@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/*
+  LBS design tokens, v2 (approved Phase 0 direction):
+  flat solid color, hairline borders, 12px radius, navy chrome,
+  blue #38B6FF signature, orange CTA used once per screen.
+*/
+@theme {
+  --color-navy-950: #0a1622;
+  --color-navy-900: #0e1d2e;
+  --color-navy-800: #16293d;
+
+  --color-brand: #38b6ff;
+  --color-brand-deep: #1287d8;
+  --color-brand-tint: #e8f4fd;
+
+  --color-cta: #ff8c00;
+  --color-cta-hover: #e67c00;
+  --color-cta-tint: #fff3e3;
+
+  --color-ink: #101828;
+  --color-body: #3d4a5c;
+  --color-muted: #67768a;
+  --color-faint: #98a4b5;
+  --color-line: #e7ebf0;
+  --color-line-strong: #d5dce4;
+  --color-surface: #fafbfc;
+
+  --color-ok: #12a150;
+  --color-warn: #c77e10;
+  --color-danger: #d64545;
+
+  --radius-card: 12px;
+  --radius-btn: 9px;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Tabular numerals wherever digits align (prices, stats, tables) */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
