@@ -2,30 +2,40 @@ import "server-only";
 import { UPCOMING_MAILINGS, type UpcomingMailing } from "@/lib/mailings";
 
 /**
- * Mission Control adapter, wired to MC's real API surface:
+ * Mission Control adapter, locked to MC's real contract (from its type
+ * definitions and middleware):
  *
- *   GET  /api/store                          full snapshot (primary read)
- *   GET  /api/pipeline/cards                 card list (light fallback)
- *   POST /api/pipeline/cards/{id}/advertisers  place advertiser on card
- *   POST /api/pipeline/advertisers/{id}/payment  record payment
- *   GET/POST /api/accounts                   advertiser accounts
+ * Auth: Authorization: Bearer <key> OR x-api-key (either passes).
+ * Failure is a 307 redirect to /login, NOT a 401, so redirects are
+ * never followed and any 3xx/non-2xx counts as failure.
  *
- * MC is the source of truth: the site reads availability from it and
- * reports checkouts/payments into it. Reads cache for 60s; the inbound
- * webhook (/api/mission-control/webhook) busts that early.
+ * Reads (all fields camelCase):
+ *   GET /api/pipeline/cards       enriched cards incl. activity (primary)
+ *   GET /api/store                snapshot fallback: pipelineCards[] +
+ *                                 pipelineAdvertisers[] joined by cardId
+ * Card canonical fields: area, totalSpots. Advertiser fields: id,
+ * cardId, businessName, adSize, spotsPurchased, totalAmount,
+ * amountPaid, paymentStatus, exclusivity, ...
  *
- * Field names on MC records are normalized defensively (see pick())
- * until a sample /api/store payload locks the exact shape. Env:
- *   MC_BASE_URL   e.g. https://mc.example.com  (no trailing slash)
- *   MC_API_KEY    sent as Authorization: Bearer and x-api-key
- *   MC_WEBHOOK_SECRET  inbound webhook shared secret
+ * Writes:
+ *   POST /api/pipeline/cards/{id}/advertisers   place paid advertiser
+ *   POST /api/pipeline/advertisers/{id}/payment record the payment
+ *   GET  /api/accounts?search=<email>           dedup check (MC only
+ *                                               dedupes by slug, so we
+ *                                               match exact email first)
+ *   POST /api/accounts                          create lead account
  */
 
 export const mcEnabled = () => !!process.env.MC_BASE_URL;
 
 const mcFetch = async (path: string, init?: RequestInit) => {
+  // Card/store reads cache for 60s; mutations and dedup lookups must
+  // never be cached (a cached empty search result would create
+  // duplicate accounts).
+  const cacheable = (!init?.method || init.method === "GET") && init?.cache !== "no-store";
   const res = await fetch(`${process.env.MC_BASE_URL}${path}`, {
     ...init,
+    redirect: "manual", // a 307 to /login means auth failed; never follow
     headers: {
       ...(process.env.MC_API_KEY
         ? {
@@ -36,26 +46,42 @@ const mcFetch = async (path: string, init?: RequestInit) => {
       "Content-Type": "application/json",
       ...init?.headers,
     },
-    next: init?.method && init.method !== "GET" ? undefined : { revalidate: 60 },
+    ...(cacheable ? { next: { revalidate: 60 } } : {}),
   });
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error(`Mission Control ${path}: auth failed (redirected)`);
+  }
   if (!res.ok) throw new Error(`Mission Control ${path}: ${res.status}`);
   return res.json();
 };
 
-/* ---------- normalization ---------- */
+/* ---------- types matching MC ---------- */
 
-type McRecord = Record<string, unknown>;
-
-/** First present-and-defined of several possible field spellings. */
-const pick = <T,>(obj: McRecord, keys: string[], fallback: T): T => {
-  for (const k of keys) {
-    if (obj[k] !== undefined && obj[k] !== null) return obj[k] as T;
-  }
-  return fallback;
+type McAdvertiser = {
+  id: string | number;
+  cardId?: string | number;
+  accountId?: string;
+  businessName?: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  adSize?: string;
+  spotsPurchased?: number;
+  pricePerSpot?: number;
+  totalAmount?: number;
+  amountPaid?: number;
+  paymentStatus?: "unpaid" | "partial" | "paid";
+  exclusivity?: string | boolean;
+  category?: string;
 };
 
-const slugify = (s: string) =>
-  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+type McCardRaw = Record<string, unknown> & {
+  id: string | number;
+  area?: string;
+  totalSpots?: number;
+  status?: string;
+  advertisers?: McAdvertiser[];
+};
 
 type McCard = {
   id: string | number;
@@ -67,76 +93,81 @@ type McCard = {
   spotsTotal: number;
   spotsTaken: number;
   status: UpcomingMailing["status"];
-  advertisers: { category?: string; name?: string }[];
+  advertisers: McAdvertiser[];
 };
 
-function normalizeCard(raw: McRecord): McCard {
-  const zoneName = String(
-    pick(raw, ["zone", "zone_name", "area", "neighborhood", "name", "title"], ""),
-  );
-  const advertisersRaw = pick<McRecord[]>(
-    raw,
-    ["advertisers", "spots", "slots", "members"],
-    [],
-  );
-  const spotsTotal = Number(
-    pick(raw, ["total_spots", "spots_total", "capacity", "max_spots"], 11),
-  );
-  const spotsTaken = Number(
-    pick(
-      raw,
-      ["spots_taken", "taken", "filled", "sold"],
-      Array.isArray(advertisersRaw) ? advertisersRaw.length : 0,
-    ),
-  );
-  const statusRaw = String(pick(raw, ["status", "state"], "open")).toLowerCase();
+const slugify = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const str = (v: unknown, fallback = ""): string =>
+  v === undefined || v === null ? fallback : String(v);
+
+function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
+  const zoneName = str(raw.area ?? raw.name ?? raw.title);
+  const spotsTotal = Number(raw.totalSpots ?? 11);
+  // Prefer an explicit activity field; otherwise sum purchased spots.
+  const explicitTaken = raw.spotsTaken ?? raw.spotsFilled ?? raw.spotsSold;
+  const spotsTaken =
+    explicitTaken !== undefined && explicitTaken !== null
+      ? Number(explicitTaken)
+      : advertisers.reduce((n, a) => n + (a.spotsPurchased ?? 1), 0);
+
+  const statusRaw = str(raw.status, "open").toLowerCase();
   const status: UpcomingMailing["status"] =
     statusRaw.includes("wait") ? "waitlist"
     : statusRaw.includes("full") || spotsTaken >= spotsTotal ? "full"
-    : statusRaw.includes("open") || statusRaw.includes("active") ? "open"
     : "open";
 
   return {
-    id: pick(raw, ["id", "card_id", "uuid"], ""),
-    zoneSlug: slugify(String(pick(raw, ["zone_slug", "slug"], zoneName))),
+    id: raw.id,
+    zoneSlug: slugify(zoneName),
     zoneName,
-    mailMonth: String(
-      pick(raw, ["mail_month", "mail_date", "mails_at", "mailing_date", "month"], "TBD"),
-    ),
-    artworkDeadline: String(
-      pick(raw, ["artwork_deadline", "deadline", "print_deadline", "due"], "TBD"),
-    ),
-    households: String(pick(raw, ["households", "homes", "reach"], "5,000+")),
+    mailMonth: str(raw.mailMonth ?? raw.mailDate ?? raw.month, "TBD"),
+    artworkDeadline: str(raw.artworkDeadline ?? raw.deadline ?? raw.printDeadline, "TBD"),
+    households: str(raw.households ?? raw.homes, "5,000+"),
     spotsTotal,
     spotsTaken,
     status,
-    advertisers: (Array.isArray(advertisersRaw) ? advertisersRaw : []).map((a) => ({
-      category: pick<string | undefined>(a, ["category", "industry", "trade"], undefined),
-      name: pick<string | undefined>(a, ["name", "business_name", "business"], undefined),
-    })),
+    advertisers,
   };
 }
+
+/** Category an advertiser holds exclusively on their card. */
+const advertiserCategory = (a: McAdvertiser): string | undefined => {
+  if (typeof a.exclusivity === "string" && a.exclusivity) return a.exclusivity;
+  return a.category;
+};
 
 /* ---------- reads ---------- */
 
 async function fetchCards(): Promise<McCard[] | null> {
   if (!mcEnabled()) return null;
   try {
-    // Prefer the snapshot; fall back to the cards list.
-    let raw: unknown;
+    // Primary: enriched cards with nested advertisers (activity).
     try {
-      const store = (await mcFetch("/api/store")) as McRecord;
-      raw = pick(store, ["cards", "pipeline_cards", "pipeline"], null) ?? store;
-    } catch {
-      raw = await mcFetch("/api/pipeline/cards");
+      const list = (await mcFetch("/api/pipeline/cards")) as McCardRaw[];
+      if (Array.isArray(list)) {
+        return list
+          .map((c) => normalizeCard(c, c.advertisers ?? []))
+          .filter((c) => c.zoneName);
+      }
+    } catch (e) {
+      console.error("MC /api/pipeline/cards failed, trying /api/store:", e);
     }
-    const list = Array.isArray(raw)
-      ? raw
-      : Array.isArray((raw as McRecord)?.cards)
-        ? ((raw as McRecord).cards as McRecord[])
-        : null;
-    if (!list) return null;
-    return list.map(normalizeCard).filter((c) => c.zoneName);
+    // Fallback: raw snapshot, join advertisers by cardId ourselves.
+    const store = (await mcFetch("/api/store")) as {
+      pipelineCards?: McCardRaw[];
+      pipelineAdvertisers?: McAdvertiser[];
+    };
+    if (!Array.isArray(store.pipelineCards)) return null;
+    const byCard = new Map<string, McAdvertiser[]>();
+    for (const a of store.pipelineAdvertisers ?? []) {
+      const key = String(a.cardId);
+      byCard.set(key, [...(byCard.get(key) ?? []), a]);
+    }
+    return store.pipelineCards
+      .map((c) => normalizeCard(c, byCard.get(String(c.id)) ?? []))
+      .filter((c) => c.zoneName);
   } catch (e) {
     console.error("Mission Control read failed, serving fallback:", e);
     return null;
@@ -169,7 +200,7 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
   const card = cards.find((c) => c.zoneSlug === zoneSlug && c.status === "open");
   if (!card) return [];
   return card.advertisers
-    .map((a) => a.category)
+    .map(advertiserCategory)
     .filter((c): c is string => !!c);
 }
 
@@ -188,11 +219,52 @@ type SignupEvent = {
 };
 
 /**
+ * MC's POST /api/accounts dedupes by slug only (same name creates
+ * joes-pizza-1; same email is never caught), so we search for an exact
+ * email match before creating.
+ */
+async function ensureAccount(event: SignupEvent): Promise<void> {
+  if (event.email) {
+    try {
+      const results = (await mcFetch(
+        `/api/accounts?search=${encodeURIComponent(event.email)}`,
+        { cache: "no-store" },
+      )) as { email?: string }[];
+      if (
+        Array.isArray(results) &&
+        results.some(
+          (a) => a.email?.toLowerCase() === event.email!.toLowerCase(),
+        )
+      ) {
+        return; // already known; do not create a duplicate
+      }
+    } catch (e) {
+      console.error("MC account search failed, skipping create to avoid dupes:", e);
+      return;
+    }
+  }
+
+  await mcFetch("/api/accounts", {
+    method: "POST",
+    body: JSON.stringify({
+      businessName: event.businessName ?? event.email ?? "Website lead",
+      email: event.email,
+      phone: event.phone,
+      category: event.category,
+      city: event.zoneSlug
+        ? event.zoneSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        : undefined,
+      state: "SC",
+      tags: ["website"],
+      nextAction: `Website ${event.type.replace("_", " ")}${event.spot ? ` (${event.spot})` : ""}`,
+    }),
+  });
+}
+
+/**
  * Report site activity into Mission Control. Paid orders become real
- * pipeline records: the advertiser is placed on the matching card and
- * the payment recorded, so MC's board reflects online sales without
- * manual entry. Other events create/annotate accounts. All writes are
- * fire-and-forget: MC being down must never break a checkout.
+ * pipeline records; other events become accounts in the follow-up
+ * queue. Fire-and-forget: MC being down must never break a checkout.
  */
 export async function pushToMissionControl(event: SignupEvent): Promise<void> {
   if (!mcEnabled()) {
@@ -207,53 +279,39 @@ export async function pushToMissionControl(event: SignupEvent): Promise<void> {
       );
       if (!card) throw new Error(`no open MC card for zone ${event.zoneSlug}`);
 
+      const dollars = event.amountCents ? event.amountCents / 100 : undefined;
       const advertiser = (await mcFetch(
         `/api/pipeline/cards/${card.id}/advertisers`,
         {
           method: "POST",
           body: JSON.stringify({
-            name: event.businessName,
-            business_name: event.businessName,
+            businessName: event.businessName,
             email: event.email,
             phone: event.phone,
-            category: event.category,
-            spot: event.spot,
-            source: "website",
+            adSize: event.spot,
+            spotsPurchased: 1,
+            totalAmount: dollars,
+            amountPaid: dollars,
+            paymentStatus: "paid",
+            exclusivity: event.category,
           }),
         },
-      )) as McRecord;
+      )) as { id?: string | number };
 
-      const advertiserId = pick(advertiser, ["id", "advertiser_id"], null);
-      if (advertiserId !== null && event.amountCents) {
-        await mcFetch(`/api/pipeline/advertisers/${advertiserId}/payment`, {
+      if (advertiser.id !== undefined && dollars) {
+        await mcFetch(`/api/pipeline/advertisers/${advertiser.id}/payment`, {
           method: "POST",
           body: JSON.stringify({
-            amount: event.amountCents / 100,
-            amount_cents: event.amountCents,
+            amount: dollars,
             method: "stripe",
             reference: event.reference,
-            source: "website",
           }),
         });
       }
       return;
     }
 
-    // Leads, waitlist joins, and started checkouts become accounts so
-    // they appear in MC's follow-up queue.
-    await mcFetch("/api/accounts", {
-      method: "POST",
-      body: JSON.stringify({
-        name: event.businessName,
-        business_name: event.businessName,
-        email: event.email,
-        phone: event.phone,
-        category: event.category,
-        zone: event.zoneSlug,
-        note: `website:${event.type}${event.spot ? ` (${event.spot})` : ""}`,
-        source: "website",
-      }),
-    });
+    await ensureAccount(event);
   } catch (e) {
     console.error("Mission Control push failed (event logged for sweep):", e, event);
   }
