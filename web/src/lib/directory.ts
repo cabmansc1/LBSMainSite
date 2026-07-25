@@ -168,6 +168,7 @@ export async function getBusinesses(
     return [...rows].sort((a, b) => rankPlan(a) - rankPlan(b));
   }
 
+  try {
   const { db } = await import("@/lib/db");
   const { businesses, categories, locations } = await import(
     "@/lib/db/schema-legacy"
@@ -225,6 +226,12 @@ export async function getBusinesses(
       ? `${r.address}, ${r.city ?? ""}, ${r.state ?? "SC"} ${r.zipCode ?? ""}`
       : undefined,
   }));
+  } catch (e) {
+    // Surface the exact DB failure in server logs, serve samples so the
+    // page stays up while the schema mapping gets corrected.
+    console.error("[directory] DB query failed, serving samples:", e);
+    return [...SAMPLE].sort((a, b) => rankPlan(a) - rankPlan(b));
+  }
 }
 
 export async function getBusiness(
@@ -249,14 +256,29 @@ export async function getFilterOptions() {
       })),
     };
   }
-  const { db } = await import("@/lib/db");
-  const { categories, locations } = await import("@/lib/db/schema-legacy");
-  const [cats, locs] = await Promise.all([
-    db.select().from(categories),
-    db.select().from(locations),
-  ]);
-  return {
-    categories: cats.map((c) => ({ name: c.name, slug: c.slug })),
-    locations: locs.map((l) => ({ name: l.name, slug: l.slug })),
-  };
+  try {
+    const { db } = await import("@/lib/db");
+    const { categories, locations } = await import("@/lib/db/schema-legacy");
+    const [cats, locs] = await Promise.all([
+      db.select().from(categories),
+      db.select().from(locations),
+    ]);
+    return {
+      categories: cats.map((c) => ({ name: c.name, slug: c.slug })),
+      locations: locs.map((l) => ({ name: l.name, slug: l.slug })),
+    };
+  } catch (e) {
+    console.error("[directory] filter options query failed, serving samples:", e);
+    const uniq = <T,>(arr: T[]) => [...new Set(arr)];
+    return {
+      categories: uniq(SAMPLE.map((b) => b.category)).map((name) => ({
+        name,
+        slug: slugify(name),
+      })),
+      locations: uniq(SAMPLE.map((b) => b.locationArea)).map((name) => ({
+        name,
+        slug: slugify(name),
+      })),
+    };
+  }
 }
