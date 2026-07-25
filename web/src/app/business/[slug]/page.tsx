@@ -126,24 +126,8 @@ export default async function BusinessPage({
             <span>/</span>
             <b className="text-white font-semibold">{b.name}</b>
           </nav>
-          <div className="mt-5 flex items-start gap-4 flex-wrap">
-            {b.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={b.logoUrl}
-                alt={`${b.name} logo`}
-                className="w-16 h-16 rounded-xl bg-white object-contain p-1"
-              />
-            ) : (
-              <span className="w-14 h-14 rounded-xl bg-brand text-navy-950 font-bold text-xl flex items-center justify-center">
-                {b.name
-                  .split(" ")
-                  .slice(0, 2)
-                  .map((w) => w[0])
-                  .join("")}
-              </span>
-            )}
-            <div>
+          <div className="mt-5 flex items-start justify-between gap-5">
+            <div className="min-w-0">
               <h1 className="text-[26px] md:text-[36px] font-bold tracking-[-0.03em] leading-tight">
                 {b.name}
               </h1>
@@ -167,6 +151,22 @@ export default async function BusinessPage({
                 )}
               </p>
             </div>
+            {b.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={b.logoUrl}
+                alt={`${b.name} logo`}
+                className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-white object-contain p-1.5 border border-white/15 shrink-0 ml-auto"
+              />
+            ) : (
+              <span className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-brand text-navy-950 font-bold text-2xl flex items-center justify-center shrink-0 ml-auto">
+                {b.name
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")}
+              </span>
+            )}
           </div>
         </div>
       </header>
@@ -301,9 +301,23 @@ export default async function BusinessPage({
             </h2>
             <InquiryForm businessSlug={b.slug} />
           </Card>
+
+          <Card className="p-6.5 grid gap-2.5 bg-surface">
+            <h3 className="text-[15px] font-semibold">Is this your business?</h3>
+            <p className="text-[13px] text-body leading-relaxed">
+              Claim this listing to update your details, add photos and offers,
+              and see how many people view your page.
+            </p>
+            <Link
+              href="/register"
+              className="text-sm font-semibold text-brand-deep hover:underline"
+            >
+              Claim this listing
+            </Link>
+          </Card>
         </div>
 
-        <aside className="grid gap-3.5">
+        <aside className="grid gap-3.5 order-first lg:order-none">
           <Card className="p-6.5 grid gap-3.5 content-start">
             <span className="text-xs font-semibold uppercase tracking-widest text-muted">
               Details
@@ -348,20 +362,6 @@ export default async function BusinessPage({
                 ))}
               </div>
             )}
-          </Card>
-
-          <Card className="p-6.5 grid gap-2.5 bg-surface">
-            <h3 className="text-[15px] font-semibold">Is this your business?</h3>
-            <p className="text-[13px] text-body leading-relaxed">
-              Claim this listing to update your details, add photos and offers,
-              and see how many people view your page.
-            </p>
-            <Link
-              href="/register"
-              className="text-sm font-semibold text-brand-deep hover:underline"
-            >
-              Claim this listing
-            </Link>
           </Card>
         </aside>
       </div>
