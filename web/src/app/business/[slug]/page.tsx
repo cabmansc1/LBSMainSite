@@ -58,13 +58,22 @@ export default async function BusinessPage({
             <b className="text-white font-semibold">{b.name}</b>
           </nav>
           <div className="mt-5 flex items-start gap-4 flex-wrap">
-            <span className="w-14 h-14 rounded-xl bg-brand text-navy-950 font-bold text-xl flex items-center justify-center">
-              {b.name
-                .split(" ")
-                .slice(0, 2)
-                .map((w) => w[0])
-                .join("")}
-            </span>
+            {b.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={b.logoUrl}
+                alt={`${b.name} logo`}
+                className="w-16 h-16 rounded-xl bg-white object-contain p-1"
+              />
+            ) : (
+              <span className="w-14 h-14 rounded-xl bg-brand text-navy-950 font-bold text-xl flex items-center justify-center">
+                {b.name
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")}
+              </span>
+            )}
             <div>
               <h1 className="text-[26px] md:text-[36px] font-bold tracking-[-0.03em] leading-tight">
                 {b.name}
@@ -104,6 +113,24 @@ export default async function BusinessPage({
               <p className="text-xs text-muted">
                 Mention Lowcountry Business Spotlight when you call.
               </p>
+            </Card>
+          )}
+
+          {b.photos && b.photos.length > 1 && (
+            <Card className="p-6.5 grid gap-3">
+              <h2 className="text-[17px] font-semibold tracking-tight">Photos</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {b.photos.slice(0, 9).map((p) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={p.url}
+                    src={p.url}
+                    alt={p.alt}
+                    loading="lazy"
+                    className="w-full aspect-square object-cover rounded-[10px] border border-line bg-surface"
+                  />
+                ))}
+              </div>
             </Card>
           )}
 

@@ -11,13 +11,23 @@ function BusinessCard({ b }: { b: DirectoryBusiness }) {
       className="bg-white border border-line rounded-(--radius-card) p-6 grid gap-3 content-start hover:border-faint transition-colors"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="w-11 h-11 rounded-[10px] bg-brand-tint text-brand-deep font-bold text-[15px] flex items-center justify-center">
-          {b.name
-            .split(" ")
-            .slice(0, 2)
-            .map((w) => w[0])
-            .join("")}
-        </div>
+        {b.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={b.logoUrl}
+            alt={`${b.name} logo`}
+            className="w-14 h-14 rounded-[10px] border border-line bg-white object-contain p-0.5"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-11 h-11 rounded-[10px] bg-brand-tint text-brand-deep font-bold text-[15px] flex items-center justify-center">
+            {b.name
+              .split(" ")
+              .slice(0, 2)
+              .map((w) => w[0])
+              .join("")}
+          </div>
+        )}
         <div className="flex gap-1.5 flex-wrap justify-end">
           {b.isFeatured && (
             <span className="text-[10.5px] font-bold uppercase tracking-wider bg-navy-950 text-white px-2 py-0.5 rounded-full">

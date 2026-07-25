@@ -77,12 +77,17 @@ export const businessTags = mysqlTable("directory_business_tags", {
   tagId: int("tag_id").notNull(),
 });
 
+/* Columns verified against Business.php getBusinessPhotos ordering and
+   business.php photo_type/alt_text usage. */
 export const businessPhotos = mysqlTable("directory_business_photos", {
   id: int("id").primaryKey().autoincrement(),
   businessId: int("business_id").notNull(),
   filename: varchar("filename", { length: 255 }),
-  caption: varchar("caption", { length: 255 }),
+  altText: varchar("alt_text", { length: 255 }),
+  photoType: varchar("photo_type", { length: 32 }),
+  isPrimary: boolean("is_primary"),
   sortOrder: int("sort_order"),
+  uploadedAt: timestamp("uploaded_at"),
 });
 
 export const businessHours = mysqlTable("directory_business_hours", {

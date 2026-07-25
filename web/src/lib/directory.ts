@@ -28,7 +28,20 @@ export type DirectoryBusiness = {
   offer?: { title: string; description?: string };
   hours?: { day: string; text: string }[];
   address?: string;
+  /** Primary photo (logo), absolute URL served by the uploads host. */
+  logoUrl?: string;
+  /** Gallery photos (excludes banner type), primary first. */
+  photos?: { url: string; alt: string }[];
 };
+
+/**
+ * Photo files live on the PHP host's disk; both apps share the DB but
+ * only that host has /uploads. Point at production by default,
+ * overridable at cutover when uploads move or get a CDN.
+ */
+const uploadsBase = () =>
+  (process.env.UPLOADS_BASE_URL ?? "https://www.lowcountrybusinessspotlight.com/uploads").replace(/\/$/, "") +
+  "/business_photos/";
 
 export type DirectoryFilters = {
   category?: string;
@@ -207,6 +220,33 @@ export async function getBusinesses(
     )
     .limit(200);
 
+  // Photos for all listed businesses in one query, ordered like the
+  // legacy site: primary first, then sort order, then upload date.
+  const { inArray, asc } = await import("drizzle-orm");
+  const { businessPhotos } = await import("@/lib/db/schema-legacy");
+  const photosByBiz = new Map<number, { url: string; alt: string; type: string }[]>();
+  if (rows.length > 0) {
+    const photoRows = await db
+      .select()
+      .from(businessPhotos)
+      .where(inArray(businessPhotos.businessId, rows.map((r) => r.id)))
+      .orderBy(
+        desc(businessPhotos.isPrimary),
+        asc(businessPhotos.sortOrder),
+        asc(businessPhotos.uploadedAt),
+      );
+    for (const p of photoRows) {
+      if (!p.filename) continue;
+      const list = photosByBiz.get(p.businessId) ?? [];
+      list.push({
+        url: uploadsBase() + p.filename,
+        alt: p.altText ?? "",
+        type: p.photoType ?? "",
+      });
+      photosByBiz.set(p.businessId, list);
+    }
+  }
+
   return rows.map((r) => ({
     id: r.id,
     slug: r.slug,
@@ -229,6 +269,11 @@ export async function getBusinesses(
     address: r.address
       ? `${r.address}, ${r.city ?? ""}, ${r.state ?? "SC"} ${r.zipCode ?? ""}`
       : undefined,
+    logoUrl: photosByBiz.get(r.id)?.[0]?.url,
+    photos: photosByBiz
+      .get(r.id)
+      ?.filter((p) => p.type !== "banner")
+      .map(({ url, alt }) => ({ url, alt: alt || r.businessName })),
   }));
   } catch (e) {
     // Surface the exact DB failure in server logs, serve samples so the
