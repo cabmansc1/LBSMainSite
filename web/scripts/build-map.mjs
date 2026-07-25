@@ -1,0 +1,169 @@
+/**
+ * Generates src/lib/map-data.ts from Census ZCTA boundaries.
+ *
+ * Input: /tmp/sc-zips.json (SC ZCTA GeoJSON, not committed)
+ * Output: compact per-zone SVG path strings in the coverage map's
+ * viewBox, plus a label anchor per zone. Re-run only when zone or ZIP
+ * definitions change:  node scripts/build-map.mjs
+ */
+import { readFileSync, writeFileSync } from "fs";
+
+const VIEW_W = 760;
+const VIEW_H = 640;
+const PAD = 26;
+const TOLERANCE = 1.4; // Douglas-Peucker, in projected px
+
+// Zone -> ZIPs. Specific zones own overlapping ZIPs (James Island keeps
+// 29412, Johns Island keeps 29455); Charleston keeps the rest of its list.
+const ZONE_ZIPS = {
+  summerville: ["29483", "29485", "29486"],
+  "mount-pleasant": ["29464", "29466"],
+  "daniel-island": ["29492"],
+  "north-charleston": ["29405", "29406", "29418", "29420"],
+  "moncks-corner": ["29461"],
+  charleston: ["29401", "29403", "29407", "29414", "29439"],
+  "goose-creek": ["29445"],
+  "sullivans-island": ["29482"],
+  "isle-of-palms": ["29451"],
+  "james-island": ["29412"],
+  "johns-island": ["29455"],
+};
+
+const zipToZone = {};
+for (const [zone, zips] of Object.entries(ZONE_ZIPS))
+  for (const z of zips) zipToZone[z] = zone;
+
+const geo = JSON.parse(readFileSync("/tmp/sc-zips.json", "utf8"));
+const features = geo.features.filter(
+  (f) => zipToZone[f.properties.ZCTA5CE10],
+);
+console.log(`Matched ${features.length} ZCTAs of ${Object.keys(zipToZone).length} wanted`);
+
+// Collect rings per zone (lon/lat)
+const zoneRings = {};
+for (const f of features) {
+  const zone = zipToZone[f.properties.ZCTA5CE10];
+  const geom = f.geometry;
+  const polys =
+    geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+  for (const poly of polys) {
+    // outer ring only; ZCTA holes are visual noise at this scale
+    (zoneRings[zone] ??= []).push(poly[0]);
+  }
+}
+
+// Bounding box across all rings
+let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+for (const rings of Object.values(zoneRings))
+  for (const ring of rings)
+    for (const [lon, lat] of ring) {
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+
+// Equirectangular projection with latitude correction, fit to viewBox
+const midLat = ((minLat + maxLat) / 2) * (Math.PI / 180);
+const kx = Math.cos(midLat);
+const spanX = (maxLon - minLon) * kx;
+const spanY = maxLat - minLat;
+const scale = Math.min((VIEW_W - PAD * 2) / spanX, (VIEW_H - PAD * 2) / spanY);
+const offX = (VIEW_W - spanX * scale) / 2;
+const offY = (VIEW_H - spanY * scale) / 2;
+
+const project = ([lon, lat]) => [
+  offX + (lon - minLon) * kx * scale,
+  offY + (maxLat - lat) * scale,
+];
+
+// Douglas-Peucker simplification
+function simplify(points, tol) {
+  if (points.length <= 4) return points;
+  const sqTol = tol * tol;
+  const sqSegDist = (p, a, b) => {
+    let [x, y] = a;
+    let dx = b[0] - x, dy = b[1] - y;
+    if (dx !== 0 || dy !== 0) {
+      const t = ((p[0] - x) * dx + (p[1] - y) * dy) / (dx * dx + dy * dy);
+      if (t > 1) { x = b[0]; y = b[1]; }
+      else if (t > 0) { x += dx * t; y += dy * t; }
+    }
+    dx = p[0] - x; dy = p[1] - y;
+    return dx * dx + dy * dy;
+  };
+  const keep = new Uint8Array(points.length);
+  keep[0] = keep[points.length - 1] = 1;
+  const stack = [[0, points.length - 1]];
+  while (stack.length) {
+    const [first, last] = stack.pop();
+    let maxDist = 0, index = -1;
+    for (let i = first + 1; i < last; i++) {
+      const d = sqSegDist(points[i], points[first], points[last]);
+      if (d > maxDist) { maxDist = d; index = i; }
+    }
+    if (maxDist > sqTol && index !== -1) {
+      keep[index] = 1;
+      stack.push([first, index], [index, last]);
+    }
+  }
+  return points.filter((_, i) => keep[i]);
+}
+
+const r1 = (n) => Math.round(n * 10) / 10;
+
+const shapes = [];
+for (const [zone, rings] of Object.entries(zoneRings)) {
+  const projected = rings.map((ring) => simplify(ring.map(project), TOLERANCE));
+  const paths = projected
+    .filter((ring) => ring.length >= 4)
+    .map(
+      (ring) =>
+        "M" + ring.map(([x, y]) => `${r1(x)} ${r1(y)}`).join("L") + "Z",
+    );
+
+  // Label anchor: centroid of the largest ring by area
+  let best = null, bestArea = 0;
+  for (const ring of projected) {
+    let area = 0, cx = 0, cy = 0;
+    for (let i = 0; i < ring.length - 1; i++) {
+      const cross = ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+      area += cross;
+      cx += (ring[i][0] + ring[i + 1][0]) * cross;
+      cy += (ring[i][1] + ring[i + 1][1]) * cross;
+    }
+    area /= 2;
+    if (Math.abs(area) > Math.abs(bestArea)) {
+      bestArea = area;
+      best = [cx / (6 * area), cy / (6 * area)];
+    }
+  }
+
+  shapes.push({
+    slug: zone,
+    d: paths.join(""),
+    labelX: r1(best[0]),
+    labelY: r1(best[1]),
+  });
+  console.log(`${zone}: ${paths.length} rings, ${paths.join("").length} chars`);
+}
+
+const out = `/**
+ * GENERATED by scripts/build-map.mjs from Census ZCTA boundaries.
+ * Do not edit by hand; re-run the script if zones or ZIPs change.
+ */
+export const MAP_VIEW = { w: ${VIEW_W}, h: ${VIEW_H} };
+
+export type ZoneShape = {
+  slug: string;
+  d: string;
+  labelX: number;
+  labelY: number;
+};
+
+export const ZONE_SHAPES: ZoneShape[] = ${JSON.stringify(shapes, null, 2)};
+`;
+
+writeFileSync("src/lib/map-data.ts", out);
+const total = shapes.reduce((n, s) => n + s.d.length, 0);
+console.log(`Wrote src/lib/map-data.ts (${Math.round(total / 1024)}KB of path data)`);

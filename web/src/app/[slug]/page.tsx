@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, SectionHeading, TestimonialStrip, FillMeter } from "@/components/sections";
+import { ZoneMiniMap } from "@/components/zone-mini-map";
 import { ZONES, zoneBySlug } from "@/lib/zones";
 import { UPCOMING_MAILINGS } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
@@ -152,6 +153,10 @@ export default async function ZonePage({
           </div>
 
           <Card className="p-6.5 grid gap-4 content-start">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted">
+              Where we mail
+            </span>
+            <ZoneMiniMap highlight={zone.slug} />
             <span className="text-xs font-semibold uppercase tracking-widest text-muted">
               Explore nearby zones
             </span>
