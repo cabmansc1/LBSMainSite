@@ -31,7 +31,31 @@ export async function GET(req: Request) {
       counts[n] = Number(r[0].filled);
       counts.total = Number(r[0].total);
     }
-    return NextResponse.json({ coordCols, counts });
+    // Exercise the same probe getBusinesses uses.
+    let probe: Record<string, unknown> = {};
+    try {
+      const [rws] = (await db.execute(
+        sql.raw(
+          "SELECT id, COALESCE(lat, latitude) AS la, COALESCE(lng, longitude) AS ln FROM directory_businesses",
+        ),
+      )) as unknown as [{ id: number; la: unknown; ln: unknown }[]];
+      probe = {
+        shape: Array.isArray(rws) ? "array" : typeof rws,
+        rows: Array.isArray(rws) ? rws.length : undefined,
+        withCoords: Array.isArray(rws)
+          ? rws.filter((r) => r.la != null && r.ln != null).length
+          : undefined,
+        sampleKeys: Array.isArray(rws) && rws[0] ? Object.keys(rws[0]) : undefined,
+      };
+    } catch (e) {
+      probe = { probeError: String(e) };
+    }
+
+    const { getBusinesses } = await import("@/lib/directory");
+    const biz = await getBusinesses();
+    const withLat = biz.filter((b) => b.lat != null).length;
+
+    return NextResponse.json({ coordCols, counts, probe, businesses: biz.length, withLat });
   } catch (e) {
     return NextResponse.json({ error: String(e) });
   }
