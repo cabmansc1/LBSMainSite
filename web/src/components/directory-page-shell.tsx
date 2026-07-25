@@ -65,7 +65,7 @@ export async function DirectoryPageShell({
   return (
     <>
       <header className="bg-navy-950 text-white">
-        <div className="mx-auto max-w-[1120px] px-6 pt-14 pb-14">
+        <div className="mx-auto max-w-[1120px] px-6 pt-14 pb-26">
           <span className="text-xs font-semibold uppercase tracking-widest text-brand">
             Business directory
           </span>
@@ -86,21 +86,23 @@ export async function DirectoryPageShell({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1120px] px-6 py-10">
-        {usingSampleData() && (
-          <p className="mb-6 text-[12.5px] text-muted bg-surface border border-line rounded-lg px-3.5 py-2.5 w-max">
-            Preview listings shown. Live listings connect with the staging
-            database.
-          </p>
-        )}
+      <div className="mx-auto max-w-[1120px] px-6 pb-12">
         <DirectoryBrowser
           businesses={businesses}
           categories={options.categories}
           locations={options.locations}
+          tags={options.tags}
           activeCategory={filters.category}
           activeLocation={filters.location}
+          activeTag={filters.tag}
           lowcoDealCounts={lowcoDealCounts}
         />
+        {usingSampleData() && (
+          <p className="mt-6 text-[12.5px] text-muted bg-surface border border-line rounded-lg px-3.5 py-2.5 w-max">
+            Preview listings shown. Live listings connect with the staging
+            database.
+          </p>
+        )}
 
         {faqs && faqs.length > 0 && (
           <section className="mt-14 max-w-[720px]">

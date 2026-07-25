@@ -360,13 +360,16 @@ export async function getFilterOptions() {
         name,
         slug: slugify(name),
       })),
+      tags: uniq(SAMPLE.flatMap((b) => b.tags?.map((t) => t.name) ?? [])).map(
+        (name) => ({ name, slug: slugify(name) }),
+      ),
     };
   }
   try {
     const { db } = await import("@/lib/db");
-    const { categories, locations } = await import("@/lib/db/schema-legacy");
+    const { categories, locations, tags } = await import("@/lib/db/schema-legacy");
     const { asc, eq } = await import("drizzle-orm");
-    const [cats, locs] = await Promise.all([
+    const [cats, locs, tagRows] = await Promise.all([
       db
         .select()
         .from(categories)
@@ -377,10 +380,16 @@ export async function getFilterOptions() {
         .from(locations)
         .where(eq(locations.isActive, true))
         .orderBy(asc(locations.displayOrder)),
+      db
+        .select()
+        .from(tags)
+        .where(eq(tags.isActive, true))
+        .orderBy(asc(tags.displayOrder)),
     ]);
     return {
       categories: cats.map((c) => ({ name: c.displayName, slug: c.slug })),
       locations: locs.map((l) => ({ name: l.displayName, slug: l.slug })),
+      tags: tagRows.map((t) => ({ name: t.displayName, slug: t.slug })),
     };
   } catch (e) {
     console.error("[directory] filter options query failed, serving samples:", e);
@@ -394,6 +403,7 @@ export async function getFilterOptions() {
         name,
         slug: slugify(name),
       })),
+      tags: [] as { name: string; slug: string }[],
     };
   }
 }

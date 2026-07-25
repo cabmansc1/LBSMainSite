@@ -2,7 +2,59 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { DirectoryBusiness } from "@/lib/directory";
+
+type Option = { name: string; slug: string };
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  allLabel,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Option[];
+  allLabel: string;
+}) {
+  return (
+    <label className="grid gap-1.5 content-start">
+      <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+        {label}
+      </span>
+      <span className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full appearance-none text-sm font-medium px-3.5 py-3 pr-9 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950 cursor-pointer"
+        >
+          <option value="">{allLabel}</option>
+          {options.map((o) => (
+            <option key={o.slug} value={o.slug}>
+              {o.name}
+            </option>
+          ))}
+        </select>
+        <svg
+          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </span>
+    </label>
+  );
+}
 
 const Pin = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
@@ -148,21 +200,41 @@ export function DirectoryBrowser({
   businesses,
   categories,
   locations,
+  tags = [],
   activeCategory,
   activeLocation,
+  activeTag,
   lowcoDealCounts = {},
 }: {
   businesses: DirectoryBusiness[];
-  categories: { name: string; slug: string }[];
-  locations: { name: string; slug: string }[];
+  categories: Option[];
+  locations: Option[];
+  tags?: Option[];
   activeCategory?: string;
   activeLocation?: string;
+  activeTag?: string;
   /** normalized business name -> live LowcoDeals count */
   lowcoDealCounts?: Record<string, number>;
 }) {
+  const router = useRouter();
   const dealCount = (name: string) =>
     lowcoDealCounts[name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")] ?? 0;
   const [query, setQuery] = useState("");
+
+  const activeFilters = [
+    activeCategory && {
+      label: categories.find((c) => c.slug === activeCategory)?.name ?? activeCategory,
+      kind: "Category",
+    },
+    activeLocation && {
+      label: locations.find((l) => l.slug === activeLocation)?.name ?? activeLocation,
+      kind: "Location",
+    },
+    activeTag && {
+      label: tags.find((t) => t.slug === activeTag)?.name ?? activeTag,
+      kind: "Tag",
+    },
+  ].filter(Boolean) as { label: string; kind: string }[];
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -180,54 +252,70 @@ export function DirectoryBrowser({
 
   return (
     <div className="grid gap-8">
-      <div className="grid gap-4">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, trade, or neighborhood"
-          aria-label="Search the directory"
-          className="w-full max-w-[520px] text-[15px] px-4 py-3 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
-        />
-        <div className="flex flex-wrap gap-2" aria-label="Filter by category">
-          <Link
-            href="/directory"
-            className={`text-[12.5px] font-semibold px-3 py-1.5 rounded-full border ${
-              !activeCategory && !activeLocation
-                ? "bg-navy-950 text-white border-navy-950"
-                : "bg-white text-body border-line-strong hover:border-faint"
-            }`}
-          >
-            All
-          </Link>
-          {categories.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/directory/category/${c.slug}`}
-              className={`text-[12.5px] font-semibold px-3 py-1.5 rounded-full border ${
-                activeCategory === c.slug
-                  ? "bg-navy-950 text-white border-navy-950"
-                  : "bg-white text-body border-line-strong hover:border-faint"
-              }`}
-            >
-              {c.name}
-            </Link>
-          ))}
-          <span className="w-px bg-line-strong mx-1 hidden sm:block" />
-          {locations.map((l) => (
-            <Link
-              key={l.slug}
-              href={`/directory/location/${l.slug}`}
-              className={`text-[12.5px] font-semibold px-3 py-1.5 rounded-full border ${
-                activeLocation === l.slug
-                  ? "bg-navy-950 text-white border-navy-950"
-                  : "bg-surface text-muted border-line hover:border-faint"
-              }`}
-            >
-              {l.name}
-            </Link>
-          ))}
+      <div className="relative z-10 -mt-20 bg-white border border-line rounded-2xl p-5 md:p-6 shadow-[0_12px_32px_rgba(8,21,39,0.10)]">
+        <div
+          className={`grid gap-4 md:grid-cols-2 ${
+            tags.length > 0
+              ? "lg:grid-cols-[1.6fr_1fr_1fr_1fr]"
+              : "lg:grid-cols-[1.6fr_1fr_1fr]"
+          }`}
+        >
+          <label className="grid gap-1.5 content-start">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+              Search
+            </span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Business name, service, keyword"
+              aria-label="Search the directory"
+              className="w-full text-sm px-3.5 py-3 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
+            />
+          </label>
+          <SelectField
+            label="Category"
+            value={activeCategory ?? ""}
+            allLabel="All categories"
+            options={categories}
+            onChange={(v) => router.push(v ? `/directory/category/${v}` : "/directory")}
+          />
+          <SelectField
+            label="Location"
+            value={activeLocation ?? ""}
+            allLabel="All areas"
+            options={locations}
+            onChange={(v) => router.push(v ? `/directory/location/${v}` : "/directory")}
+          />
+          {tags.length > 0 && (
+            <SelectField
+              label="Tag"
+              value={activeTag ?? ""}
+              allLabel="All tags"
+              options={tags}
+              onChange={(v) => router.push(v ? `/directory/tag/${v}` : "/directory")}
+            />
+          )}
         </div>
+        {activeFilters.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-line flex items-center gap-2 flex-wrap text-[13px]">
+            <span className="text-muted">Showing:</span>
+            {activeFilters.map((f) => (
+              <span
+                key={f.kind}
+                className="inline-flex items-center gap-1.5 font-semibold text-navy-950 bg-surface border border-line rounded-full px-3 py-1"
+              >
+                {f.label}
+              </span>
+            ))}
+            <Link
+              href="/directory"
+              className="font-semibold text-brand-deep hover:underline ml-1"
+            >
+              Clear
+            </Link>
+          </div>
+        )}
       </div>
 
       {featured.length > 0 && (
