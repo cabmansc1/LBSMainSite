@@ -1,5 +1,9 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo";
+
+// Generate per request: the build machine cannot reach the database,
+// so a static sitemap would bake in fallback URLs.
+export const dynamic = "force-dynamic";
 import { ZONES } from "@/lib/zones";
 import { getBusinesses, getFilterOptions } from "@/lib/directory";
 import { getPosts } from "@/lib/blog";
