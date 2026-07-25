@@ -19,11 +19,14 @@ export function NavBar() {
   return (
     <nav className="bg-navy-950 text-white">
       <div className="mx-auto max-w-[1120px] px-6 py-4 flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="w-[30px] h-[30px] rounded-lg bg-brand text-navy-950 font-extrabold text-[13px] flex items-center justify-center">
-            LB
-          </span>
-          <span className="font-bold text-[15px] tracking-tight whitespace-nowrap">
+        <Link href="/" className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/lb-spotlight.png"
+            alt="LB Spotlight"
+            className="h-10 w-auto"
+          />
+          <span className="font-bold text-[15px] tracking-tight whitespace-nowrap max-[380px]:hidden">
             Lowcountry Business Spotlight
           </span>
         </Link>

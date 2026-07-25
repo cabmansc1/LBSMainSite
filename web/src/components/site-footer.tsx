@@ -53,10 +53,13 @@ export function SiteFooter() {
     <footer className="bg-navy-950 text-[#93A5B8] text-[13.5px] mt-auto">
       <div className="mx-auto max-w-[1120px] px-6 py-13 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="col-span-2 md:col-span-1">
-          <div className="flex items-center gap-2.5 mb-3.5">
-            <span className="w-[30px] h-[30px] rounded-lg bg-brand text-navy-950 font-extrabold text-[13px] flex items-center justify-center">
-              LB
-            </span>
+          <div className="flex items-center gap-3 mb-3.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/lb-spotlight.png"
+              alt="LB Spotlight"
+              className="h-9 w-auto"
+            />
             <span className="font-bold text-white text-[15px] tracking-tight">
               {SITE_NAME}
             </span>
