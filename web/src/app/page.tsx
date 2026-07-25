@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import {
+  SectionHeading,
+  Card,
+  TestimonialStrip,
+  CtaBand,
+} from "@/components/sections";
 import { buildMetadata } from "@/lib/seo";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
 
@@ -12,6 +19,61 @@ const STATS = [
   { value: "11", label: "Service areas" },
 ];
 
+const BENEFITS = [
+  {
+    title: "Category exclusivity",
+    body: "One plumber, one dentist, one pizza place per card. Your competitors cannot buy their way on.",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l2.9 6.3 6.6.6-5 4.5 1.5 6.6L12 16.9 6 20l1.5-6.6-5-4.5 6.6-.6z" />
+      </svg>
+    ),
+  },
+  {
+    title: "9×12: too big to ignore",
+    body: "The largest piece in the mailbox that day. It gets flipped, read, and stuck to the fridge.",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M3 9h18M8 15h4" />
+      </svg>
+    ),
+  },
+  {
+    title: "Tracking built in",
+    body: "QR codes and unique URLs on every ad, so you see exactly what a mailing brings in.",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
+      </svg>
+    ),
+  },
+  {
+    title: "Design done for you",
+    body: "Copywriting and layout are included. Send a logo and an offer, and we handle the rest.",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.6 7.6" />
+      </svg>
+    ),
+  },
+];
+
+const STEPS = [
+  {
+    title: "Pick your zone and spot",
+    body: "Choose a neighborhood and an ad size. Live availability shows what is open. Reserve and pay online in minutes.",
+  },
+  {
+    title: "We design your ad",
+    body: "Our team writes and lays out your ad free, with your offer and a trackable QR code. You approve before print.",
+  },
+  {
+    title: "We mail. You answer the phone.",
+    body: "Your card lands in 5,000+ mailboxes. Watch scans and calls roll in from your advertiser dashboard.",
+  },
+];
+
 export default function HomePage() {
   const fromPrice = formatPrice(POSTCARD_PRICING["5k"].small.priceCents);
 
@@ -22,16 +84,18 @@ export default function HomePage() {
           <div>
             <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/6 border border-white/14 text-[#C6D3E0]">
               <span className="w-1.5 h-1.5 rounded-full bg-cta" />
-              Phase 1 foundation build
+              September Summerville card: 2 spots left
             </span>
             <h1 className="mt-5 text-4xl md:text-[54px] font-bold tracking-[-0.035em] leading-[1.06] text-balance">
-              Your business in <em className="not-italic text-brand">5,000 mailboxes.</em>{" "}
-              One competitor: none.
+              Your business in{" "}
+              <em className="not-italic text-brand">5,000 mailboxes.</em> One
+              competitor: none.
             </h1>
             <p className="mt-5 text-[17px] leading-relaxed text-[#AEBDCC] max-w-[50ch]">
               Shared 9×12 postcards mailed to Charleston-area neighborhoods. One
               exclusive spot per industry, professional design included, from{" "}
-              <b className="text-white font-semibold num">{fromPrice}</b> per mailing.
+              <b className="text-white font-semibold num">{fromPrice}</b> per
+              mailing.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button href="/pricing">Reserve a Spot</Button>
@@ -39,37 +103,30 @@ export default function HomePage() {
                 View Coverage Map
               </Button>
             </div>
-          </div>
-          <div className="justify-self-center w-full max-w-[430px] rotate-[1.5deg] bg-white rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,.35)] p-5 text-ink">
-            <div className="flex justify-between items-start px-1">
-              <span className="font-bold text-sm tracking-tight">
-                Lowcountry <span className="text-brand-deep">Business Spotlight</span>
-              </span>
-              <span className="w-[42px] h-[50px] border-[1.5px] border-line-strong rounded-[3px] bg-surface text-muted text-[9px] font-bold flex items-center justify-center text-center leading-tight">
-                FIRST
-                <br />
-                CLASS
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 p-1 pt-3">
-              <div className="col-span-2 row-span-2 rounded-[5px] bg-navy-950 text-white text-[11.5px] font-semibold flex items-center justify-center text-center min-h-[110px]">
-                YOUR BUSINESS
-                <br />
-                FEATURED HERE
-              </div>
-              {["HVAC", "$50 OFF", "Dentist", "Roofing", "Landscaping", "Pizza"].map(
-                (label) => (
-                  <div
-                    key={label}
-                    className="rounded-[5px] bg-surface border border-line min-h-[52px] flex items-center justify-center text-[9.5px] font-semibold text-faint text-center p-1"
-                  >
-                    {label}
-                  </div>
+            <ul className="mt-7 flex flex-wrap gap-5 text-[13.5px] text-[#67768A]">
+              {["No competitors on your card", "Free ad design", "QR tracking included"].map(
+                (item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <svg className="text-brand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    {item}
+                  </li>
                 ),
               )}
-            </div>
-            <p className="text-center text-[10.5px] text-muted pt-2.5">
-              9×12 postcard · Summerville edition · 5,000+ households
+            </ul>
+          </div>
+          <div className="justify-self-center w-full max-w-[460px] rotate-[1.5deg]">
+            <Image
+              src="/cards/card-sample-1.webp"
+              alt="A real 9x12 Lowcountry Business Spotlight postcard with local business ads"
+              width={920}
+              height={614}
+              priority
+              className="rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,.4)]"
+            />
+            <p className="text-center text-[11px] text-[#67768A] pt-3 -rotate-[1.5deg]">
+              A real Spotlight Postcard, mailed to 5,000+ households
             </p>
           </div>
         </div>
@@ -91,19 +148,87 @@ export default function HomePage() {
       </header>
 
       <section className="mx-auto max-w-[1120px] px-6 py-22">
-        <div className="max-w-[560px] mb-11">
-          <span className="text-xs font-semibold uppercase tracking-widest text-muted">
-            Phase 1 status
-          </span>
-          <h2 className="mt-3 text-[26px] md:text-[32px] font-bold tracking-[-0.025em] text-balance">
-            Foundation is live. Full pages arrive in Phase 2.
-          </h2>
-          <p className="mt-3 text-[14.5px] text-muted">
-            This page proves the design tokens, navigation, footer, fonts, pricing
-            data, and redirect rules ported from the PHP site. The real homepage,
-            pricing, zones, map, and blog land next.
-          </p>
+        <SectionHeading
+          eyebrow="Why it works"
+          title="Billboard impact, split eleven ways"
+          sub="You share the card, and the cost, with non-competing local businesses. Everyone gets seen. Nobody pays billboard prices."
+        />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {BENEFITS.map((b) => (
+            <Card key={b.title} className="p-6.5 grid gap-3 content-start">
+              <span className="w-9.5 h-9.5 rounded-[9px] bg-brand-tint text-brand-deep flex items-center justify-center">
+                {b.icon}
+              </span>
+              <h3 className="text-[17px] font-semibold tracking-tight">{b.title}</h3>
+              <p className="text-sm text-body leading-relaxed">{b.body}</p>
+            </Card>
+          ))}
         </div>
+      </section>
+
+      <section className="bg-surface border-y border-line">
+        <div className="mx-auto max-w-[1120px] px-6 py-22">
+          <SectionHeading
+            eyebrow="The product"
+            title="Real cards, real mailboxes"
+            sub="Every card is a 9×12 full-color postcard printed on heavy stock. These are actual cards we mailed."
+          />
+          <div className="grid sm:grid-cols-2 gap-3.5">
+            <Image
+              src="/cards/card-nmp-front.webp"
+              alt="Front of a mailed Spotlight Postcard"
+              width={800}
+              height={534}
+              className="rounded-(--radius-card) border border-line"
+            />
+            <Image
+              src="/cards/card-nmp-back.webp"
+              alt="Back of a mailed Spotlight Postcard with local business ads"
+              width={800}
+              height={534}
+              className="rounded-(--radius-card) border border-line"
+            />
+          </div>
+          <div className="mt-5">
+            <Button href="/gallery" variant="quiet" small>
+              See past cards by neighborhood
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1120px] px-6 py-22">
+        <SectionHeading
+          eyebrow="Local businesses on LBS"
+          title="Trusted around the Lowcountry"
+        />
+        <TestimonialStrip placement="home" />
+      </section>
+
+      <section className="bg-surface border-y border-line">
+        <div className="mx-auto max-w-[1120px] px-6 py-22">
+          <SectionHeading eyebrow="How it works" title="On a card in three steps" />
+          <div className="grid md:grid-cols-3 gap-3.5">
+            {STEPS.map((s, i) => (
+              <Card key={s.title} className="p-6.5 grid gap-2.5 content-start">
+                <span className="w-[30px] h-[30px] rounded-lg bg-brand-tint text-brand-deep text-[13px] font-bold flex items-center justify-center num">
+                  {i + 1}
+                </span>
+                <h3 className="text-[17px] font-semibold tracking-tight">{s.title}</h3>
+                <p className="text-sm text-body leading-relaxed">{s.body}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1120px] px-6 py-16">
+        <CtaBand
+          title="The next Summerville card has 2 spots left."
+          sub="Print deadline is coming. Exclusive categories go fast."
+          ctaLabel="Claim Your Category"
+          ctaHref="/pricing"
+        />
       </section>
     </>
   );

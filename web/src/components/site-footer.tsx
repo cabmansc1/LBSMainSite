@@ -8,6 +8,8 @@ const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
       { href: "/advertise", label: "Spotlight Postcards" },
       { href: "/pricing", label: "Pricing" },
       { href: "/coverage-map", label: "Coverage Map" },
+      { href: "/mailing-calendar", label: "Mailing Calendar" },
+      { href: "/gallery", label: "Card Gallery" },
       { href: "/roi-calculator", label: "ROI Calculator" },
     ],
   },
