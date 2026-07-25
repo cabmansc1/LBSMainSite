@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { StatusChip, FillMeter, CtaBand } from "@/components/sections";
-import { UPCOMING_MAILINGS } from "@/lib/mailings";
+import { getUpcomingMailings } from "@/lib/mission-control";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -24,7 +24,8 @@ const chipFor = (status: string, left: number) => {
   return <StatusChip tone="ok">Open</StatusChip>;
 };
 
-export default function MailingCalendarPage() {
+export default async function MailingCalendarPage() {
+  const mailings = await getUpcomingMailings();
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -60,7 +61,7 @@ export default function MailingCalendarPage() {
               </tr>
             </thead>
             <tbody>
-              {UPCOMING_MAILINGS.map((m) => {
+              {mailings.map((m) => {
                 const left = m.spotsTotal - m.spotsTaken;
                 return (
                   <tr key={`${m.zoneSlug}-${m.mailMonth}`} className="hover:bg-surface">
@@ -91,8 +92,8 @@ export default function MailingCalendarPage() {
           </table>
         </div>
         <p className="text-[12.5px] text-muted mt-3">
-          Schedule shown is illustrative until live inventory connects in the
-          commerce phase.
+          Schedule syncs from Mission Control once connected; illustrative
+          until then.
         </p>
 
         <div className="mt-14">

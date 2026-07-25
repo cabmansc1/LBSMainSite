@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripeEnabled, createCheckoutSession } from "@/lib/stripe";
+import { pushToMissionControl } from "@/lib/mission-control";
 import { POSTCARD_PRICING, type Reach, type SpotSize } from "@/lib/pricing";
 import { zoneBySlug } from "@/lib/zones";
 import { getCard } from "@/lib/cards";
@@ -82,6 +83,17 @@ export async function POST(req: Request) {
   } else {
     return NextResponse.json({ error: "Unknown checkout kind" }, { status: 422 });
   }
+
+  // Mission Control hears about every checkout attempt (fire-and-forget).
+  void pushToMissionControl({
+    type: "checkout_started",
+    businessName,
+    category,
+    email: typeof body.email === "string" ? body.email : undefined,
+    zoneSlug: metadata.zone ?? metadata.card,
+    spot: metadata.spotSize ?? metadata.spotType,
+    amountCents,
+  });
 
   if (!stripeEnabled()) {
     // Preview mode: no keys configured, simulate the hosted checkout hop.

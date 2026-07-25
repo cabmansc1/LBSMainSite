@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CoverageMap } from "@/components/coverage-map";
+import { getUpcomingMailings } from "@/lib/mission-control";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -15,7 +16,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function CoverageMapPage() {
+export default async function CoverageMapPage() {
+  const mailings = await getUpcomingMailings();
   return (
     <div className="bg-navy-950 text-white">
       <div className="mx-auto max-w-[1120px] px-6 py-14 pb-18">
@@ -31,7 +33,7 @@ export default function CoverageMapPage() {
           availability.
         </p>
         <div className="mt-9">
-          <CoverageMap />
+          <CoverageMap mailings={mailings} />
         </div>
       </div>
     </div>

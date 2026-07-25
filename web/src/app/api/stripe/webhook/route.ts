@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe, stripeEnabled } from "@/lib/stripe";
+import { pushToMissionControl } from "@/lib/mission-control";
 
 /**
  * Stripe webhook: the single source of truth for payment state (the
@@ -33,6 +34,18 @@ export async function POST(req: Request) {
     case "checkout.session.completed": {
       // Idempotent flip pending -> paid, guarded by status='pending'
       // in the UPDATE's WHERE clause once the orders table connects.
+      const s = event.data.object;
+      const md = (s.metadata ?? {}) as Record<string, string>;
+      void pushToMissionControl({
+        type: "order_paid",
+        businessName: md.businessName,
+        category: md.category,
+        email: s.customer_email ?? undefined,
+        zoneSlug: md.zone ?? md.card,
+        spot: md.spotSize ?? md.spotType,
+        amountCents: s.amount_total ?? undefined,
+        reference: s.id,
+      });
       break;
     }
     case "charge.refunded": {

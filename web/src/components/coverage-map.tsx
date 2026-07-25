@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ZONES } from "@/lib/zones";
-import { UPCOMING_MAILINGS } from "@/lib/mailings";
+import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
 import { MAP_VIEW, ZONE_SHAPES } from "@/lib/map-data";
 
@@ -24,8 +24,7 @@ const LABELS: Record<string, { text?: string; dx?: number; dy?: number }> = {
   "goose-creek": { text: "Goose Creek" },
 };
 
-const availability = (slug: string) => {
-  const m = UPCOMING_MAILINGS.find((x) => x.zoneSlug === slug);
+const availability = (m: UpcomingMailing | undefined) => {
   if (!m) return { text: "Coming soon", tone: "info" as const };
   if (m.status === "waitlist") return { text: "Waitlist", tone: "info" as const };
   const left = m.spotsTotal - m.spotsTaken;
@@ -33,11 +32,11 @@ const availability = (slug: string) => {
   return { text: "Open", tone: "ok" as const };
 };
 
-export function CoverageMap() {
+export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
   const [selected, setSelected] = useState("summerville");
   const zone = ZONES.find((z) => z.slug === selected)!;
-  const mailing = UPCOMING_MAILINGS.find((m) => m.zoneSlug === selected);
-  const avail = availability(selected);
+  const mailing = mailings.find((m) => m.zoneSlug === selected);
+  const avail = availability(mailing);
   const dotColor = { ok: "bg-ok", warn: "bg-cta", info: "bg-brand" }[avail.tone];
 
   return (

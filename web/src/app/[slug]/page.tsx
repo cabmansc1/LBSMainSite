@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, SectionHeading, TestimonialStrip, FillMeter } from "@/components/sections";
 import { ZoneMiniMap } from "@/components/zone-mini-map";
 import { ZONES, zoneBySlug } from "@/lib/zones";
-import { UPCOMING_MAILINGS } from "@/lib/mailings";
+import { getZoneMailing } from "@/lib/mission-control";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -52,7 +52,7 @@ export default async function ZonePage({
   const zone = parseZone(slug);
   if (!zone) notFound();
 
-  const mailing = UPCOMING_MAILINGS.find((m) => m.zoneSlug === zone.slug);
+  const mailing = await getZoneMailing(zone.slug);
   const fromPrice = formatPrice(POSTCARD_PRICING["5k"].small.priceCents);
   const nearby = ZONES.filter((z) => z.slug !== zone.slug).slice(0, 4);
 

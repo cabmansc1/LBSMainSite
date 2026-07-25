@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
 import { zoneBySlug } from "@/lib/zones";
-import { UPCOMING_MAILINGS } from "@/lib/mailings";
+import { getZoneMailing, getTakenCategories } from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -23,18 +23,12 @@ const CATEGORIES = [
   "Pest Control",
 ];
 
-/** Sample availability until the postcard inventory tables go live. */
-const sampleAvailability = (zoneSlug: string) => {
-  const m = UPCOMING_MAILINGS.find((x) => x.zoneSlug === zoneSlug);
-  const left = m ? m.spotsTotal - m.spotsTaken : 6;
-  return [
-    { size: "small" as const, open: Math.max(0, Math.min(4, left)) },
-    { size: "medium" as const, open: Math.max(0, Math.min(2, left - 2)) },
-    { size: "large" as const, open: Math.max(0, left - 8) },
-  ];
-};
-
-const sampleTaken = ["Plumbing", "Dental"];
+/** Spot counts derive from the mailing's remaining capacity. */
+const availabilityFrom = (left: number) => [
+  { size: "small" as const, open: Math.max(0, Math.min(4, left)) },
+  { size: "medium" as const, open: Math.max(0, Math.min(2, left - 2)) },
+  { size: "large" as const, open: Math.max(0, left - 8) },
+];
 
 export async function generateMetadata({
   params,
@@ -61,7 +55,10 @@ export default async function PostcardCheckoutPage({
   const z = zoneBySlug(zone);
   if (!z) notFound();
 
-  const mailing = UPCOMING_MAILINGS.find((m) => m.zoneSlug === zone);
+  const [mailing, takenCategories] = await Promise.all([
+    getZoneMailing(zone),
+    getTakenCategories(zone),
+  ]);
   if (!mailing || mailing.status === "waitlist") notFound();
 
   return (
@@ -93,8 +90,8 @@ export default async function PostcardCheckoutPage({
           zoneName={z.name}
           mailMonth={mailing.mailMonth}
           reach="5k"
-          availability={sampleAvailability(zone)}
-          takenCategories={sampleTaken}
+          availability={availabilityFrom(mailing.spotsTotal - mailing.spotsTaken)}
+          takenCategories={takenCategories}
           categories={CATEGORIES}
         />
       </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { zoneBySlug } from "@/lib/zones";
+import { pushToMissionControl } from "@/lib/mission-control";
 
 /**
  * Category waitlist: when a category is exclusive on the current
@@ -25,6 +26,15 @@ export async function POST(req: Request) {
       { status: 422 },
     );
   }
+
+  void pushToMissionControl({
+    type: "waitlist_joined",
+    businessName:
+      typeof body.businessName === "string" ? body.businessName : undefined,
+    email,
+    category,
+    zoneSlug: zone.slug,
+  });
 
   if (!process.env.DB_HOST) {
     return NextResponse.json({ ok: true, preview: true });
