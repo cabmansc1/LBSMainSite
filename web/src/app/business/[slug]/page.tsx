@@ -138,6 +138,14 @@ export default async function BusinessPage({
               </h1>
               <p className="text-[#93A5B8] text-[14.5px] mt-1">
                 {b.category} · {b.locationArea}, SC
+                {b.isFeatured && (
+                  <span className="inline-flex items-center gap-1 ml-3 text-xs font-bold text-navy-950 bg-cta rounded-full px-2.5 py-0.5 uppercase tracking-wider">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2l2.9 6.3 6.6.6-5 4.5 1.5 6.6L12 16.9 6 20l1.5-6.6-5-4.5 6.6-.6z" />
+                    </svg>
+                    Featured
+                  </span>
+                )}
                 {b.isVerified && (
                   <span className="inline-flex items-center gap-1 ml-3 text-xs font-semibold text-white bg-white/8 border border-white/16 rounded-full px-2.5 py-0.5">
                     <svg className="text-brand" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
