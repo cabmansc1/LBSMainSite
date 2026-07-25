@@ -186,7 +186,7 @@ export async function getBusinesses(
       .from(categories)
       .where(eq(categories.slug, filters.category))
       .limit(1);
-    if (cat[0]) conds.push(eq(businesses.category, cat[0].name));
+    if (cat[0]) conds.push(eq(businesses.category, cat[0].displayName));
   }
   if (filters.location) {
     const loc = await db
@@ -194,7 +194,7 @@ export async function getBusinesses(
       .from(locations)
       .where(eq(locations.slug, filters.location))
       .limit(1);
-    if (loc[0]) conds.push(eq(businesses.locationArea, loc[0].name));
+    if (loc[0]) conds.push(eq(businesses.locationArea, loc[0].displayName));
   }
 
   const rows = await db
@@ -259,13 +259,22 @@ export async function getFilterOptions() {
   try {
     const { db } = await import("@/lib/db");
     const { categories, locations } = await import("@/lib/db/schema-legacy");
+    const { asc, eq } = await import("drizzle-orm");
     const [cats, locs] = await Promise.all([
-      db.select().from(categories),
-      db.select().from(locations),
+      db
+        .select()
+        .from(categories)
+        .where(eq(categories.isActive, true))
+        .orderBy(asc(categories.displayOrder)),
+      db
+        .select()
+        .from(locations)
+        .where(eq(locations.isActive, true))
+        .orderBy(asc(locations.displayOrder)),
     ]);
     return {
-      categories: cats.map((c) => ({ name: c.name, slug: c.slug })),
-      locations: locs.map((l) => ({ name: l.name, slug: l.slug })),
+      categories: cats.map((c) => ({ name: c.displayName, slug: c.slug })),
+      locations: locs.map((l) => ({ name: l.displayName, slug: l.slug })),
     };
   } catch (e) {
     console.error("[directory] filter options query failed, serving samples:", e);

@@ -23,7 +23,10 @@ export function generateStaticParams() {
   return ZONES.map((z) => ({ slug: `${z.slug}${SUFFIX}` }));
 }
 
-export const dynamicParams = false;
+// dynamicParams stays enabled: unknown top-level paths (favicon probes,
+// bots) fall through to parseZone() -> notFound() as clean 404s instead
+// of throwing internal NoFallbackError noise in server logs.
+export const dynamicParams = true;
 
 export async function generateMetadata({
   params,

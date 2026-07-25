@@ -45,22 +45,31 @@ export const businesses = mysqlTable("directory_businesses", {
   createdAt: timestamp("created_at"),
 });
 
+/* Taxonomy DDL verified against config.php ensureDirectoryTaxonomyTables
+   and the live staging error logs: display_name, not name. */
 export const categories = mysqlTable("directory_categories", {
   id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 128 }).notNull(),
-  slug: varchar("slug", { length: 128 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull(),
+  displayName: varchar("display_name", { length: 150 }).notNull(),
+  displayOrder: int("display_order"),
+  isActive: boolean("is_active"),
 });
 
 export const locations = mysqlTable("directory_locations", {
   id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 128 }).notNull(),
-  slug: varchar("slug", { length: 128 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull(),
+  displayName: varchar("display_name", { length: 150 }).notNull(),
+  displayOrder: int("display_order"),
+  isActive: boolean("is_active"),
 });
 
 export const tags = mysqlTable("directory_tags", {
   id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 128 }).notNull(),
-  slug: varchar("slug", { length: 128 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull(),
+  displayName: varchar("display_name", { length: 150 }).notNull(),
+  categorySlug: varchar("category_slug", { length: 100 }),
+  displayOrder: int("display_order"),
+  isActive: boolean("is_active"),
 });
 
 export const businessTags = mysqlTable("directory_business_tags", {
