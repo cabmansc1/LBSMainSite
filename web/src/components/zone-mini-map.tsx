@@ -1,42 +1,29 @@
-import { MAP_VIEW, ZONE_SHAPES, COUNTIES, LAKES_D } from "@/lib/map-data";
+import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
 
 /**
- * Static (server-rendered) mini map for zone pages: light reference-map
- * style with real geography, current zone highlighted in orange.
+ * Static (server-rendered) mini map for zone pages: the Tri-County
+ * base map with the current zone's bubble highlighted in orange.
  */
 export function ZoneMiniMap({ highlight }: { highlight: string }) {
   return (
     <svg
-      viewBox={`0 0 ${MAP_VIEW.w} ${MAP_VIEW.h}`}
+      viewBox={`0 0 ${MAP_IMG.w} ${MAP_IMG.h}`}
       role="img"
       aria-label="Zone highlighted on the Lowcountry coverage map"
       className="w-full h-auto rounded-[10px] border border-line"
     >
-      <rect width={MAP_VIEW.w} height={MAP_VIEW.h} fill="#ACD9EF" />
-      {COUNTIES.map((c) => (
-        <path
-          key={c.name}
-          d={c.d}
-          fill="#FBFDFE"
-          fillRule="evenodd"
-          stroke="#9FB8C9"
-          strokeWidth="1"
-          strokeDasharray="3 4"
-          strokeLinejoin="round"
-        />
-      ))}
-      <path d={LAKES_D} fill="#ACD9EF" stroke="#8FC3DE" strokeWidth="0.75" strokeLinejoin="round" />
-      {ZONE_SHAPES.map((s) => {
-        const sel = s.slug === highlight;
+      <image href={MAP_IMG.src} width={MAP_IMG.w} height={MAP_IMG.h} />
+      {MAP_POSITIONS.map((b) => {
+        const sel = b.slug === highlight;
         return (
           <circle
-            key={s.slug}
-            cx={s.labelX}
-            cy={s.labelY}
-            r={sel ? 30 : 20}
-            fill={sel ? "rgba(255,140,0,.5)" : "rgba(56,182,255,.22)"}
+            key={b.slug}
+            cx={b.x}
+            cy={b.y}
+            r={sel ? b.r + 6 : b.r * 0.6}
+            fill={sel ? "rgba(255,140,0,.45)" : "rgba(56,182,255,.25)"}
             stroke={sel ? "#E67C00" : "rgba(18,135,216,.55)"}
-            strokeWidth={sel ? 2 : 1}
+            strokeWidth={sel ? 4 : 1.5}
           />
         );
       })}

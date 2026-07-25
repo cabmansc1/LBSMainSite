@@ -5,32 +5,13 @@ import Link from "next/link";
 import { ZONES } from "@/lib/zones";
 import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
-import { MAP_VIEW, ZONE_SHAPES, COUNTIES, LAKES_D } from "@/lib/map-data";
+import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
 
 /**
- * Real Lowcountry geography: zone shapes are simplified Census ZCTA
- * boundaries (see scripts/build-map.mjs). The navy ground reads as
- * water; land only exists where we mail.
+ * Coverage bubbles pinned to the printed town markers on the
+ * Tri-County base map. The base map carries its own town labels; the
+ * site labels only the two zones the map does not name.
  */
-
-/**
- * Coverage bubbles at each zone's true geographic center (projected
- * ZIP centroids), sized by reach. The base map behind them is
- * swappable; the user is sourcing a preferred base image.
- */
-const BUBBLES: Record<string, { text?: string; r: number; dx?: number; dy?: number }> = {
-  summerville: { r: 32 },
-  "moncks-corner": { text: "Moncks Corner", r: 24, dx: 10, dy: -10 },
-  "goose-creek": { text: "Goose Creek", r: 21, dx: 6 },
-  "north-charleston": { text: "N. Charleston", r: 25, dx: -26, dy: -2 },
-  "daniel-island": { text: "Daniel Island", r: 18, dx: 22, dy: -18 },
-  "mount-pleasant": { text: "Mt. Pleasant", r: 25, dx: 22, dy: 10 },
-  "isle-of-palms": { text: "Isle of Palms", r: 14, dx: 34, dy: -6 },
-  "sullivans-island": { text: "Sullivans Is.", r: 12, dx: 30, dy: 26 },
-  charleston: { r: 25, dx: -22, dy: 20 },
-  "james-island": { text: "James Is.", r: 17, dx: 4, dy: 22 },
-  "johns-island": { text: "Johns Island", r: 20, dx: -22, dy: 6 },
-};
 
 const availability = (m: UpcomingMailing | undefined) => {
   if (!m) return { text: "Coming soon", tone: "info" as const };
@@ -49,80 +30,57 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
 
   return (
     <div className="grid lg:grid-cols-[1.35fr_.65fr] gap-4 items-stretch">
-      <div className="bg-white border border-white/10 rounded-2xl p-3 overflow-hidden">
+      <div className="bg-white border border-line rounded-2xl p-3 overflow-hidden">
         <svg
-          viewBox={`0 0 ${MAP_VIEW.w} ${MAP_VIEW.h}`}
+          viewBox={`0 0 ${MAP_IMG.w} ${MAP_IMG.h}`}
           role="group"
           aria-label="Charleston Lowcountry service zone map"
-          className="w-full h-auto"
+          className="w-full h-auto rounded-[10px]"
         >
-          {/* Water */}
-          <rect width={MAP_VIEW.w} height={MAP_VIEW.h} fill="#ACD9EF" rx="10" />
-          {/* County land, like a printed reference map: white silhouettes
-              with dashed county lines; the coast and lakes stay water */}
-          <g aria-hidden="true">
-            {COUNTIES.map((c) => (
-              <path
-                key={c.name}
-                d={c.d}
-                fill="#FBFDFE"
-                fillRule="evenodd"
-                stroke="#9FB8C9"
-                strokeWidth="1"
-                strokeDasharray="3 4"
-                strokeLinejoin="round"
-              />
-            ))}
-            <path d={LAKES_D} fill="#ACD9EF" stroke="#8FC3DE" strokeWidth="0.75" strokeLinejoin="round" />
-          </g>
-          <text x={MAP_VIEW.w - 138} y={MAP_VIEW.h - 22} fill="#4E90B8" fontSize="13" fontStyle="italic">
-            Atlantic Ocean
-          </text>
-          {ZONE_SHAPES.map((s) => {
-            const z = ZONES.find((x) => x.slug === s.slug);
+          <image href={MAP_IMG.src} width={MAP_IMG.w} height={MAP_IMG.h} />
+          {MAP_POSITIONS.map((b) => {
+            const z = ZONES.find((x) => x.slug === b.slug);
             if (!z) return null;
-            const sel = selected === s.slug;
-            const b = BUBBLES[s.slug] ?? { r: 24 };
-            const cx = s.labelX + (b.dx ?? 0);
-            const cy = s.labelY + (b.dy ?? 0);
-            const label = b.text ?? z.name;
+            const sel = selected === b.slug;
             return (
               <g
-                key={s.slug}
+                key={b.slug}
                 role="button"
                 tabIndex={0}
                 aria-label={`${z.name}, ${z.households5k} households`}
                 className="cursor-pointer outline-none group"
-                onClick={() => setSelected(s.slug)}
+                onClick={() => setSelected(b.slug)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setSelected(s.slug);
+                    setSelected(b.slug);
                   }
                 }}
               >
                 <circle
-                  cx={cx}
-                  cy={cy}
+                  cx={b.x}
+                  cy={b.y}
                   r={b.r}
-                  fill={sel ? "rgba(255,140,0,.45)" : "rgba(56,182,255,.3)"}
+                  fill={sel ? "rgba(255,140,0,.4)" : "rgba(56,182,255,.3)"}
                   stroke={sel ? "#E67C00" : "#1287D8"}
-                  strokeWidth={sel ? 2 : 1.25}
+                  strokeWidth={sel ? 4 : 2.5}
                   className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
-                  style={sel ? { fill: "rgba(255,140,0,.45)" } : undefined}
+                  style={sel ? { fill: "rgba(255,140,0,.4)" } : undefined}
                 />
-                <text
-                  x={cx}
-                  y={cy + b.r + 14}
-                  textAnchor="middle"
-                  fill={sel ? "#8A4B00" : "#12293C"}
-                  fontSize="11.5"
-                  fontWeight="650"
-                  className="pointer-events-none"
-                  style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,.85)", strokeWidth: 3 }}
-                >
-                  {label}
-                </text>
+                {b.label && (
+                  <text
+                    x={b.x}
+                    y={b.labelAbove ? b.y - b.r - 14 : b.y + b.r + 26}
+                    textAnchor="middle"
+                    fill="#1F2937"
+                    fontSize="23"
+                    fontWeight="700"
+                    className="pointer-events-none"
+                    style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,.9)", strokeWidth: 6 }}
+                  >
+                    {b.label}
+                  </text>
+                )}
               </g>
             );
           })}
