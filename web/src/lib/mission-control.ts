@@ -271,6 +271,12 @@ export async function pushToMissionControl(event: SignupEvent): Promise<void> {
     console.log("[mission-control preview] would push:", event.type, event.businessName ?? "");
     return;
   }
+  // Staging safety: with MC_READ_ONLY set (or a read-only key), writes
+  // are never attempted, so no staging bug can mutate live MC data.
+  if (process.env.MC_READ_ONLY === "1") {
+    console.log("[mission-control read-only] suppressed write:", event.type, event.businessName ?? "");
+    return;
+  }
   try {
     if (event.type === "order_paid" && event.zoneSlug) {
       const cards = await fetchCards();
