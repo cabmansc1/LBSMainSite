@@ -24,11 +24,14 @@ const CATEGORIES = [
 ];
 
 /** Spot counts derive from the mailing's remaining capacity. */
-const availabilityFrom = (left: number) => [
-  { size: "small" as const, open: Math.max(0, Math.min(4, left)) },
-  { size: "medium" as const, open: Math.max(0, Math.min(2, left - 2)) },
-  { size: "large" as const, open: Math.max(0, left - 8) },
-];
+const availabilityFrom = (leftRaw: number) => {
+  const left = Math.max(0, Math.floor(leftRaw)); // half-spots exist in MC
+  return [
+    { size: "small" as const, open: Math.min(4, left) },
+    { size: "medium" as const, open: Math.max(0, Math.min(2, left - 2)) },
+    { size: "large" as const, open: Math.max(0, left - 8) },
+  ];
+};
 
 export async function generateMetadata({
   params,
@@ -60,6 +63,8 @@ export default async function PostcardCheckoutPage({
     getTakenCategories(zone),
   ]);
   if (!mailing || mailing.status === "waitlist") notFound();
+  const spotsLeft =
+    mailing.status === "full" ? 0 : mailing.spotsTotal - mailing.spotsTaken;
 
   return (
     <>
@@ -90,7 +95,7 @@ export default async function PostcardCheckoutPage({
           zoneName={z.name}
           mailMonth={mailing.mailMonth}
           reach="5k"
-          availability={availabilityFrom(mailing.spotsTotal - mailing.spotsTaken)}
+          availability={availabilityFrom(spotsLeft)}
           takenCategories={takenCategories}
           categories={CATEGORIES}
         />

@@ -66,13 +66,16 @@ type McAdvertiser = {
   phone?: string;
   email?: string;
   adSize?: string;
+  spotsConsumed?: number;
   spotsPurchased?: number;
   pricePerSpot?: number;
   totalAmount?: number;
   amountPaid?: number;
   paymentStatus?: "unpaid" | "partial" | "paid";
+  /** Live MC: boolean flag; the locked category is category/primaryCategory. */
   exclusivity?: string | boolean;
   category?: string;
+  primaryCategory?: string;
 };
 
 type McCardRaw = Record<string, unknown> & {
@@ -80,6 +83,10 @@ type McCardRaw = Record<string, unknown> & {
   area?: string;
   totalSpots?: number;
   status?: string;
+  mailDate?: string;
+  distribution?: number | string;
+  cardsMailed?: number | string;
+  spotsFilled?: number;
   advertisers?: McAdvertiser[];
 };
 
@@ -94,6 +101,8 @@ type McCard = {
   spotsTaken: number;
   status: UpcomingMailing["status"];
   advertisers: McAdvertiser[];
+  isPast: boolean;
+  mailDateIso: string;
 };
 
 const slugify = (s: string) =>
@@ -102,40 +111,71 @@ const slugify = (s: string) =>
 const str = (v: unknown, fallback = ""): string =>
   v === undefined || v === null ? fallback : String(v);
 
+/** MC area names that map onto a different site zone. */
+const ZONE_ALIASES: Record<string, string> = {
+  "north-mount-pleasant": "mount-pleasant",
+  nexton: "summerville",
+};
+
+/** Live MC statuses: filling = selling now; in_production = closed for
+ * print; mailed = history. */
+const isPastStatus = (s: string) =>
+  ["mailed", "shipped", "archived", "cancelled", "completed"].includes(s);
+
+const formatMailMonth = (iso: string): string => {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso || "TBD";
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+};
+
 function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   const zoneName = str(raw.area ?? raw.name ?? raw.title);
   const spotsTotal = Number(raw.totalSpots ?? 11);
-  // Prefer an explicit activity field; otherwise sum purchased spots.
-  const explicitTaken = raw.spotsTaken ?? raw.spotsFilled ?? raw.spotsSold;
+  // Enriched rows carry spotsFilled; raw store rows fall back to
+  // summing each advertiser's consumed spots.
+  const explicitTaken = raw.spotsFilled ?? raw.spotsTaken ?? raw.spotsSold;
   const spotsTaken =
     explicitTaken !== undefined && explicitTaken !== null
       ? Number(explicitTaken)
-      : advertisers.reduce((n, a) => n + (a.spotsPurchased ?? 1), 0);
+      : advertisers.reduce(
+          (n, a) => n + (a.spotsConsumed ?? a.spotsPurchased ?? 1),
+          0,
+        );
 
   const statusRaw = str(raw.status, "open").toLowerCase();
   const status: UpcomingMailing["status"] =
     statusRaw.includes("wait") ? "waitlist"
-    : statusRaw.includes("full") || spotsTaken >= spotsTotal ? "full"
+    : statusRaw === "in_production" || spotsTaken >= spotsTotal ? "full"
     : "open";
+
+  const mailDate = str(raw.mailDate ?? raw.mailMonth ?? raw.month);
+  const households = raw.distribution ?? raw.cardsMailed ?? raw.households;
+  const rawSlug = slugify(zoneName);
 
   return {
     id: raw.id,
-    zoneSlug: slugify(zoneName),
+    zoneSlug: ZONE_ALIASES[rawSlug] ?? rawSlug,
     zoneName,
-    mailMonth: str(raw.mailMonth ?? raw.mailDate ?? raw.month, "TBD"),
-    artworkDeadline: str(raw.artworkDeadline ?? raw.deadline ?? raw.printDeadline, "TBD"),
-    households: str(raw.households ?? raw.homes, "5,000+"),
+    mailMonth: formatMailMonth(mailDate),
+    artworkDeadline: str(raw.artworkDeadline ?? raw.deadline, "Ask us"),
+    households:
+      typeof households === "number"
+        ? households.toLocaleString("en-US")
+        : str(households, "5,000+"),
     spotsTotal,
     spotsTaken,
     status,
     advertisers,
+    isPast: isPastStatus(statusRaw) || !mailDate,
+    mailDateIso: mailDate,
   };
 }
 
 /** Category an advertiser holds exclusively on their card. */
 const advertiserCategory = (a: McAdvertiser): string | undefined => {
+  if (a.exclusivity === true) return a.category ?? a.primaryCategory;
   if (typeof a.exclusivity === "string" && a.exclusivity) return a.exclusivity;
-  return a.category;
+  return undefined;
 };
 
 /* ---------- reads ---------- */
@@ -143,30 +183,34 @@ const advertiserCategory = (a: McAdvertiser): string | undefined => {
 async function fetchCards(): Promise<McCard[] | null> {
   if (!mcEnabled()) return null;
   try {
-    // Primary: enriched cards with nested advertisers (activity).
+    // Primary: the store snapshot. The enriched cards list has activity
+    // numbers but does NOT nest advertisers (verified against live MC),
+    // and category locks need advertiser records, so the snapshot with
+    // a cardId join is the one source that has everything.
     try {
-      const list = (await mcFetch("/api/pipeline/cards")) as McCardRaw[];
-      if (Array.isArray(list)) {
-        return list
-          .map((c) => normalizeCard(c, c.advertisers ?? []))
+      const store = (await mcFetch("/api/store")) as {
+        pipelineCards?: McCardRaw[];
+        pipelineAdvertisers?: McAdvertiser[];
+      };
+      if (Array.isArray(store.pipelineCards)) {
+        const byCard = new Map<string, McAdvertiser[]>();
+        for (const a of store.pipelineAdvertisers ?? []) {
+          const key = String(a.cardId);
+          byCard.set(key, [...(byCard.get(key) ?? []), a]);
+        }
+        return store.pipelineCards
+          .map((c) => normalizeCard(c, byCard.get(String(c.id)) ?? []))
           .filter((c) => c.zoneName);
       }
     } catch (e) {
-      console.error("MC /api/pipeline/cards failed, trying /api/store:", e);
+      console.error("MC /api/store failed, trying /api/pipeline/cards:", e);
     }
-    // Fallback: raw snapshot, join advertisers by cardId ourselves.
-    const store = (await mcFetch("/api/store")) as {
-      pipelineCards?: McCardRaw[];
-      pipelineAdvertisers?: McAdvertiser[];
-    };
-    if (!Array.isArray(store.pipelineCards)) return null;
-    const byCard = new Map<string, McAdvertiser[]>();
-    for (const a of store.pipelineAdvertisers ?? []) {
-      const key = String(a.cardId);
-      byCard.set(key, [...(byCard.get(key) ?? []), a]);
-    }
-    return store.pipelineCards
-      .map((c) => normalizeCard(c, byCard.get(String(c.id)) ?? []))
+    // Fallback: enriched cards (no advertisers, so no category locks,
+    // but availability still works via spotsFilled).
+    const list = (await mcFetch("/api/pipeline/cards")) as McCardRaw[];
+    if (!Array.isArray(list)) return null;
+    return list
+      .map((c) => normalizeCard(c, c.advertisers ?? []))
       .filter((c) => c.zoneName);
   } catch (e) {
     console.error("Mission Control read failed, serving fallback:", e);
@@ -177,7 +221,11 @@ async function fetchCards(): Promise<McCard[] | null> {
 export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
   const cards = await fetchCards();
   if (!cards || cards.length === 0) return UPCOMING_MAILINGS;
-  return cards.map((c) => ({
+  const upcoming = cards
+    .filter((c) => !c.isPast && c.zoneName.toLowerCase() !== "other")
+    .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso));
+  if (upcoming.length === 0) return UPCOMING_MAILINGS;
+  return upcoming.map((c) => ({
     zoneSlug: c.zoneSlug,
     zoneName: c.zoneName,
     mailMonth: c.mailMonth,

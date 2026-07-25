@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { StatusChip, FillMeter, CtaBand } from "@/components/sections";
 import { getUpcomingMailings } from "@/lib/mission-control";
+import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -78,12 +79,21 @@ export default async function MailingCalendarPage() {
                       {chipFor(m.status, left)}
                     </td>
                     <td className="px-4 py-3.5 border-b border-line">
-                      <Link
-                        href={`/${m.zoneSlug}-direct-mail-marketing`}
-                        className="text-brand-deep font-semibold hover:underline whitespace-nowrap"
-                      >
-                        {m.status === "waitlist" ? "Join waitlist" : "Reserve"}
-                      </Link>
+                      {zoneBySlug(m.zoneSlug) ? (
+                        <Link
+                          href={`/${m.zoneSlug}-direct-mail-marketing`}
+                          className="text-brand-deep font-semibold hover:underline whitespace-nowrap"
+                        >
+                          {m.status === "waitlist" ? "Join waitlist" : "Reserve"}
+                        </Link>
+                      ) : (
+                        <a
+                          href="tel:+18432122969"
+                          className="text-brand-deep font-semibold hover:underline whitespace-nowrap"
+                        >
+                          Call to book
+                        </a>
+                      )}
                     </td>
                   </tr>
                 );
@@ -92,8 +102,9 @@ export default async function MailingCalendarPage() {
           </table>
         </div>
         <p className="text-[12.5px] text-muted mt-3">
-          Schedule syncs from Mission Control once connected; illustrative
-          until then.
+          {process.env.MC_BASE_URL
+            ? "Live schedule, synced from our production system."
+            : "Illustrative schedule until the live sync connects."}
         </p>
 
         <div className="mt-14">
