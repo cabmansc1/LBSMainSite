@@ -42,6 +42,32 @@ export const businesses = mysqlTable("directory_businesses", {
   showHours: boolean("show_hours"),
   viewsCount: int("views_count"),
   inquiriesCount: int("inquiries_count"),
+  facebookUrl: varchar("facebook_url", { length: 512 }),
+  instagramUrl: varchar("instagram_url", { length: 512 }),
+  tiktokUrl: varchar("tiktok_url", { length: 512 }),
+  youtubeUrl: varchar("youtube_url", { length: 512 }),
+  createdAt: timestamp("created_at"),
+});
+
+export const blogCategories = mysqlTable("directory_blog_categories", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 128 }).notNull(),
+  slug: varchar("slug", { length: 128 }).notNull(),
+  displayOrder: int("display_order"),
+  isActive: boolean("is_active"),
+});
+
+export const blogPosts = mysqlTable("directory_blog_posts", {
+  id: int("id").primaryKey().autoincrement(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 280 }).notNull(),
+  content: text("content"),
+  excerpt: text("excerpt"),
+  metaDescription: varchar("meta_description", { length: 320 }),
+  featuredImage: varchar("featured_image", { length: 255 }),
+  categoryId: int("category_id"),
+  status: varchar("status", { length: 16 }),
+  publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at"),
 });
 

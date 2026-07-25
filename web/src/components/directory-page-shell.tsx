@@ -6,6 +6,7 @@ import {
   usingSampleData,
   type DirectoryFilters,
 } from "@/lib/directory";
+import { SITE_URL } from "@/lib/seo";
 
 /**
  * Shared server shell for /directory and its category/location/tag
@@ -22,6 +23,19 @@ export async function DirectoryPageShell({
     getBusinesses(filters),
     getFilterOptions(),
   ]);
+
+  // ItemList structured data: tells search engines this page is a
+  // ranked list of local businesses, each with its own indexable page.
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: businesses.slice(0, 25).map((b, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/business/${b.slug}`,
+      name: b.name,
+    })),
+  };
 
   return (
     <>
@@ -58,6 +72,10 @@ export async function DirectoryPageShell({
           activeLocation={filters.location}
         />
       </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
     </>
   );
 }

@@ -32,6 +32,7 @@ export type DirectoryBusiness = {
   logoUrl?: string;
   /** Gallery photos (excludes banner type), primary first. */
   photos?: { url: string; alt: string }[];
+  socials?: { facebook?: string; instagram?: string; tiktok?: string; youtube?: string };
 };
 
 /**
@@ -265,7 +266,19 @@ export async function getBusinesses(
     description: r.description ?? "",
     planType: (r.planType as DirectoryBusiness["planType"]) ?? "basic",
     isVerified: !!r.isVerified,
-    isFeatured: !!r.isFeatured,
+    // Legacy directory.php features on is_featured OR paid placement;
+    // plan_type mirrors the paid tiers the admin assigns.
+    isFeatured:
+      !!r.isFeatured || r.planType === "featured" || r.planType === "elite",
+    socials:
+      r.facebookUrl || r.instagramUrl || r.tiktokUrl || r.youtubeUrl
+        ? {
+            facebook: r.facebookUrl ?? undefined,
+            instagram: r.instagramUrl ?? undefined,
+            tiktok: r.tiktokUrl ?? undefined,
+            youtube: r.youtubeUrl ?? undefined,
+          }
+        : undefined,
     address: r.address
       ? `${r.address}, ${r.city ?? ""}, ${r.state ?? "SC"} ${r.zipCode ?? ""}`
       : undefined,

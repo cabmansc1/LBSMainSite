@@ -32,6 +32,14 @@ export default async function BusinessPage({
   const b = await getBusiness(slug);
   if (!b) notFound();
 
+  const sameAs = [
+    b.website,
+    b.socials?.facebook,
+    b.socials?.instagram,
+    b.socials?.tiktok,
+    b.socials?.youtube,
+  ].filter(Boolean);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -39,10 +47,60 @@ export default async function BusinessPage({
     description: b.description,
     url: `${SITE_URL}/business/${b.slug}`,
     telephone: b.phone,
+    image: b.logoUrl,
+    sameAs: sameAs.length ? sameAs : undefined,
     address: b.address
       ? { "@type": "PostalAddress", streetAddress: b.address, addressRegion: "SC" }
-      : undefined,
+      : { "@type": "PostalAddress", addressLocality: b.locationArea, addressRegion: "SC" },
   };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Directory", item: `${SITE_URL}/directory` },
+      { "@type": "ListItem", position: 2, name: b.category, item: `${SITE_URL}/directory/category/${b.categorySlug}` },
+      { "@type": "ListItem", position: 3, name: b.name, item: `${SITE_URL}/business/${b.slug}` },
+    ],
+  };
+
+  const SOCIALS: { key: string; href?: string; label: string; icon: React.ReactNode }[] = [
+    {
+      key: "facebook",
+      href: b.socials?.facebook,
+      label: "Facebook",
+      icon: <path d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v7h3v-7h2.3l.7-3H13V9a1 1 0 0 1 1-1z" />,
+    },
+    {
+      key: "instagram",
+      href: b.socials?.instagram,
+      label: "Instagram",
+      icon: (
+        <>
+          <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" />
+          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+          <circle cx="17.2" cy="6.8" r="1.3" />
+        </>
+      ),
+    },
+    {
+      key: "tiktok",
+      href: b.socials?.tiktok,
+      label: "TikTok",
+      icon: <path d="M15 4a5 5 0 0 0 5 4v3a8 8 0 0 1-5-1.7V15a6 6 0 1 1-6-6v3a3 3 0 1 0 3 3V4h3z" />,
+    },
+    {
+      key: "youtube",
+      href: b.socials?.youtube,
+      label: "YouTube",
+      icon: (
+        <>
+          <rect x="2.5" y="6" width="19" height="12" rx="3.5" />
+          <path d="M10.5 9.5v5l4.5-2.5-4.5-2.5z" fill="#fff" />
+        </>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -182,6 +240,25 @@ export default async function BusinessPage({
                 Open in Google Maps
               </a>
             )}
+            {b.socials && (
+              <div className="flex gap-2.5 pt-1">
+                {SOCIALS.filter((s) => s.href).map((s) => (
+                  <a
+                    key={s.key}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    title={s.label}
+                    className="w-10 h-10 rounded-[10px] bg-surface border border-line flex items-center justify-center text-brand-deep hover:bg-brand hover:text-white hover:border-brand transition-colors"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      {s.icon}
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card className="p-6.5 grid gap-2.5 bg-surface">
@@ -203,6 +280,10 @@ export default async function BusinessPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
     </>
   );
