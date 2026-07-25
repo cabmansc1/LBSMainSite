@@ -175,27 +175,27 @@ export async function getBusinesses(
   );
   const { and, eq, desc, sql } = await import("drizzle-orm");
 
+  // Matches legacy Business.php exactly: businesses.category and
+  // businesses.location_area STORE SLUGS, and filters compare slugs
+  // directly. Display labels come from the taxonomy tables afterward.
   const conds = [
     eq(businesses.isActive, true),
     eq(businesses.isVerified, true),
     eq(businesses.isHidden, false),
   ];
-  if (filters.category) {
-    const cat = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.slug, filters.category))
-      .limit(1);
-    if (cat[0]) conds.push(eq(businesses.category, cat[0].displayName));
-  }
-  if (filters.location) {
-    const loc = await db
-      .select()
-      .from(locations)
-      .where(eq(locations.slug, filters.location))
-      .limit(1);
-    if (loc[0]) conds.push(eq(businesses.locationArea, loc[0].displayName));
-  }
+  if (filters.category) conds.push(eq(businesses.category, filters.category));
+  if (filters.location)
+    conds.push(eq(businesses.locationArea, filters.location));
+
+  // Slug -> pretty label maps (legacy fallback: ucwords on the slug).
+  const [catRows, locRows] = await Promise.all([
+    db.select().from(categories),
+    db.select().from(locations),
+  ]);
+  const prettify = (slug: string) =>
+    slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const catLabel = new Map(catRows.map((c) => [c.slug, c.displayName]));
+  const locLabel = new Map(locRows.map((l) => [l.slug, l.displayName]));
 
   const rows = await db
     .select()
@@ -211,10 +211,14 @@ export async function getBusinesses(
     id: r.id,
     slug: r.slug,
     name: r.businessName,
-    category: r.category ?? "General",
-    categorySlug: slugify(r.category ?? "general"),
-    locationArea: r.locationArea ?? r.city ?? "",
-    locationSlug: slugify(r.locationArea ?? r.city ?? ""),
+    category: r.category
+      ? (catLabel.get(r.category) ?? prettify(r.category))
+      : "General",
+    categorySlug: r.category ?? "general",
+    locationArea: r.locationArea
+      ? (locLabel.get(r.locationArea) ?? prettify(r.locationArea))
+      : (r.city ?? ""),
+    locationSlug: r.locationArea ?? slugify(r.city ?? ""),
     city: r.city ?? "",
     phone: r.phone ?? undefined,
     website: r.website ?? undefined,
