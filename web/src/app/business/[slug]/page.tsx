@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { Card } from "@/components/sections";
 import { InquiryForm } from "@/components/inquiry-form";
 import { getBusiness } from "@/lib/directory";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { dealsForBusiness } from "@/lib/lowco-deals";
+import { advertiserAppearances } from "@/lib/mission-control";
+import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +33,15 @@ export default async function BusinessPage({
   const { slug } = await params;
   const b = await getBusiness(slug);
   if (!b) notFound();
+
+  // Cross-site and Mission Control lookups are best-effort extras; the
+  // page renders fine when either source is unreachable.
+  const [lowcoDeals, appearances] = await Promise.all([
+    dealsForBusiness(b.name).catch(() => []),
+    advertiserAppearances({ name: b.name }).catch(
+      () => [] as { zoneName: string; mailMonth: string }[],
+    ),
+  ]);
 
   const sameAs = [
     b.website,
@@ -165,7 +176,77 @@ export default async function BusinessPage({
           <Card className="p-6.5 grid gap-3">
             <h2 className="text-[17px] font-semibold tracking-tight">About</h2>
             <p className="text-sm text-body leading-relaxed">{b.description}</p>
+            {b.tags && b.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {b.tags.map((t) => (
+                  <Link
+                    key={t.slug}
+                    href={`/directory/tag/${t.slug}`}
+                    className="text-[11.5px] font-semibold text-brand-deep bg-brand-tint rounded-full px-2.5 py-1 hover:bg-brand hover:text-white transition-colors"
+                  >
+                    {t.name}
+                  </Link>
+                ))}
+              </div>
+            )}
           </Card>
+
+          {appearances.length > 0 && (
+            <Card className="p-6.5 grid gap-2 bg-brand-tint border-brand/25">
+              <span className="text-xs font-semibold uppercase tracking-widest text-brand-deep">
+                As seen in mailboxes
+              </span>
+              <p className="text-sm text-body leading-relaxed">
+                {b.name} appeared on{" "}
+                {appearances
+                  .map((a) => `the ${a.mailMonth} ${a.zoneName} Spotlight card`)
+                  .join(" and ")}
+                , mailed to local homes.
+              </p>
+              <Link
+                href="/gallery"
+                className="text-[13px] font-semibold text-brand-deep hover:underline"
+              >
+                Browse past cards →
+              </Link>
+            </Card>
+          )}
+
+          {lowcoDeals.length > 0 && (
+            <Card className="p-6.5 grid gap-3 border-l-[3px] border-l-ok">
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted">
+                Live deals on LowcoDeals
+              </span>
+              <div className="grid gap-2.5">
+                {lowcoDeals.map((d) => (
+                  <a
+                    key={d.id}
+                    href={d.url}
+                    target="_blank"
+                    rel="noopener"
+                    className="flex items-center justify-between gap-4 bg-surface border border-line rounded-[10px] px-4 py-3 hover:border-faint transition-colors"
+                  >
+                    <span className="text-sm font-semibold">{d.title}</span>
+                    <span className="text-[13px] num shrink-0">
+                      {d.dealPrice !== undefined && (
+                        <b className="font-bold text-ok">
+                          ${d.dealPrice.toLocaleString("en-US")}
+                        </b>
+                      )}{" "}
+                      {d.originalPrice !== undefined && (
+                        <s className="text-faint text-xs">
+                          ${d.originalPrice.toLocaleString("en-US")}
+                        </s>
+                      )}
+                    </span>
+                  </a>
+                ))}
+              </div>
+              <p className="text-xs text-muted">
+                Deals are claimed on our sister site LowcoDeals.com.
+              </p>
+            </Card>
+          )}
 
           {b.offer && (
             <Card className="p-6.5 grid gap-2 border-l-[3px] border-l-cta">

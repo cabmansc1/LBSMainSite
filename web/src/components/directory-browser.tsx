@@ -11,7 +11,13 @@ const Pin = () => (
   </svg>
 );
 
-function BusinessCard({ b }: { b: DirectoryBusiness }) {
+function BusinessCard({
+  b,
+  lowcoDeals = 0,
+}: {
+  b: DirectoryBusiness;
+  lowcoDeals?: number;
+}) {
   const featured = b.isFeatured;
   return (
     <div
@@ -79,10 +85,27 @@ function BusinessCard({ b }: { b: DirectoryBusiness }) {
         <p className="text-[13.5px] text-body leading-relaxed line-clamp-2">
           {b.description}
         </p>
-        {b.offer && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#a05e00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-2.5 py-1.5 w-max">
-            {b.offer.title}
-          </span>
+        {(b.tags?.length || b.offer || lowcoDeals > 0) && (
+          <div className="flex flex-wrap gap-1.5">
+            {b.tags?.map((t) => (
+              <span
+                key={t.slug}
+                className="text-[11.5px] font-semibold text-brand-deep bg-brand-tint rounded-full px-2.5 py-1"
+              >
+                {t.name}
+              </span>
+            ))}
+            {b.offer && (
+              <span className="text-xs font-semibold text-[#a05e00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-2.5 py-1">
+                {b.offer.title}
+              </span>
+            )}
+            {lowcoDeals > 0 && (
+              <span className="text-xs font-semibold text-ok bg-[#e5f5ec] border border-[#bfe8d2] rounded-lg px-2.5 py-1">
+                {lowcoDeals} deal{lowcoDeals > 1 ? "s" : ""} on LowcoDeals
+              </span>
+            )}
+          </div>
         )}
       </Link>
       <div
@@ -127,13 +150,18 @@ export function DirectoryBrowser({
   locations,
   activeCategory,
   activeLocation,
+  lowcoDealCounts = {},
 }: {
   businesses: DirectoryBusiness[];
   categories: { name: string; slug: string }[];
   locations: { name: string; slug: string }[];
   activeCategory?: string;
   activeLocation?: string;
+  /** normalized business name -> live LowcoDeals count */
+  lowcoDealCounts?: Record<string, number>;
 }) {
+  const dealCount = (name: string) =>
+    lowcoDealCounts[name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")] ?? 0;
   const [query, setQuery] = useState("");
 
   const visible = useMemo(() => {
@@ -216,7 +244,7 @@ export function DirectoryBrowser({
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             {featured.map((b) => (
-              <BusinessCard key={b.id} b={b} />
+              <BusinessCard key={b.id} b={b} lowcoDeals={dealCount(b.name)} />
             ))}
           </div>
         </section>
@@ -242,7 +270,7 @@ export function DirectoryBrowser({
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {rest.map((b) => (
-              <BusinessCard key={b.id} b={b} />
+              <BusinessCard key={b.id} b={b} lowcoDeals={dealCount(b.name)} />
             ))}
           </div>
         )}

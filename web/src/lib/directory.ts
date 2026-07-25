@@ -33,6 +33,8 @@ export type DirectoryBusiness = {
   /** Gallery photos (excludes banner type), primary first. */
   photos?: { url: string; alt: string }[];
   socials?: { facebook?: string; instagram?: string; tiktok?: string; youtube?: string };
+  /** Taxonomy tags ("Locally Owned", "Licensed & Insured", ...). */
+  tags?: { name: string; slug: string }[];
 };
 
 /**
@@ -200,6 +202,26 @@ export async function getBusinesses(
   if (filters.category) conds.push(eq(businesses.category, filters.category));
   if (filters.location)
     conds.push(eq(businesses.locationArea, filters.location));
+  if (filters.tag) {
+    const { tags, businessTags } = await import("@/lib/db/schema-legacy");
+    const { inArray: inArr } = await import("drizzle-orm");
+    const tagRow = await db
+      .select()
+      .from(tags)
+      .where(eq(tags.slug, filters.tag))
+      .limit(1);
+    if (tagRow[0]) {
+      const links = await db
+        .select()
+        .from(businessTags)
+        .where(eq(businessTags.tagId, tagRow[0].id));
+      const ids = links.map((l) => l.businessId);
+      if (ids.length === 0) return [];
+      conds.push(inArr(businesses.id, ids));
+    } else {
+      return [];
+    }
+  }
 
   // Slug -> pretty label maps (legacy fallback: ucwords on the slug).
   const [catRows, locRows] = await Promise.all([
@@ -224,7 +246,28 @@ export async function getBusinesses(
   // Photos for all listed businesses in one query, ordered like the
   // legacy site: primary first, then sort order, then upload date.
   const { inArray, asc } = await import("drizzle-orm");
-  const { businessPhotos } = await import("@/lib/db/schema-legacy");
+  const { businessPhotos, businessTags, tags } = await import(
+    "@/lib/db/schema-legacy"
+  );
+
+  // Tags per business (junction join, batched).
+  const tagsByBiz = new Map<number, { name: string; slug: string }[]>();
+  if (rows.length > 0) {
+    const links = await db
+      .select({
+        businessId: businessTags.businessId,
+        name: tags.displayName,
+        slug: tags.slug,
+      })
+      .from(businessTags)
+      .innerJoin(tags, eq(businessTags.tagId, tags.id))
+      .where(inArray(businessTags.businessId, rows.map((r) => r.id)));
+    for (const l of links) {
+      const list = tagsByBiz.get(l.businessId) ?? [];
+      list.push({ name: l.name, slug: l.slug });
+      tagsByBiz.set(l.businessId, list);
+    }
+  }
   const photosByBiz = new Map<number, { url: string; alt: string; type: string }[]>();
   if (rows.length > 0) {
     const photoRows = await db
@@ -282,6 +325,7 @@ export async function getBusinesses(
     address: r.address
       ? `${r.address}, ${r.city ?? ""}, ${r.state ?? "SC"} ${r.zipCode ?? ""}`
       : undefined,
+    tags: tagsByBiz.get(r.id),
     logoUrl: photosByBiz.get(r.id)?.[0]?.url,
     photos: photosByBiz
       .get(r.id)

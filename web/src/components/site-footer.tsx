@@ -17,6 +17,7 @@ const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
     heading: "Directory",
     links: [
       { href: "/directory", label: "Browse Businesses" },
+      { href: "/deals", label: "Local Deals" },
       { href: "/directory-signup", label: "List Your Business" },
       { href: "/login", label: "Advertiser Login" },
     ],

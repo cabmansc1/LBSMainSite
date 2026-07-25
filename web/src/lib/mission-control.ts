@@ -252,6 +252,40 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
     .filter((c): c is string => !!c);
 }
 
+/**
+ * Postcard appearances for a business (any card, past or upcoming),
+ * matched by email or normalized business name. Powers the "As seen on
+ * the … Spotlight card" badge on directory listings.
+ */
+export async function advertiserAppearances(match: {
+  name?: string;
+  email?: string;
+}): Promise<{ zoneName: string; mailMonth: string }[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const normName = match.name
+    ? match.name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")
+    : undefined;
+  const email = match.email?.toLowerCase();
+  const seen: { zoneName: string; mailMonth: string }[] = [];
+  for (const card of cards) {
+    for (const a of card.advertisers) {
+      const aName = a.businessName
+        ?.toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]/g, "");
+      if (
+        (email && a.email?.toLowerCase() === email) ||
+        (normName && aName && aName === normName)
+      ) {
+        seen.push({ zoneName: card.zoneName, mailMonth: card.mailMonth });
+        break;
+      }
+    }
+  }
+  return seen;
+}
+
 /* ---------- writes ---------- */
 
 type SignupEvent = {

@@ -6,6 +6,7 @@ import {
   usingSampleData,
   type DirectoryFilters,
 } from "@/lib/directory";
+import { getDealsByBusiness } from "@/lib/lowco-deals";
 import { SITE_URL } from "@/lib/seo";
 
 /**
@@ -15,14 +16,25 @@ import { SITE_URL } from "@/lib/seo";
 export async function DirectoryPageShell({
   filters = {},
   heading,
+  intro,
+  faqs,
 }: {
   filters?: DirectoryFilters;
   heading?: string;
+  /** Editorial paragraph shown under the hero (category pages). */
+  intro?: string;
+  /** FAQ block rendered below the listings, with FAQPage JSON-LD. */
+  faqs?: { q: string; a: string }[];
 }) {
-  const [businesses, options] = await Promise.all([
+  const [businesses, options, dealsByBiz] = await Promise.all([
     getBusinesses(filters),
     getFilterOptions(),
+    getDealsByBusiness(),
   ]);
+
+  const lowcoDealCounts = Object.fromEntries(
+    Object.entries(dealsByBiz).map(([k, v]) => [k, v.length]),
+  );
 
   // ItemList structured data: tells search engines this page is a
   // ranked list of local businesses, each with its own indexable page.
@@ -37,6 +49,19 @@ export async function DirectoryPageShell({
     })),
   };
 
+  const faqJsonLd =
+    faqs && faqs.length
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqs.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
+        }
+      : null;
+
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -48,11 +73,15 @@ export async function DirectoryPageShell({
             {heading ?? "Trusted local businesses, all in one place."}
           </h1>
           <p className="mt-3 text-[#93A5B8] max-w-[56ch]">
-            Every listing is a real Lowcountry business. Advertisers on our
-            postcards get featured placement.{" "}
-            <Link href="/directory-signup" className="text-brand hover:underline">
-              List your business free.
-            </Link>
+            {intro ?? (
+              <>
+                Every listing is a real Lowcountry business. Advertisers on our
+                postcards get featured placement.{" "}
+                <Link href="/directory-signup" className="text-brand hover:underline">
+                  List your business free.
+                </Link>
+              </>
+            )}
           </p>
         </div>
       </header>
@@ -70,12 +99,45 @@ export async function DirectoryPageShell({
           locations={options.locations}
           activeCategory={filters.category}
           activeLocation={filters.location}
+          lowcoDealCounts={lowcoDealCounts}
         />
+
+        {faqs && faqs.length > 0 && (
+          <section className="mt-14 max-w-[720px]">
+            <h2 className="text-[19px] font-bold tracking-tight mb-5">
+              Common questions
+            </h2>
+            <div className="grid gap-3">
+              {faqs.map((f) => (
+                <details
+                  key={f.q}
+                  className="bg-white border border-line rounded-xl px-5 py-4 group"
+                >
+                  <summary className="text-[14.5px] font-semibold cursor-pointer list-none flex items-center justify-between gap-4">
+                    {f.q}
+                    <span className="text-muted text-lg leading-none group-open:rotate-45 transition-transform">
+                      +
+                    </span>
+                  </summary>
+                  <p className="text-sm text-body leading-relaxed mt-2.5">
+                    {f.a}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
     </>
   );
 }

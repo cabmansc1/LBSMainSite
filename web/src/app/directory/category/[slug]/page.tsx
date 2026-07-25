@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DirectoryPageShell } from "@/components/directory-page-shell";
+import { getCategoryContent } from "@/lib/category-content";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +28,13 @@ export default async function DirectoryCategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const content = getCategoryContent(slug);
   return (
     <DirectoryPageShell
       filters={{ category: slug }}
       heading={`${pretty(slug)} in the Lowcountry`}
+      intro={content?.intro}
+      faqs={content?.faqs}
     />
   );
 }

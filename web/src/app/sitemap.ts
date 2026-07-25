@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/coverage-map", priority: 0.8 },
     { path: "/mailing-calendar", priority: 0.8 },
     { path: "/directory", priority: 0.8 },
+    { path: "/deals", priority: 0.7 },
     { path: "/gallery", priority: 0.6 },
     { path: "/roi-calculator", priority: 0.6 },
     { path: "/contact", priority: 0.6 },
