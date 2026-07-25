@@ -13,16 +13,23 @@ import { MAP_VIEW, ZONE_SHAPES, COUNTIES, LAKES_D } from "@/lib/map-data";
  * water; land only exists where we mail.
  */
 
-const LABELS: Record<string, { text?: string; dx?: number; dy?: number }> = {
-  "north-charleston": { text: "N. Charleston", dy: -4 },
-  "mount-pleasant": { text: "Mt. Pleasant", dy: 6 },
-  "daniel-island": { text: "Daniel Island", dy: -8 },
-  "sullivans-island": { text: "Sullivans Is.", dx: 46, dy: 22 },
-  "isle-of-palms": { text: "Isle of Palms", dx: 48, dy: -4 },
-  "james-island": { text: "James Is.", dx: 30, dy: 22 },
-  "moncks-corner": { text: "Moncks Corner" },
-  "goose-creek": { text: "Goose Creek", dy: 6 },
-  charleston: { dx: -30, dy: 18 },
+/**
+ * Coverage bubbles at each zone's true geographic center (projected
+ * ZIP centroids), sized by reach. The base map behind them is
+ * swappable; the user is sourcing a preferred base image.
+ */
+const BUBBLES: Record<string, { text?: string; r: number; dx?: number; dy?: number }> = {
+  summerville: { r: 32 },
+  "moncks-corner": { text: "Moncks Corner", r: 24, dx: 10, dy: -10 },
+  "goose-creek": { text: "Goose Creek", r: 21, dx: 6 },
+  "north-charleston": { text: "N. Charleston", r: 25, dx: -26, dy: -2 },
+  "daniel-island": { text: "Daniel Island", r: 18, dx: 22, dy: -18 },
+  "mount-pleasant": { text: "Mt. Pleasant", r: 25, dx: 22, dy: 10 },
+  "isle-of-palms": { text: "Isle of Palms", r: 14, dx: 34, dy: -6 },
+  "sullivans-island": { text: "Sullivans Is.", r: 12, dx: 30, dy: 26 },
+  charleston: { r: 25, dx: -22, dy: 20 },
+  "james-island": { text: "James Is.", r: 17, dx: 4, dy: 22 },
+  "johns-island": { text: "Johns Island", r: 20, dx: -22, dy: 6 },
 };
 
 const availability = (m: UpcomingMailing | undefined) => {
@@ -75,7 +82,10 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
             const z = ZONES.find((x) => x.slug === s.slug);
             if (!z) return null;
             const sel = selected === s.slug;
-            const label = LABELS[s.slug]?.text ?? z.name;
+            const b = BUBBLES[s.slug] ?? { r: 24 };
+            const cx = s.labelX + (b.dx ?? 0);
+            const cy = s.labelY + (b.dy ?? 0);
+            const label = b.text ?? z.name;
             return (
               <g
                 key={s.slug}
@@ -91,18 +101,19 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
                   }
                 }}
               >
-                <path
-                  d={s.d}
-                  fill={sel ? "rgba(255,140,0,.5)" : "rgba(56,182,255,.32)"}
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={b.r}
+                  fill={sel ? "rgba(255,140,0,.45)" : "rgba(56,182,255,.3)"}
                   stroke={sel ? "#E67C00" : "#1287D8"}
-                  strokeWidth={sel ? 1.75 : 1}
-                  strokeLinejoin="round"
+                  strokeWidth={sel ? 2 : 1.25}
                   className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
-                  style={sel ? { fill: "rgba(255,140,0,.5)" } : undefined}
+                  style={sel ? { fill: "rgba(255,140,0,.45)" } : undefined}
                 />
                 <text
-                  x={s.labelX + (LABELS[s.slug]?.dx ?? 0)}
-                  y={s.labelY + (LABELS[s.slug]?.dy ?? 0)}
+                  x={cx}
+                  y={cy + b.r + 14}
                   textAnchor="middle"
                   fill={sel ? "#8A4B00" : "#12293C"}
                   fontSize="11.5"
@@ -125,7 +136,7 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
             <i className="w-2 h-2 rounded-full bg-cta inline-block" />
             Selected
           </span>
-          <span>Boundaries follow real ZIP codes</span>
+          <span>Bubble size reflects households reached</span>
         </div>
       </div>
 

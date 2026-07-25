@@ -29,13 +29,14 @@ export function ZoneMiniMap({ highlight }: { highlight: string }) {
       {ZONE_SHAPES.map((s) => {
         const sel = s.slug === highlight;
         return (
-          <path
+          <circle
             key={s.slug}
-            d={s.d}
-            fill={sel ? "rgba(255,140,0,.55)" : "rgba(56,182,255,.22)"}
-            stroke={sel ? "#E67C00" : "rgba(18,135,216,.6)"}
-            strokeWidth={sel ? 2 : 0.75}
-            strokeLinejoin="round"
+            cx={s.labelX}
+            cy={s.labelY}
+            r={sel ? 30 : 20}
+            fill={sel ? "rgba(255,140,0,.5)" : "rgba(56,182,255,.22)"}
+            stroke={sel ? "#E67C00" : "rgba(18,135,216,.55)"}
+            strokeWidth={sel ? 2 : 1}
           />
         );
       })}
