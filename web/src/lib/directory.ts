@@ -35,6 +35,9 @@ export type DirectoryBusiness = {
   socials?: { facebook?: string; instagram?: string; tiktok?: string; youtube?: string };
   /** Taxonomy tags ("Locally Owned", "Licensed & Insured", ...). */
   tags?: { name: string; slug: string }[];
+  /** Coordinates from the legacy geocoder, for the directory map view. */
+  lat?: number;
+  lng?: number;
 };
 
 /**
@@ -61,6 +64,8 @@ const SAMPLE: DirectoryBusiness[] = [
   {
     id: 1,
     slug: "palmetto-plumbing-co",
+    lat: 33.0185,
+    lng: -80.1756,
     name: "Palmetto Plumbing Co.",
     category: "Plumbing",
     categorySlug: "plumbing",
@@ -85,6 +90,8 @@ const SAMPLE: DirectoryBusiness[] = [
   {
     id: 2,
     slug: "lowcountry-smiles-dental",
+    lat: 32.8323,
+    lng: -79.8284,
     name: "Lowcountry Smiles Dental",
     category: "Dental",
     categorySlug: "dental",
@@ -103,6 +110,8 @@ const SAMPLE: DirectoryBusiness[] = [
   {
     id: 3,
     slug: "marsh-view-roofing",
+    lat: 32.981,
+    lng: -80.0326,
     name: "Marsh View Roofing",
     category: "Roofing",
     categorySlug: "roofing",
@@ -119,6 +128,8 @@ const SAMPLE: DirectoryBusiness[] = [
   {
     id: 4,
     slug: "tidal-wave-car-wash",
+    lat: 32.8546,
+    lng: -79.9748,
     name: "Tidal Wave Car Wash",
     category: "Automotive",
     categorySlug: "automotive",
@@ -134,6 +145,8 @@ const SAMPLE: DirectoryBusiness[] = [
   {
     id: 5,
     slug: "island-breeze-hvac",
+    lat: 32.8639,
+    lng: -79.9099,
     name: "Island Breeze HVAC",
     category: "HVAC",
     categorySlug: "hvac",
@@ -151,6 +164,8 @@ const SAMPLE: DirectoryBusiness[] = [
   {
     id: 6,
     slug: "saltwater-pizza",
+    lat: 32.722,
+    lng: -79.945,
     name: "Saltwater Pizza",
     category: "Restaurants",
     categorySlug: "restaurants",
@@ -326,6 +341,8 @@ export async function getBusinesses(
       ? `${r.address}, ${r.city ?? ""}, ${r.state ?? "SC"} ${r.zipCode ?? ""}`
       : undefined,
     tags: tagsByBiz.get(r.id),
+    lat: r.latitude != null ? Number(r.latitude) : undefined,
+    lng: r.longitude != null ? Number(r.longitude) : undefined,
     logoUrl: photosByBiz.get(r.id)?.[0]?.url,
     photos: photosByBiz
       .get(r.id)

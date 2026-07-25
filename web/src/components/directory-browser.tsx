@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DirectoryMap } from "@/components/directory-map";
 import type { DirectoryBusiness } from "@/lib/directory";
 
 type Option = { name: string; slug: string };
@@ -220,6 +221,7 @@ export function DirectoryBrowser({
   const dealCount = (name: string) =>
     lowcoDealCounts[name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")] ?? 0;
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"list" | "map">("list");
 
   const activeFilters = [
     activeCategory && {
@@ -256,8 +258,8 @@ export function DirectoryBrowser({
         <div
           className={`grid gap-4 md:grid-cols-2 ${
             tags.length > 0
-              ? "lg:grid-cols-[1.6fr_1fr_1fr_1fr]"
-              : "lg:grid-cols-[1.6fr_1fr_1fr]"
+              ? "lg:grid-cols-[1.5fr_1fr_1fr_1fr_auto]"
+              : "lg:grid-cols-[1.6fr_1fr_1fr_auto]"
           }`}
         >
           <label className="grid gap-1.5 content-start">
@@ -296,6 +298,28 @@ export function DirectoryBrowser({
               onChange={(v) => router.push(v ? `/directory/tag/${v}` : "/directory")}
             />
           )}
+          <div className="grid gap-1.5 content-start">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+              View
+            </span>
+            <span className="inline-flex rounded-[10px] border border-line-strong bg-white p-1 w-max">
+              {(["list", "map"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  className={`px-4 py-2 text-[13px] font-semibold rounded-lg capitalize ${
+                    view === v
+                      ? "bg-navy-950 text-white"
+                      : "text-muted hover:text-navy-950"
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </span>
+          </div>
         </div>
         {activeFilters.length > 0 && (
           <div className="mt-4 pt-4 border-t border-line flex items-center gap-2 flex-wrap text-[13px]">
@@ -318,7 +342,9 @@ export function DirectoryBrowser({
         )}
       </div>
 
-      {featured.length > 0 && (
+      {view === "map" && <DirectoryMap businesses={visible} />}
+
+      {view === "list" && featured.length > 0 && (
         <section className="bg-white border border-line rounded-2xl p-6 md:p-7">
           <div className="flex items-center gap-2.5 mb-5">
             <span className="w-8 h-8 rounded-full bg-cta text-white flex items-center justify-center">
@@ -338,6 +364,7 @@ export function DirectoryBrowser({
         </section>
       )}
 
+      {view === "list" && (
       <section>
         <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3.5">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-muted">
@@ -363,6 +390,7 @@ export function DirectoryBrowser({
           </div>
         )}
       </section>
+      )}
     </div>
   );
 }
