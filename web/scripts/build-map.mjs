@@ -1,21 +1,27 @@
 /**
  * Generates src/lib/map-data.ts from Census ZCTA boundaries.
  *
+ * Emits two layers, both in one projection:
+ *  - CONTEXT_D: light land silhouette of the wider Lowcountry (every
+ *    ZCTA in the expanded frame), so the map reads like a real
+ *    reference map: coastline, harbor, sea islands, and lakes appear
+ *    as water because ZCTAs exclude them.
+ *  - ZONE_SHAPES: the 11 service zones with label anchors.
+ *
  * Input: /tmp/sc-zips.json (SC ZCTA GeoJSON, not committed)
- * Output: compact per-zone SVG path strings in the coverage map's
- * viewBox, plus a label anchor per zone. Re-run only when zone or ZIP
- * definitions change:  node scripts/build-map.mjs
+ * Re-run when zones/ZIPs change:  node scripts/build-map.mjs
  */
 import { readFileSync, writeFileSync } from "fs";
 
 const VIEW_W = 760;
 const VIEW_H = 640;
-const PAD = 26;
-const TOLERANCE = 1.0; // Douglas-Peucker, in projected px
-const MIN_RING_AREA = 140; // px^2; drops sliver fragments that read as noise
+const PAD = 8;
+const FRAME = 0.30; // expand zone bbox by 30% per side for context
+const ZONE_TOL = 1.0;
+const CTX_TOL = 1.2;
+const MIN_RING_AREA = 140;
+const CTX_MIN_AREA = 40;
 
-// Zone -> ZIPs. Specific zones own overlapping ZIPs (James Island keeps
-// 29412, Johns Island keeps 29455); Charleston keeps the rest of its list.
 const ZONE_ZIPS = {
   summerville: ["29483", "29485", "29486"],
   "mount-pleasant": ["29464", "29466"],
@@ -35,50 +41,45 @@ for (const [zone, zips] of Object.entries(ZONE_ZIPS))
   for (const z of zips) zipToZone[z] = zone;
 
 const geo = JSON.parse(readFileSync("/tmp/sc-zips.json", "utf8"));
-const features = geo.features.filter(
-  (f) => zipToZone[f.properties.ZCTA5CE10],
-);
-console.log(`Matched ${features.length} ZCTAs of ${Object.keys(zipToZone).length} wanted`);
 
-// Collect rings per zone (lon/lat)
-const zoneRings = {};
-for (const f of features) {
-  const zone = zipToZone[f.properties.ZCTA5CE10];
-  const geom = f.geometry;
-  const polys =
-    geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
-  for (const poly of polys) {
-    // outer ring only; ZCTA holes are visual noise at this scale
-    (zoneRings[zone] ??= []).push(poly[0]);
-  }
-}
+const ringsOf = (f) =>
+  f.geometry.type === "Polygon"
+    ? f.geometry.coordinates.map((r) => r)
+    : f.geometry.coordinates.flatMap((poly) => poly);
+const outerRingsOf = (f) =>
+  f.geometry.type === "Polygon"
+    ? [f.geometry.coordinates[0]]
+    : f.geometry.coordinates.map((poly) => poly[0]);
 
-// Bounding box across all rings
+// Zone bbox drives the frame
 let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
-for (const rings of Object.values(zoneRings))
-  for (const ring of rings)
+for (const f of geo.features) {
+  if (!zipToZone[f.properties.ZCTA5CE10]) continue;
+  for (const ring of outerRingsOf(f))
     for (const [lon, lat] of ring) {
       if (lon < minLon) minLon = lon;
       if (lon > maxLon) maxLon = lon;
       if (lat < minLat) minLat = lat;
       if (lat > maxLat) maxLat = lat;
     }
+}
+const lonPad = (maxLon - minLon) * FRAME;
+const latPad = (maxLat - minLat) * FRAME;
+const fMinLon = minLon - lonPad, fMaxLon = maxLon + lonPad;
+const fMinLat = minLat - latPad, fMaxLat = maxLat + latPad;
 
-// Equirectangular projection with latitude correction, fit to viewBox
-const midLat = ((minLat + maxLat) / 2) * (Math.PI / 180);
+const midLat = ((fMinLat + fMaxLat) / 2) * (Math.PI / 180);
 const kx = Math.cos(midLat);
-const spanX = (maxLon - minLon) * kx;
-const spanY = maxLat - minLat;
+const spanX = (fMaxLon - fMinLon) * kx;
+const spanY = fMaxLat - fMinLat;
 const scale = Math.min((VIEW_W - PAD * 2) / spanX, (VIEW_H - PAD * 2) / spanY);
 const offX = (VIEW_W - spanX * scale) / 2;
 const offY = (VIEW_H - spanY * scale) / 2;
-
 const project = ([lon, lat]) => [
-  offX + (lon - minLon) * kx * scale,
-  offY + (maxLat - lat) * scale,
+  offX + (lon - fMinLon) * kx * scale,
+  offY + (fMaxLat - lat) * scale,
 ];
 
-// Douglas-Peucker simplification
 function simplify(points, tol) {
   if (points.length <= 4) return points;
   const sqTol = tol * tol;
@@ -111,8 +112,6 @@ function simplify(points, tol) {
   return points.filter((_, i) => keep[i]);
 }
 
-const r1 = (n) => Math.round(n * 10) / 10;
-
 const ringArea = (ring) => {
   let area = 0;
   for (let i = 0; i < ring.length - 1; i++)
@@ -120,16 +119,64 @@ const ringArea = (ring) => {
   return Math.abs(area / 2);
 };
 
+const r1 = (n) => Math.round(n * 10) / 10;
+const toPath = (ring) =>
+  "M" + ring.map(([x, y]) => `${r1(x)} ${r1(y)}`).join("L") + "Z";
+const inFrame = (ring) =>
+  ring.some(
+    ([lon, lat]) =>
+      lon >= fMinLon && lon <= fMaxLon && lat >= fMinLat && lat <= fMaxLat,
+  );
+
+// ---- context: county land silhouettes (like a printed reference map;
+// counties include marshland, so the Lowcountry reads as continuous
+// land with the real coastline, unlike ZCTAs which skip wetlands) ----
+const countiesGeo = JSON.parse(readFileSync("/tmp/us-counties.json", "utf8"));
+const counties = [];
+for (const f of countiesGeo.features) {
+  if (!String(f.id).startsWith("45")) continue; // South Carolina
+  // All rings including holes, so lakes (Moultrie, Marion) render as
+  // water via fill-rule evenodd in the components.
+  const rings = ringsOf(f).filter(inFrame);
+  if (rings.length === 0) continue;
+  const paths = rings
+    .map((ring) => simplify(ring.map(project), CTX_TOL))
+    .filter((ring) => ring.length >= 4 && ringArea(ring) >= CTX_MIN_AREA)
+    .map(toPath);
+  if (paths.length > 0)
+    counties.push({ name: f.properties.NAME, d: paths.join("") });
+}
+
+// ---- lakes (Natural Earth 10m; the county source has no lake holes) ----
+const lakesGeo = JSON.parse(readFileSync("/tmp/ne-lakes.json", "utf8"));
+const lakePaths = [];
+for (const f of lakesGeo.features) {
+  const rings = outerRingsOf(f).filter(inFrame);
+  for (const ring of rings) {
+    const s = simplify(ring.map(project), CTX_TOL);
+    if (s.length >= 4 && ringArea(s) >= CTX_MIN_AREA) {
+      lakePaths.push(toPath(s));
+      console.log(`lake: ${f.properties.name}`);
+    }
+  }
+}
+const lakesD = lakePaths.join("");
+
+// ---- zones ----
+const zoneRings = {};
+for (const f of geo.features) {
+  const zone = zipToZone[f.properties.ZCTA5CE10];
+  if (!zone) continue;
+  for (const ring of outerRingsOf(f)) (zoneRings[zone] ??= []).push(ring);
+}
+
 const shapes = [];
 for (const [zone, rings] of Object.entries(zoneRings)) {
   const projected = rings
-    .map((ring) => simplify(ring.map(project), TOLERANCE))
+    .map((ring) => simplify(ring.map(project), ZONE_TOL))
     .filter((ring) => ring.length >= 4 && ringArea(ring) >= MIN_RING_AREA);
-  const paths = projected.map(
-    (ring) => "M" + ring.map(([x, y]) => `${r1(x)} ${r1(y)}`).join("L") + "Z",
-  );
+  const paths = projected.map(toPath);
 
-  // Label anchor: centroid of the largest ring by area
   let best = null, bestArea = 0;
   for (const ring of projected) {
     let area = 0, cx = 0, cy = 0;
@@ -146,20 +193,26 @@ for (const [zone, rings] of Object.entries(zoneRings)) {
     }
   }
 
-  shapes.push({
-    slug: zone,
-    d: paths.join(""),
-    labelX: r1(best[0]),
-    labelY: r1(best[1]),
-  });
+  shapes.push({ slug: zone, d: paths.join(""), labelX: r1(best[0]), labelY: r1(best[1]) });
   console.log(`${zone}: ${paths.length} rings, ${paths.join("").length} chars`);
 }
 
+const ctxSize = counties.reduce((n, c) => n + c.d.length, 0);
+console.log(
+  `context: ${counties.length} counties (${counties.map((c) => c.name).join(", ")}), ${Math.round(ctxSize / 1024)}KB`,
+);
+
 const out = `/**
- * GENERATED by scripts/build-map.mjs from Census ZCTA boundaries.
- * Do not edit by hand; re-run the script if zones or ZIPs change.
+ * GENERATED by scripts/build-map.mjs from Census ZCTA and county
+ * boundaries. Do not edit by hand; re-run the script to regenerate.
  */
 export const MAP_VIEW = { w: ${VIEW_W}, h: ${VIEW_H} };
+
+/** County land silhouettes for the wider Lowcountry (context layer). */
+export const COUNTIES: { name: string; d: string }[] = ${JSON.stringify(counties)};
+
+/** Lakes drawn over land (Natural Earth 10m). */
+export const LAKES_D = ${JSON.stringify(lakesD)};
 
 export type ZoneShape = {
   slug: string;
@@ -172,5 +225,4 @@ export const ZONE_SHAPES: ZoneShape[] = ${JSON.stringify(shapes, null, 2)};
 `;
 
 writeFileSync("src/lib/map-data.ts", out);
-const total = shapes.reduce((n, s) => n + s.d.length, 0);
-console.log(`Wrote src/lib/map-data.ts (${Math.round(total / 1024)}KB of path data)`);
+console.log(`Wrote src/lib/map-data.ts`);

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ZONES } from "@/lib/zones";
 import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
-import { MAP_VIEW, ZONE_SHAPES } from "@/lib/map-data";
+import { MAP_VIEW, ZONE_SHAPES, COUNTIES, LAKES_D } from "@/lib/map-data";
 
 /**
  * Real Lowcountry geography: zone shapes are simplified Census ZCTA
@@ -14,14 +14,15 @@ import { MAP_VIEW, ZONE_SHAPES } from "@/lib/map-data";
  */
 
 const LABELS: Record<string, { text?: string; dx?: number; dy?: number }> = {
-  "north-charleston": { text: "N. Charleston" },
-  "mount-pleasant": { text: "Mt. Pleasant" },
-  "daniel-island": { text: "Daniel Island", dy: -6 },
-  "sullivans-island": { text: "Sullivans Is.", dx: 30, dy: 14 },
-  "isle-of-palms": { text: "Isle of Palms", dx: 34, dy: -8 },
-  "james-island": { text: "James Is." },
+  "north-charleston": { text: "N. Charleston", dy: -4 },
+  "mount-pleasant": { text: "Mt. Pleasant", dy: 6 },
+  "daniel-island": { text: "Daniel Island", dy: -8 },
+  "sullivans-island": { text: "Sullivans Is.", dx: 46, dy: 22 },
+  "isle-of-palms": { text: "Isle of Palms", dx: 48, dy: -4 },
+  "james-island": { text: "James Is.", dx: 30, dy: 22 },
   "moncks-corner": { text: "Moncks Corner" },
-  "goose-creek": { text: "Goose Creek" },
+  "goose-creek": { text: "Goose Creek", dy: 6 },
+  charleston: { dx: -30, dy: 18 },
 };
 
 const availability = (m: UpcomingMailing | undefined) => {
@@ -41,31 +42,35 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
 
   return (
     <div className="grid lg:grid-cols-[1.35fr_.65fr] gap-4 items-stretch">
-      <div className="bg-navy-900 border border-white/10 rounded-2xl p-3 overflow-hidden">
+      <div className="bg-white border border-white/10 rounded-2xl p-3 overflow-hidden">
         <svg
           viewBox={`0 0 ${MAP_VIEW.w} ${MAP_VIEW.h}`}
           role="group"
           aria-label="Charleston Lowcountry service zone map"
           className="w-full h-auto"
         >
-          <rect width={MAP_VIEW.w} height={MAP_VIEW.h} fill="#0e1d2e" rx="12" />
-          <text x={MAP_VIEW.w - 130} y={MAP_VIEW.h - 24} fill="#2e4459" fontSize="13" fontStyle="italic">
-            Atlantic Ocean
-          </text>
-          {/* Land underlay: thick same-color strokes fuse adjacent zones
-              into one continuous landmass and hide simplification cracks */}
+          {/* Water */}
+          <rect width={MAP_VIEW.w} height={MAP_VIEW.h} fill="#ACD9EF" rx="10" />
+          {/* County land, like a printed reference map: white silhouettes
+              with dashed county lines; the coast and lakes stay water */}
           <g aria-hidden="true">
-            {ZONE_SHAPES.map((s) => (
+            {COUNTIES.map((c) => (
               <path
-                key={s.slug}
-                d={s.d}
-                fill="#182c42"
-                stroke="#182c42"
-                strokeWidth="8"
+                key={c.name}
+                d={c.d}
+                fill="#FBFDFE"
+                fillRule="evenodd"
+                stroke="#9FB8C9"
+                strokeWidth="1"
+                strokeDasharray="3 4"
                 strokeLinejoin="round"
               />
             ))}
+            <path d={LAKES_D} fill="#ACD9EF" stroke="#8FC3DE" strokeWidth="0.75" strokeLinejoin="round" />
           </g>
+          <text x={MAP_VIEW.w - 138} y={MAP_VIEW.h - 22} fill="#4E90B8" fontSize="13" fontStyle="italic">
+            Atlantic Ocean
+          </text>
           {ZONE_SHAPES.map((s) => {
             const z = ZONES.find((x) => x.slug === s.slug);
             if (!z) return null;
@@ -88,22 +93,22 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
               >
                 <path
                   d={s.d}
-                  fill={sel ? "rgba(255,140,0,.42)" : "rgba(56,182,255,.24)"}
-                  stroke={sel ? "#ff8c00" : "rgba(56,182,255,.8)"}
+                  fill={sel ? "rgba(255,140,0,.5)" : "rgba(56,182,255,.32)"}
+                  stroke={sel ? "#E67C00" : "#1287D8"}
                   strokeWidth={sel ? 1.75 : 1}
                   strokeLinejoin="round"
-                  className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.4)]"
-                  style={sel ? { fill: "rgba(255,140,0,.42)" } : undefined}
+                  className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
+                  style={sel ? { fill: "rgba(255,140,0,.5)" } : undefined}
                 />
                 <text
                   x={s.labelX + (LABELS[s.slug]?.dx ?? 0)}
                   y={s.labelY + (LABELS[s.slug]?.dy ?? 0)}
                   textAnchor="middle"
-                  fill={sel ? "#ffd9a8" : "#dcebf7"}
+                  fill={sel ? "#8A4B00" : "#12293C"}
                   fontSize="11.5"
-                  fontWeight="600"
+                  fontWeight="650"
                   className="pointer-events-none"
-                  style={{ paintOrder: "stroke", stroke: "rgba(10,22,34,.75)", strokeWidth: 3 }}
+                  style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,.85)", strokeWidth: 3 }}
                 >
                   {label}
                 </text>
@@ -111,9 +116,9 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
             );
           })}
         </svg>
-        <div className="flex flex-wrap gap-4.5 px-3 pb-2 text-xs text-[#67768A]">
+        <div className="flex flex-wrap gap-4.5 px-3 py-2 text-xs text-muted">
           <span className="flex items-center gap-1.5">
-            <i className="w-2 h-2 rounded-full bg-brand/70 inline-block" />
+            <i className="w-2 h-2 rounded-full bg-brand inline-block" />
             Open spots
           </span>
           <span className="flex items-center gap-1.5">
