@@ -129,6 +129,17 @@ export const qrPages = mysqlTable("qr_pages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const postcardGallery = mysqlTable("postcard_gallery", {
+  id: int("id").primaryKey().autoincrement(),
+  zoneSlug: varchar("zone_slug", { length: 64 }),
+  mailMonth: varchar("mail_month", { length: 32 }),
+  caption: varchar("caption", { length: 255 }),
+  imageUrl: varchar("image_url", { length: 512 }).notNull(),
+  sortOrder: int("sort_order").notNull().default(0),
+  isPublished: boolean("is_published").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const qrScans = mysqlTable(
   "qr_scans",
   {
