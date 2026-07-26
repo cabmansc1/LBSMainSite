@@ -7,6 +7,7 @@ import {
   TestimonialStrip,
   CtaBand,
 } from "@/components/sections";
+import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata } from "@/lib/seo";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
 
@@ -197,13 +198,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1120px] px-6 py-22">
-        <SectionHeading
-          eyebrow="Local businesses on LBS"
-          title="Trusted around the Lowcountry"
-        />
-        <TestimonialStrip placement="home" />
-      </section>
+      {hasTestimonials("home") && (
+        <section className="mx-auto max-w-[1120px] px-6 py-22">
+          <SectionHeading
+            eyebrow="Local businesses on LBS"
+            title="Trusted around the Lowcountry"
+          />
+          <TestimonialStrip placement="home" />
+        </section>
+      )}
 
       <section className="bg-surface border-y border-line">
         <div className="mx-auto max-w-[1120px] px-6 py-22">

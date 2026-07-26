@@ -218,13 +218,19 @@ async function fetchCards(): Promise<McCard[] | null> {
   }
 }
 
+/**
+ * Sample mailings are a local-development convenience only. Once
+ * MC_BASE_URL is configured, Mission Control is the sole authority: if
+ * it is unreachable or has nothing upcoming, pages show an empty state
+ * rather than an invented schedule a customer could act on.
+ */
 export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
   const cards = await fetchCards();
-  if (!cards || cards.length === 0) return UPCOMING_MAILINGS;
+  if (!cards || cards.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
   const upcoming = cards
     .filter((c) => !c.isPast && c.zoneName.toLowerCase() !== "other")
     .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso));
-  if (upcoming.length === 0) return UPCOMING_MAILINGS;
+  if (upcoming.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
   return upcoming.map((c) => ({
     zoneSlug: c.zoneSlug,
     zoneName: c.zoneName,

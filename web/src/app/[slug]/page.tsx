@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, SectionHeading, TestimonialStrip, FillMeter } from "@/components/sections";
+import { hasTestimonials } from "@/lib/testimonials";
 import { ZoneMiniMap } from "@/components/zone-mini-map";
 import { ZONES, zoneBySlug } from "@/lib/zones";
 import { getZoneMailing } from "@/lib/mission-control";
@@ -183,6 +184,7 @@ export default async function ZonePage({
         </div>
       </section>
 
+      {hasTestimonials(`zone:${zone.slug}`) && (
       <section className="bg-surface border-y border-line">
         <div className="mx-auto max-w-[1120px] px-6 py-16">
           <SectionHeading
@@ -195,6 +197,7 @@ export default async function ZonePage({
           </div>
         </div>
       </section>
+      )}
 
       <script
         type="application/ld+json"

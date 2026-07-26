@@ -1,8 +1,8 @@
 /**
- * Placeholder testimonials. Replace quotes and names with real customer
- * quotes during the Phase 2 content pass; the layout is final.
- * Rendered only where placement matches, mirroring the planned
- * testimonials table (placements column).
+ * Layout samples only. These quotes are NOT from real customers, so they
+ * stay hidden unless SHOW_SAMPLE_TESTIMONIALS=1 is set (useful for
+ * reviewing the design). Real quotes belong in the testimonials table
+ * via the admin, and sections self-hide until there are some.
  */
 export type Testimonial = {
   quote: string;
@@ -35,5 +35,13 @@ export const TESTIMONIALS: Testimonial[] = [
   },
 ];
 
+const samplesVisible = () => process.env.SHOW_SAMPLE_TESTIMONIALS === "1";
+
 export const testimonialsFor = (placement: string) =>
-  TESTIMONIALS.filter((t) => t.placements.includes(placement));
+  samplesVisible()
+    ? TESTIMONIALS.filter((t) => t.placements.includes(placement))
+    : [];
+
+/** True when a placement has quotes worth rendering a section for. */
+export const hasTestimonials = (placement: string) =>
+  testimonialsFor(placement).length > 0;

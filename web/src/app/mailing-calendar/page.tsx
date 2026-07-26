@@ -45,6 +45,23 @@ export default async function MailingCalendarPage() {
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6 py-12">
+        {mailings.length === 0 ? (
+          <div className="border border-line rounded-(--radius-card) bg-white p-8 text-center">
+            <h2 className="text-[17px] font-semibold tracking-tight">
+              The next round of cards is being scheduled
+            </h2>
+            <p className="text-sm text-body mt-2 max-w-[46ch] mx-auto leading-relaxed">
+              Dates for upcoming neighborhood cards are not posted yet. Call us
+              and we will tell you which zones still have room.
+            </p>
+            <a
+              href="tel:+18432122969"
+              className="inline-block mt-4 text-sm font-semibold text-brand-deep hover:underline"
+            >
+              843-212-2969
+            </a>
+          </div>
+        ) : (
         <div className="border border-line rounded-(--radius-card) bg-white overflow-x-auto">
           <table className="w-full border-collapse text-[13.5px] min-w-[720px]">
             <thead>
@@ -101,11 +118,14 @@ export default async function MailingCalendarPage() {
             </tbody>
           </table>
         </div>
-        <p className="text-[12.5px] text-muted mt-3">
-          {process.env.MC_BASE_URL
-            ? "Live schedule, synced from our production system."
-            : "Illustrative schedule until the live sync connects."}
-        </p>
+        )}
+        {mailings.length > 0 && (
+          <p className="text-[12.5px] text-muted mt-3">
+            {process.env.MC_BASE_URL
+              ? "Live schedule, synced from our production system."
+              : "Illustrative schedule until the live sync connects."}
+          </p>
+        )}
 
         <div className="mt-14">
           <CtaBand

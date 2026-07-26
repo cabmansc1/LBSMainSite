@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PricingCards } from "@/components/pricing-cards";
 import { SectionHeading, TestimonialStrip, CtaBand } from "@/components/sections";
+import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata("pricing");
@@ -73,13 +74,15 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <section className="py-22">
-          <SectionHeading
-            eyebrow="What advertisers say"
-            title="Priced for results"
-          />
-          <TestimonialStrip placement="pricing" />
-        </section>
+        {hasTestimonials("pricing") && (
+          <section className="py-22">
+            <SectionHeading
+              eyebrow="What advertisers say"
+              title="Priced for results"
+            />
+            <TestimonialStrip placement="pricing" />
+          </section>
+        )}
 
         <section className="pb-22">
           <SectionHeading eyebrow="Questions" title="Pricing FAQs" />
