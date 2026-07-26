@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/sections";
+import { OrderStatus } from "@/components/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +36,12 @@ export default async function CheckoutSuccessPage({
             paid order{sp.item ? ` for “${sp.item}”` : ""} after the webhook
             verifies it.
           </p>
+        ) : sp.session_id ? (
+          <OrderStatus sessionId={sp.session_id} />
         ) : (
           <p className="text-[14.5px] text-body max-w-[44ch]">
-            Payment received. Your category is now locked on this mailing.
-            Check your email for a receipt and next steps for your ad artwork.
+            Payment received. Check your email for a receipt and next steps for
+            your ad artwork.
           </p>
         )}
         <div className="flex gap-3 flex-wrap justify-center mt-2">

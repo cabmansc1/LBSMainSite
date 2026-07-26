@@ -250,7 +250,11 @@ export async function getZoneMailing(zoneSlug: string) {
 
 export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
   const cards = await fetchCards();
-  if (!cards) return ["Plumbing", "Dental"]; // sample fallback
+  // Samples are a local-development convenience only. With MC configured
+  // but unreachable, returning the sample list would block real sales in
+  // those categories, so report none taken and let the order through;
+  // the paid push to MC surfaces any genuine clash.
+  if (!cards) return mcEnabled() ? [] : ["Plumbing", "Dental"];
   const card = cards.find((c) => c.zoneSlug === zoneSlug && c.status === "open");
   if (!card) return [];
   return card.advertisers

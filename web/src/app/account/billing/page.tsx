@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
+import { getOrdersForEmail } from "@/lib/orders";
 import { Card, StatusChip } from "@/components/sections";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,10 @@ const money = (cents?: number) =>
 export default async function AccountBillingPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  const { cards, listings } = await getPortalContext(session);
+  const [{ cards, listings }, orders] = await Promise.all([
+    getPortalContext(session),
+    getOrdersForEmail(session.email),
+  ]);
 
   const plan = listings[0]?.planType ?? "basic";
 
@@ -45,6 +49,57 @@ export default async function AccountBillingPage() {
           See what a Spotlight Postcard costs
         </Link>
       </Card>
+
+      {orders.length > 0 && (
+        <>
+          <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mb-3">
+            Your payments
+          </h2>
+          <div className="overflow-x-auto border border-line rounded-(--radius-card) bg-white mb-6">
+            <table className="w-full border-collapse text-[13.5px] min-w-[520px]">
+              <thead>
+                <tr>
+                  {["Reference", "For", "Amount", "Status"].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left text-[11px] uppercase tracking-wider text-muted font-semibold px-4 py-3 border-b border-line bg-surface"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id} className="hover:bg-surface">
+                    <td className="px-4 py-3.5 border-b border-line num font-semibold">
+                      {o.reference}
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-line text-[12.5px]">
+                      {o.zoneSlug} {o.spot}
+                      <div className="text-muted">
+                        {o.createdAt?.slice(0, 10) ?? ""}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-line num">
+                      {money(o.amountCents)}
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-line">
+                      {o.status === "paid" ? (
+                        <StatusChip tone="ok">Paid</StatusChip>
+                      ) : o.status === "refunded" ? (
+                        <StatusChip tone="info">Refunded</StatusChip>
+                      ) : (
+                        <StatusChip tone="warn">Pending</StatusChip>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mb-3">
         Card bookings

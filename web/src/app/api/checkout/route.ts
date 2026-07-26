@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { stripeEnabled, createCheckoutSession } from "@/lib/stripe";
-import { pushToMissionControl } from "@/lib/mission-control";
+import { pushToMissionControl, getTakenCategories } from "@/lib/mission-control";
+import {
+  createPendingOrder,
+  attachSession,
+  newReference,
+} from "@/lib/orders";
 import { type Reach, type SpotSize } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
 import { zoneBySlug } from "@/lib/zones";
@@ -49,6 +54,19 @@ export async function POST(req: Request) {
     if (!zone || !tier) {
       return NextResponse.json({ error: "Unknown zone or spot" }, { status: 422 });
     }
+    // Category exclusivity is the product promise: never sell a category
+    // Mission Control already shows as taken on that zone's card.
+    const taken = await getTakenCategories(zone.slug).catch(() => [] as string[]);
+    const normalize = (v: string) => v.trim().toLowerCase();
+    if (taken.some((t) => normalize(t) === normalize(category))) {
+      return NextResponse.json(
+        {
+          error:
+            "That category is already taken on this card. Join the waitlist and we will tell you when it opens.",
+        },
+        { status: 409 },
+      );
+    }
     name = `Spotlight Postcard: ${zone.name}, ${spotSize} spot`;
     amountCents = tier.priceCents;
     metadata = {
@@ -86,31 +104,54 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unknown checkout kind" }, { status: 422 });
   }
 
+  const reference = newReference();
+  const email = typeof body.email === "string" ? body.email : undefined;
+  const phone = typeof body.phone === "string" ? body.phone : undefined;
+
+  // Record the intent before handing off to Stripe, so a payment always
+  // has something on our side to reconcile against.
+  await createPendingOrder({
+    reference,
+    kind,
+    businessName,
+    email,
+    phone,
+    category,
+    zoneSlug: metadata.zone ?? metadata.card ?? "",
+    spot: metadata.spotSize ?? metadata.spotType ?? "",
+    reach: metadata.reach,
+    amountCents,
+  });
+  metadata.reference = reference;
+
   // Mission Control hears about every checkout attempt (fire-and-forget).
   void pushToMissionControl({
     type: "checkout_started",
     businessName,
     category,
-    email: typeof body.email === "string" ? body.email : undefined,
+    email,
     zoneSlug: metadata.zone ?? metadata.card,
     spot: metadata.spotSize ?? metadata.spotType,
     amountCents,
+    reference,
   });
 
   if (!stripeEnabled()) {
     // Preview mode: no keys configured, simulate the hosted checkout hop.
-    const qs = new URLSearchParams({ preview: "1", item: name });
+    const qs = new URLSearchParams({ preview: "1", item: name, ref: reference });
     return NextResponse.json({ url: `${origin}/postcards/success?${qs}` });
   }
 
   const session = await createCheckoutSession({
     name,
     amountCents,
-    email: typeof body.email === "string" ? body.email : undefined,
+    email,
     metadata,
     successUrl: `${origin}/postcards/success?session_id={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${origin}/postcards/cancelled`,
   });
+
+  await attachSession(reference, session.id);
 
   return NextResponse.json({ url: session.url });
 }
