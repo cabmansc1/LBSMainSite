@@ -20,8 +20,12 @@ export const metadata: Metadata = {
   },
 };
 
+// A deal with no price set comes back as 0 or undefined. Showing "$0"
+// reads as free, so treat anything non-positive as "no price given".
 const money = (n?: number) =>
-  n === undefined || isNaN(n) ? undefined : `$${n.toLocaleString("en-US")}`;
+  n === undefined || !isFinite(n) || n <= 0
+    ? undefined
+    : `$${n.toLocaleString("en-US")}`;
 
 export default async function DealsPage() {
   const [deals, businesses] = await Promise.all([
@@ -64,9 +68,30 @@ export default async function DealsPage() {
       <div className="mx-auto max-w-[1120px] px-6 py-12">
         {deals.length > 0 && (
           <section className="mb-14">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">
-              On LowCoDeals.com
-            </h2>
+            <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+              <a
+                href="https://lowcodeals.com"
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center"
+                aria-label="LowCoDeals"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/brand/lowcodeals.png"
+                  alt="LowCoDeals"
+                  className="h-9 w-auto"
+                />
+              </a>
+              <a
+                href="https://lowcodeals.com"
+                target="_blank"
+                rel="noopener"
+                className="text-[13px] font-semibold text-[#5C8420] hover:underline"
+              >
+                See all deals on LowCoDeals
+              </a>
+            </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {deals.map((d) => (
                 <a key={d.id} href={d.url} target="_blank" rel="noopener">
@@ -85,10 +110,10 @@ export default async function DealsPage() {
                         {d.title}
                       </h3>
                       <p className="text-[12.5px] text-muted">{d.businessName}</p>
-                      {(d.dealPrice !== undefined || d.originalPrice !== undefined) && (
+                      {(money(d.dealPrice) || money(d.originalPrice)) && (
                         <p className="text-[14px] num">
                           {money(d.dealPrice) && (
-                            <b className="font-bold text-ok">{money(d.dealPrice)}</b>
+                            <b className="font-bold text-[#5C8420]">{money(d.dealPrice)}</b>
                           )}{" "}
                           {money(d.originalPrice) && (
                             <s className="text-faint text-[12.5px]">
@@ -97,7 +122,7 @@ export default async function DealsPage() {
                           )}
                         </p>
                       )}
-                      <span className="text-[12.5px] font-semibold text-brand-deep mt-1">
+                      <span className="text-[12.5px] font-semibold text-[#5C8420] mt-1">
                         Claim on LowCoDeals →
                       </span>
                     </div>

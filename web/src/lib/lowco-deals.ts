@@ -10,6 +10,17 @@ import "server-only";
 const API = () => process.env.LOWCODEALS_API ?? "https://lowcodeals.com/api/deals";
 const SITE = () => (process.env.LOWCODEALS_SITE ?? "https://lowcodeals.com").replace(/\/$/, "");
 
+/** LowCoDeals brand, sampled from their logo. */
+export const LOWCODEALS_BRAND = {
+  green: "#8CBB39",
+  greenDeep: "#6F9A28",
+  greenTint: "#F0F7E4",
+  greenLine: "#D3E7B4",
+  navy: "#0A2348",
+  logo: "/brand/lowcodeals.png",
+  site: "https://lowcodeals.com",
+} as const;
+
 export type LowcoDeal = {
   id: number;
   title: string;

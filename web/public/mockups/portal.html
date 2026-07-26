@@ -26,6 +26,10 @@
     --ok: #1a9d5c;
     --ok-tint: #e6f5ec;
     --warn-ink: #b8730a;
+    --lcd-green: #8cbb39;
+    --lcd-green-ink: #5c8420;
+    --lcd-green-tint: #f0f7e4;
+    --lcd-green-line: #d3e7b4;
     --radius: 12px;
     --sidebar: 224px;
     font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -151,6 +155,7 @@
   .chip.good { background: var(--ok-tint); border-color: #bfe6d1; color: var(--ok); }
   .chip.done { background: var(--surface); border-color: var(--line-strong); color: var(--muted); }
   .chip.info { background: var(--brand-tint); border-color: #c2e4fb; color: var(--brand-deep); }
+  .chip.deal { background: var(--lcd-green-tint); border-color: var(--lcd-green-line); color: var(--lcd-green-ink); }
   .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
 
   .sec-label {
@@ -477,22 +482,25 @@
         <button class="btn quiet">Preview public page</button>
       </div>
 
-      <div class="sec-label">Deals on LowCoDeals</div>
-      <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin:26px 0 10px">
+        <span class="sec-label" style="margin:0">Deals on</span>
+        <img src="/brand/lowcodeals.png" alt="LowCoDeals" style="height:20px;width:auto">
+      </div>
+      <div class="card" style="border-left:3px solid var(--lcd-green)">
         <div class="row">
           <div class="grow">
             <h3>$50 off any water heater install</h3>
-            <div class="meta">$249 <span style="text-decoration:line-through;color:var(--faint)">$299</span> &middot; 14 claimed &middot; ends Sept 30</div>
+            <div class="meta"><b style="color:var(--lcd-green-ink)">$249</b> <span style="text-decoration:line-through;color:var(--faint)">$299</span> &middot; 14 claimed &middot; ends Sept 30</div>
           </div>
-          <span class="chip good"><span class="dot"></span>Live</span>
+          <span class="chip deal"><span class="dot"></span>Live</span>
           <button class="btn quiet small">Edit on LowCoDeals</button>
         </div>
         <div class="row">
           <div class="grow">
             <h3>Drain cleaning, first visit</h3>
-            <div class="meta">$89 <span style="text-decoration:line-through;color:var(--faint)">$140</span> &middot; 6 claimed &middot; ends Aug 31</div>
+            <div class="meta"><b style="color:var(--lcd-green-ink)">$89</b> <span style="text-decoration:line-through;color:var(--faint)">$140</span> &middot; 6 claimed &middot; ends Aug 31</div>
           </div>
-          <span class="chip good"><span class="dot"></span>Live</span>
+          <span class="chip deal"><span class="dot"></span>Live</span>
           <button class="btn quiet small">Edit on LowCoDeals</button>
         </div>
         <div class="row">

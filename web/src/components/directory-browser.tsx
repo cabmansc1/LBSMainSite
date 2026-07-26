@@ -154,7 +154,7 @@ function BusinessCard({
               </span>
             )}
             {lowcoDeals > 0 && (
-              <span className="text-xs font-semibold text-ok bg-[#e5f5ec] border border-[#bfe8d2] rounded-lg px-2.5 py-1">
+              <span className="text-xs font-semibold text-[#5C8420] bg-[#F0F7E4] border border-[#D3E7B4] rounded-lg px-2.5 py-1">
                 {lowcoDeals} deal{lowcoDeals > 1 ? "s" : ""} on LowCoDeals
               </span>
             )}

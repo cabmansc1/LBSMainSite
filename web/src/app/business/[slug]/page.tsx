@@ -213,10 +213,18 @@ export default async function BusinessPage({
           )}
 
           {lowcoDeals.length > 0 && (
-            <Card className="p-6.5 grid gap-3 border-l-[3px] border-l-ok">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted">
-                Live deals on LowCoDeals
-              </span>
+            <Card className="p-6.5 grid gap-3 border-l-[3px] border-l-[#8CBB39]">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted">
+                  Live deals on
+                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/brand/lowcodeals.png"
+                  alt="LowCoDeals"
+                  className="h-5 w-auto"
+                />
+              </div>
               <div className="grid gap-2.5">
                 {lowcoDeals.map((d) => (
                   <a
@@ -228,12 +236,12 @@ export default async function BusinessPage({
                   >
                     <span className="text-sm font-semibold">{d.title}</span>
                     <span className="text-[13px] num shrink-0">
-                      {d.dealPrice !== undefined && (
-                        <b className="font-bold text-ok">
+                      {d.dealPrice !== undefined && d.dealPrice > 0 && (
+                        <b className="font-bold text-[#5C8420]">
                           ${d.dealPrice.toLocaleString("en-US")}
                         </b>
                       )}{" "}
-                      {d.originalPrice !== undefined && (
+                      {d.originalPrice !== undefined && d.originalPrice > 0 && (
                         <s className="text-faint text-xs">
                           ${d.originalPrice.toLocaleString("en-US")}
                         </s>
