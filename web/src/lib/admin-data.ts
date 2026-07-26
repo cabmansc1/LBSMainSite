@@ -365,21 +365,108 @@ export async function setSignupStatus(id: number, status: string) {
 
 /* ---------- orders ---------- */
 
-export async function getAdminOrders(): Promise<Record<string, unknown>[]> {
+export type AdminOrder = {
+  id: number;
+  status: string;
+  amountCents: number;
+  customer: string;
+  email: string;
+  cardName: string;
+  spotName: string;
+  categoryName: string;
+  createdAt: string | null;
+  printDeadline: string | null;
+  adminApproved: boolean | null;
+  hasArtwork: boolean;
+};
+
+/**
+ * Mirrors admin/card_orders.php: the same joins across orders, cards,
+ * spot types, users, ad content, and categories. Table names carry the
+ * legacy directory_ prefix.
+ */
+export async function getAdminOrders(): Promise<AdminOrder[]> {
   const { db } = await import("@/lib/db");
-  for (const table of ["card_orders", "postcard_orders"]) {
-    try {
-      const rows = (await db.execute(
-        sql.raw(`SELECT * FROM ${table} ORDER BY id DESC LIMIT 200`),
-      )) as unknown as [Record<string, unknown>[]];
-      if (Array.isArray(rows[0])) {
-        return rows[0].map((r) => ({ ...r, __table: table }));
-      }
-    } catch {
-      // table absent on this install; try the next shape
-    }
+  try {
+    const rows = (await db.execute(
+      sql`SELECT o.id, o.status, o.amount_cents, o.created_at,
+                 u.first_name, u.last_name, u.email,
+                 c.neighborhood_name, c.print_deadline,
+                 st.name AS spot_name, st.dimensions,
+                 cc.name AS category_name,
+                 ac.admin_approved, ac.logo_filename
+          FROM directory_card_orders o
+          JOIN directory_cards c ON c.id = o.card_id
+          JOIN directory_card_spot_types st ON st.id = o.spot_type_id
+          JOIN directory_users u ON u.id = o.user_id
+          LEFT JOIN directory_card_ad_content ac ON ac.order_id = o.id
+          LEFT JOIN directory_card_categories cc ON cc.id = o.card_category_id
+          ORDER BY o.created_at DESC
+          LIMIT 200`,
+    )) as unknown as [Record<string, unknown>[]];
+
+    return (rows[0] ?? []).map((r) => ({
+      id: Number(r.id),
+      status: String(r.status ?? "pending"),
+      amountCents: Number(r.amount_cents ?? 0),
+      customer: [r.first_name, r.last_name].filter(Boolean).join(" ").trim(),
+      email: String(r.email ?? ""),
+      cardName: String(r.neighborhood_name ?? ""),
+      spotName: [r.spot_name, r.dimensions].filter(Boolean).join(" "),
+      categoryName: String(r.category_name ?? ""),
+      createdAt: r.created_at ? String(r.created_at) : null,
+      printDeadline: r.print_deadline ? String(r.print_deadline) : null,
+      adminApproved:
+        r.admin_approved === null || r.admin_approved === undefined
+          ? null
+          : bool(r.admin_approved),
+      hasArtwork: !!r.logo_filename,
+    }));
+  } catch (e) {
+    console.error("[admin] orders query failed:", e);
+    return [];
   }
-  return [];
+}
+
+/* ---------- leads ---------- */
+
+export type AdminLead = {
+  id: number;
+  company: string;
+  contact: string;
+  email: string;
+  phone: string;
+  location: string;
+  interest: string;
+  createdAt: string | null;
+};
+
+/** Mirrors admin/leads.php, reading the same leads table. */
+export async function getAdminLeads(): Promise<AdminLead[]> {
+  const { db } = await import("@/lib/db");
+  try {
+    const rows = (await db.execute(
+      sql`SELECT id, company_name, contact_name, email, phone, location,
+                 package_description, created_at
+          FROM directory_leads
+          ORDER BY created_at DESC
+          LIMIT 200`,
+    )) as unknown as [Record<string, unknown>[]];
+
+    return (rows[0] ?? []).map((r) => ({
+      id: Number(r.id),
+      company: String(r.company_name ?? ""),
+      contact: String(r.contact_name ?? ""),
+      email: String(r.email ?? ""),
+      phone: String(r.phone ?? ""),
+      location: String(r.location ?? ""),
+      interest: String(r.package_description ?? ""),
+      createdAt: r.created_at ? String(r.created_at) : null,
+    }));
+  } catch (e) {
+    console.error("[admin] leads query failed:", e);
+    return [];
+  }
 }
 
 /* ---------- advertiser accounts ---------- */
