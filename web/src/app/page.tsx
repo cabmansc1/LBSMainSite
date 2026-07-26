@@ -11,6 +11,8 @@ import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
+import { getSiteStats } from "@/lib/admin-data";
+import { getUpcomingMailings } from "@/lib/mission-control";
 
 export const metadata: Metadata = buildMetadata("home");
 
@@ -70,6 +72,11 @@ const homeJsonLd = [
 
 
 
+/**
+ * Fallback only. The real numbers live in site_stats and are edited on
+ * /admin/stats; these are what shows if that table is empty or the
+ * database is unreachable, so the bar never renders blank.
+ */
 const STATS = [
   { value: "50,000+", label: "Postcards mailed" },
   { value: "75+", label: "Businesses served" },
@@ -132,7 +139,34 @@ const STEPS = [
   },
 ];
 
+// Stats, prices and the next card all come from the database and from
+// Mission Control. The page was fully static, so it was baked at build
+// time and never saw an admin edit until something revalidated it.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
+  // The admin stats screen writes site_stats. The homepage was showing a
+  // hardcoded array instead, so editing a stat changed nothing a visitor
+  // could see.
+  const saved = (await getSiteStats().catch(() => []))
+    .filter((s) => s.active && s.value.trim() && s.label.trim())
+    .map((s) => ({ value: s.value, label: s.label }));
+  const stats = saved.length > 0 ? saved : STATS;
+
+  // The closing CTA used to assert "2 spots left" in hardcoded copy,
+  // which was true only by accident. Take it from the card that is
+  // actually filling soonest, and say something safe when none is.
+  const nextCard = (await getUpcomingMailings().catch(() => []))[0];
+  const spotsLeft = nextCard
+    ? Math.max(0, nextCard.spotsTotal - nextCard.spotsTaken)
+    : 0;
+  const ctaTitle = nextCard
+    ? spotsLeft > 0
+      ? `The ${nextCard.zoneName} card mailing ${nextCard.mailMonth} has ${spotsLeft} ${
+          spotsLeft === 1 ? "spot" : "spots"
+        } left.`
+      : `The ${nextCard.zoneName} card mailing ${nextCard.mailMonth} is full.`
+    : "Claim your category on the next card.";
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
 
@@ -191,7 +225,7 @@ export default async function HomePage() {
         </div>
         <div className="border-t border-white/10">
           <div className="mx-auto max-w-[1120px] px-6 py-7 grid grid-cols-2 md:grid-cols-4 gap-5">
-            {STATS.map((s, i) => (
+            {stats.map((s, i) => (
               <div
                 key={s.label}
                 className={i > 0 ? "md:border-l md:border-white/10 md:pl-5" : ""}
@@ -312,7 +346,7 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-[1120px] px-6 py-16">
         <CtaBand
-          title="The next Summerville card has 2 spots left."
+          title={ctaTitle}
           sub="Print deadline is coming. Exclusive categories go fast."
           ctaLabel="Claim Your Category"
           ctaHref="/pricing"

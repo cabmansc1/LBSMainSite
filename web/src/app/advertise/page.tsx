@@ -72,6 +72,9 @@ const advertiseFaqJsonLd = {
   })),
 };
 
+// Prices are admin-editable, so this cannot be baked at build time.
+export const dynamic = "force-dynamic";
+
 export default async function AdvertisePage() {
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
