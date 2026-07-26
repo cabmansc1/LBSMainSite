@@ -40,7 +40,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const origin = new URL(req.url).origin;
+  // Behind Railway's proxy req.url is the internal address (localhost:8080),
+  // so Stripe's return URLs must come from the public origin: an explicit
+  // env first, then the forwarded headers, and req.url only as a last resort.
+  const forwardedHost =
+    req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  const forwardedProto = req.headers.get("x-forwarded-proto") ?? "https";
+  const origin =
+    process.env.PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    (forwardedHost
+      ? `${forwardedProto}://${forwardedHost}`
+      : new URL(req.url).origin);
   let name: string;
   let amountCents: number;
   let metadata: Record<string, string>;
