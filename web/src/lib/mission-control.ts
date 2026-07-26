@@ -357,8 +357,18 @@ async function fetchCards(): Promise<McCard[] | null> {
 export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
   const cards = await fetchCards();
   if (!cards || cards.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
+  // A card whose mail date has gone by is history whatever its status
+  // says. Mission Control statuses are moved by hand, so a card can sit
+  // in production weeks after it landed in mailboxes, and calling that
+  // the next mailing puts a date in the past in front of a buyer.
+  const today = new Date().toISOString().slice(0, 10);
   const upcoming = cards
-    .filter((c) => !c.isPast && c.zoneName.toLowerCase() !== "other")
+    .filter(
+      (c) =>
+        !c.isPast &&
+        c.zoneName.toLowerCase() !== "other" &&
+        (!c.mailDateIso || c.mailDateIso.slice(0, 10) >= today),
+    )
     .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso));
   if (upcoming.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
   return upcoming.map((c) => ({

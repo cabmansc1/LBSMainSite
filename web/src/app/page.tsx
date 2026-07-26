@@ -156,7 +156,10 @@ export default async function HomePage() {
   // The closing CTA used to assert "2 spots left" in hardcoded copy,
   // which was true only by accident. Take it from the card that is
   // actually filling soonest, and say something safe when none is.
-  const nextCard = (await getUpcomingMailings().catch(() => []))[0];
+  const upcoming = await getUpcomingMailings().catch(() => []);
+  const nextCard =
+    upcoming.find((m) => m.status === "open" && m.spotsTaken < m.spotsTotal) ??
+    upcoming[0];
   const spotsLeft = nextCard
     ? Math.max(0, nextCard.spotsTotal - nextCard.spotsTaken)
     : 0;
