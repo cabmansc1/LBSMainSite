@@ -39,10 +39,21 @@ const SIZES: SpotSize[] = ["small", "medium", "large"];
 
 export function PricingCards({
   pricing = POSTCARD_PRICING,
+  zones = [],
 }: {
   pricing?: typeof POSTCARD_PRICING;
+  /** Zones with an open card, so a spot choice can go straight to checkout. */
+  zones?: { slug: string; name: string }[];
 } = {}) {
   const [reach, setReach] = useState<Reach>("5k");
+  const [zone, setZone] = useState("");
+
+  // Without a zone we cannot know which card they are buying onto, so the
+  // button asks for one first rather than dropping them on a contact form.
+  const hrefFor = (size: SpotSize) =>
+    zone
+      ? `/postcards/${zone}/checkout?spot=${size}&reach=${reach}`
+      : "/coverage-map";
 
   return (
     <>
@@ -64,6 +75,26 @@ export function PricingCards({
           </button>
         ))}
       </div>
+
+      {zones.length > 0 && (
+        <div className="mt-4">
+          <label className="text-[12.5px] text-[#93A5B8] block mb-1.5">
+            Which neighborhood?
+          </label>
+          <select
+            value={zone}
+            onChange={(e) => setZone(e.target.value)}
+            className="text-[14px] font-medium px-3.5 py-2.5 rounded-[10px] bg-white text-navy-950 border border-white/20 min-w-[240px]"
+          >
+            <option value="">Choose a neighborhood</option>
+            {zones.map((z) => (
+              <option key={z.slug} value={z.slug}>
+                {z.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-3.5 -mt-16 relative z-10 pt-24">
         {SIZES.map((size) => {
@@ -111,14 +142,14 @@ export function PricingCards({
                 ))}
               </ul>
               <Link
-                href="/contact"
+                href={hrefFor(size)}
                 className={`inline-flex items-center justify-center font-semibold text-[15px] px-6 py-3 rounded-(--radius-btn) transition-colors ${
                   meta.popular
                     ? "bg-cta text-navy-950 hover:bg-cta-hover hover:text-white"
                     : "bg-white text-ink border border-line-strong hover:border-faint"
                 }`}
               >
-                Choose {meta.label}
+                {zone ? `Reserve ${meta.label}` : `Choose ${meta.label}`}
               </Link>
             </div>
           );

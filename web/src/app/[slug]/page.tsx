@@ -91,7 +91,9 @@ export default async function ZonePage({
             One exclusive spot per industry, from {fromPrice} per mailing.
           </p>
           <div className="mt-6">
-            <Button href="/pricing">Reserve a {zone.name} Spot</Button>
+            <Button href={`/postcards/${zone.slug}/checkout`}>
+              Reserve a {zone.name} Spot
+            </Button>
           </div>
           <div className="mt-6.5 flex flex-wrap gap-3">
             {[

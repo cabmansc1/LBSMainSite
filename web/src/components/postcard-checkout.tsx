@@ -23,6 +23,7 @@ const SPOT_META: Record<SpotSize, { label: string; dims: string; note: string }>
  * to /api/checkout which creates the hold + Stripe session.
  */
 export function PostcardCheckout({
+  initialSize,
   zoneSlug,
   zoneName,
   mailMonth,
@@ -31,6 +32,8 @@ export function PostcardCheckout({
   takenCategories,
   categories,
 }: {
+  /** Spot preselected from the pricing page link. */
+  initialSize?: SpotSize;
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
@@ -39,7 +42,7 @@ export function PostcardCheckout({
   takenCategories: string[];
   categories: string[];
 }) {
-  const [size, setSize] = useState<SpotSize>("medium");
+  const [size, setSize] = useState<SpotSize>(initialSize ?? "medium");
   const [business, setBusiness] = useState("");
   const [category, setCategory] = useState("");
   const [email, setEmail] = useState("");

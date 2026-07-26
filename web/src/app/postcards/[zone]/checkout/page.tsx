@@ -51,10 +51,16 @@ export async function generateMetadata({
 
 export default async function PostcardCheckoutPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ zone: string }>;
+  searchParams: Promise<{ spot?: string; reach?: string }>;
 }) {
   const { zone } = await params;
+  const sp = await searchParams;
+  const initialSize = ["small", "medium", "large"].includes(sp.spot ?? "")
+    ? (sp.spot as "small" | "medium" | "large")
+    : undefined;
   const z = zoneBySlug(zone);
   if (!z) notFound();
 
@@ -94,7 +100,8 @@ export default async function PostcardCheckoutPage({
           zoneSlug={zone}
           zoneName={z.name}
           mailMonth={mailing.mailMonth}
-          reach="5k"
+          reach={sp.reach === "10k" ? "10k" : "5k"}
+          initialSize={initialSize}
           availability={availabilityFrom(spotsLeft)}
           takenCategories={takenCategories}
           categories={CATEGORIES}

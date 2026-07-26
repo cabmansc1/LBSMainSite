@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PricingCards } from "@/components/pricing-cards";
 import { getLivePricing } from "@/lib/pricing-store";
+import { getUpcomingMailings } from "@/lib/mission-control";
 import { SectionHeading, TestimonialStrip, CtaBand } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata } from "@/lib/seo";
@@ -47,7 +48,14 @@ const faqJsonLd = {
 export const dynamic = "force-dynamic";
 
 export default async function PricingPage() {
-  const pricing = await getLivePricing();
+  const [pricing, mailings] = await Promise.all([
+    getLivePricing(),
+    getUpcomingMailings(),
+  ]);
+  // Only offer zones you can actually buy onto right now.
+  const openZones = mailings
+    .filter((m) => m.status !== "waitlist" && m.status !== "full")
+    .map((m) => ({ slug: m.zoneSlug, name: m.zoneName }));
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -66,7 +74,7 @@ export default async function PricingPage() {
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6">
-        <PricingCards pricing={pricing} />
+        <PricingCards pricing={pricing} zones={openZones} />
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           {INCLUDED.map((item) => (
