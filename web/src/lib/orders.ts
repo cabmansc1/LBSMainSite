@@ -132,6 +132,10 @@ export async function markPaid(opts: {
   sessionId: string;
   paymentIntent?: string;
   reference?: string;
+  /** What Stripe actually collected. A promotion code makes this lower
+   *  than the price the order was created at, and the receipt, the admin
+   *  and the books all have to show what was really paid. */
+  amountCents?: number;
 }): Promise<boolean> {
   try {
     await ensureOrdersTable();
@@ -140,7 +144,8 @@ export async function markPaid(opts: {
       sql`UPDATE lbs_orders
           SET status = 'paid', paid_at = NOW(),
               stripe_payment_intent = ${opts.paymentIntent ?? null},
-              stripe_session_id = ${opts.sessionId}
+              stripe_session_id = ${opts.sessionId},
+              amount_cents = COALESCE(${opts.amountCents ?? null}, amount_cents)
           WHERE status = 'pending'
             AND (stripe_session_id = ${opts.sessionId}
                  OR reference = ${opts.reference ?? ""})`,

@@ -41,6 +41,10 @@ export async function createCheckoutSession(opts: {
         },
       },
     ],
+    // Discounts are Stripe's job: create a coupon and a promotion code
+    // there and this flag puts the "Add promotion code" field on the
+    // hosted checkout page. Nothing to configure on our side.
+    allow_promotion_codes: true,
     metadata: opts.metadata,
     success_url: opts.successUrl,
     cancel_url: opts.cancelUrl,

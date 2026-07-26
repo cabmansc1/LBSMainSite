@@ -52,6 +52,9 @@ export async function POST(req: Request) {
           sessionId: s.id,
           paymentIntent,
           reference: md.reference,
+          // Stripe's total, so a promotion code is reflected rather than
+          // the list price the order was created at.
+          amountCents: s.amount_total ?? undefined,
         });
 
         // Only push the first time, so a retried webhook cannot place the
