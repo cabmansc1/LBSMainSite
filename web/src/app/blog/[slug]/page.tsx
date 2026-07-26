@@ -1,10 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPost } from "@/lib/blog";
+import { getPost, type BlogPost } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * A handful of posts have neither a meta description nor an excerpt, so
+ * the description falls back to the opening of the post itself before
+ * giving up and composing one. An empty description is a wasted result
+ * snippet.
+ */
+function describe(post: BlogPost): string {
+  const explicit = (post.metaDescription ?? "").trim();
+  if (explicit) return explicit.slice(0, 155);
+  const excerpt = (post.excerpt ?? "").trim();
+  if (excerpt) return excerpt.slice(0, 155);
+  const body = (post.contentHtml ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (body) return body.slice(0, 155);
+  return `${post.title}. Direct mail and local marketing insight from ${SITE_NAME}.`;
+}
 
 export async function generateMetadata({
   params,
@@ -16,11 +35,11 @@ export async function generateMetadata({
   if (!post) return {};
   return {
     title: post.title,
-    description: post.metaDescription ?? post.excerpt.slice(0, 155),
+    description: describe(post),
     alternates: { canonical: `${SITE_URL}/blog/${slug}` },
     openGraph: {
       title: post.title,
-      description: post.metaDescription ?? post.excerpt.slice(0, 155),
+      description: describe(post),
       siteName: SITE_NAME,
       type: "article",
       images: post.imageUrl ? [post.imageUrl] : undefined,

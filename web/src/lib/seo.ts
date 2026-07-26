@@ -42,7 +42,9 @@ export const PAGE_SEO: Record<string, PageSeo> = {
 export function buildMetadata(key: keyof typeof PAGE_SEO): Metadata {
   const page = PAGE_SEO[key];
   return {
-    title: page.title,
+    // These titles already carry the brand, so they bypass the layout
+    // template rather than picking it up a second time.
+    title: { absolute: page.title },
     description: page.description,
     alternates: page.canonical
       ? { canonical: `${SITE_URL}${page.canonical === "/" ? "" : page.canonical}` }

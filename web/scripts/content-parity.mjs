@@ -130,7 +130,26 @@ async function compare(path) {
   if (next.title.length > 65) issues.push(`title ${next.title.length} chars`);
   if (!next.canonical) issues.push("no canonical");
 
-  const lost = live.schema.filter((t) => !next.schema.includes(t));
+  // schema.org subtypes satisfy their parent, so a BlogPosting is not a
+  // lost Article and a Restaurant is not a lost LocalBusiness.
+  const SATISFIES = {
+    Article: ["BlogPosting", "NewsArticle"],
+    LocalBusiness: [
+      "Restaurant",
+      "AutoRepair",
+      "BeautySalon",
+      "HealthAndBeautyBusiness",
+      "LegalService",
+      "SportsActivityLocation",
+    ],
+    Blog: ["BlogPosting"],
+    Place: ["City", "LocalBusiness"],
+    WebPage: ["ItemPage", "AboutPage"],
+  };
+  const covered = (type) =>
+    next.schema.includes(type) ||
+    (SATISFIES[type] ?? []).some((sub) => next.schema.includes(sub));
+  const lost = live.schema.filter((t) => !covered(t));
   if (lost.length) issues.push(`schema lost: ${lost.join(", ")}`);
 
   return { path, live, next, issues };

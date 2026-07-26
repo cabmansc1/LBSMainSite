@@ -32,9 +32,15 @@ export async function generateMetadata({
   if (!b) return {};
   return {
     // Name and place only. Category too pushed these past 60 characters,
-    // and the legacy titles that rank are just "Name - brand".
-    title: `${b.name} | ${b.locationArea}, SC`,
-    description: b.description.slice(0, 155),
+    // and the legacy titles that rank are just "Name - brand". Plenty of
+    // listings already carry their city in the name, so it is not
+    // repeated.
+    title: b.name.toLowerCase().includes(b.locationArea.toLowerCase())
+      ? b.name
+      : `${b.name} | ${b.locationArea}, SC`,
+    description:
+      b.description.trim().slice(0, 155) ||
+      `${b.name} is a ${b.category.toLowerCase()} business in ${b.locationArea}, SC. See contact details, hours and offers in the Lowcountry Business Spotlight directory.`,
     alternates: { canonical: `${SITE_URL}/business/${slug}` },
   };
 }
