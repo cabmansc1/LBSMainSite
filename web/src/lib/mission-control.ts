@@ -1,0 +1,515 @@
+import "server-only";
+import { UPCOMING_MAILINGS, type UpcomingMailing } from "@/lib/mailings";
+
+/**
+ * Mission Control adapter, locked to MC's real contract (from its type
+ * definitions and middleware):
+ *
+ * Auth: Authorization: Bearer <key> OR x-api-key (either passes).
+ * Failure is a 307 redirect to /login, NOT a 401, so redirects are
+ * never followed and any 3xx/non-2xx counts as failure.
+ *
+ * Reads (all fields camelCase):
+ *   GET /api/pipeline/cards       enriched cards incl. activity (primary)
+ *   GET /api/store                snapshot fallback: pipelineCards[] +
+ *                                 pipelineAdvertisers[] joined by cardId
+ * Card canonical fields: area, totalSpots. Advertiser fields: id,
+ * cardId, businessName, adSize, spotsPurchased, totalAmount,
+ * amountPaid, paymentStatus, exclusivity, ...
+ *
+ * Writes:
+ *   POST /api/pipeline/cards/{id}/advertisers   place paid advertiser
+ *   POST /api/pipeline/advertisers/{id}/payment record the payment
+ *   GET  /api/accounts?search=<email>           dedup check (MC only
+ *                                               dedupes by slug, so we
+ *                                               match exact email first)
+ *   POST /api/accounts                          create lead account
+ */
+
+export const mcEnabled = () => !!process.env.MC_BASE_URL;
+
+/**
+ * The key may be stored under any of the tiered names Mission Control
+ * issues. Read-only is enough for everything the public site does; the
+ * write-scoped key is only needed at cutover.
+ */
+const mcKey = () =>
+  process.env.MC_API_KEY ??
+  process.env.MC_API_KEY_READONLY ??
+  process.env.MC_API_KEY_WRITE;
+
+const mcFetch = async (path: string, init?: RequestInit) => {
+  // Card/store reads cache for 60s; mutations and dedup lookups must
+  // never be cached (a cached empty search result would create
+  // duplicate accounts).
+  const cacheable = (!init?.method || init.method === "GET") && init?.cache !== "no-store";
+  const res = await fetch(`${process.env.MC_BASE_URL}${path}`, {
+    ...init,
+    redirect: "manual", // a 307 to /login means auth failed; never follow
+    headers: {
+      ...(mcKey()
+        ? {
+            Authorization: `Bearer ${mcKey()}`,
+            "x-api-key": mcKey() as string,
+          }
+        : {}),
+      "Content-Type": "application/json",
+      ...init?.headers,
+    },
+    ...(cacheable ? { next: { revalidate: 60 } } : {}),
+  });
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error(`Mission Control ${path}: auth failed (redirected)`);
+  }
+  if (!res.ok) throw new Error(`Mission Control ${path}: ${res.status}`);
+  return res.json();
+};
+
+/* ---------- types matching MC ---------- */
+
+type McAdvertiser = {
+  id: string | number;
+  cardId?: string | number;
+  accountId?: string;
+  businessName?: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  adSize?: string;
+  spotsConsumed?: number;
+  spotsPurchased?: number;
+  pricePerSpot?: number;
+  totalAmount?: number;
+  amountPaid?: number;
+  paymentStatus?: "unpaid" | "partial" | "paid";
+  /** Live MC: boolean flag; the locked category is category/primaryCategory. */
+  exclusivity?: string | boolean;
+  category?: string;
+  primaryCategory?: string;
+};
+
+type McCardRaw = Record<string, unknown> & {
+  id: string | number;
+  area?: string;
+  totalSpots?: number;
+  status?: string;
+  mailDate?: string;
+  distribution?: number | string;
+  cardsMailed?: number | string;
+  spotsFilled?: number;
+  advertisers?: McAdvertiser[];
+};
+
+type McCard = {
+  id: string | number;
+  zoneSlug: string;
+  zoneName: string;
+  mailMonth: string;
+  artworkDeadline: string;
+  households: string;
+  spotsTotal: number;
+  spotsTaken: number;
+  status: UpcomingMailing["status"];
+  advertisers: McAdvertiser[];
+  isPast: boolean;
+  mailDateIso: string;
+};
+
+const slugify = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const str = (v: unknown, fallback = ""): string =>
+  v === undefined || v === null ? fallback : String(v);
+
+/** MC area names that map onto a different site zone. */
+const ZONE_ALIASES: Record<string, string> = {
+  "north-mount-pleasant": "mount-pleasant",
+  nexton: "summerville",
+};
+
+/** Live MC statuses: filling = selling now; in_production = closed for
+ * print; mailed = history. */
+const isPastStatus = (s: string) =>
+  ["mailed", "shipped", "archived", "cancelled", "completed"].includes(s);
+
+const formatMailMonth = (iso: string): string => {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso || "TBD";
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+};
+
+function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
+  const zoneName = str(raw.area ?? raw.name ?? raw.title);
+  const spotsTotal = Number(raw.totalSpots ?? 11);
+  // Enriched rows carry spotsFilled; raw store rows fall back to
+  // summing each advertiser's consumed spots.
+  const explicitTaken = raw.spotsFilled ?? raw.spotsTaken ?? raw.spotsSold;
+  const spotsTaken =
+    explicitTaken !== undefined && explicitTaken !== null
+      ? Number(explicitTaken)
+      : advertisers.reduce(
+          (n, a) => n + (a.spotsConsumed ?? a.spotsPurchased ?? 1),
+          0,
+        );
+
+  const statusRaw = str(raw.status, "open").toLowerCase();
+  const status: UpcomingMailing["status"] =
+    statusRaw.includes("wait") ? "waitlist"
+    : statusRaw === "in_production" || spotsTaken >= spotsTotal ? "full"
+    : "open";
+
+  const mailDate = str(raw.mailDate ?? raw.mailMonth ?? raw.month);
+  const households = raw.distribution ?? raw.cardsMailed ?? raw.households;
+  const rawSlug = slugify(zoneName);
+
+  return {
+    id: raw.id,
+    zoneSlug: ZONE_ALIASES[rawSlug] ?? rawSlug,
+    zoneName,
+    mailMonth: formatMailMonth(mailDate),
+    artworkDeadline: str(raw.artworkDeadline ?? raw.deadline, "Ask us"),
+    households:
+      typeof households === "number"
+        ? households.toLocaleString("en-US")
+        : str(households, "5,000+"),
+    spotsTotal,
+    spotsTaken,
+    status,
+    advertisers,
+    isPast: isPastStatus(statusRaw) || !mailDate,
+    mailDateIso: mailDate,
+  };
+}
+
+/** Category an advertiser holds exclusively on their card. */
+const advertiserCategory = (a: McAdvertiser): string | undefined => {
+  if (a.exclusivity === true) return a.category ?? a.primaryCategory;
+  if (typeof a.exclusivity === "string" && a.exclusivity) return a.exclusivity;
+  return undefined;
+};
+
+/* ---------- reads ---------- */
+
+async function fetchCards(): Promise<McCard[] | null> {
+  if (!mcEnabled()) return null;
+  try {
+    // Primary: the store snapshot. The enriched cards list has activity
+    // numbers but does NOT nest advertisers (verified against live MC),
+    // and category locks need advertiser records, so the snapshot with
+    // a cardId join is the one source that has everything.
+    try {
+      const store = (await mcFetch("/api/store")) as {
+        pipelineCards?: McCardRaw[];
+        pipelineAdvertisers?: McAdvertiser[];
+      };
+      if (Array.isArray(store.pipelineCards)) {
+        const byCard = new Map<string, McAdvertiser[]>();
+        for (const a of store.pipelineAdvertisers ?? []) {
+          const key = String(a.cardId);
+          byCard.set(key, [...(byCard.get(key) ?? []), a]);
+        }
+        return store.pipelineCards
+          .map((c) => normalizeCard(c, byCard.get(String(c.id)) ?? []))
+          .filter((c) => c.zoneName);
+      }
+    } catch (e) {
+      console.error("MC /api/store failed, trying /api/pipeline/cards:", e);
+    }
+    // Fallback: enriched cards (no advertisers, so no category locks,
+    // but availability still works via spotsFilled).
+    const list = (await mcFetch("/api/pipeline/cards")) as McCardRaw[];
+    if (!Array.isArray(list)) return null;
+    return list
+      .map((c) => normalizeCard(c, c.advertisers ?? []))
+      .filter((c) => c.zoneName);
+  } catch (e) {
+    console.error("Mission Control read failed, serving fallback:", e);
+    return null;
+  }
+}
+
+/**
+ * Sample mailings are a local-development convenience only. Once
+ * MC_BASE_URL is configured, Mission Control is the sole authority: if
+ * it is unreachable or has nothing upcoming, pages show an empty state
+ * rather than an invented schedule a customer could act on.
+ */
+export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
+  const cards = await fetchCards();
+  if (!cards || cards.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
+  const upcoming = cards
+    .filter((c) => !c.isPast && c.zoneName.toLowerCase() !== "other")
+    .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso));
+  if (upcoming.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
+  return upcoming.map((c) => ({
+    cardId: String(c.id),
+    zoneSlug: c.zoneSlug,
+    zoneName: c.zoneName,
+    mailMonth: c.mailMonth,
+    artworkDeadline: c.artworkDeadline,
+    households: c.households,
+    spotsTotal: c.spotsTotal,
+    spotsTaken: c.spotsTaken,
+    status: c.status,
+  }));
+}
+
+/** Every card currently open in a zone, soonest first. */
+export async function getZoneMailings(zoneSlug: string): Promise<UpcomingMailing[]> {
+  const all = await getUpcomingMailings();
+  return all.filter((m) => m.zoneSlug === zoneSlug);
+}
+
+/** The soonest card in a zone. Prefer getZoneMailings where a zone can
+ *  have more than one card filling at the same time. */
+export async function getZoneMailing(zoneSlug: string) {
+  const all = await getZoneMailings(zoneSlug);
+  return all[0];
+}
+
+export async function getTakenCategoriesForCard(cardId: string): Promise<string[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const card = cards.find((c) => String(c.id) === String(cardId));
+  if (!card) return [];
+  return card.advertisers
+    .map(advertiserCategory)
+    .filter((c): c is string => !!c);
+}
+
+export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
+  const cards = await fetchCards();
+  // Samples are a local-development convenience only. With MC configured
+  // but unreachable, returning the sample list would block real sales in
+  // those categories, so report none taken and let the order through;
+  // the paid push to MC surfaces any genuine clash.
+  if (!cards) return mcEnabled() ? [] : ["Plumbing", "Dental"];
+  const card = cards.find((c) => c.zoneSlug === zoneSlug && c.status === "open");
+  if (!card) return [];
+  return card.advertisers
+    .map(advertiserCategory)
+    .filter((c): c is string => !!c);
+}
+
+/**
+ * Postcard appearances for a business (any card, past or upcoming),
+ * matched by email or normalized business name. Powers the "As seen on
+ * the … Spotlight card" badge on directory listings.
+ */
+export async function advertiserAppearances(match: {
+  name?: string;
+  email?: string;
+}): Promise<{ zoneName: string; mailMonth: string }[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const normName = match.name
+    ? match.name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")
+    : undefined;
+  const email = match.email?.toLowerCase();
+  const seen: { zoneName: string; mailMonth: string }[] = [];
+  for (const card of cards) {
+    for (const a of card.advertisers) {
+      const aName = a.businessName
+        ?.toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]/g, "");
+      if (
+        (email && a.email?.toLowerCase() === email) ||
+        (normName && aName && aName === normName)
+      ) {
+        seen.push({ zoneName: card.zoneName, mailMonth: card.mailMonth });
+        break;
+      }
+    }
+  }
+  return seen;
+}
+
+/* ---------- writes ---------- */
+
+type SignupEvent = {
+  type: "checkout_started" | "order_paid" | "waitlist_joined" | "lead";
+  businessName?: string;
+  email?: string;
+  phone?: string;
+  category?: string;
+  zoneSlug?: string;
+  spot?: string;
+  amountCents?: number;
+  reference?: string;
+};
+
+/**
+ * MC's POST /api/accounts dedupes by slug only (same name creates
+ * joes-pizza-1; same email is never caught), so we search for an exact
+ * email match before creating.
+ */
+async function ensureAccount(event: SignupEvent): Promise<void> {
+  if (event.email) {
+    try {
+      const results = (await mcFetch(
+        `/api/accounts?search=${encodeURIComponent(event.email)}`,
+        { cache: "no-store" },
+      )) as { email?: string }[];
+      if (
+        Array.isArray(results) &&
+        results.some(
+          (a) => a.email?.toLowerCase() === event.email!.toLowerCase(),
+        )
+      ) {
+        return; // already known; do not create a duplicate
+      }
+    } catch (e) {
+      console.error("MC account search failed, skipping create to avoid dupes:", e);
+      return;
+    }
+  }
+
+  await mcFetch("/api/accounts", {
+    method: "POST",
+    body: JSON.stringify({
+      businessName: event.businessName ?? event.email ?? "Website lead",
+      email: event.email,
+      phone: event.phone,
+      category: event.category,
+      city: event.zoneSlug
+        ? event.zoneSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        : undefined,
+      state: "SC",
+      tags: ["website"],
+      nextAction: `Website ${event.type.replace("_", " ")}${event.spot ? ` (${event.spot})` : ""}`,
+    }),
+  });
+}
+
+/**
+ * Report site activity into Mission Control. Paid orders become real
+ * pipeline records; other events become accounts in the follow-up
+ * queue. Fire-and-forget: MC being down must never break a checkout.
+ */
+export async function pushToMissionControl(event: SignupEvent): Promise<void> {
+  if (!mcEnabled()) {
+    console.log("[mission-control preview] would push:", event.type, event.businessName ?? "");
+    return;
+  }
+  // Staging safety: with MC_READ_ONLY set (or a read-only key), writes
+  // are never attempted, so no staging bug can mutate live MC data.
+  if (process.env.MC_READ_ONLY === "1") {
+    console.log("[mission-control read-only] suppressed write:", event.type, event.businessName ?? "");
+    return;
+  }
+  try {
+    if (event.type === "order_paid" && event.zoneSlug) {
+      const cards = await fetchCards();
+      const card = cards?.find(
+        (c) => c.zoneSlug === event.zoneSlug && c.status === "open",
+      );
+      if (!card) throw new Error(`no open MC card for zone ${event.zoneSlug}`);
+
+      const dollars = event.amountCents ? event.amountCents / 100 : undefined;
+      const advertiser = (await mcFetch(
+        `/api/pipeline/cards/${card.id}/advertisers`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            businessName: event.businessName,
+            email: event.email,
+            phone: event.phone,
+            adSize: event.spot,
+            spotsPurchased: 1,
+            totalAmount: dollars,
+            amountPaid: dollars,
+            paymentStatus: "paid",
+            exclusivity: event.category,
+          }),
+        },
+      )) as { id?: string | number };
+
+      if (advertiser.id !== undefined && dollars) {
+        await mcFetch(`/api/pipeline/advertisers/${advertiser.id}/payment`, {
+          method: "POST",
+          body: JSON.stringify({
+            amount: dollars,
+            method: "stripe",
+            reference: event.reference,
+          }),
+        });
+      }
+      return;
+    }
+
+    await ensureAccount(event);
+  } catch (e) {
+    console.error("Mission Control push failed (event logged for sweep):", e, event);
+  }
+}
+
+/**
+ * Every card an advertiser is on, current and past, for the portal.
+ * Matching is by email first (exact), then by normalized business name,
+ * mirroring how advertiserAppearances resolves identity.
+ */
+export type AdvertiserCard = {
+  cardId: string;
+  zoneSlug: string;
+  zoneName: string;
+  mailMonth: string;
+  mailDateIso: string;
+  artworkDeadline: string;
+  households: string;
+  spotsTotal: number;
+  spotsTaken: number;
+  isPast: boolean;
+  status: UpcomingMailing["status"];
+  /** The advertiser's own record on that card. */
+  adSize: string;
+  category: string;
+  amountCents?: number;
+  paymentStatus?: string;
+};
+
+const normalizeName = (s: string) =>
+  s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+
+export async function getAdvertiserCards(match: {
+  name?: string;
+  email?: string;
+}): Promise<AdvertiserCard[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const normName = match.name ? normalizeName(match.name) : undefined;
+  const email = match.email?.toLowerCase();
+
+  const out: AdvertiserCard[] = [];
+  for (const card of cards) {
+    const mine = card.advertisers.find((a) => {
+      const aName = a.businessName ? normalizeName(a.businessName) : undefined;
+      return (
+        (email && a.email?.toLowerCase() === email) ||
+        (normName && aName && aName === normName)
+      );
+    });
+    if (!mine) continue;
+    out.push({
+      cardId: String(card.id),
+      zoneSlug: card.zoneSlug,
+      zoneName: card.zoneName,
+      mailMonth: card.mailMonth,
+      mailDateIso: card.mailDateIso,
+      artworkDeadline: card.artworkDeadline,
+      households: card.households,
+      spotsTotal: card.spotsTotal,
+      spotsTaken: card.spotsTaken,
+      isPast: card.isPast,
+      status: card.status,
+      adSize: str(mine.adSize, "Spot"),
+      category: str(mine.category ?? mine.primaryCategory),
+      amountCents:
+        typeof mine.totalAmount === "number"
+          ? Math.round(mine.totalAmount * 100)
+          : undefined,
+      paymentStatus: mine.paymentStatus,
+    });
+  }
+  return out.sort((a, b) => b.mailDateIso.localeCompare(a.mailDateIso));
+}
