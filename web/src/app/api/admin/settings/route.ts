@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { saveSetting, saveSiteStat, deleteSiteStat } from "@/lib/admin-data";
 import { PRICING_KEY } from "@/lib/pricing-store";
+import { setCardOrientation, type Orientation } from "@/lib/card-capacity";
 
 /**
  * Admin writes for editable site settings: postcard pricing and the
@@ -53,6 +54,23 @@ export async function POST(req: Request) {
       }
       await saveSiteStat(stat);
       revalidatePath("/");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "card-orientation") {
+      const cardId = String(body.cardId ?? "");
+      const orientation = String(body.orientation ?? "") as Orientation;
+      if (!cardId || !["horizontal", "vertical"].includes(orientation)) {
+        return NextResponse.json(
+          { error: "A card and orientation are required" },
+          { status: 422 },
+        );
+      }
+      await setCardOrientation(cardId, orientation);
+      // Capacity feeds availability everywhere a card is sold.
+      for (const path of ["/coverage-map", "/mailing-calendar"]) {
+        revalidatePath(path);
+      }
       return NextResponse.json({ ok: true });
     }
 

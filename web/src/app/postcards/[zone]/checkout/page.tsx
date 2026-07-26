@@ -7,6 +7,11 @@ import {
   getZoneMailings,
   getTakenCategoriesForCard,
 } from "@/lib/mission-control";
+import {
+  cardCapacity,
+  getCardOrientation,
+  type CardCapacity,
+} from "@/lib/card-capacity";
 import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -27,14 +32,15 @@ const CATEGORIES = [
 ];
 
 /** Spot counts derive from the mailing's remaining capacity. */
-const availabilityFrom = (leftRaw: number) => {
-  const left = Math.max(0, Math.floor(leftRaw)); // half-spots exist in MC
-  return [
-    { size: "small" as const, open: Math.min(4, left) },
-    { size: "medium" as const, open: Math.max(0, Math.min(2, left - 2)) },
-    { size: "large" as const, open: Math.max(0, left - 8) },
-  ];
-};
+/**
+ * Real availability: what still fits in the space left on the card,
+ * from Mission Control's spot counts and the card's orientation.
+ */
+const availabilityFrom = (cap: CardCapacity) =>
+  (["small", "medium", "large"] as const).map((size) => ({
+    size,
+    open: cap.fits[size],
+  }));
 
 export async function generateMetadata({
   params,
@@ -79,6 +85,14 @@ export default async function PostcardCheckoutPage({
   const takenCategories = chosen?.cardId
     ? await getTakenCategoriesForCard(chosen.cardId)
     : [];
+  const orientation = chosen?.cardId
+    ? await getCardOrientation(chosen.cardId)
+    : "horizontal";
+  const capacity = cardCapacity({
+    orientation,
+    totalSpots: chosen?.spotsTotal,
+    spotsFilled: chosen?.spotsTaken,
+  });
   if (!mailing && openCards.length > 1) {
     return (
       <>
@@ -234,6 +248,11 @@ export default async function PostcardCheckoutPage({
             {mailing.households} households · artwork deadline{" "}
             {mailing.artworkDeadline}
           </p>
+          <p className="text-[#67768A] text-[13px] mt-1.5 num">
+            {capacity.orientation === "vertical" ? "Vertical" : "Horizontal"}{" "}
+            card · {capacity.remainingSqIn} of {capacity.totalSqIn} square
+            inches still open
+          </p>
         </div>
       </header>
 
@@ -245,7 +264,7 @@ export default async function PostcardCheckoutPage({
           reach={sp.reach === "10k" ? "10k" : "5k"}
           initialSize={initialSize}
           cardId={mailing.cardId}
-          availability={availabilityFrom(spotsLeft)}
+          availability={availabilityFrom(capacity)}
           takenCategories={takenCategories}
           categories={CATEGORIES}
         />
