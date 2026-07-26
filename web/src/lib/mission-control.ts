@@ -58,8 +58,38 @@ const mcFetch = async (path: string, init?: RequestInit) => {
     },
     ...(cacheable ? { next: { revalidate: 60 } } : {}),
   });
+  // Not every redirect is an auth failure. MC sends 307 to /login when a
+  // key is rejected, but a plain 308 is host or path normalization, which
+  // is safe to follow once for a read.
   if (res.status >= 300 && res.status < 400) {
-    throw new Error(`Mission Control ${path}: auth failed (redirected)`);
+    const location = res.headers.get("location") ?? "";
+    if (!location || /\/login/i.test(location)) {
+      throw new Error(
+        `Mission Control ${path}: auth failed (${res.status} -> ${location || "no location"})`,
+      );
+    }
+    const next = new URL(location, `${process.env.MC_BASE_URL}${path}`).toString();
+    const followed = await fetch(next, {
+      ...init,
+      redirect: "manual",
+      headers: {
+        ...(mcKey()
+          ? { Authorization: `Bearer ${mcKey()}`, "x-api-key": mcKey() as string }
+          : {}),
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+      ...(cacheable ? { next: { revalidate: 60 } } : {}),
+    });
+    if (followed.status >= 300 && followed.status < 400) {
+      throw new Error(
+        `Mission Control ${path}: redirect loop (${followed.status} -> ${followed.headers.get("location") ?? "?"})`,
+      );
+    }
+    if (!followed.ok) {
+      throw new Error(`Mission Control ${path}: ${followed.status} after redirect`);
+    }
+    return followed.json();
   }
   if (!res.ok) throw new Error(`Mission Control ${path}: ${res.status}`);
   return res.json();

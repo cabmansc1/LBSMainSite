@@ -23,7 +23,8 @@ export async function GET() {
         redirect: "manual",
         cache: "no-store",
       });
-      return `http ${res.status}`;
+      const loc = res.headers.get("location");
+      return loc ? `http ${res.status} -> ${loc}` : `http ${res.status}`;
     } catch (e) {
       return `unreachable: ${String(e).slice(0, 120)}`;
     }
