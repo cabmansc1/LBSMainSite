@@ -3,7 +3,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, SectionHeading, CtaBand } from "@/components/sections";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
-import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
+import { getLivePricing } from "@/lib/pricing-store";
 
 export const metadata: Metadata = {
   title: "Spotlight Postcards: Shared Direct Mail Advertising",
@@ -33,8 +34,9 @@ const VALUE = [
   },
 ];
 
-export default function AdvertisePage() {
-  const fromPrice = formatPrice(POSTCARD_PRICING["5k"].small.priceCents);
+export default async function AdvertisePage() {
+  const livePricing = await getLivePricing();
+  const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
 
   return (
     <>

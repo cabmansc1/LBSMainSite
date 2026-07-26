@@ -37,7 +37,11 @@ const CARD_META: Record<
 
 const SIZES: SpotSize[] = ["small", "medium", "large"];
 
-export function PricingCards() {
+export function PricingCards({
+  pricing = POSTCARD_PRICING,
+}: {
+  pricing?: typeof POSTCARD_PRICING;
+} = {}) {
   const [reach, setReach] = useState<Reach>("5k");
 
   return (
@@ -64,7 +68,7 @@ export function PricingCards() {
       <div className="grid md:grid-cols-3 gap-3.5 -mt-16 relative z-10 pt-24">
         {SIZES.map((size) => {
           const meta = CARD_META[size];
-          const tier = POSTCARD_PRICING[reach][size];
+          const tier = pricing[reach][size];
           return (
             <div
               key={size}

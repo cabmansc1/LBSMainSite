@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { stripeEnabled, createCheckoutSession } from "@/lib/stripe";
 import { pushToMissionControl } from "@/lib/mission-control";
-import { POSTCARD_PRICING, type Reach, type SpotSize } from "@/lib/pricing";
+import { type Reach, type SpotSize } from "@/lib/pricing";
+import { getLivePricing } from "@/lib/pricing-store";
 import { zoneBySlug } from "@/lib/zones";
 import { getCard } from "@/lib/cards";
 
@@ -43,7 +44,8 @@ export async function POST(req: Request) {
     const zone = zoneBySlug(String(body.zoneSlug ?? ""));
     const spotSize = String(body.spotSize ?? "") as SpotSize;
     const reach = (String(body.reach ?? "5k") as Reach) ?? "5k";
-    const tier = zone && POSTCARD_PRICING[reach]?.[spotSize];
+    const pricing = await getLivePricing();
+    const tier = zone && pricing[reach]?.[spotSize];
     if (!zone || !tier) {
       return NextResponse.json({ error: "Unknown zone or spot" }, { status: 422 });
     }

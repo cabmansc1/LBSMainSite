@@ -7,7 +7,8 @@ import { hasTestimonials } from "@/lib/testimonials";
 import { ZoneMiniMap } from "@/components/zone-mini-map";
 import { ZONES, zoneBySlug } from "@/lib/zones";
 import { getZoneMailing } from "@/lib/mission-control";
-import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
+import { getLivePricing } from "@/lib/pricing-store";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 /**
@@ -57,7 +58,8 @@ export default async function ZonePage({
   if (!zone) notFound();
 
   const mailing = await getZoneMailing(zone.slug);
-  const fromPrice = formatPrice(POSTCARD_PRICING["5k"].small.priceCents);
+  const livePricing = await getLivePricing();
+  const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
   const nearby = ZONES.filter((z) => z.slug !== zone.slug).slice(0, 4);
 
   const serviceJsonLd = {

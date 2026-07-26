@@ -9,7 +9,8 @@ import {
 } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata } from "@/lib/seo";
-import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
+import { getLivePricing } from "@/lib/pricing-store";
 
 export const metadata: Metadata = buildMetadata("home");
 
@@ -75,8 +76,9 @@ const STEPS = [
   },
 ];
 
-export default function HomePage() {
-  const fromPrice = formatPrice(POSTCARD_PRICING["5k"].small.priceCents);
+export default async function HomePage() {
+  const livePricing = await getLivePricing();
+  const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
 
   return (
     <>

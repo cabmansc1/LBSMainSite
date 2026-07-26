@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PricingCards } from "@/components/pricing-cards";
+import { getLivePricing } from "@/lib/pricing-store";
 import { SectionHeading, TestimonialStrip, CtaBand } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata } from "@/lib/seo";
@@ -42,7 +43,11 @@ const faqJsonLd = {
   })),
 };
 
-export default function PricingPage() {
+// Prices are admin-editable, so never serve a build-time snapshot.
+export const dynamic = "force-dynamic";
+
+export default async function PricingPage() {
+  const pricing = await getLivePricing();
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -61,7 +66,7 @@ export default function PricingPage() {
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6">
-        <PricingCards />
+        <PricingCards pricing={pricing} />
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           {INCLUDED.map((item) => (
