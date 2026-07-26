@@ -65,6 +65,10 @@ export type OpenCard = {
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
+  /** What Mission Control calls the card, e.g. "Nexton/Cane Bay". */
+  cardName?: string;
+  /** ZIPs the card's carrier routes fall in. */
+  zips?: string[];
 };
 
 export function PricingCards({
@@ -93,10 +97,14 @@ export function PricingCards({
   for (const c of cards) {
     zoneCounts.set(c.zoneSlug, (zoneCounts.get(c.zoneSlug) ?? 0) + 1);
   }
-  const labelFor = (c: OpenCard) =>
-    (zoneCounts.get(c.zoneSlug) ?? 0) > 1
-      ? `${c.zoneName} · mails ${c.mailMonth}`
-      : c.zoneName;
+  const labelFor = (c: OpenCard) => {
+    if ((zoneCounts.get(c.zoneSlug) ?? 0) <= 1) return c.zoneName;
+    // Two cards in one zone cover different parts of town, so the name
+    // and the ZIPs matter more than the month.
+    const part = c.cardName ?? `mails ${c.mailMonth}`;
+    const zips = c.zips?.length ? ` (${c.zips.join(", ")})` : "";
+    return `${c.zoneName}: ${part}${zips}`;
+  };
 
   // Keep the choice in the URL. Coming back from checkout then restores
   // it instead of dropping the buyer back on step one.
@@ -177,7 +185,9 @@ export function PricingCards({
             </select>
             <p className="text-[12.5px] text-muted mt-2">
               {card
-                ? `Mails ${card.mailMonth}. Now pick an ad size below to reserve.`
+                ? `${card.cardName ? `${card.cardName}. ` : ""}Mails ${card.mailMonth}${
+                    card.zips?.length ? `, ZIP ${card.zips.join(", ")}` : ""
+                  }. Now pick an ad size below to reserve.`
                 : `${cards.length} ${cards.length === 1 ? "card is" : "cards are"} open for booking right now.`}
             </p>
           </>

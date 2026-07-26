@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCapacity, getCardOrientations } from "@/lib/card-capacity";
+import { cardCoverage } from "@/lib/card-coverage";
 import { AdminCards } from "@/components/admin-cards";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +32,14 @@ export default async function AdminCardsPage() {
         totalSpots: m.spotsTotal,
         spotsFilled: m.spotsTaken,
       });
+      const coverage = cardCoverage(m);
       return {
         cardId: m.cardId!,
         zoneName: m.zoneName,
+        cardName: coverage.name,
+        zips: coverage.zips,
+        routeCount: coverage.routeCount,
+        routeHouseholds: coverage.households,
         mailMonth: m.mailMonth,
         orientation,
         totalSpots: m.spotsTotal,
@@ -50,6 +56,9 @@ export default async function AdminCardsPage() {
         <p className="text-sm text-muted mt-1">
           Set each card's orientation. Switching a card to vertical gives it
           more usable ad space, and the site immediately offers what fits.
+          Coverage comes from the route table in each card's Mission Control
+          notes: paste the USPS route rows there and the site tells buyers
+          which part of town the card mails to.
         </p>
       </div>
       <AdminCards cards={cards} />

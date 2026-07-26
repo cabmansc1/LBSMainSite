@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
 import { ALL_SIZES, type SpotSize } from "@/lib/pricing";
+import { cardCoverage } from "@/lib/card-coverage";
 import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
@@ -142,8 +143,21 @@ export default async function PostcardCheckoutPage({
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
                     <b className="text-[16px] font-bold tracking-tight">
-                      Mails {m.mailMonth}
+                      {cardCoverage(m).name ?? `Mails ${m.mailMonth}`}
                     </b>
+                    {cardCoverage(m).name && (
+                      <p className="text-[13px] text-body mt-0.5">
+                        Mails {m.mailMonth}
+                      </p>
+                    )}
+                    {cardCoverage(m).zips.length > 0 && (
+                      <p className="text-[12.5px] text-muted mt-0.5 num">
+                        ZIP {cardCoverage(m).zips.join(", ")} ·{" "}
+                        {cardCoverage(m).routeCount} carrier routes ·{" "}
+                        {cardCoverage(m).households.toLocaleString("en-US")}{" "}
+                        addresses
+                      </p>
+                    )}
                     <p className="text-[13px] text-muted mt-0.5 num">
                       {m.households} households · artwork deadline{" "}
                       {m.artworkDeadline}
@@ -245,12 +259,21 @@ export default async function PostcardCheckoutPage({
             <b className="text-white font-semibold">Checkout</b>
           </nav>
           <h1 className="mt-4 text-[24px] md:text-[34px] font-bold tracking-[-0.03em]">
-            Reserve your spot: {z.name}, {mailing.mailMonth}
+            Reserve your spot: {cardCoverage(mailing).name ?? z.name},{" "}
+            {mailing.mailMonth}
           </h1>
           <p className="text-[#93A5B8] text-[14.5px] mt-2 num">
             {mailing.households} households · artwork deadline{" "}
             {mailing.artworkDeadline}
           </p>
+          {cardCoverage(mailing).zips.length > 0 && (
+            <p className="text-[#67768A] text-[13px] mt-1.5 num">
+              Mails to ZIP {cardCoverage(mailing).zips.join(", ")} ·{" "}
+              {cardCoverage(mailing).routeCount} USPS carrier routes ·{" "}
+              {cardCoverage(mailing).households.toLocaleString("en-US")}{" "}
+              deliverable addresses
+            </p>
+          )}
           <p className="text-[#67768A] text-[13px] mt-1.5 num">
             {capacity.orientation === "vertical" ? "Vertical" : "Horizontal"}{" "}
             card · {capacity.remainingSqIn} of {capacity.totalSqIn} square

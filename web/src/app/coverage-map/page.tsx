@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CoverageMap } from "@/components/coverage-map";
 import { getUpcomingMailings } from "@/lib/mission-control";
+import { cardCoverage } from "@/lib/card-coverage";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -65,17 +66,27 @@ export default async function CoverageMapPage() {
                         : { text: "Open", cls: "text-brand border-brand/50" };
                 return (
                   <div
-                    key={`${m.zoneSlug}-${m.mailMonth}`}
+                    key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`}
                     className="border border-white/12 bg-white/4 rounded-2xl p-5 grid gap-3.5 content-start"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-[15.5px] font-semibold leading-snug">
                           {m.zoneName}
+                          {cardCoverage(m).name && (
+                            <span className="block text-[12.5px] font-medium text-brand">
+                              {cardCoverage(m).name}
+                            </span>
+                          )}
                         </h3>
                         <p className="text-[12.5px] text-[#93A5B8] mt-1">
                           Mails {m.mailMonth} · {m.households} homes
                         </p>
+                        {cardCoverage(m).zips.length > 0 && (
+                          <p className="text-[12px] text-[#67768A] mt-0.5 num">
+                            ZIP {cardCoverage(m).zips.join(", ")}
+                          </p>
+                        )}
                       </div>
                       <span
                         className={`text-[11px] font-bold uppercase tracking-wider border rounded-full px-2.5 py-1 whitespace-nowrap ${chip.cls}`}

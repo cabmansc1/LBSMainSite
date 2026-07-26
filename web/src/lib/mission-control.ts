@@ -1,5 +1,9 @@
 import "server-only";
-import { UPCOMING_MAILINGS, type UpcomingMailing } from "@/lib/mailings";
+import {
+  UPCOMING_MAILINGS,
+  type CardRoute,
+  type UpcomingMailing,
+} from "@/lib/mailings";
 
 /**
  * Mission Control adapter, locked to MC's real contract (from its type
@@ -140,6 +144,8 @@ type McAccount = {
 
 type McCardRaw = Record<string, unknown> & {
   id: string | number;
+  cardName?: string;
+  notes?: string | null;
   area?: string;
   totalSpots?: number;
   status?: string;
@@ -152,6 +158,8 @@ type McCardRaw = Record<string, unknown> & {
 
 type McCard = {
   id: string | number;
+  cardName: string;
+  routes: CardRoute[];
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
@@ -188,6 +196,49 @@ const formatMailMonth = (iso: string): string => {
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 };
 
+const num = (v: string) => {
+  const n = Number(String(v).replace(/[$,\s%]/g, ""));
+  return Number.isFinite(n) ? n : undefined;
+};
+
+/**
+ * Mission Control keeps the USPS route table in the card's notes as
+ * pasted spreadsheet rows:
+ *
+ *   Route  Residential  Business  Total  Age: 25-34  Size  Income  Cost
+ *   29483-R039  667  13  680  10.8%  2.68  $101,970  $167.96
+ *
+ * Parsing it is what lets the site say which part of town a card covers,
+ * which matters the moment a zone has two cards filling at once.
+ *
+ * Only the route code and the delivery counts are kept. The cost and
+ * demographic columns are dropped here, at the boundary, so they never
+ * reach a page or a payload in the first place.
+ */
+function parseRoutes(notes?: string | null): CardRoute[] {
+  if (!notes) return [];
+  const out: CardRoute[] = [];
+  for (const line of notes.split(/\r?\n/)) {
+    const cells = line.split("\t").map((c) => c.trim()).filter(Boolean);
+    if (cells.length < 4) continue;
+    const code = cells[0];
+    const m = /^(\d{5})-([A-Z]?\d+)$/i.exec(code);
+    if (!m) continue; // header row, or a note that is not a route
+    const residential = num(cells[1]);
+    const business = num(cells[2]);
+    const total = num(cells[3]);
+    if (total === undefined) continue;
+    out.push({
+      code,
+      zip: m[1],
+      residential: residential ?? 0,
+      business: business ?? 0,
+      total,
+    });
+  }
+  return out;
+}
+
 function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   const zoneName = str(raw.area ?? raw.name ?? raw.title);
   const spotsTotal = Number(raw.totalSpots ?? 11);
@@ -214,6 +265,8 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
 
   return {
     id: raw.id,
+    cardName: str(raw.cardName),
+    routes: parseRoutes(raw.notes),
     zoneSlug: ZONE_ALIASES[rawSlug] ?? rawSlug,
     zoneName,
     mailMonth: formatMailMonth(mailDate),
@@ -310,6 +363,8 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
   if (upcoming.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
   return upcoming.map((c) => ({
     cardId: String(c.id),
+    cardName: c.cardName || undefined,
+    routes: c.routes.length ? c.routes : undefined,
     zoneSlug: c.zoneSlug,
     zoneName: c.zoneName,
     mailMonth: c.mailMonth,

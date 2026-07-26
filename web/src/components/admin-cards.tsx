@@ -5,6 +5,11 @@ import { useState } from "react";
 type Row = {
   cardId: string;
   zoneName: string;
+  /** Mission Control's name for the card, e.g. "Nexton/Cane Bay". */
+  cardName?: string;
+  zips: string[];
+  routeCount: number;
+  routeHouseholds: number;
   mailMonth: string;
   orientation: "horizontal" | "vertical";
   totalSpots: number;
@@ -79,6 +84,21 @@ export function AdminCards({ cards }: { cards: Row[] }) {
               <tr key={c.cardId} className="hover:bg-surface">
                 <td className="px-4 py-3.5 border-b border-line font-semibold">
                   {c.zoneName}
+                  {c.cardName && (
+                    <span className="block text-[12.5px] font-medium text-muted">
+                      {c.cardName}
+                    </span>
+                  )}
+                  {c.zips.length > 0 ? (
+                    <span className="block text-[12px] text-muted num font-normal">
+                      ZIP {c.zips.join(", ")} · {c.routeCount} routes ·{" "}
+                      {c.routeHouseholds.toLocaleString("en-US")} addresses
+                    </span>
+                  ) : (
+                    <span className="block text-[12px] text-[#a05e00] font-normal">
+                      No route table in Mission Control notes
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3.5 border-b border-line">{c.mailMonth}</td>
                 <td className="px-4 py-3.5 border-b border-line num">

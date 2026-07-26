@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PricingCards } from "@/components/pricing-cards";
 import { getLivePricing } from "@/lib/pricing-store";
 import { getUpcomingMailings } from "@/lib/mission-control";
+import { cardCoverage } from "@/lib/card-coverage";
 import { SectionHeading, TestimonialStrip, CtaBand } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata } from "@/lib/seo";
@@ -62,12 +63,17 @@ export default async function PricingPage({
   // own inventory and category locks.
   const openCards = mailings
     .filter((m) => m.status !== "waitlist" && m.status !== "full")
-    .map((m) => ({
-      cardId: m.cardId,
-      zoneSlug: m.zoneSlug,
-      zoneName: m.zoneName,
-      mailMonth: m.mailMonth,
-    }));
+    .map((m) => {
+      const coverage = cardCoverage(m);
+      return {
+        cardId: m.cardId,
+        zoneSlug: m.zoneSlug,
+        zoneName: m.zoneName,
+        mailMonth: m.mailMonth,
+        cardName: coverage.name,
+        zips: coverage.zips,
+      };
+    });
   return (
     <>
       <header className="bg-navy-950 text-white">

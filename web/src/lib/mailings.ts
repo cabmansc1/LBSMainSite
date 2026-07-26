@@ -3,9 +3,37 @@
  * postcard_mailings table; the shapes match the Drizzle schema so the
  * swap is a query change only.
  */
+/**
+ * One USPS carrier route on a card, from the route table Mission Control
+ * keeps in the card's notes.
+ *
+ * Only the delivery counts cross over. Mission Control's route table also
+ * carries our cost per route and the demographic columns, and none of
+ * that is business the site has: not on a public page, not in the admin,
+ * not in the payload. It is parsed out and dropped rather than carried
+ * and hidden, because anything carried can leak.
+ */
+export type CardRoute = {
+  /** e.g. 29483-R039 */
+  code: string;
+  zip: string;
+  residential: number;
+  business: number;
+  total: number;
+};
+
 export type UpcomingMailing = {
   /** Mission Control card id. A zone can have several cards filling at once. */
   cardId?: string;
+  /**
+   * What MC calls this card, e.g. "Downtown Summerville" or
+   * "Nexton/Cane Bay". A zone can be filling two cards at once, and the
+   * month alone does not tell a buyer which part of town they are
+   * buying into.
+   */
+  cardName?: string;
+  /** Carrier routes the card mails to, when MC has the route table. */
+  routes?: CardRoute[];
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
