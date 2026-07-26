@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPost, type BlogPost } from "@/lib/blog";
+import { getPost, getPosts, type BlogPost } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +55,12 @@ export default async function BlogPostPage({
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) notFound();
+
+  // "More Articles" on the legacy post: the internal links that keep a
+  // reader in the blog and give the newer posts a route to be crawled.
+  const more = (await getPosts().catch(() => []))
+    .filter((p) => p.slug !== post.slug)
+    .slice(0, 3);
 
   // The legacy post carried dates, a publisher with a logo, the page
   // itself as mainEntityOfPage, and breadcrumbs. Article rich results
@@ -126,6 +132,35 @@ export default async function BlogPostPage({
           dangerouslySetInnerHTML={{ __html: post.contentHtml ?? "" }}
         />
       </article>
+
+      {more.length > 0 && (
+        <section className="bg-surface border-t border-line">
+          <div className="mx-auto max-w-[760px] px-6 py-14">
+            <h2 className="text-[19px] font-bold tracking-tight mb-5">
+              More articles
+            </h2>
+            <ul className="grid gap-2.5">
+              {more.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/blog/${p.slug}`}
+                    className="block bg-white border border-line rounded-(--radius-card) px-5 py-4 hover:border-faint transition-colors"
+                  >
+                    <b className="block text-[15px] font-semibold tracking-tight">
+                      {p.title}
+                    </b>
+                    {p.excerpt && (
+                      <span className="text-[13px] text-muted line-clamp-2">
+                        {p.excerpt}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       <script
         type="application/ld+json"
