@@ -381,3 +381,70 @@ export async function getAdminOrders(): Promise<Record<string, unknown>[]> {
   }
   return [];
 }
+
+/* ---------- advertiser accounts ---------- */
+
+export type AdminUser = {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  createdAt: string | null;
+  listings: string[];
+};
+
+export async function getAdminUsers(search = ""): Promise<AdminUser[]> {
+  const { db } = await import("@/lib/db");
+  const term = `%${search.replace(/[%_\\]/g, "\\$&")}%`;
+  const where = search ? sql`WHERE u.email LIKE ${term}` : sql``;
+  const rows = (await db.execute(
+    sql`SELECT u.id, u.email, u.first_name, u.last_name, u.is_active, u.created_at,
+               GROUP_CONCAT(b.business_name SEPARATOR '||') AS listings
+        FROM directory_users u
+        LEFT JOIN directory_businesses b ON b.user_id = u.id
+        ${where}
+        GROUP BY u.id
+        ORDER BY u.id DESC
+        LIMIT 200`,
+  )) as unknown as [Record<string, unknown>[]];
+
+  return (rows[0] ?? []).map((r) => ({
+    id: Number(r.id),
+    email: String(r.email ?? ""),
+    firstName: String(r.first_name ?? ""),
+    lastName: String(r.last_name ?? ""),
+    isActive: bool(r.is_active),
+    createdAt: r.created_at ? String(r.created_at) : null,
+    listings: r.listings ? String(r.listings).split("||").filter(Boolean) : [],
+  }));
+}
+
+/**
+ * Sets an advertiser's password to a value the admin chose. Hashed with
+ * bcrypt at the same cost PHP uses, so the legacy site accepts it too.
+ * The plaintext is never stored or logged; it is shown once in the UI.
+ */
+export async function setUserPassword(id: number, password: string) {
+  const bcrypt = (await import("bcryptjs")).default;
+  const { db } = await import("@/lib/db");
+  const hash = await bcrypt.hash(password, 12);
+  await db.execute(
+    sql`UPDATE directory_users SET password_hash = ${hash} WHERE id = ${id}`,
+  );
+}
+
+export async function setUserActive(id: number, active: boolean) {
+  const { db } = await import("@/lib/db");
+  await db.execute(
+    sql`UPDATE directory_users SET is_active = ${active ? 1 : 0} WHERE id = ${id}`,
+  );
+}
+
+/** Links a listing to a login so the portal can show "your listing". */
+export async function linkListingToUser(businessId: number, userId: number | null) {
+  const { db } = await import("@/lib/db");
+  await db.execute(
+    sql`UPDATE directory_businesses SET user_id = ${userId} WHERE id = ${businessId}`,
+  );
+}
