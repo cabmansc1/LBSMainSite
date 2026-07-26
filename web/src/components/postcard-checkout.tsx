@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CardPreview } from "@/components/card-preview";
 import {
   isOffered,
   POSTCARD_PRICING,
@@ -272,44 +273,12 @@ export function PostcardCheckout({
       </div>
 
       <aside className="grid gap-4 lg:sticky lg:top-5">
-        <div className="bg-white rounded-[10px] border border-line p-4 rotate-[1deg] shadow-[0_12px_30px_rgba(11,31,51,.12)]">
-          <div className="flex justify-between items-start px-1">
-            <span className="font-bold text-[12.5px] tracking-tight">
-              Lowcountry <span className="text-brand-deep">Business Spotlight</span>
-            </span>
-            <span className="w-8 h-10 border border-line-strong rounded-[2px] bg-surface text-muted text-[7px] font-bold flex items-center justify-center text-center leading-tight">
-              FIRST
-              <br />
-              CLASS
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-1 p-1 pt-2.5">
-            <div
-              className={`rounded bg-navy-950 text-white flex items-center justify-center text-center p-1.5 ${
-                size === "large"
-                  ? "col-span-2 row-span-2 min-h-[96px] text-[11px]"
-                  : size === "medium"
-                    ? "row-span-2 min-h-[96px] text-[9.5px]"
-                    : "min-h-[44px] text-[8.5px]"
-              } font-semibold leading-snug`}
-            >
-              {business.trim() || "YOUR BUSINESS HERE"}
-            </div>
-            {Array.from({ length: size === "large" ? 4 : size === "medium" ? 5 : 7 }).map(
-              (_, i) => (
-                <div
-                  key={i}
-                  className="rounded bg-surface border border-line min-h-[44px] flex items-center justify-center text-[8px] font-semibold text-faint"
-                >
-                  AD
-                </div>
-              ),
-            )}
-          </div>
-          <p className="text-center text-[9.5px] text-muted pt-2">
-            Live preview · {zoneName} edition · {mailMonth}
-          </p>
-        </div>
+        <CardPreview
+          size={size}
+          business={business}
+          zoneName={zoneName}
+          mailMonth={mailMonth}
+        />
 
         <div className="bg-white border border-line rounded-(--radius-card) p-6 grid gap-3">
           <h2 className="text-[16px] font-semibold tracking-tight">Order summary</h2>

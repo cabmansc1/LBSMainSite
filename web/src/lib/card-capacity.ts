@@ -9,6 +9,11 @@ import "server-only";
  * showing 12.5 of 16 spots filled has a small in it, which is half a
  * spot. Keeping both views in sync means area / 12 = spots.
  *
+ * A card has two printed sides. A horizontal card carries four mediums
+ * along the top and four along the bottom of each side, so eight per
+ * side and sixteen across the card, with the branding and postage band
+ * between the rows on the address side.
+ *
  * Orientation changes only the capacity, which is why switching a card
  * from horizontal to vertical buys room for more ads.
  */
@@ -56,6 +61,15 @@ export const AD_SIZES: Record<AdSizeKey, AdSizeSpec> = {
 export const ORIENTATION_CAPACITY: Record<Orientation, number> = {
   horizontal: 192,
   vertical: 204,
+};
+
+/** Printed sides per card, each carrying half the capacity. */
+export const SIDES_PER_CARD = 2;
+
+/** Medium slots on one side, at the standard four across, two rows. */
+export const SLOTS_PER_SIDE: Record<Orientation, number> = {
+  horizontal: 8,
+  vertical: 8.5,
 };
 
 export const spotsToSqIn = (spots: number) => spots * SQ_IN_PER_SPOT;
