@@ -69,6 +69,8 @@ export type OpenCard = {
   cardName?: string;
   /** ZIPs the card's carrier routes fall in. */
   zips?: string[];
+  /** What this card is, written in the admin. */
+  description?: string;
 };
 
 export function PricingCards({
@@ -183,6 +185,9 @@ export function PricingCards({
                 </option>
               ))}
             </select>
+            {card?.description && (
+              <p className="text-[13px] text-body mt-2.5">{card.description}</p>
+            )}
             <p className="text-[12.5px] text-muted mt-2">
               {card
                 ? `${card.cardName ? `${card.cardName}. ` : ""}Mails ${card.mailMonth}${

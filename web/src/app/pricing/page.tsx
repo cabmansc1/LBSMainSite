@@ -3,6 +3,7 @@ import { PricingCards } from "@/components/pricing-cards";
 import { getLivePricing } from "@/lib/pricing-store";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
+import { getCardDescriptions } from "@/lib/card-details";
 import { SectionHeading, TestimonialStrip, CtaBand } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
 import { buildMetadata } from "@/lib/seo";
@@ -54,9 +55,10 @@ export default async function PricingPage({
   searchParams: Promise<{ card?: string; reach?: string }>;
 }) {
   const sp = await searchParams;
-  const [pricing, mailings] = await Promise.all([
+  const [pricing, mailings, descriptions] = await Promise.all([
     getLivePricing(),
     getUpcomingMailings(),
+    getCardDescriptions(),
   ]);
   // Only cards you can actually buy onto right now. One entry per card,
   // because a zone can be filling several at once and each carries its
@@ -72,6 +74,7 @@ export default async function PricingPage({
         mailMonth: m.mailMonth,
         cardName: coverage.name,
         zips: coverage.zips,
+        description: m.cardId ? descriptions[m.cardId] : undefined,
       };
     });
   return (

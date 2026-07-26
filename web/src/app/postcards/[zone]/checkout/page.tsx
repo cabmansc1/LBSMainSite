@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
 import { ALL_SIZES, type SpotSize } from "@/lib/pricing";
 import { cardCoverage } from "@/lib/card-coverage";
+import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
@@ -78,6 +79,9 @@ export default async function PostcardCheckoutPage({
   const openCards = (await getZoneMailings(zone)).filter(
     (m) => m.status !== "waitlist",
   );
+  // Written per card in the admin: the sentence that tells a buyer what
+  // this card is, which the zone name alone never does.
+  const descriptions = await getCardDescriptions();
   const chosen =
     openCards.find((m) => m.cardId && m.cardId === sp.card) ??
     (openCards.length === 1 ? openCards[0] : undefined);
@@ -148,6 +152,11 @@ export default async function PostcardCheckoutPage({
                     {cardCoverage(m).name && (
                       <p className="text-[13px] text-body mt-0.5">
                         Mails {m.mailMonth}
+                      </p>
+                    )}
+                    {m.cardId && descriptions[m.cardId] && (
+                      <p className="text-[13px] text-body mt-1.5 max-w-[52ch]">
+                        {descriptions[m.cardId]}
                       </p>
                     )}
                     {cardCoverage(m).zips.length > 0 && (
@@ -266,6 +275,11 @@ export default async function PostcardCheckoutPage({
             {mailing.households} households · artwork deadline{" "}
             {mailing.artworkDeadline}
           </p>
+          {mailing.cardId && descriptions[mailing.cardId] && (
+            <p className="text-[#93A5B8] text-[14px] mt-2.5 max-w-[60ch]">
+              {descriptions[mailing.cardId]}
+            </p>
+          )}
           {cardCoverage(mailing).zips.length > 0 && (
             <p className="text-[#67768A] text-[13px] mt-1.5 num">
               Mails to ZIP {cardCoverage(mailing).zips.join(", ")} ·{" "}

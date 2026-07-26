@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/admin";
 import { saveSetting, saveSiteStat, deleteSiteStat } from "@/lib/admin-data";
 import { PRICING_KEY } from "@/lib/pricing-store";
 import { setCardOrientation, type Orientation } from "@/lib/card-capacity";
+import { CARD_DESCRIPTION_MAX, setCardDescription } from "@/lib/card-details";
 
 /**
  * Admin writes for editable site settings: postcard pricing and the
@@ -55,6 +56,26 @@ export async function POST(req: Request) {
       }
       await saveSiteStat(stat);
       revalidatePath("/");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "card-description") {
+      const cardId = String(body.cardId ?? "");
+      if (!cardId) {
+        return NextResponse.json({ error: "A card is required" }, { status: 422 });
+      }
+      const description = String(body.description ?? "");
+      if (description.length > CARD_DESCRIPTION_MAX) {
+        return NextResponse.json(
+          { error: `Keep it under ${CARD_DESCRIPTION_MAX} characters` },
+          { status: 422 },
+        );
+      }
+      await setCardDescription(cardId, description);
+      // The description shows anywhere a card is offered.
+      for (const path of ["/pricing", "/coverage-map", "/mailing-calendar"]) {
+        revalidatePath(path);
+      }
       return NextResponse.json({ ok: true });
     }
 

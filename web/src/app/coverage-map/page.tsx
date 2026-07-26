@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CoverageMap } from "@/components/coverage-map";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
+import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -20,7 +21,10 @@ export const metadata: Metadata = {
 };
 
 export default async function CoverageMapPage() {
-  const mailings = await getUpcomingMailings();
+  const [mailings, descriptions] = await Promise.all([
+    getUpcomingMailings(),
+    getCardDescriptions(),
+  ]);
   return (
     <div className="bg-navy-950 text-white">
       <div className="mx-auto max-w-[1120px] px-6 py-14 pb-18">
@@ -85,6 +89,11 @@ export default async function CoverageMapPage() {
                         {cardCoverage(m).zips.length > 0 && (
                           <p className="text-[12px] text-[#67768A] mt-0.5 num">
                             ZIP {cardCoverage(m).zips.join(", ")}
+                          </p>
+                        )}
+                        {m.cardId && descriptions[m.cardId] && (
+                          <p className="text-[12.5px] text-[#93A5B8] mt-2 leading-relaxed">
+                            {descriptions[m.cardId]}
                           </p>
                         )}
                       </div>

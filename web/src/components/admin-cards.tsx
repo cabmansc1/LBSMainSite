@@ -10,6 +10,8 @@ type Row = {
   zips: string[];
   routeCount: number;
   routeHouseholds: number;
+  /** Sales copy shown to buyers wherever this card is offered. */
+  description: string;
   mailMonth: string;
   orientation: "horizontal" | "vertical";
   totalSpots: number;
@@ -22,6 +24,37 @@ export function AdminCards({ cards }: { cards: Row[] }) {
   const [rows, setRows] = useState(cards);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+
+  const [drafts, setDrafts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(cards.map((c) => [c.cardId, c.description])),
+  );
+
+  async function saveDescription(cardId: string) {
+    setBusy(cardId);
+    setMessage("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "card-description",
+          cardId,
+          description: drafts[cardId] ?? "",
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Failed");
+      setRows((r) =>
+        r.map((x) =>
+          x.cardId === cardId ? { ...x, description: drafts[cardId] ?? "" } : x,
+        ),
+      );
+      setMessage("Saved. Buyers see it wherever this card is offered.");
+    } catch (e) {
+      setMessage(String(e instanceof Error ? e.message : e));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function setOrientation(
     cardId: string,
@@ -80,7 +113,7 @@ export function AdminCards({ cards }: { cards: Row[] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((c) => (
+            {rows.flatMap((c) => [
               <tr key={c.cardId} className="hover:bg-surface">
                 <td className="px-4 py-3.5 border-b border-line font-semibold">
                   {c.zoneName}
@@ -126,8 +159,45 @@ export function AdminCards({ cards }: { cards: Row[] }) {
                     ))}
                   </span>
                 </td>
-              </tr>
-            ))}
+              </tr>,
+              <tr key={`${c.cardId}-desc`}>
+                <td colSpan={5} className="px-4 pb-4 border-b border-line">
+                  <label
+                    htmlFor={`desc-${c.cardId}`}
+                    className="text-[11px] uppercase tracking-wider text-muted font-semibold block mb-1.5"
+                  >
+                    What this card is, in a sentence
+                  </label>
+                  <div className="flex gap-2 items-start flex-wrap">
+                    <textarea
+                      id={`desc-${c.cardId}`}
+                      rows={2}
+                      maxLength={400}
+                      value={drafts[c.cardId] ?? ""}
+                      onChange={(e) =>
+                        setDrafts((d) => ({ ...d, [c.cardId]: e.target.value }))
+                      }
+                      placeholder="Nexton and Cane Bay: the master-planned side of Summerville, thousands of new rooftops and families who moved in this year."
+                      className="flex-1 min-w-[280px] text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => saveDescription(c.cardId)}
+                      disabled={
+                        busy === c.cardId || (drafts[c.cardId] ?? "") === c.description
+                      }
+                      className="bg-navy-950 text-white text-[13px] font-semibold px-4 py-2.5 rounded-[10px] hover:bg-navy-800 disabled:opacity-40"
+                    >
+                      Save
+                    </button>
+                  </div>
+                  <p className="text-[11.5px] text-muted mt-1.5 num">
+                    {(drafts[c.cardId] ?? "").length} of 400 characters. Shown to
+                    buyers on the pricing picker, the card chooser and checkout.
+                  </p>
+                </td>
+              </tr>,
+            ])}
           </tbody>
         </table>
       </div>

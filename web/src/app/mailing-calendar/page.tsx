@@ -3,6 +3,7 @@ import Link from "next/link";
 import { StatusChip, FillMeter, CtaBand } from "@/components/sections";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
+import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -27,7 +28,10 @@ const chipFor = (status: string, left: number) => {
 };
 
 export default async function MailingCalendarPage() {
-  const mailings = await getUpcomingMailings();
+  const [mailings, descriptions] = await Promise.all([
+    getUpcomingMailings(),
+    getCardDescriptions(),
+  ]);
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -97,6 +101,11 @@ export default async function MailingCalendarPage() {
                       {cardCoverage(m).zips.length > 0 && (
                         <span className="block text-[12px] text-muted num">
                           ZIP {cardCoverage(m).zips.join(", ")}
+                        </span>
+                      )}
+                      {m.cardId && descriptions[m.cardId] && (
+                        <span className="block text-[12.5px] font-normal text-body mt-1 max-w-[42ch]">
+                          {descriptions[m.cardId]}
                         </span>
                       )}
                     </td>

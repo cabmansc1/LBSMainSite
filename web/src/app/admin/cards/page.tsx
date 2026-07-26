@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCapacity, getCardOrientations } from "@/lib/card-capacity";
 import { cardCoverage } from "@/lib/card-coverage";
+import { getCardDescriptions } from "@/lib/card-details";
 import { AdminCards } from "@/components/admin-cards";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +19,10 @@ export const metadata: Metadata = {
  */
 export default async function AdminCardsPage() {
   await requireAdmin();
-  const [mailings, orientations] = await Promise.all([
+  const [mailings, orientations, descriptions] = await Promise.all([
     getUpcomingMailings(),
     getCardOrientations(),
+    getCardDescriptions(),
   ]);
 
   const cards = mailings
@@ -37,6 +39,7 @@ export default async function AdminCardsPage() {
         cardId: m.cardId!,
         zoneName: m.zoneName,
         cardName: coverage.name,
+        description: descriptions[m.cardId!] ?? "",
         zips: coverage.zips,
         routeCount: coverage.routeCount,
         routeHouseholds: coverage.households,
