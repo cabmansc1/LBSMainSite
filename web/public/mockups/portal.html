@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Advertiser Portal: structure mockup</title>
+<style>
+  :root {
+    --navy: #0a1622;
+    --navy-soft: #16283b;
+    --surface: #f6f8fa;
+    --white: #ffffff;
+    --line: #e3e9ef;
+    --line-strong: #d3dce6;
+    --ink: #0f1e2e;
+    --body: #3d4d5e;
+    --muted: #6b7c8d;
+    --faint: #93a5b8;
+    --brand: #38b6ff;
+    --brand-deep: #1287d8;
+    --brand-tint: #e8f5ff;
+    --cta: #ff8c00;
+    --cta-tint: #fff4e3;
+    --cta-ink: #9a5c00;
+    --ok: #1a9d5c;
+    --ok-tint: #e6f5ec;
+    --warn-ink: #b8730a;
+    --radius: 12px;
+    --sidebar: 224px;
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.011em;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  h1, h2, h3 { margin: 0; letter-spacing: -0.025em; text-wrap: balance; }
+  a { color: var(--brand-deep); }
+  button { font: inherit; letter-spacing: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+
+  /* ---------- mockup banner ---------- */
+  .banner {
+    background: var(--navy-soft); color: #cfe0ee;
+    font-size: 12.5px; padding: 8px 20px; text-align: center;
+  }
+  .banner b { color: #fff; }
+
+  /* ---------- shell ---------- */
+  .shell { display: flex; min-height: 100vh; align-items: stretch; }
+
+  .sidebar {
+    width: var(--sidebar); flex: 0 0 var(--sidebar);
+    background: var(--navy); color: #b6c6d6;
+    padding: 20px 14px; position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column; gap: 22px;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; padding: 0 8px; }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--brand);
+    color: var(--navy); font-weight: 800; font-size: 12px;
+    display: grid; place-items: center; letter-spacing: -0.03em;
+  }
+  .brand-text { color: #fff; font-weight: 700; font-size: 13.5px; line-height: 1.25; }
+  .brand-text span { display: block; color: var(--faint); font-weight: 500; font-size: 11.5px; }
+
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav button {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    background: none; border: 0; color: #b6c6d6;
+    padding: 9px 10px; border-radius: 9px; font-size: 13.5px; font-weight: 500;
+    text-align: left; transition: background .12s, color .12s;
+  }
+  .nav button:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .nav button[aria-current="page"] { background: rgba(56,182,255,.14); color: #fff; font-weight: 600; }
+  .nav svg { width: 16px; height: 16px; flex: 0 0 16px; }
+  .pill {
+    margin-left: auto; background: var(--cta); color: var(--navy);
+    font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px;
+  }
+
+  .side-foot { margin-top: auto; border-top: 1px solid rgba(255,255,255,.09); padding-top: 14px; }
+  .who { display: flex; align-items: center; gap: 9px; padding: 0 8px; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 999px; 
+    background: #1d334a; color: #fff; font-size: 12px; font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .who-text { font-size: 12.5px; color: #fff; line-height: 1.3; }
+  .who-text span { display: block; color: var(--faint); font-size: 11.5px; }
+
+  /* ---------- main ---------- */
+  main { flex: 1; min-width: 0; padding: 26px 28px 90px; }
+  .wrap { max-width: 940px; }
+  .page-head { margin-bottom: 20px; }
+  .page-head h1 { font-size: 22px; font-weight: 700; }
+  .page-head p { margin: 5px 0 0; color: var(--muted); font-size: 13.5px; }
+
+  .card {
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .pad { padding: 18px 20px; }
+
+  .grid { display: grid; gap: 14px; }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .stat .label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .09em; color: var(--muted);
+  }
+  .stat .value { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-top: 5px; }
+  .stat .note { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .stat .value.due { color: var(--cta-ink); }
+
+  /* attention band: state encoded in form, not just color */
+  .attention {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--cta-tint); border: 1px solid #f2ddba;
+    border-left: 3px solid var(--cta); border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .attention h2 { font-size: 15px; font-weight: 700; }
+  .attention p { margin: 3px 0 0; font-size: 13.5px; color: var(--body); }
+
+  .btn {
+    border: 0; border-radius: 9px; padding: 9px 15px;
+    font-size: 13.5px; font-weight: 700; background: var(--cta); color: var(--navy);
+    white-space: nowrap;
+  }
+  .btn:hover { background: #ffa033; }
+  .btn.quiet { background: var(--white); color: var(--ink); border: 1px solid var(--line-strong); font-weight: 600; }
+  .btn.quiet:hover { border-color: var(--faint); }
+  .btn.small { padding: 6px 11px; font-size: 12.5px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    border-radius: 999px; padding: 3px 9px; border: 1px solid;
+    white-space: nowrap;
+  }
+  .chip.wait { background: var(--cta-tint); border-color: #f2ddba; color: var(--cta-ink); }
+  .chip.good { background: var(--ok-tint); border-color: #bfe6d1; color: var(--ok); }
+  .chip.done { background: var(--surface); border-color: var(--line-strong); color: var(--muted); }
+  .chip.info { background: var(--brand-tint); border-color: #c2e4fb; color: var(--brand-deep); }
+  .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+
+  .sec-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--muted); margin: 26px 0 10px;
+  }
+
+  .row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: 0; }
+  .row .grow { flex: 1; min-width: 0; }
+  .row h3 { font-size: 14.5px; font-weight: 650; }
+  .row .meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  .unread { background: #fbfdff; }
+  .unread h3::before {
+    content: ""; display: inline-block; width: 7px; height: 7px;
+    border-radius: 999px; background: var(--brand-deep); margin-right: 7px;
+    vertical-align: middle;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    text-align: left; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--muted); font-weight: 700;
+    padding: 11px 18px; background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  td { padding: 13px 18px; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  .scroll-x { overflow-x: auto; }
+
+  .meter { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .meter > i { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+  .meter > i.hot { background: var(--cta); }
+
+  /* bar chart, given the same care as type */
+  .chart { display: flex; align-items: flex-end; gap: 7px; height: 132px; padding-top: 8px; }
+  .chart div { flex: 1; background: var(--brand-tint); border-radius: 4px 4px 0 0; position: relative; }
+  .chart div > i {
+    position: absolute; inset: auto 0 0 0; background: var(--brand);
+    border-radius: 4px 4px 0 0; display: block;
+  }
+  .chart div.peak > i { background: var(--brand-deep); }
+  .chart-x { display: flex; gap: 7px; margin-top: 7px; }
+  .chart-x span { flex: 1; text-align: center; font-size: 11px; color: var(--muted); }
+
+  .field { display: grid; gap: 6px; }
+  .field > span {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .09em; color: var(--muted);
+  }
+  .field input, .field textarea, .field select {
+    font: inherit; font-size: 14px; padding: 9px 12px;
+    border: 1px solid var(--line-strong); border-radius: 9px; background: var(--white);
+    color: var(--ink); width: 100%;
+  }
+  .field input:focus, .field textarea:focus { outline: 2px solid var(--brand-deep); outline-offset: 0; border-color: var(--brand-deep); }
+
+  .thumb {
+    aspect-ratio: 4 / 3; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 9px; display: grid; place-items: center;
+    color: var(--faint); font-size: 12px;
+  }
+
+  .card-face {
+    aspect-ratio: 9 / 12; background: linear-gradient(160deg, #12283c, #0a1622);
+    border-radius: 9px; color: #8fa8bd; display: grid; place-items: center;
+    font-size: 11.5px; text-align: center; padding: 10px; border: 1px solid #1d334a;
+  }
+
+  /* ---------- mobile bottom bar ---------- */
+  .bottombar { display: none; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    main { padding: 20px 16px 96px; }
+    .cols-4 { grid-template-columns: repeat(2, 1fr); }
+    .cols-2 { grid-template-columns: 1fr; }
+    .mobile-head {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--navy); color: #fff; padding: 12px 16px;
+      position: sticky; top: 0; z-index: 20;
+    }
+    .bottombar {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      position: fixed; inset: auto 0 0 0; z-index: 30;
+      background: var(--white); border-top: 1px solid var(--line);
+      padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    }
+    .bottombar button {
+      background: none; border: 0; display: grid; justify-items: center; gap: 3px;
+      padding: 5px 2px; color: var(--muted); font-size: 10.5px; font-weight: 600;
+      position: relative;
+    }
+    .bottombar button[aria-current="page"] { color: var(--brand-deep); }
+    .bottombar svg { width: 20px; height: 20px; }
+    .bottombar .pill {
+      position: absolute; top: 1px; left: 50%; margin-left: 4px;
+      background: var(--cta); color: var(--navy); font-size: 10px; padding: 0 5px;
+    }
+    .attention { flex-direction: column; }
+  }
+  @media (min-width: 901px) { .mobile-head { display: none; } }
+
+  .panel[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <b>Structure mockup</b> for the advertiser portal. Sample content, not live data. Resize the window below 900px to see the mobile bottom bar.
+</div>
+
+<div class="mobile-head">
+  <b style="font-size:14px">Palmetto Plumbing Co.</b>
+  <span style="font-size:12.5px;color:#93a5b8">Sign out</span>
+</div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">LB</span>
+      <span class="brand-text">Spotlight<span>Advertiser portal</span></span>
+    </div>
+
+    <nav class="nav" id="nav-desktop">
+      <button data-panel="overview" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+        Overview
+      </button>
+      <button data-panel="messages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
+        Messages <span class="pill num">3</span>
+      </button>
+      <button data-panel="listing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
+        Listing
+      </button>
+      <button data-panel="campaigns">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 4v16"/></svg>
+        Campaigns
+      </button>
+      <button data-panel="results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        Results
+      </button>
+      <button data-panel="billing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19"/></svg>
+        Billing
+      </button>
+    </nav>
+
+    <div class="side-foot">
+      <div class="who">
+        <span class="avatar">PP</span>
+        <span class="who-text">Palmetto Plumbing<span>Account and settings</span></span>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ================= OVERVIEW ================= -->
+    <section class="panel wrap" id="overview">
+      <div class="page-head">
+        <h1>Welcome back, Dana</h1>
+        <p>Here is what needs you today.</p>
+      </div>
+
+      <div class="attention">
+        <div class="grow">
+          <h2>Artwork is due for the Summerville September card</h2>
+          <p>Send us your art or let us design it. After August 4 the card goes to print without you.</p>
+        </div>
+        <button class="btn" data-goto="campaigns">Handle artwork</button>
+      </div>
+
+      <div class="grid cols-4" style="margin-top:14px">
+        <div class="card pad stat">
+          <div class="label">Artwork deadline</div>
+          <div class="value due num">Aug 4</div>
+          <div class="note">9 days away</div>
+        </div>
+        <div class="card pad stat">
+          <div class="label">Active cards</div>
+          <div class="value num">2</div>
+          <div class="note">Summerville, Goose Creek</div>
+        </div>
+        <div class="card pad stat">
+          <div class="label">New messages</div>
+          <div class="value num">3</div>
+          <div class="note">Oldest 2 days ago</div>
+        </div>
+        <div class="card pad stat">
+          <div class="label">QR scans</div>
+          <div class="value num">312</div>
+          <div class="note">41 this week</div>
+        </div>
+      </div>
+
+      <div class="sec-label">Recent activity</div>
+      <div class="card">
+        <div class="row">
+          <div class="grow">
+            <h3>Marcus Webb asked about a water heater</h3>
+            <div class="meta">Through your listing, 2 hours ago</div>
+          </div>
+          <button class="btn quiet small" data-goto="messages">Read</button>
+        </div>
+        <div class="row">
+          <div class="grow">
+            <h3>Goose Creek October card approved for print</h3>
+            <div class="meta">Yesterday</div>
+          </div>
+          <span class="chip good"><span class="dot"></span>Approved</span>
+        </div>
+        <div class="row">
+          <div class="grow">
+            <h3>Listing edit is waiting for review</h3>
+            <div class="meta">You updated your hours, 3 days ago</div>
+          </div>
+          <span class="chip wait"><span class="dot"></span>In review</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MESSAGES ================= -->
+    <section class="panel wrap" id="messages" hidden>
+      <div class="page-head">
+        <h1>Messages</h1>
+        <p>People who contacted you through your directory listing.</p>
+      </div>
+      <div class="card">
+        <div class="row unread">
+          <div class="grow">
+            <h3>Marcus Webb</h3>
+            <div class="meta">Water heater is leaking, can someone come out this week? Summerville 29483.</div>
+            <div class="meta">marcus.webb@example.com &middot; 843-555-0147 &middot; 2 hours ago</div>
+          </div>
+          <button class="btn small">Reply</button>
+        </div>
+        <div class="row unread">
+          <div class="grow">
+            <h3>Renee Alcott</h3>
+            <div class="meta">Quote for repiping a 1970s ranch. Saw you on the September postcard.</div>
+            <div class="meta">ralcott@example.com &middot; Yesterday</div>
+          </div>
+          <button class="btn small">Reply</button>
+        </div>
+        <div class="row unread">
+          <div class="grow">
+            <h3>Tomas Guerra</h3>
+            <div class="meta">Do you handle tankless installs? Scanned the QR code on the card.</div>
+            <div class="meta">tguerra@example.com &middot; 2 days ago</div>
+          </div>
+          <button class="btn small">Reply</button>
+        </div>
+        <div class="row">
+          <div class="grow">
+            <h3>Priya Raman</h3>
+            <div class="meta">Thanks for the quick visit last month.</div>
+            <div class="meta">Answered &middot; July 8</div>
+          </div>
+          <span class="chip done">Handled</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= LISTING ================= -->
+    <section class="panel wrap" id="listing" hidden>
+      <div class="page-head">
+        <h1>Your listing</h1>
+        <p>This is your page in the directory. Edits are reviewed before they go public.</p>
+      </div>
+
+      <div class="card pad" style="display:flex;gap:14px;align-items:center;background:var(--cta-tint);border-color:#f2ddba">
+        <span class="chip wait"><span class="dot"></span>In review</span>
+        <div class="grow" style="font-size:13.5px;color:var(--body)">
+          Your hours change is waiting for approval. The public page still shows the old hours until then.
+        </div>
+        <button class="btn quiet small">View pending change</button>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:14px">
+        <div class="card pad grid" style="gap:14px">
+          <label class="field"><span>Business name</span><input value="Palmetto Plumbing Co."></label>
+          <label class="field"><span>Description</span><textarea rows="4">Family-owned plumbing serving Summerville for 15 years. Water heaters, repipes, and same-day repairs.</textarea></label>
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:12px">
+            <label class="field"><span>Phone</span><input value="843-555-0142"></label>
+            <label class="field"><span>Category</span><select><option>Home &amp; Garden</option></select></label>
+          </div>
+        </div>
+
+        <div class="grid" style="gap:14px;align-content:start">
+          <div class="card pad">
+            <div class="sec-label" style="margin:0 0 10px">Photos</div>
+            <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:9px">
+              <div class="thumb">Truck</div>
+              <div class="thumb">Crew</div>
+              <div class="thumb">Add</div>
+            </div>
+          </div>
+          <div class="card pad">
+            <div class="sec-label" style="margin:0 0 10px">Current offer</div>
+            <div style="font-size:14px;font-weight:650">$50 off water heater install</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Shows as a chip on your listing card</div>
+          </div>
+          <div class="card pad">
+            <div class="sec-label" style="margin:0 0 10px">Listing health</div>
+            <div style="display:grid;gap:7px;font-size:13px">
+              <div style="display:flex;gap:8px;align-items:center"><span class="chip good"><span class="dot"></span>Good</span> Photos, hours, and offer are set</div>
+              <div style="display:flex;gap:8px;align-items:center"><span class="chip wait"><span class="dot"></span>Missing</span> No Instagram link</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn">Submit for review</button>
+        <button class="btn quiet">Preview public page</button>
+      </div>
+    </section>
+
+    <!-- ================= CAMPAIGNS ================= -->
+    <section class="panel wrap" id="campaigns" hidden>
+      <div class="page-head">
+        <h1>Campaigns</h1>
+        <p>Cards you are on now, and every card you have run.</p>
+      </div>
+
+      <div class="sec-label" style="margin-top:0">Running now</div>
+      <div class="grid" style="gap:14px">
+        <div class="card pad">
+          <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div class="grow">
+              <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+                <h3 style="font-size:16px">Summerville, September 2026</h3>
+                <span class="chip wait"><span class="dot"></span>Artwork needed</span>
+              </div>
+              <div class="meta" style="font-size:13px;color:var(--muted);margin-top:4px">
+                Medium spot &middot; $349 &middot; mails Sept 12 &middot; 5,000 homes
+              </div>
+            </div>
+            <div style="display:flex;gap:9px">
+              <button class="btn">Upload my art</button>
+              <button class="btn quiet">Have LBS design it</button>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px">
+              <span>Card is filling</span><span class="num">12 of 16 spots taken</span>
+            </div>
+            <div class="meter"><i class="hot" style="width:75%"></i></div>
+          </div>
+        </div>
+
+        <div class="card pad">
+          <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <div class="grow">
+              <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+                <h3 style="font-size:16px">Goose Creek, October 2026</h3>
+                <span class="chip good"><span class="dot"></span>Approved for print</span>
+              </div>
+              <div class="meta" style="font-size:13px;color:var(--muted);margin-top:4px">
+                Medium spot &middot; $349 &middot; mails Oct 3 &middot; 5,000 homes
+              </div>
+            </div>
+            <button class="btn quiet">View proof</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-label">Past cards</div>
+      <div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+        <div class="card" style="overflow:hidden">
+          <div class="card-face">Summerville<br>June 2026</div>
+          <div class="pad" style="padding:12px 14px">
+            <div style="font-size:13.5px;font-weight:650">June 2026</div>
+            <div style="font-size:12px;color:var(--muted)" class="num">5,000 homes &middot; 148 scans</div>
+          </div>
+        </div>
+        <div class="card" style="overflow:hidden">
+          <div class="card-face">Summerville<br>March 2026</div>
+          <div class="pad" style="padding:12px 14px">
+            <div style="font-size:13.5px;font-weight:650">March 2026</div>
+            <div style="font-size:12px;color:var(--muted)" class="num">5,000 homes &middot; 121 scans</div>
+          </div>
+        </div>
+        <div class="card" style="overflow:hidden">
+          <div class="card-face">Goose Creek<br>Jan 2026</div>
+          <div class="pad" style="padding:12px 14px">
+            <div style="font-size:13.5px;font-weight:650">January 2026</div>
+            <div style="font-size:12px;color:var(--muted)" class="num">5,000 homes &middot; 96 scans</div>
+          </div>
+        </div>
+        <div class="card" style="overflow:hidden">
+          <div class="card-face">Summerville<br>Oct 2025</div>
+          <div class="pad" style="padding:12px 14px">
+            <div style="font-size:13.5px;font-weight:650">October 2025</div>
+            <div style="font-size:12px;color:var(--muted)" class="num">5,000 homes &middot; 88 scans</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RESULTS ================= -->
+    <section class="panel wrap" id="results" hidden>
+      <div class="page-head">
+        <h1>Results</h1>
+        <p>What your cards and listing actually produced.</p>
+      </div>
+
+      <div class="grid cols-4">
+        <div class="card pad stat"><div class="label">Scans, 12 months</div><div class="value num">453</div><div class="note">Across 4 cards</div></div>
+        <div class="card pad stat"><div class="label">Listing views</div><div class="value num">1,204</div><div class="note">Last 90 days</div></div>
+        <div class="card pad stat"><div class="label">Inquiries</div><div class="value num">27</div><div class="note">9 this quarter</div></div>
+        <div class="card pad stat"><div class="label">Cost per inquiry</div><div class="value num">$51</div><div class="note">Down from $63</div></div>
+      </div>
+
+      <div class="sec-label">QR scans by month</div>
+      <div class="card pad">
+        <div class="chart">
+          <div><i style="height:38%"></i></div>
+          <div><i style="height:52%"></i></div>
+          <div><i style="height:44%"></i></div>
+          <div class="peak"><i style="height:88%"></i></div>
+          <div><i style="height:61%"></i></div>
+          <div><i style="height:47%"></i></div>
+          <div><i style="height:55%"></i></div>
+          <div><i style="height:72%"></i></div>
+        </div>
+        <div class="chart-x">
+          <span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span>
+          <span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--muted);margin:12px 0 0">
+          March is the spike: the Summerville card landed March 14.
+        </p>
+      </div>
+
+      <div class="sec-label">By card</div>
+      <div class="card scroll-x">
+        <table>
+          <thead><tr><th>Card</th><th>Mailed</th><th>Homes</th><th>Scans</th><th>Inquiries</th></tr></thead>
+          <tbody>
+            <tr><td>Summerville, June 2026</td><td>Jun 14</td><td class="num">5,000</td><td class="num">148</td><td class="num">11</td></tr>
+            <tr><td>Summerville, March 2026</td><td>Mar 14</td><td class="num">5,000</td><td class="num">121</td><td class="num">8</td></tr>
+            <tr><td>Goose Creek, January 2026</td><td>Jan 10</td><td class="num">5,000</td><td class="num">96</td><td class="num">5</td></tr>
+            <tr><td>Summerville, October 2025</td><td>Oct 5</td><td class="num">5,000</td><td class="num">88</td><td class="num">3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= BILLING ================= -->
+    <section class="panel wrap" id="billing" hidden>
+      <div class="page-head">
+        <h1>Billing</h1>
+        <p>Receipts, your listing subscription, and referral credit.</p>
+      </div>
+
+      <div class="grid cols-2">
+        <div class="card pad">
+          <div class="sec-label" style="margin:0 0 8px">Premium listing</div>
+          <div style="font-size:20px;font-weight:700" class="num">$10<span style="font-size:13px;color:var(--muted);font-weight:500"> per month</span></div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">Renews Aug 14 &middot; Visa ending 4242</div>
+          <div style="display:flex;gap:9px;margin-top:14px">
+            <button class="btn quiet small">Update card</button>
+            <button class="btn quiet small">Cancel</button>
+          </div>
+        </div>
+        <div class="card pad" style="border-left:3px solid var(--brand)">
+          <div class="sec-label" style="margin:0 0 8px">Referral credit</div>
+          <div style="font-size:20px;font-weight:700" class="num">$50</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">
+            Ashley River Auto Spa booked in June. Credit applies to your next mailing.
+          </div>
+          <button class="btn small" style="margin-top:14px">Refer a business</button>
+        </div>
+      </div>
+
+      <div class="sec-label">Receipts</div>
+      <div class="card scroll-x">
+        <table>
+          <thead><tr><th>Date</th><th>Item</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Jul 2, 2026</td><td>Summerville, September card, medium spot</td><td class="num">$349.00</td><td><span class="chip good"><span class="dot"></span>Paid</span></td><td><a href="#">Receipt</a></td></tr>
+            <tr><td>Jun 1, 2026</td><td>Goose Creek, October card, medium spot</td><td class="num">$349.00</td><td><span class="chip good"><span class="dot"></span>Paid</span></td><td><a href="#">Receipt</a></td></tr>
+            <tr><td>Jun 14, 2026</td><td>Premium listing, monthly</td><td class="num">$10.00</td><td><span class="chip good"><span class="dot"></span>Paid</span></td><td><a href="#">Receipt</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="bottombar" id="nav-mobile">
+  <button data-panel="overview" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+    Home
+  </button>
+  <button data-panel="messages">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
+    Messages<span class="pill num">3</span>
+  </button>
+  <button data-panel="listing">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
+    Listing
+  </button>
+  <button data-panel="campaigns">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 4v16"/></svg>
+    Cards
+  </button>
+  <button data-panel="results">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    Results
+  </button>
+</nav>
+
+<script>
+  const panels = [...document.querySelectorAll(".panel")];
+  const navButtons = [...document.querySelectorAll("[data-panel]")];
+
+  function show(name) {
+    panels.forEach(p => { p.hidden = p.id !== name; });
+    navButtons.forEach(b => {
+      if (b.dataset.panel === name) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
+    window.scrollTo({ top: 0 });
+  }
+
+  navButtons.forEach(b => b.addEventListener("click", () => show(b.dataset.panel)));
+  document.querySelectorAll("[data-goto]").forEach(b =>
+    b.addEventListener("click", () => show(b.dataset.goto))
+  );
+</script>
+</body>
+</html>
