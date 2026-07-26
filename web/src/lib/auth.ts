@@ -104,17 +104,40 @@ export async function verifyAdminCredentials(
 
   const { db } = await import("@/lib/db");
   const { sql } = await import("drizzle-orm");
-  const rows = (await db.execute(
-    sql`SELECT id, email, password_hash, name FROM campaign_admins WHERE email = ${email} LIMIT 1`,
-  )) as unknown as Array<
-    { id: number; email: string; password_hash: string; name: string }[]
-  >;
-  const admin = rows[0]?.[0];
+
+  // admin/login.php authenticates on `username` and requires
+  // status = 'active'. Some installs also carry an email column, so try
+  // username first and fall back to email; SELECT * keeps this working
+  // whichever columns the table actually has.
+  type AdminRow = Record<string, unknown>;
+  const lookups = [
+    sql`SELECT * FROM campaign_admins WHERE username = ${email} AND status = 'active' LIMIT 1`,
+    sql`SELECT * FROM campaign_admins WHERE email = ${email} AND status = 'active' LIMIT 1`,
+  ];
+
+  let admin: AdminRow | undefined;
+  for (const query of lookups) {
+    try {
+      const rows = (await db.execute(query)) as unknown as Array<AdminRow[]>;
+      admin = rows[0]?.[0];
+      if (admin) break;
+    } catch {
+      // Column not present on this install; try the next shape.
+    }
+  }
   if (!admin) return null;
-  const ok = await bcrypt.compare(password, admin.password_hash);
-  return ok
-    ? { id: admin.id, email: admin.email, firstName: admin.name ?? "Admin", role: "admin" }
-    : null;
+
+  const hash = String(admin.password_hash ?? "");
+  if (!hash) return null;
+  const ok = await bcrypt.compare(password, hash);
+  if (!ok) return null;
+
+  return {
+    id: Number(admin.id),
+    email: String(admin.email ?? admin.username ?? email),
+    firstName: String(admin.name ?? admin.username ?? "Admin"),
+    role: "admin",
+  };
 }
 
 export async function verifyCredentials(

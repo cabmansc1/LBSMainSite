@@ -32,14 +32,14 @@ export function AdminLoginForm() {
     <form onSubmit={submit} className="grid gap-4">
       <div>
         <label htmlFor="al-email" className="text-[12.5px] font-semibold text-body block mb-1.5">
-          Admin email
+          Admin username
         </label>
         <input
           id="al-email"
           name="email"
-          type="email"
+          type="text"
           required
-          autoComplete="email"
+          autoComplete="username"
           className="w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg focus:outline-none focus:border-navy-950"
         />
       </div>
