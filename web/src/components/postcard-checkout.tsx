@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CardPreview } from "@/components/card-preview";
 import type { Orientation } from "@/lib/card-capacity";
 import {
+  ALL_SIZES,
   isOffered,
   POSTCARD_PRICING,
   formatPrice,
@@ -18,7 +19,12 @@ const SPOT_META: Record<SpotSize, { label: string; dims: string; note: string }>
   medium: { label: "Medium", dims: "3″ × 4″", note: "Offer, photo, QR" },
   large: { label: "Large", dims: "4″ × 6″", note: "Dominant position" },
   triple: { label: "Triple", dims: "3 mediums", note: "Owns a whole band" },
-  quad: { label: "Quad", dims: "2 larges", note: "Largest format we print" },
+  quad: { label: "Quad", dims: "2 larges", note: "Half-card takeover" },
+  full: {
+    label: "Full page",
+    dims: "one whole side",
+    note: "Every spot on the non-postage side",
+  },
 };
 
 /**
@@ -33,6 +39,7 @@ const SWATCH: Record<SpotSize, { width: number; height: number }> = {
   large: { width: 52, height: 28 },
   triple: { width: 52, height: 42 },
   quad: { width: 52, height: 56 },
+  full: { width: 52, height: 74 },
 };
 
 /**
@@ -140,7 +147,7 @@ export function PostcardCheckout({
     <div className="grid lg:grid-cols-[1.15fr_.85fr] gap-5 items-start">
       <div className="grid gap-4">
         <div className="grid gap-2.5" role="radiogroup" aria-label="Ad size">
-          {(["small", "medium", "large", "triple", "quad"] as SpotSize[])
+          {ALL_SIZES
             .filter((s) => isOffered(POSTCARD_PRICING[reach]?.[s]))
             .map((s) => {
             const open = openFor(s);

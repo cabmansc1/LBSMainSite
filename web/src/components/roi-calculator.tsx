@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  ALL_SIZES,
   POSTCARD_PRICING,
   HOUSEHOLDS,
   formatPrice,
@@ -27,7 +28,7 @@ export function RoiCalculator({
 
   // Only sizes actually on sale at this reach; a zero price means the
   // size is not offered there.
-  const sizes = (["small", "medium", "large", "triple", "quad"] as SpotSize[]).filter(
+  const sizes = ALL_SIZES.filter(
     (s) => (pricing[reach]?.[s]?.priceCents ?? 0) > 0,
   );
   const active = sizes.includes(size) ? size : (sizes[0] ?? "small");

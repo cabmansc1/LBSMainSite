@@ -20,7 +20,13 @@ import "server-only";
 
 export type Orientation = "horizontal" | "vertical";
 
-export type AdSizeKey = "small" | "medium" | "large" | "triple" | "quad";
+export type AdSizeKey =
+  | "small"
+  | "medium"
+  | "large"
+  | "triple"
+  | "quad"
+  | "full";
 
 export type AdSizeSpec = {
   key: AdSizeKey;
@@ -28,8 +34,6 @@ export type AdSizeSpec = {
   dimensions: string;
   /** Usable area consumed on the card. */
   sqIn: number;
-  /** Whether it can be bought without talking to us. */
-  selfServe: boolean;
   /**
    * Orientations this size can be laid out on. Every size works on both
    * today; the field exists because layout, not just area, decides what
@@ -44,13 +48,20 @@ const BOTH: Orientation[] = ["horizontal", "vertical"];
 export const SQ_IN_PER_SPOT = 12;
 
 export const AD_SIZES: Record<AdSizeKey, AdSizeSpec> = {
-  small: { key: "small", label: "Small", dimensions: "3x2", sqIn: 6, selfServe: true, orientations: BOTH },
-  medium: { key: "medium", label: "Medium", dimensions: "4x3", sqIn: 12, selfServe: true, orientations: BOTH },
-  large: { key: "large", label: "Large", dimensions: "4x6", sqIn: 24, selfServe: true, orientations: BOTH },
-  // Custom formats. Both lay out on either orientation, with a different
-  // arrangement on each.
-  triple: { key: "triple", label: "Triple", dimensions: "3 mediums", sqIn: 36, selfServe: false, orientations: BOTH },
-  quad: { key: "quad", label: "Quad", dimensions: "2 larges or 4 mediums", sqIn: 48, selfServe: false, orientations: BOTH },
+  small: { key: "small", label: "Small", dimensions: "3x2", sqIn: 6, orientations: BOTH },
+  medium: { key: "medium", label: "Medium", dimensions: "4x3", sqIn: 12, orientations: BOTH },
+  large: { key: "large", label: "Large", dimensions: "4x6", sqIn: 24, orientations: BOTH },
+  // Larger formats. All lay out on either orientation, with a different
+  // arrangement on each. Whether a size is sellable is decided by its
+  // price, so there is no separate self-serve flag to fall out of sync.
+  triple: { key: "triple", label: "Triple", dimensions: "3 mediums", sqIn: 36, orientations: BOTH },
+  quad: { key: "quad", label: "Quad", dimensions: "2 larges or 4 mediums", sqIn: 48, orientations: BOTH },
+  // A full page is every spot on one side. It has to be the non-postage
+  // side, because the other side carries the branding and the postage
+  // indicia, so a card can only ever hold one. Its area is half the card,
+  // and cardCapacity recomputes it from the card's real total rather than
+  // trusting this nominal figure.
+  full: { key: "full", label: "Full page", dimensions: "one whole side", sqIn: 96, orientations: BOTH },
 };
 
 /**
@@ -66,6 +77,12 @@ export const ORIENTATION_CAPACITY: Record<Orientation, number> = {
 /** Printed sides per card, each carrying half the capacity. */
 export const SIDES_PER_CARD = 2;
 
+/** Ad area on one side, which is what a full page buys. */
+export const SIDE_CAPACITY: Record<Orientation, number> = {
+  horizontal: ORIENTATION_CAPACITY.horizontal / SIDES_PER_CARD,
+  vertical: ORIENTATION_CAPACITY.vertical / SIDES_PER_CARD,
+};
+
 /** Medium slots on one side, at the standard four across, two rows. */
 export const SLOTS_PER_SIDE: Record<Orientation, number> = {
   horizontal: 8,
@@ -80,6 +97,8 @@ export type CardCapacity = {
   totalSqIn: number;
   usedSqIn: number;
   remainingSqIn: number;
+  /** Area on one printed side, which is what a full page costs in space. */
+  sideSqIn: number;
   totalSpots: number;
   usedSpots: number;
   remainingSpots: number;
@@ -111,12 +130,21 @@ export function cardCapacity(opts: {
   const usedSqIn = Math.max(0, spotsToSqIn(opts.spotsFilled ?? 0));
   const remainingSqIn = Math.max(0, totalSqIn - usedSqIn);
 
+  const sideSqIn = totalSqIn / SIDES_PER_CARD;
+
   const fits = Object.fromEntries(
     (Object.keys(AD_SIZES) as AdSizeKey[]).map((k) => {
       const spec = AD_SIZES[k];
       // A size that cannot be laid out on this orientation never fits,
       // however much area is left.
       if (!spec.orientations.includes(orientation)) return [k, 0];
+      // A full page needs a whole side to itself, and only the
+      // non-postage side can be given away, so there is at most one. It
+      // is available while everything already sold would still fit on the
+      // postage side, which is exactly one side's worth of space left.
+      // Placement is not fixed until production, so that is a real test
+      // and not an approximation.
+      if (k === "full") return [k, remainingSqIn >= sideSqIn ? 1 : 0];
       return [k, Math.floor(remainingSqIn / spec.sqIn)];
     }),
   ) as Record<AdSizeKey, number>;
@@ -126,6 +154,7 @@ export function cardCapacity(opts: {
     totalSqIn,
     usedSqIn,
     remainingSqIn,
+    sideSqIn,
     totalSpots: sqInToSpots(totalSqIn),
     usedSpots: sqInToSpots(usedSqIn),
     remainingSpots: sqInToSpots(remainingSqIn),

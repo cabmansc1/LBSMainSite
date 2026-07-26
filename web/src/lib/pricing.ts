@@ -2,7 +2,13 @@
  * Spotlight Postcard pricing, ported from pricing_config.php.
  * One place to change prices, exactly like the PHP config it replaces.
  */
-export type SpotSize = "small" | "medium" | "large" | "triple" | "quad";
+export type SpotSize =
+  | "small"
+  | "medium"
+  | "large"
+  | "triple"
+  | "quad"
+  | "full";
 export type Reach = "5k" | "10k";
 
 export type SpotTier = {
@@ -15,7 +21,10 @@ export type SpotTier = {
 /** The three sizes sold on their own cards in the pricing grid. */
 export const CORE_SIZES: SpotSize[] = ["small", "medium", "large"];
 /** Larger formats: same buying flow, listed separately. */
-export const BIG_SIZES: SpotSize[] = ["triple", "quad"];
+export const BIG_SIZES: SpotSize[] = ["triple", "quad", "full"];
+
+/** Every size, biggest last. Anything iterating sizes should use this. */
+export const ALL_SIZES: SpotSize[] = [...CORE_SIZES, ...BIG_SIZES];
 
 export const POSTCARD_PRICING: Record<Reach, Record<SpotSize, SpotTier>> = {
   "5k": {
@@ -24,6 +33,7 @@ export const POSTCARD_PRICING: Record<Reach, Record<SpotSize, SpotTier>> = {
     large: { size: "4×6", priceCents: 59900, description: "~4 inches x 6 inches" },
     triple: { size: "3 mediums", priceCents: 89900, description: "Three medium spots together" },
     quad: { size: "2 larges", priceCents: 119900, description: "Two larges or four mediums" },
+    full: { size: "one whole side", priceCents: 220000, description: "Every spot on one side of the card" },
   },
   "10k": {
     small: { size: "3×2", priceCents: 29900, description: "Business card size" },
@@ -32,6 +42,7 @@ export const POSTCARD_PRICING: Record<Reach, Record<SpotSize, SpotTier>> = {
     // Not priced at 10k yet: set these in the admin to offer them.
     triple: { size: "3 mediums", priceCents: 0, description: "Three medium spots together" },
     quad: { size: "2 larges", priceCents: 0, description: "Two larges or four mediums" },
+    full: { size: "one whole side", priceCents: 0, description: "Every spot on one side of the card" },
   },
 };
 

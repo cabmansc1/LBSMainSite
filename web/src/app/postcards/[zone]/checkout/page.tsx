@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
+import { ALL_SIZES } from "@/lib/pricing";
 import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
@@ -38,10 +39,7 @@ const CATEGORIES = [
  * from Mission Control's spot counts and the card's orientation.
  */
 const availabilityFrom = (cap: CardCapacity) =>
-  (["small", "medium", "large", "triple", "quad"] as const).map((size) => ({
-    size,
-    open: cap.fits[size],
-  }));
+  ALL_SIZES.map((size) => ({ size, open: cap.fits[size] }));
 
 export async function generateMetadata({
   params,

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getLivePricing } from "@/lib/pricing-store";
 import { AdminPricing } from "@/components/admin-pricing";
-import type { Reach, SpotSize } from "@/lib/pricing";
+import { ALL_SIZES, type Reach } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default async function AdminPricingPage() {
   const pricing = await getLivePricing();
 
   const rows = (["5k", "10k"] as Reach[]).flatMap((reach) =>
-    (["small", "medium", "large", "triple", "quad"] as SpotSize[]).map((size) => ({
+    ALL_SIZES.map((size) => ({
       reach,
       size,
       label: pricing[reach][size].size,

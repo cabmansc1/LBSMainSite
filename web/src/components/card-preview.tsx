@@ -8,9 +8,14 @@ import type { Orientation } from "@/lib/card-capacity";
  * printed in.
  *
  * Horizontal: four medium slots along the top and four along the bottom
- * of each side, with the branding and postage band between the rows.
- * Vertical: the band runs across the top and the slots sit two wide and
- * four deep beneath it.
+ * of each side, with the branding band between the rows. Vertical: the
+ * band runs across the top and the slots sit two wide and four deep
+ * beneath it.
+ *
+ * One side carries the postage indicia, which is technically the front of
+ * the card. EDDM needs no address, so the rest of that side sells like
+ * any other. The buyer's ad is drawn on the other side, and a full page
+ * takes that whole side, which is why only one can exist per card.
  *
  * One slot is one medium either way, so an ad is drawn at its real
  * relative size. Position is illustrative, which the caption says
@@ -32,6 +37,7 @@ const HORIZONTAL: Record<SpotSize, Footprint> = {
   large: { colSpan: 2, rowSpan: 1, half: false, note: "two slots side by side" },
   triple: { colSpan: 3, rowSpan: 1, half: false, note: "three slots across" },
   quad: { colSpan: 4, rowSpan: 1, half: false, note: "a full row of four" },
+  full: { colSpan: 4, rowSpan: 2, half: false, note: "every spot on the side" },
 };
 
 const VERTICAL: Record<SpotSize, Footprint> = {
@@ -40,6 +46,7 @@ const VERTICAL: Record<SpotSize, Footprint> = {
   large: { colSpan: 1, rowSpan: 2, half: false, note: "two slots stacked" },
   triple: { colSpan: 1, rowSpan: 3, half: false, note: "three slots stacked" },
   quad: { colSpan: 2, rowSpan: 2, half: false, note: "a two by two block" },
+  full: { colSpan: 2, rowSpan: 4, half: false, note: "every spot on the side" },
 };
 
 const GRID = {
@@ -154,8 +161,21 @@ function HorizontalSide({
   /** Whether the buyer's ad is drawn on this side. It runs once. */
   mine: boolean;
 }) {
-  const { colSpan, half } = HORIZONTAL[size];
-  const topRemaining = mine ? 4 - Math.min(4, colSpan) : 4;
+  const { colSpan, rowSpan, half } = HORIZONTAL[size];
+  const wholeSide = mine && rowSpan > 1;
+  const topRemaining = mine && !wholeSide ? 4 - Math.min(4, colSpan) : 4;
+
+  // A full page takes every ad slot on the side. The card's own branding
+  // still runs, so the band stays.
+  if (wholeSide) {
+    return (
+      <div className="bg-[#f4f2ee] border border-line rounded-[6px] p-2 grid gap-1.5">
+        <MyAd business={business} half={false} style={{ height: 130 }} />
+        <Band addressSide={addressSide} mailMonth={mailMonth} />
+        <Caption label={label} />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#f4f2ee] border border-line rounded-[6px] p-2 grid gap-1.5">
@@ -259,20 +279,22 @@ export function CardPreview({
     <div className="bg-white rounded-[10px] border border-line p-4 shadow-[0_12px_30px_rgba(11,31,51,.12)] grid gap-2.5">
       <div className="grid sm:grid-cols-2 gap-2.5">
         <Side
-          label="Front · your ad runs here"
-          size={size}
-          business={business}
-          addressSide={false}
-          mailMonth={mailMonth}
-          mine
-        />
-        <Side
-          label="Address side · other advertisers"
+          label="Postage side · other advertisers"
           size={size}
           business={business}
           addressSide
           mailMonth={mailMonth}
           mine={false}
+        />
+        <Side
+          label={
+            size === "full" ? "Your side · all yours" : "Back · your ad runs here"
+          }
+          size={size}
+          business={business}
+          addressSide={false}
+          mailMonth={mailMonth}
+          mine
         />
       </div>
       <div className="grid gap-1.5 border-t border-line pt-2.5">
@@ -281,11 +303,22 @@ export function CardPreview({
           {zoneName} edition, {mailMonth} · {perSide} medium spots per side
         </p>
         <p className="text-center text-[9.5px] text-body bg-surface border border-line rounded-[6px] px-2.5 py-1.5">
-          <b className="font-semibold">Example layout only.</b> Your ad runs
-          once, on one side of the card. It is drawn here at its true size,{" "}
-          {GRID[orientation].footprints[size].note}, but the position and side
-          are set during production and confirmed on your proof. Both sides are
-          shown so you can see the whole card you are on.
+          {size === "full" ? (
+            <>
+              <b className="font-semibold">You take the whole side.</b> A full
+              page is every ad spot on the non-postage side, so no other
+              business appears next to you there. The postage side carries the
+              rest of the card. Only one full page exists per card.
+            </>
+          ) : (
+            <>
+              <b className="font-semibold">Example layout only.</b> Your ad runs
+              once, on one side of the card. It is drawn here at its true size,{" "}
+              {GRID[orientation].footprints[size].note}, but the position and
+              side are set during production and confirmed on your proof. Both
+              sides are shown so you can see the whole card you are on.
+            </>
+          )}
         </p>
       </div>
     </div>

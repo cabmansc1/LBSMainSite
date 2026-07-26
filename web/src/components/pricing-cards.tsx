@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  BIG_SIZES,
+  CORE_SIZES,
   POSTCARD_PRICING,
   formatPrice,
   centsPerHome,
@@ -42,13 +44,19 @@ const CARD_META: Record<
   quad: {
     label: "Quad",
     dims: "2 larges",
-    sub: "The largest format we print",
-    features: ["Everything in Triple", "Two larges or four mediums", "Effectively a half-card takeover"],
+    sub: "Half the card is yours",
+    features: ["Everything in Triple", "Two larges or four mediums", "A half-card takeover"],
+  },
+  full: {
+    label: "Full page",
+    dims: "one whole side",
+    sub: "Every spot on the non-postage side",
+    features: ["Everything in Quad", "No other business on your side", "One per card, ever"],
   },
 };
 
-const SIZES: SpotSize[] = ["small", "medium", "large"];
-const BIG: SpotSize[] = ["triple", "quad"];
+const SIZES = CORE_SIZES;
+const BIG = BIG_SIZES;
 
 export function PricingCards({
   pricing = POSTCARD_PRICING,
@@ -199,7 +207,7 @@ export function PricingCards({
         })}
       </div>
 
-      <div className="mt-3.5 grid md:grid-cols-2 gap-3.5 relative z-10">
+      <div className="mt-3.5 grid md:grid-cols-3 gap-3.5 relative z-10">
         {BIG.map((size) => {
           const meta = CARD_META[size];
           const tier = pricing[reach]?.[size];
@@ -211,20 +219,20 @@ export function PricingCards({
           return (
             <div
               key={size}
-              className="bg-white rounded-(--radius-card) p-6 border border-line grid sm:grid-cols-[1fr_auto] gap-4 items-center"
+              className="bg-white rounded-(--radius-card) p-6 border border-line grid gap-3.5 content-start"
             >
               <div>
-                <div className="flex items-baseline gap-2.5 flex-wrap">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-muted">
-                    {meta.label}
-                  </span>
-                  <span className="text-[14.5px] font-semibold tracking-tight">
-                    {meta.dims}
-                  </span>
+                <div className="text-xs font-semibold uppercase tracking-widest text-muted">
+                  {meta.label}
                 </div>
-                <div className="text-[14.5px] text-muted mt-0.5">{meta.sub}</div>
-                <div className="text-[28px] font-bold tracking-[-0.03em] leading-none mt-3 num">
-                  {priced ? formatPrice(tier.priceCents) : "Priced on request"}
+                <div className="text-[17px] font-bold tracking-tight mt-1">
+                  {meta.dims}
+                </div>
+                <div className="text-[13.5px] text-muted">{meta.sub}</div>
+              </div>
+              <div>
+                <div className="text-[30px] font-bold tracking-[-0.03em] leading-none num">
+                  {priced ? formatPrice(tier.priceCents) : "On request"}
                   {priced && (
                     <span className="text-sm font-medium text-muted tracking-normal">
                       {" "}
@@ -232,15 +240,15 @@ export function PricingCards({
                     </span>
                   )}
                 </div>
-                {priced && (
-                  <div className="text-[12.5px] text-muted mt-1.5 num">
-                    {centsPerHome(tier.priceCents, reach)}
-                  </div>
-                )}
+                <div className="text-[12.5px] text-muted mt-1.5 num">
+                  {priced
+                    ? centsPerHome(tier.priceCents, reach)
+                    : "Ask us about this reach"}
+                </div>
               </div>
               <Link
                 href={priced ? hrefFor(size) : "/contact"}
-                className="inline-flex items-center justify-center font-semibold text-[15px] px-6 py-3 rounded-(--radius-btn) bg-white text-ink border border-line-strong hover:border-faint transition-colors whitespace-nowrap"
+                className="inline-flex items-center justify-center font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) bg-white text-ink border border-line-strong hover:border-faint transition-colors"
               >
                 {priced
                   ? zone

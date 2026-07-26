@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import type { SpotSize } from "@/lib/pricing";
 
-type SizeKey = "small" | "medium" | "large" | "triple" | "quad";
+type SizeKey = SpotSize;
 
 type Row = { reach: "5k" | "10k"; size: SizeKey; label: string; dollars: string };
 
