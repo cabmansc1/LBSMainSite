@@ -10,6 +10,18 @@ import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
+/** Category to schema type, ported from business.php. */
+const SCHEMA_TYPE_BY_CATEGORY: Record<string, string> = {
+  restaurant: "Restaurant",
+  "restaurants-dining": "Restaurant",
+  automotive: "AutoRepair",
+  "health-wellness": "HealthAndBeautyBusiness",
+  beauty: "BeautySalon",
+  "beauty-personal-care": "BeautySalon",
+  legal: "LegalService",
+  "fitness-recreation": "SportsActivityLocation",
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -53,9 +65,13 @@ export default async function BusinessPage({
     b.socials?.youtube,
   ].filter(Boolean);
 
+  // The legacy page typed the schema by category and carried the map
+  // coordinates and opening hours. Those are the signals that put a
+  // listing in a local pack, so they carry over rather than flattening
+  // every listing to a bare LocalBusiness.
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": SCHEMA_TYPE_BY_CATEGORY[b.categorySlug] ?? "LocalBusiness",
     name: b.name,
     description: b.description,
     url: `${SITE_URL}/business/${b.slug}`,
@@ -63,8 +79,26 @@ export default async function BusinessPage({
     image: b.logoUrl,
     sameAs: sameAs.length ? sameAs : undefined,
     address: b.address
-      ? { "@type": "PostalAddress", streetAddress: b.address, addressRegion: "SC" }
+      ? {
+          "@type": "PostalAddress",
+          streetAddress: b.address,
+          addressLocality: b.locationArea,
+          addressRegion: "SC",
+        }
       : { "@type": "PostalAddress", addressLocality: b.locationArea, addressRegion: "SC" },
+    geo:
+      b.lat && b.lng
+        ? { "@type": "GeoCoordinates", latitude: b.lat, longitude: b.lng }
+        : undefined,
+    openingHoursSpecification: b.hours?.length
+      ? b.hours
+          .filter((h) => !/closed/i.test(h.text))
+          .map((h) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: h.day,
+            description: h.text,
+          }))
+      : undefined,
   };
 
   const breadcrumbJsonLd = {

@@ -8,11 +8,67 @@ import {
   CtaBand,
 } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
 
 export const metadata: Metadata = buildMetadata("home");
+
+/**
+ * Homepage FAQs, ported from index.php where they produced the FAQ rich
+ * result. Two answers stated prices and reach figures that are no longer
+ * true, so those are corrected to what the site actually sells today.
+ * Publishing a stale price is worse than losing the snippet.
+ */
+const HOME_FAQS = [
+  {
+    q: "How much does direct mail advertising cost?",
+    a: "Spotlight Postcards start at $249 per mailing for 5,000 households. Pricing depends on the zone, the reach, and the ad size, and design, print and postage are always included.",
+  },
+  {
+    q: "How many households will see my ad?",
+    a: "Each mailing reaches 5,000 or 10,000 households in one zone, across Charleston, Summerville, Mount Pleasant, Daniel Island, North Charleston, Moncks Corner, Goose Creek and the islands.",
+  },
+  {
+    q: "Do I need to design my own ad?",
+    a: "No. We provide free professional ad design. Send us your logo, your offer and your contact details, and we handle the rest. You approve a proof before anything prints.",
+  },
+  {
+    q: "What makes your postcards different from other advertising?",
+    a: "Each business gets exclusive category placement, so no competitor appears on the same card. Your ad arrives like a mini billboard delivered straight to the mailbox.",
+  },
+  {
+    q: "How do I track my results?",
+    a: "We can include a trackable QR code, a unique landing page, and a dedicated phone number, so scans, visits and calls are all measurable.",
+  },
+  {
+    q: "Is the online directory listing free?",
+    a: "Yes. Every business gets a free basic listing in our directory. Paid plans unlock photos, hours, offers and featured placement.",
+  },
+];
+
+const homeJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/brand/lb-spotlight.png`,
+    telephone: "+1-843-212-2969",
+    email: "hello@lbspotlight.com",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: HOME_FAQS.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  },
+];
+
+
 
 const STATS = [
   { value: "50,000+", label: "Postcards mailed" },
@@ -227,6 +283,33 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="bg-surface border-y border-line">
+        <div className="mx-auto max-w-[760px] px-6 py-18">
+          <SectionHeading eyebrow="Questions" title="Direct mail, answered" />
+          <div className="mt-8 bg-white border border-line rounded-(--radius-card) overflow-hidden">
+            {HOME_FAQS.map((f) => (
+              <details
+                key={f.q}
+                className="border-b border-line last:border-b-0 group"
+              >
+                <summary className="cursor-pointer list-none px-6 py-4.5 flex items-center justify-between gap-4 text-[15px] font-semibold">
+                  {f.q}
+                  <span className="text-muted text-lg leading-none group-open:hidden">
+                    +
+                  </span>
+                  <span className="text-muted text-lg leading-none hidden group-open:inline">
+                    &minus;
+                  </span>
+                </summary>
+                <p className="px-6 pb-5 text-[14.5px] text-body leading-relaxed">
+                  {f.a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-[1120px] px-6 py-16">
         <CtaBand
           title="The next Summerville card has 2 spots left."
@@ -235,6 +318,11 @@ export default async function HomePage() {
           ctaHref="/pricing"
         />
       </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+      />
     </>
   );
 }
