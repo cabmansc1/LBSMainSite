@@ -118,6 +118,26 @@ type McAdvertiser = {
   primaryCategory?: string;
 };
 
+/**
+ * A category an admin has reserved on a card from inside Mission
+ * Control, before any advertiser exists for it. Sales staff use these to
+ * park a category they are mid-conversation on, so the site has to treat
+ * a hold exactly like a sold exclusive.
+ */
+type McHold = {
+  id: string;
+  cardId?: string | number;
+  category?: string;
+  note?: string | null;
+};
+
+type McAccount = {
+  id?: string;
+  category?: string;
+  primaryCategory?: string;
+  subcategory?: string;
+};
+
 type McCardRaw = Record<string, unknown> & {
   id: string | number;
   area?: string;
@@ -220,6 +240,28 @@ const advertiserCategory = (a: McAdvertiser): string | undefined => {
 
 /* ---------- reads ---------- */
 
+type McStore = {
+  pipelineCards?: McCardRaw[];
+  pipelineAdvertisers?: McAdvertiser[];
+  spotlightHolds?: McHold[];
+  accounts?: McAccount[];
+};
+
+/**
+ * The whole Mission Control snapshot. Every read the site does comes out
+ * of this one document, and mcFetch caches it for 60s, so asking for it
+ * in several places costs one request per minute in total.
+ */
+async function fetchStore(): Promise<McStore | null> {
+  if (!mcEnabled()) return null;
+  try {
+    return (await mcFetch("/api/store")) as McStore;
+  } catch (e) {
+    console.error("MC /api/store failed:", e);
+    return null;
+  }
+}
+
 async function fetchCards(): Promise<McCard[] | null> {
   if (!mcEnabled()) return null;
   try {
@@ -227,11 +269,8 @@ async function fetchCards(): Promise<McCard[] | null> {
     // numbers but does NOT nest advertisers (verified against live MC),
     // and category locks need advertiser records, so the snapshot with
     // a cardId join is the one source that has everything.
-    try {
-      const store = (await mcFetch("/api/store")) as {
-        pipelineCards?: McCardRaw[];
-        pipelineAdvertisers?: McAdvertiser[];
-      };
+    {
+      const store = (await fetchStore()) ?? {};
       if (Array.isArray(store.pipelineCards)) {
         const byCard = new Map<string, McAdvertiser[]>();
         for (const a of store.pipelineAdvertisers ?? []) {
@@ -242,8 +281,6 @@ async function fetchCards(): Promise<McCard[] | null> {
           .map((c) => normalizeCard(c, byCard.get(String(c.id)) ?? []))
           .filter((c) => c.zoneName);
       }
-    } catch (e) {
-      console.error("MC /api/store failed, trying /api/pipeline/cards:", e);
     }
     // Fallback: enriched cards (no advertisers, so no category locks,
     // but availability still works via spotsFilled).
@@ -297,14 +334,37 @@ export async function getZoneMailing(zoneSlug: string) {
   return all[0];
 }
 
+/**
+ * Categories an admin reserved on a card inside Mission Control. These
+ * are not sold yet, but they are spoken for, so the site must not let
+ * anyone buy them.
+ */
+async function heldCategoriesForCard(cardId: string | number): Promise<string[]> {
+  const store = await fetchStore();
+  return (store?.spotlightHolds ?? [])
+    .filter((h) => String(h.cardId) === String(cardId))
+    .map((h) => (h.category ?? "").trim())
+    .filter(Boolean);
+}
+
+const uniqueCategories = (values: string[]): string[] => {
+  const seen = new Map<string, string>();
+  for (const v of values) {
+    const key = v.trim().toLowerCase();
+    if (key && !seen.has(key)) seen.set(key, v.trim());
+  }
+  return [...seen.values()];
+};
+
 export async function getTakenCategoriesForCard(cardId: string): Promise<string[]> {
   const cards = await fetchCards();
   if (!cards) return [];
   const card = cards.find((c) => String(c.id) === String(cardId));
   if (!card) return [];
-  return card.advertisers
+  const sold = card.advertisers
     .map(advertiserCategory)
     .filter((c): c is string => !!c);
+  return uniqueCategories([...sold, ...(await heldCategoriesForCard(card.id))]);
 }
 
 export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
@@ -316,9 +376,10 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
   if (!cards) return mcEnabled() ? [] : ["Plumbing", "Dental"];
   const card = cards.find((c) => c.zoneSlug === zoneSlug && c.status === "open");
   if (!card) return [];
-  return card.advertisers
+  const sold = card.advertisers
     .map(advertiserCategory)
     .filter((c): c is string => !!c);
+  return uniqueCategories([...sold, ...(await heldCategoriesForCard(card.id))]);
 }
 
 /**
@@ -553,20 +614,130 @@ export async function getAdvertiserCards(match: {
  * in MC shows up here on its own. "Other" sorts last because it is a
  * catch-all, not a trade.
  */
-export async function getMcCategories(): Promise<string[]> {
-  const cards = await fetchCards();
-  if (!cards) return [];
-  const seen = new Set<string>();
-  for (const card of cards) {
-    for (const a of card.advertisers) {
-      const c = (a.category ?? a.primaryCategory ?? "").trim();
-      if (c) seen.add(c);
-    }
-  }
-  const all = [...seen];
-  const other = all.filter((c) => c.toLowerCase() === "other");
-  const rest = all
+export type CategoryVocabulary = {
+  /** Where the words came from, so the admin can see sync is working. */
+  source: "registry" | "derived" | "none";
+  categories: {
+    name: string;
+    /** A business in MC carries this category. */
+    onAccounts: boolean;
+    /** Someone has bought this category on a card. */
+    onCards: boolean;
+    /** An admin reserved it on a card in MC. */
+    held: boolean;
+  }[];
+};
+
+const sortCategories = (all: string[]): string[] => {
+  const unique = uniqueCategories(all);
+  // "Other" is a catch-all, so it belongs at the bottom of the picker
+  // rather than alphabetically among real trades.
+  const other = unique.filter((c) => c.toLowerCase() === "other");
+  const rest = unique
     .filter((c) => c.toLowerCase() !== "other")
     .sort((a, b) => a.localeCompare(b));
   return [...rest, ...other];
+};
+
+/**
+ * The category vocabulary the site sells against.
+ *
+ * Mission Control owns it. If MC grows a managed registry at
+ * /api/categories that becomes the sole source, which is what lets a new
+ * category added in MC appear here without a deploy. Until then the
+ * vocabulary is derived from the snapshot, and derived widely on
+ * purpose: an account carrying a category, an advertiser already on a
+ * card, and a category an admin has held all count, so a trade shows up
+ * on the site as soon as MC knows the word, not only after it has sold.
+ */
+export async function getMcCategories(): Promise<string[]> {
+  if (!mcEnabled()) return [];
+
+  // Preferred: a registry MC manages deliberately.
+  try {
+    const registry = (await mcFetch("/api/categories")) as
+      | string[]
+      | { categories?: unknown; name?: unknown }[]
+      | { categories?: unknown[] };
+    const rows = Array.isArray(registry)
+      ? registry
+      : Array.isArray(registry?.categories)
+        ? registry.categories
+        : [];
+    const names = rows
+      .map((r) =>
+        typeof r === "string"
+          ? r
+          : String(
+              (r as { name?: unknown; label?: unknown; category?: unknown })?.name ??
+                (r as { label?: unknown })?.label ??
+                (r as { category?: unknown })?.category ??
+                "",
+            ),
+      )
+      .filter(Boolean);
+    if (names.length) return sortCategories(names);
+  } catch {
+    // No registry yet. Fall through to deriving from the snapshot.
+  }
+
+  const store = await fetchStore();
+  if (!store) return [];
+  const fromAccounts = (store.accounts ?? []).flatMap((a) => [
+    a.category ?? "",
+    a.primaryCategory ?? "",
+  ]);
+  const fromAdvertisers = (store.pipelineAdvertisers ?? []).flatMap((a) => [
+    a.category ?? "",
+    a.primaryCategory ?? "",
+  ]);
+  const fromHolds = (store.spotlightHolds ?? []).map((h) => h.category ?? "");
+  return sortCategories(
+    [...fromAccounts, ...fromAdvertisers, ...fromHolds]
+      .map((c) => c.trim())
+      .filter(Boolean),
+  );
+}
+
+/**
+ * The same vocabulary, annotated with where each word came from. The
+ * admin Categories screen uses this to prove the sync: add a category in
+ * Mission Control and it appears here, and on the checkout picker,
+ * within the 60 second cache window.
+ */
+export async function getCategoryVocabulary(): Promise<CategoryVocabulary> {
+  const names = await getMcCategories();
+  if (names.length === 0) return { source: "none", categories: [] };
+
+  const store = await fetchStore();
+  const set = (values: string[]) =>
+    new Set(values.map((v) => v.trim().toLowerCase()).filter(Boolean));
+  const accounts = set(
+    (store?.accounts ?? []).flatMap((a) => [a.category ?? "", a.primaryCategory ?? ""]),
+  );
+  const cards = set(
+    (store?.pipelineAdvertisers ?? []).flatMap((a) => [
+      a.category ?? "",
+      a.primaryCategory ?? "",
+    ]),
+  );
+  const holds = set((store?.spotlightHolds ?? []).map((h) => h.category ?? ""));
+
+  const categories = names.map((name) => {
+    const key = name.toLowerCase();
+    return {
+      name,
+      onAccounts: accounts.has(key),
+      onCards: cards.has(key),
+      held: holds.has(key),
+    };
+  });
+  // If a name is in the list that no snapshot record explains, it can
+  // only have come from a managed registry.
+  const source: CategoryVocabulary["source"] = categories.some(
+    (c) => !c.onAccounts && !c.onCards && !c.held,
+  )
+    ? "registry"
+    : "derived";
+  return { source, categories };
 }
