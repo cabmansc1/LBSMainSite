@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/sections";
 import { InquiryForm } from "@/components/inquiry-form";
-import { getBusiness } from "@/lib/directory";
+import { getBusinesses, getBusiness } from "@/lib/directory";
 import { dealsForBusiness } from "@/lib/lowco-deals";
 import { advertiserAppearances } from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
@@ -56,7 +56,12 @@ export default async function BusinessPage({
 
   // Cross-site and Mission Control lookups are best-effort extras; the
   // page renders fine when either source is unreachable.
-  const [lowcoDeals, appearances] = await Promise.all([
+  const [related, lowcoDeals, appearances] = await Promise.all([
+    // "More X Businesses" on the legacy page: internal links that keep a
+    // visitor in the directory and spread crawl depth across listings.
+    getBusinesses({ category: b.categorySlug })
+      .then((rows) => rows.filter((r) => r.slug !== b.slug).slice(0, 6))
+      .catch(() => []),
     dealsForBusiness(b.name).catch(() => []),
     advertiserAppearances({ name: b.name }).catch(
       () => [] as { zoneName: string; mailMonth: string }[],
@@ -345,12 +350,72 @@ export default async function BusinessPage({
             </Card>
           )}
 
+          {(b.address || b.locationArea) && (
+            <Card className="p-6.5 grid gap-3">
+              <h2 className="text-[17px] font-semibold tracking-tight">Location</h2>
+              <p className="text-sm text-body leading-relaxed">
+                {b.name} serves {b.locationArea} and the surrounding Lowcountry.
+                {b.address ? ` You can find them at ${b.address}.` : ""}
+              </p>
+              {b.lat && b.lng && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold text-brand-deep hover:underline"
+                >
+                  Open in Google Maps
+                </a>
+              )}
+              <p className="text-[13px] text-muted">
+                Looking for more {b.category.toLowerCase()} businesses nearby?
+                Browse the{" "}
+                <Link
+                  href={`/directory/location/${b.locationSlug}`}
+                  className="text-brand-deep font-medium hover:underline"
+                >
+                  {b.locationArea} directory
+                </Link>
+                .
+              </p>
+            </Card>
+          )}
+
           <Card className="p-6.5 grid gap-4">
             <h2 className="text-[17px] font-semibold tracking-tight">
               Contact {b.name}
             </h2>
             <InquiryForm businessSlug={b.slug} />
           </Card>
+
+          {related.length > 0 && (
+            <Card className="p-6.5 grid gap-3.5">
+              <h2 className="text-[17px] font-semibold tracking-tight">
+                More {b.category} businesses
+              </h2>
+              <ul className="grid sm:grid-cols-2 gap-2.5">
+                {related.map((r) => (
+                  <li key={r.slug}>
+                    <Link
+                      href={`/business/${r.slug}`}
+                      className="block border border-line rounded-[10px] px-4 py-3 hover:border-faint transition-colors"
+                    >
+                      <b className="block text-[14px] font-semibold">{r.name}</b>
+                      <span className="text-[12.5px] text-muted">
+                        {r.locationArea}, SC
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={`/directory/category/${b.categorySlug}`}
+                className="text-sm font-semibold text-brand-deep hover:underline"
+              >
+                See all {b.category} businesses
+              </Link>
+            </Card>
+          )}
 
           <Card className="p-6.5 grid gap-2.5 bg-surface">
             <h3 className="text-[15px] font-semibold">Is this your business?</h3>

@@ -20,6 +20,20 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
+  // The legacy blog index declared itself a Blog with a publisher, which
+  // is what tied the posts to the brand.
+  const blogJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: `${SITE_NAME} Blog`,
+    url: `${SITE_URL}/blog`,
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/brand/lb-spotlight.png` },
+    },
+  };
   const posts = await getPosts();
 
   return (
@@ -71,6 +85,10 @@ export default async function BlogPage() {
           </div>
         )}
       </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
+      />
     </>
   );
 }

@@ -34,6 +34,44 @@ const VALUE = [
   },
 ];
 
+/**
+ * Ported from advertise.php, where they produced the FAQ rich result.
+ * The areas answer is updated: the site now mails more zones than the
+ * four the old copy listed.
+ */
+const ADVERTISE_FAQS = [
+  {
+    q: "What areas do you currently serve?",
+    a: "We mail to households in Summerville, Mount Pleasant, Daniel Island, Charleston, North Charleston, Moncks Corner, Goose Creek, James Island, Johns Island, Isle of Palms and Sullivan's Island. New areas are added regularly.",
+  },
+  {
+    q: "How often are postcards mailed?",
+    a: "We run mailings every 4 to 6 weeks per area. The mailing calendar lists the dates that are open right now.",
+  },
+  {
+    q: "Can I choose my ad size?",
+    a: "Yes. Sizes run from a small business-card spot up to a full page, which is every ad spot on one side of the card. Larger ads get more visibility and better placement.",
+  },
+  {
+    q: "What is the deadline to get on the next mailing?",
+    a: "Artwork deadlines are typically two weeks before the mail date. Contact us early to secure your spot, because exclusive categories fill up fast.",
+  },
+  {
+    q: "Do you offer discounts for multiple mailings?",
+    a: "Yes. We offer package pricing for businesses that commit to multiple mailings, and for bundling neighboring zones. Contact us for details.",
+  },
+];
+
+const advertiseFaqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: ADVERTISE_FAQS.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 export default async function AdvertisePage() {
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
@@ -95,6 +133,30 @@ export default async function AdvertisePage() {
           ctaHref="/pricing"
         />
       </section>
+      <section className="bg-surface border-t border-line">
+        <div className="mx-auto max-w-[760px] px-6 py-18">
+          <SectionHeading eyebrow="Questions" title="Advertising, answered" />
+          <div className="mt-8 bg-white border border-line rounded-(--radius-card) overflow-hidden">
+            {ADVERTISE_FAQS.map((f) => (
+              <details key={f.q} className="border-b border-line last:border-b-0 group">
+                <summary className="cursor-pointer list-none px-6 py-4.5 flex items-center justify-between gap-4 text-[15px] font-semibold">
+                  {f.q}
+                  <span className="text-muted text-lg leading-none group-open:hidden">+</span>
+                  <span className="text-muted text-lg leading-none hidden group-open:inline">
+                    &minus;
+                  </span>
+                </summary>
+                <p className="px-6 pb-5 text-[14.5px] text-body leading-relaxed">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(advertiseFaqJsonLd) }}
+      />
     </>
   );
 }
