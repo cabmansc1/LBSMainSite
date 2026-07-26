@@ -19,7 +19,9 @@ export async function generateMetadata({
   const b = await getBusiness(slug);
   if (!b) return {};
   return {
-    title: `${b.name}: ${b.category} in ${b.locationArea}, SC`,
+    // Name and place only. Category too pushed these past 60 characters,
+    // and the legacy titles that rank are just "Name - brand".
+    title: `${b.name} | ${b.locationArea}, SC`,
     description: b.description.slice(0, 155),
     alternates: { canonical: `${SITE_URL}/business/${slug}` },
   };

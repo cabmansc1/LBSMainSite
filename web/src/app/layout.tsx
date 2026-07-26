@@ -18,7 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: SITE_NAME,
-    template: `%s | ${SITE_NAME}`,
+    // "LBS" not the full name: the legacy titles used the short form and
+    // sat inside the ~60 characters a search result actually shows. The
+    // full name pushed most pages well past it.
+    template: "%s | LBS",
   },
   description:
     "Shared 9x12 postcards mailed to Charleston-area neighborhoods. One exclusive spot per industry, free ad design, from $249 per mailing.",

@@ -33,19 +33,65 @@ const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
   },
 ];
 
+/**
+ * Sitewide LocalBusiness schema, matching what the legacy footer.php
+ * emitted on every page. The areaServed cities and the opening hours are
+ * not decoration: they are the local signals the old site carried on all
+ * 161 URLs, and dropping them would be a sitewide regression rather than
+ * a page-level one.
+ */
+const AREA_SERVED = [
+  "Summerville",
+  "Mount Pleasant",
+  "Daniel Island",
+  "North Charleston",
+  "Moncks Corner",
+  "Charleston",
+];
+
 const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   name: SITE_NAME,
+  description:
+    "Billboard-style direct mail marketing serving the Charleston, SC metro area. Affordable postcard advertising with exclusive category placement.",
   url: SITE_URL,
+  logo: `${SITE_URL}/brand/lb-spotlight.png`,
   telephone: "+1-843-212-2969",
   email: "hello@lbspotlight.com",
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Summerville",
+    streetAddress: "PO Box 357",
+    addressLocality: "Huger",
     addressRegion: "SC",
+    postalCode: "29450",
     addressCountry: "US",
   },
+  areaServed: AREA_SERVED.map((name) => ({
+    "@type": "City",
+    name,
+    containedInPlace: { "@type": "State", name: "South Carolina" },
+  })),
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "09:00",
+      closes: "18:00",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: "Saturday",
+      opens: "10:00",
+      closes: "16:00",
+    },
+  ],
+  priceRange: "$$",
+  knowsAbout: [
+    "Direct Mail Marketing",
+    "Postcard Advertising",
+    "Local Business Advertising",
+  ],
 };
 
 export function SiteFooter() {
