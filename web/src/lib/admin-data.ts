@@ -255,3 +255,129 @@ export async function getInquiries(): Promise<Record<string, unknown>[]> {
     return [];
   }
 }
+
+/* ---------- blog ---------- */
+
+export type AdminPost = {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;
+  metaDescription: string | null;
+  featuredImage: string | null;
+  categoryId: number | null;
+  status: string;
+  publishedAt: string | null;
+};
+
+export async function getAdminPosts(): Promise<AdminPost[]> {
+  const { db } = await import("@/lib/db");
+  const { blogPosts } = await import("@/lib/db/schema-legacy");
+  const { desc } = await import("drizzle-orm");
+  const rows = await db
+    .select()
+    .from(blogPosts)
+    .orderBy(desc(blogPosts.id))
+    .limit(300);
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    slug: r.slug,
+    excerpt: r.excerpt ?? null,
+    content: r.content ?? null,
+    metaDescription: r.metaDescription ?? null,
+    featuredImage: r.featuredImage ?? null,
+    categoryId: r.categoryId ?? null,
+    status: r.status ?? "draft",
+    publishedAt: r.publishedAt ? String(r.publishedAt) : null,
+  }));
+}
+
+export async function getAdminPost(id: number): Promise<AdminPost | null> {
+  const all = await getAdminPosts();
+  return all.find((p) => p.id === id) ?? null;
+}
+
+export type PostPatch = Partial<
+  Pick<
+    AdminPost,
+    | "title"
+    | "slug"
+    | "excerpt"
+    | "content"
+    | "metaDescription"
+    | "featuredImage"
+    | "status"
+  >
+>;
+
+const POST_COLUMNS: Record<keyof PostPatch, string> = {
+  title: "title",
+  slug: "slug",
+  excerpt: "excerpt",
+  content: "content",
+  metaDescription: "meta_description",
+  featuredImage: "featured_image",
+  status: "status",
+};
+
+export async function savePost(id: number | null, patch: PostPatch) {
+  const { db } = await import("@/lib/db");
+  if (id) {
+    const sets = [];
+    for (const [key, column] of Object.entries(POST_COLUMNS)) {
+      const value = patch[key as keyof PostPatch];
+      if (value === undefined) continue;
+      sets.push(sql`${sql.raw(`\`${column}\``)} = ${value}`);
+    }
+    // Publishing for the first time stamps the date the public site sorts by.
+    if (patch.status === "published") {
+      sets.push(sql`published_at = COALESCE(published_at, NOW())`);
+    }
+    if (sets.length === 0) return { id };
+    await db.execute(
+      sql`UPDATE directory_blog_posts SET ${sql.join(sets, sql`, `)} WHERE id = ${id}`,
+    );
+    return { id };
+  }
+  const published = patch.status === "published";
+  await db.execute(
+    sql`INSERT INTO directory_blog_posts
+        (title, slug, excerpt, content, meta_description, featured_image, status, published_at, created_at)
+        VALUES (${patch.title ?? "Untitled"}, ${patch.slug ?? ""}, ${patch.excerpt ?? ""},
+                ${patch.content ?? ""}, ${patch.metaDescription ?? ""}, ${patch.featuredImage ?? ""},
+                ${patch.status ?? "draft"}, ${published ? sql`NOW()` : null}, NOW())`,
+  );
+  return { id: 0 };
+}
+
+/* ---------- signups ---------- */
+
+export async function setSignupStatus(id: number, status: string) {
+  const allowed = ["pending", "approved", "rejected"];
+  if (!allowed.includes(status)) throw new Error("Unknown status");
+  const { db } = await import("@/lib/db");
+  await db.execute(
+    sql`UPDATE directory_signups SET status = ${status} WHERE id = ${id}`,
+  );
+}
+
+/* ---------- orders ---------- */
+
+export async function getAdminOrders(): Promise<Record<string, unknown>[]> {
+  const { db } = await import("@/lib/db");
+  for (const table of ["card_orders", "postcard_orders"]) {
+    try {
+      const rows = (await db.execute(
+        sql.raw(`SELECT * FROM ${table} ORDER BY id DESC LIMIT 200`),
+      )) as unknown as [Record<string, unknown>[]];
+      if (Array.isArray(rows[0])) {
+        return rows[0].map((r) => ({ ...r, __table: table }));
+      }
+    } catch {
+      // table absent on this install; try the next shape
+    }
+  }
+  return [];
+}
