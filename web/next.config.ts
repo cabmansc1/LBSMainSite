@@ -59,6 +59,11 @@ const nextConfig: NextConfig = {
         destination: "/compare",
         permanent: true,
       },
+      {
+        source: "/coming-soon-service-areas.php",
+        destination: "/coming-soon-service-areas",
+        permanent: true,
+      },
       { source: "/advertise.php", destination: "/advertise", permanent: true },
       { source: "/contact.php", destination: "/contact", permanent: true },
       {
