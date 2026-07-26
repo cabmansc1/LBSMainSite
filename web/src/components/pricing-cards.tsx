@@ -71,7 +71,7 @@ export function PricingCards({
   return (
     <>
       <div
-        className="inline-flex bg-white/6 border border-white/14 rounded-[10px] p-[3px] mt-7"
+        className="inline-flex bg-surface border border-line rounded-[10px] p-[3px] mt-7"
         role="group"
         aria-label="Mailing reach"
       >
@@ -80,7 +80,7 @@ export function PricingCards({
             key={r}
             onClick={() => setReach(r)}
             className={`text-[13.5px] font-semibold px-5 py-2 rounded-lg transition-colors ${
-              reach === r ? "bg-white text-navy-950" : "text-[#93A5B8]"
+              reach === r ? "bg-navy-950 text-white" : "text-muted hover:text-body"
             }`}
             aria-pressed={reach === r}
           >
@@ -89,12 +89,12 @@ export function PricingCards({
         ))}
       </div>
 
-      <div className="mt-6 bg-white/8 border border-white/16 rounded-xl p-5 max-w-[560px]">
+      <div className="mt-6 bg-surface border border-line rounded-xl p-5 max-w-[560px]">
         <div className="flex items-center gap-2.5 mb-2.5">
           <span className="w-6 h-6 rounded-full bg-cta text-navy-950 text-[12px] font-extrabold grid place-items-center">
             1
           </span>
-          <b className="text-[15px] text-white">Pick your neighborhood</b>
+          <b className="text-[15px]">Pick your neighborhood</b>
         </div>
         {zones.length > 0 ? (
           <>
@@ -102,7 +102,7 @@ export function PricingCards({
               value={zone}
               onChange={(e) => setZone(e.target.value)}
               aria-label="Neighborhood"
-              className="w-full text-[15px] font-medium px-4 py-3 rounded-[10px] bg-white text-navy-950 border border-white/20 cursor-pointer"
+              className="w-full text-[15px] font-medium px-4 py-3 rounded-[10px] bg-white text-navy-950 border border-line-strong cursor-pointer focus:outline-none focus:border-navy-950"
             >
               <option value="">Choose a neighborhood...</option>
               {zones.map((z) => (
@@ -111,16 +111,16 @@ export function PricingCards({
                 </option>
               ))}
             </select>
-            <p className="text-[12.5px] text-[#93A5B8] mt-2">
+            <p className="text-[12.5px] text-muted mt-2">
               {zone
                 ? "Now pick an ad size below to reserve."
                 : `${zones.length} ${zones.length === 1 ? "neighborhood has" : "neighborhoods have"} spots open right now.`}
             </p>
           </>
         ) : (
-          <p className="text-[13px] text-[#93A5B8]">
+          <p className="text-[13px] text-muted">
             No neighborhoods are open for booking this minute.{" "}
-            <a href="/contact" className="text-brand hover:underline">
+            <a href="/contact" className="text-brand-deep font-semibold hover:underline">
               Tell us where you want to be
             </a>{" "}
             and we will hold you a spot on the next card.
@@ -128,43 +128,15 @@ export function PricingCards({
         )}
       </div>
 
-      {BIG.some((sz) => (pricing[reach]?.[sz]?.priceCents ?? 0) > 0) && (
-        <div className="mt-4 grid sm:grid-cols-2 gap-3.5">
-          {BIG.filter((sz) => (pricing[reach]?.[sz]?.priceCents ?? 0) > 0).map(
-            (sz) => {
-              const meta = CARD_META[sz];
-              const tier = pricing[reach][sz];
-              return (
-                <Link
-                  key={sz}
-                  href={hrefFor(sz)}
-                  className="bg-white/6 border border-white/16 rounded-xl p-5 hover:border-white/30 transition-colors"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <b className="text-[15.5px] text-white">{meta.label}</b>
-                    <span className="text-[17px] font-bold text-white num">
-                      {formatPrice(tier.priceCents)}
-                    </span>
-                  </div>
-                  <p className="text-[12.5px] text-[#93A5B8] mt-1">
-                    {meta.sub} · {meta.dims}
-                  </p>
-                </Link>
-              );
-            },
-          )}
-        </div>
-      )}
-
       <div className="flex items-center gap-2.5 mt-7 mb-3">
         <span
           className={`w-6 h-6 rounded-full text-[12px] font-extrabold grid place-items-center ${
-            zone ? "bg-cta text-navy-950" : "bg-white/15 text-[#93A5B8]"
+            zone ? "bg-cta text-navy-950" : "bg-surface border border-line text-muted"
           }`}
         >
           2
         </span>
-        <b className="text-[15px] text-white">Pick your ad size</b>
+        <b className="text-[15px]">Pick your ad size</b>
       </div>
 
       <div className="grid md:grid-cols-3 gap-3.5 relative z-10">
@@ -221,6 +193,60 @@ export function PricingCards({
                 }`}
               >
                 {zone ? `Reserve ${meta.label}` : `Choose ${meta.label}`}
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3.5 grid md:grid-cols-2 gap-3.5 relative z-10">
+        {BIG.map((size) => {
+          const meta = CARD_META[size];
+          const tier = pricing[reach]?.[size];
+          // A price of zero means the size is not sold at this reach, and
+          // the format is big enough that dropping it off the page reads
+          // as though it does not exist. Show it and route to a
+          // conversation instead.
+          const priced = (tier?.priceCents ?? 0) > 0;
+          return (
+            <div
+              key={size}
+              className="bg-white rounded-(--radius-card) p-6 border border-line grid sm:grid-cols-[1fr_auto] gap-4 items-center"
+            >
+              <div>
+                <div className="flex items-baseline gap-2.5 flex-wrap">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-muted">
+                    {meta.label}
+                  </span>
+                  <span className="text-[14.5px] font-semibold tracking-tight">
+                    {meta.dims}
+                  </span>
+                </div>
+                <div className="text-[14.5px] text-muted mt-0.5">{meta.sub}</div>
+                <div className="text-[28px] font-bold tracking-[-0.03em] leading-none mt-3 num">
+                  {priced ? formatPrice(tier.priceCents) : "Priced on request"}
+                  {priced && (
+                    <span className="text-sm font-medium text-muted tracking-normal">
+                      {" "}
+                      / mailing
+                    </span>
+                  )}
+                </div>
+                {priced && (
+                  <div className="text-[12.5px] text-muted mt-1.5 num">
+                    {centsPerHome(tier.priceCents, reach)}
+                  </div>
+                )}
+              </div>
+              <Link
+                href={priced ? hrefFor(size) : "/contact"}
+                className="inline-flex items-center justify-center font-semibold text-[15px] px-6 py-3 rounded-(--radius-btn) bg-white text-ink border border-line-strong hover:border-faint transition-colors whitespace-nowrap"
+              >
+                {priced
+                  ? zone
+                    ? `Reserve ${meta.label}`
+                    : `Choose ${meta.label}`
+                  : "Talk to us"}
               </Link>
             </div>
           );

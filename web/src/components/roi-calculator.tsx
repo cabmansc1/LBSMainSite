@@ -14,13 +14,24 @@ const RATES = [0.0025, 0.005, 0.0075, 0.01, 0.02, 0.025];
 const fmtMoney = (n: number) =>
   `$${Math.round(n).toLocaleString("en-US")}`;
 
-export function RoiCalculator() {
+export function RoiCalculator({
+  pricing = POSTCARD_PRICING,
+}: {
+  /** Live, admin-editable prices. Falls back to the code defaults. */
+  pricing?: typeof POSTCARD_PRICING;
+} = {}) {
   const [reach, setReach] = useState<Reach>("5k");
   const [size, setSize] = useState<SpotSize>("small");
   const [rate, setRate] = useState(0.0075);
   const [avgSale, setAvgSale] = useState(600);
 
-  const priceCents = POSTCARD_PRICING[reach][size].priceCents;
+  // Only sizes actually on sale at this reach; a zero price means the
+  // size is not offered there.
+  const sizes = (["small", "medium", "large", "triple", "quad"] as SpotSize[]).filter(
+    (s) => (pricing[reach]?.[s]?.priceCents ?? 0) > 0,
+  );
+  const active = sizes.includes(size) ? size : (sizes[0] ?? "small");
+  const priceCents = pricing[reach][active].priceCents;
   const investment = priceCents / 100;
   const homes = HOUSEHOLDS[reach];
   const customers = Math.round(homes * rate);
@@ -54,10 +65,10 @@ export function RoiCalculator() {
             Ad size
           </label>
           <div className="flex flex-wrap gap-2">
-            {(["small", "medium", "large"] as SpotSize[]).map((s) => (
-              <button key={s} className={toggle(size === s)} onClick={() => setSize(s)}>
-                {s[0].toUpperCase() + s.slice(1)} ({POSTCARD_PRICING[reach][s].size}){" "}
-                <span className="num">{formatPrice(POSTCARD_PRICING[reach][s].priceCents)}</span>
+            {sizes.map((s) => (
+              <button key={s} className={toggle(active === s)} onClick={() => setSize(s)}>
+                {s[0].toUpperCase() + s.slice(1)} ({pricing[reach][s].size}){" "}
+                <span className="num">{formatPrice(pricing[reach][s].priceCents)}</span>
               </button>
             ))}
           </div>

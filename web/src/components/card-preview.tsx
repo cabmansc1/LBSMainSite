@@ -144,24 +144,29 @@ function HorizontalSide({
   business,
   addressSide,
   mailMonth,
+  mine,
 }: {
   label: string;
   size: SpotSize;
   business: string;
   addressSide: boolean;
   mailMonth: string;
+  /** Whether the buyer's ad is drawn on this side. It runs once. */
+  mine: boolean;
 }) {
   const { colSpan, half } = HORIZONTAL[size];
-  const topRemaining = 4 - Math.min(4, colSpan);
+  const topRemaining = mine ? 4 - Math.min(4, colSpan) : 4;
 
   return (
     <div className="bg-[#f4f2ee] border border-line rounded-[6px] p-2 grid gap-1.5">
       <div className="grid grid-cols-4 gap-1 h-[62px]">
-        <MyAd
-          business={business}
-          half={half}
-          style={{ gridColumn: `span ${Math.min(4, colSpan)}` }}
-        />
+        {mine && (
+          <MyAd
+            business={business}
+            half={half}
+            style={{ gridColumn: `span ${Math.min(4, colSpan)}` }}
+          />
+        )}
         {Array.from({ length: topRemaining }).map((_, i) => (
           <Slot key={`t${i}`} />
         ))}
@@ -183,12 +188,15 @@ function VerticalSide({
   business,
   addressSide,
   mailMonth,
+  mine,
 }: {
   label: string;
   size: SpotSize;
   business: string;
   addressSide: boolean;
   mailMonth: string;
+  /** Whether the buyer's ad is drawn on this side. It runs once. */
+  mine: boolean;
 }) {
   const { cols, rows } = GRID.vertical;
   const { colSpan, rowSpan, half } = VERTICAL[size];
@@ -196,8 +204,10 @@ function VerticalSide({
   // The buyer's ad takes the top left block; every cell it does not
   // cover is another advertiser.
   const taken = new Set<string>();
-  for (let r = 1; r <= rowSpan; r++) {
-    for (let c = 1; c <= colSpan; c++) taken.add(`${c}:${r}`);
+  if (mine) {
+    for (let r = 1; r <= rowSpan; r++) {
+      for (let c = 1; c <= colSpan; c++) taken.add(`${c}:${r}`);
+    }
   }
   const rest: { c: number; r: number }[] = [];
   for (let r = 1; r <= rows; r++) {
@@ -210,14 +220,16 @@ function VerticalSide({
     <div className="bg-[#f4f2ee] border border-line rounded-[6px] p-2 grid gap-1.5 max-w-[172px] mx-auto w-full overflow-hidden">
       <Band addressSide={addressSide} mailMonth={mailMonth} compact />
       <div className="grid grid-cols-2 grid-rows-4 gap-1 h-[184px]">
-        <MyAd
-          business={business}
-          half={half}
-          style={{
-            gridColumn: `1 / span ${colSpan}`,
-            gridRow: `1 / span ${rowSpan}`,
-          }}
-        />
+        {mine && (
+          <MyAd
+            business={business}
+            half={half}
+            style={{
+              gridColumn: `1 / span ${colSpan}`,
+              gridRow: `1 / span ${rowSpan}`,
+            }}
+          />
+        )}
         {rest.map(({ c, r }) => (
           <Slot key={`${c}:${r}`} style={{ gridColumn: c, gridRow: r }} />
         ))}
@@ -247,18 +259,20 @@ export function CardPreview({
     <div className="bg-white rounded-[10px] border border-line p-4 shadow-[0_12px_30px_rgba(11,31,51,.12)] grid gap-2.5">
       <div className="grid sm:grid-cols-2 gap-2.5">
         <Side
-          label="Front"
+          label="Front · your ad runs here"
           size={size}
           business={business}
           addressSide={false}
           mailMonth={mailMonth}
+          mine
         />
         <Side
-          label="Address side"
+          label="Address side · other advertisers"
           size={size}
           business={business}
           addressSide
           mailMonth={mailMonth}
+          mine={false}
         />
       </div>
       <div className="grid gap-1.5 border-t border-line pt-2.5">
@@ -267,11 +281,11 @@ export function CardPreview({
           {zoneName} edition, {mailMonth} · {perSide} medium spots per side
         </p>
         <p className="text-center text-[9.5px] text-body bg-surface border border-line rounded-[6px] px-2.5 py-1.5">
-          <b className="font-semibold">Example layout only.</b> Your ad is shown
-          at its true size on the card,{" "}
-          {GRID[orientation].footprints[size].note}, but the position here is
-          illustrative. Where your ad actually lands is set during production
-          and confirmed on your proof.
+          <b className="font-semibold">Example layout only.</b> Your ad runs
+          once, on one side of the card. It is drawn here at its true size,{" "}
+          {GRID[orientation].footprints[size].note}, but the position and side
+          are set during production and confirmed on your proof. Both sides are
+          shown so you can see the whole card you are on.
         </p>
       </div>
     </div>
