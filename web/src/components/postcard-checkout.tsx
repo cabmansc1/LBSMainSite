@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  isOffered,
   POSTCARD_PRICING,
   formatPrice,
   type Reach,
@@ -14,6 +15,8 @@ const SPOT_META: Record<SpotSize, { label: string; dims: string; note: string }>
   small: { label: "Small", dims: "3″ × 2″", note: "Logo, tagline, QR" },
   medium: { label: "Medium", dims: "3″ × 4″", note: "Offer, photo, QR" },
   large: { label: "Large", dims: "4″ × 6″", note: "Dominant position" },
+  triple: { label: "Triple", dims: "3 mediums", note: "Owns a whole band" },
+  quad: { label: "Quad", dims: "2 larges", note: "Largest format we print" },
 };
 
 /**
@@ -112,7 +115,9 @@ export function PostcardCheckout({
     <div className="grid lg:grid-cols-[1.15fr_.85fr] gap-5 items-start">
       <div className="grid gap-4">
         <div className="grid gap-2.5" role="radiogroup" aria-label="Ad size">
-          {(["small", "medium", "large"] as SpotSize[]).map((s) => {
+          {(["small", "medium", "large", "triple", "quad"] as SpotSize[])
+            .filter((s) => isOffered(POSTCARD_PRICING[reach]?.[s]))
+            .map((s) => {
             const open = openFor(s);
             const sold = open <= 0;
             const meta = SPOT_META[s];

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 
-type Row = { reach: "5k" | "10k"; size: "small" | "medium" | "large"; label: string; dollars: string };
+type SizeKey = "small" | "medium" | "large" | "triple" | "quad";
+
+type Row = { reach: "5k" | "10k"; size: SizeKey; label: string; dollars: string };
 
 export function AdminPricing({
   initial,
 }: {
-  initial: { reach: "5k" | "10k"; size: "small" | "medium" | "large"; label: string; cents: number }[];
+  initial: { reach: "5k" | "10k"; size: SizeKey; label: string; cents: number }[];
 }) {
   const [rows, setRows] = useState<Row[]>(
     initial.map((r) => ({ ...r, dollars: String(r.cents / 100) })),
@@ -21,12 +23,13 @@ export function AdminPricing({
     const overrides: Record<string, Record<string, number>> = {};
     for (const r of rows) {
       const dollars = Number(r.dollars);
-      if (!isFinite(dollars) || dollars <= 0) {
+      if (!isFinite(dollars) || dollars < 0) {
         setState("error");
         setMessage(`Enter a valid price for ${r.reach} ${r.size}`);
         return;
       }
       overrides[r.reach] ??= {};
+      // Zero is meaningful: it takes the size off sale at that reach.
       overrides[r.reach][r.size] = Math.round(dollars * 100);
     }
     try {
@@ -82,7 +85,7 @@ export function AdminPricing({
                       <span className="text-muted">$</span>
                       <input
                         type="number"
-                        min={1}
+                        min={0}
                         step={1}
                         value={r.dollars}
                         onChange={(e) => {
@@ -97,7 +100,7 @@ export function AdminPricing({
                   <td className="px-4 py-3 border-b border-line text-muted num">
                     {isFinite(cents) && cents > 0
                       ? `${(cents / homes).toFixed(1)}¢`
-                      : "-"}
+                      : "not sold"}
                   </td>
                 </tr>
               );

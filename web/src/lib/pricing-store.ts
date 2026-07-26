@@ -22,7 +22,8 @@ export async function getLivePricing(): Promise<typeof POSTCARD_PRICING> {
   for (const reach of Object.keys(merged) as Reach[]) {
     for (const size of Object.keys(merged[reach]) as SpotSize[]) {
       const cents = overrides[reach]?.[size];
-      if (typeof cents === "number" && cents > 0) {
+      // >= 0 so an admin can deliberately take a size off sale.
+      if (typeof cents === "number" && cents >= 0) {
         merged[reach][size] = { ...merged[reach][size], priceCents: cents };
       }
     }

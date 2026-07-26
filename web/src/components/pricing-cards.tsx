@@ -33,9 +33,22 @@ const CARD_META: Record<
     sub: "Dominant position",
     features: ["Everything in Medium", "Largest ad on the card", "Priority placement"],
   },
+  triple: {
+    label: "Triple",
+    dims: "3 mediums",
+    sub: "Owns a whole band of the card",
+    features: ["Everything in Large", "Three medium spots together", "Impossible to skim past"],
+  },
+  quad: {
+    label: "Quad",
+    dims: "2 larges",
+    sub: "The largest format we print",
+    features: ["Everything in Triple", "Two larges or four mediums", "Effectively a half-card takeover"],
+  },
 };
 
 const SIZES: SpotSize[] = ["small", "medium", "large"];
+const BIG: SpotSize[] = ["triple", "quad"];
 
 export function PricingCards({
   pricing = POSTCARD_PRICING,
@@ -114,6 +127,34 @@ export function PricingCards({
           </p>
         )}
       </div>
+
+      {BIG.some((sz) => (pricing[reach]?.[sz]?.priceCents ?? 0) > 0) && (
+        <div className="mt-4 grid sm:grid-cols-2 gap-3.5">
+          {BIG.filter((sz) => (pricing[reach]?.[sz]?.priceCents ?? 0) > 0).map(
+            (sz) => {
+              const meta = CARD_META[sz];
+              const tier = pricing[reach][sz];
+              return (
+                <Link
+                  key={sz}
+                  href={hrefFor(sz)}
+                  className="bg-white/6 border border-white/16 rounded-xl p-5 hover:border-white/30 transition-colors"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <b className="text-[15.5px] text-white">{meta.label}</b>
+                    <span className="text-[17px] font-bold text-white num">
+                      {formatPrice(tier.priceCents)}
+                    </span>
+                  </div>
+                  <p className="text-[12.5px] text-[#93A5B8] mt-1">
+                    {meta.sub} · {meta.dims}
+                  </p>
+                </Link>
+              );
+            },
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-2.5 mt-7 mb-3">
         <span

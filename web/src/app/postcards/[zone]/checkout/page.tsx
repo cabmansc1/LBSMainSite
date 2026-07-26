@@ -37,7 +37,7 @@ const CATEGORIES = [
  * from Mission Control's spot counts and the card's orientation.
  */
 const availabilityFrom = (cap: CardCapacity) =>
-  (["small", "medium", "large"] as const).map((size) => ({
+  (["small", "medium", "large", "triple", "quad"] as const).map((size) => ({
     size,
     open: cap.fits[size],
   }));

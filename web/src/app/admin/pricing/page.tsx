@@ -20,7 +20,7 @@ export default async function AdminPricingPage() {
   const pricing = await getLivePricing();
 
   const rows = (["5k", "10k"] as Reach[]).flatMap((reach) =>
-    (["small", "medium", "large"] as SpotSize[]).map((size) => ({
+    (["small", "medium", "large", "triple", "quad"] as SpotSize[]).map((size) => ({
       reach,
       size,
       label: pricing[reach][size].size,
@@ -35,7 +35,8 @@ export default async function AdminPricingPage() {
         <p className="text-sm text-muted mt-1">
           Set what each ad size costs at both reach levels. Saving updates the
           pricing page, zone pages, the ROI calculator, and checkout right
-          away, with no deploy.
+          away, with no deploy. A price of zero means that size is not sold
+          at that reach.
         </p>
       </div>
       <AdminPricing initial={rows} />

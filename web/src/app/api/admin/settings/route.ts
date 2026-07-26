@@ -29,9 +29,10 @@ export async function POST(req: Request) {
       // Reject anything that is not a positive whole number of cents.
       for (const reach of Object.values(overrides ?? {})) {
         for (const cents of Object.values(reach ?? {})) {
-          if (!Number.isInteger(cents) || cents <= 0 || cents > 10_000_00) {
+          // Zero is allowed: it means the size is not sold at that reach.
+          if (!Number.isInteger(cents) || cents < 0 || cents > 10_000_00) {
             return NextResponse.json(
-              { error: "Prices must be between $1 and $10,000" },
+              { error: "Prices must be between $0 and $10,000" },
               { status: 422 },
             );
           }
