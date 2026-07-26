@@ -6,6 +6,7 @@ import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
   getTakenCategoriesForCard,
+  getMcCategories,
 } from "@/lib/mission-control";
 import {
   cardCapacity,
@@ -85,6 +86,10 @@ export default async function PostcardCheckoutPage({
   const takenCategories = chosen?.cardId
     ? await getTakenCategoriesForCard(chosen.cardId)
     : [];
+  // Mission Control owns the category vocabulary; exclusivity is checked
+  // against its names, so the picker has to offer the same ones.
+  const mcCategories = await getMcCategories();
+  const categoryOptions = mcCategories.length > 0 ? mcCategories : CATEGORIES;
   const orientation = chosen?.cardId
     ? await getCardOrientation(chosen.cardId)
     : "horizontal";
@@ -266,7 +271,7 @@ export default async function PostcardCheckoutPage({
           cardId={mailing.cardId}
           availability={availabilityFrom(capacity)}
           takenCategories={takenCategories}
-          categories={CATEGORIES}
+          categories={categoryOptions}
         />
       </div>
     </>

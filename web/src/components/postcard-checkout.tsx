@@ -56,7 +56,12 @@ export function PostcardCheckout({
 
   const priceCents = POSTCARD_PRICING[reach][size].priceCents;
   const openFor = (s: SpotSize) => availability.find((a) => a.size === s)?.open ?? 0;
-  const categoryTaken = category !== "" && takenCategories.includes(category);
+  const norm = (v: string) => v.trim().toLowerCase();
+  const takenSet = new Set(takenCategories.map(norm));
+  const isTaken = (c: string) => takenSet.has(norm(c));
+  const takenHere = categories.filter(isTaken);
+  const categoryTaken = category !== "" && isTaken(category);
+  const [waitlistFor, setWaitlistFor] = useState("");
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const ready =
     business.trim().length > 1 &&
@@ -91,7 +96,8 @@ export function PostcardCheckout({
     }
   }
 
-  async function joinWaitlist() {
+  async function joinWaitlist(forCategory: string) {
+    if (!forCategory) return;
     setStatus("sending");
     try {
       const res = await fetch("/api/waitlist", {
@@ -99,7 +105,7 @@ export function PostcardCheckout({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           zoneSlug,
-          category,
+          category: forCategory,
           email,
           businessName: business.trim(),
         }),
@@ -211,32 +217,54 @@ export function PostcardCheckout({
             >
               <option value="">Choose a category</option>
               {categories.map((c) => (
-                <option key={c} value={c}>
+                <option
+                  key={c}
+                  value={c}
+                  // Taken categories stay visible so the exclusivity is
+                  // obvious, but cannot be chosen.
+                  disabled={isTaken(c)}
+                >
                   {c}
-                  {takenCategories.includes(c) ? " (taken on this mailing)" : ""}
+                  {isTaken(c) ? " (taken on this card)" : ""}
                 </option>
               ))}
             </select>
           </div>
-          {categoryTaken && (
-            <div className="bg-cta-tint border border-[#f3ddbb] rounded-[10px] px-4 py-3.5 grid gap-2.5">
-              <p className="text-[13.5px] text-[#8a4b00]">
-                <b>{category}</b> is already exclusive on the {mailMonth}{" "}
-                {zoneName} card. Join the waitlist and we email you the moment
-                the next {zoneName} mailing opens.
+          {takenHere.length > 0 && (
+            <div className="bg-surface border border-line rounded-[10px] px-4 py-3.5 grid gap-2.5">
+              <p className="text-[13px] text-body">
+                <b>{takenHere.length}</b>{" "}
+                {takenHere.length === 1 ? "category is" : "categories are"}{" "}
+                already exclusive on this card: {takenHere.join(", ")}. Only one
+                business per category rides a card.
               </p>
-              <button
-                onClick={joinWaitlist}
-                disabled={!emailOk || status === "sending"}
-                className="justify-self-start bg-navy-950 text-white font-semibold text-[13px] px-4 py-2 rounded-lg hover:bg-navy-800 disabled:opacity-50"
-              >
-                {emailOk ? "Join the waitlist" : "Enter your email above first"}
-              </button>
+              <div className="flex gap-2 flex-wrap items-center">
+                <select
+                  value={waitlistFor}
+                  onChange={(e) => setWaitlistFor(e.target.value)}
+                  aria-label="Category to join the waitlist for"
+                  className="text-[13.5px] px-3 py-2 border border-line-strong rounded-lg bg-white"
+                >
+                  <option value="">Want one of them next time?</option>
+                  {takenHere.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => joinWaitlist(waitlistFor)}
+                  disabled={!waitlistFor || !emailOk || status === "sending"}
+                  className="bg-navy-950 text-white font-semibold text-[13px] px-4 py-2 rounded-lg hover:bg-navy-800 disabled:opacity-50"
+                >
+                  {!emailOk ? "Enter your email above first" : "Join the waitlist"}
+                </button>
+              </div>
             </div>
           )}
           {status === "waitlisted" && (
             <p className="text-sm font-medium text-ok bg-[#e5f5ec] border border-[#bfe8d2] rounded-[10px] px-4 py-3">
-              You are on the {zoneName} waitlist for {category}. We will email
+              You are on the {zoneName} waitlist for {waitlistFor || category}. We will email
               you first when the next card opens.
             </p>
           )}

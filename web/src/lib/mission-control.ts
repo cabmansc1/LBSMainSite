@@ -543,3 +543,30 @@ export async function getAdvertiserCards(match: {
   }
   return out.sort((a, b) => b.mailDateIso.localeCompare(a.mailDateIso));
 }
+
+/**
+ * The category vocabulary Mission Control actually uses.
+ *
+ * Exclusivity is checked against MC's category strings, so the site has
+ * to offer the same names or nothing ever matches. Derived from the
+ * advertiser records rather than a hardcoded list, so a category added
+ * in MC shows up here on its own. "Other" sorts last because it is a
+ * catch-all, not a trade.
+ */
+export async function getMcCategories(): Promise<string[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const seen = new Set<string>();
+  for (const card of cards) {
+    for (const a of card.advertisers) {
+      const c = (a.category ?? a.primaryCategory ?? "").trim();
+      if (c) seen.add(c);
+    }
+  }
+  const all = [...seen];
+  const other = all.filter((c) => c.toLowerCase() === "other");
+  const rest = all
+    .filter((c) => c.toLowerCase() !== "other")
+    .sort((a, b) => a.localeCompare(b));
+  return [...rest, ...other];
+}
