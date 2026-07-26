@@ -410,3 +410,73 @@ export async function pushToMissionControl(event: SignupEvent): Promise<void> {
     console.error("Mission Control push failed (event logged for sweep):", e, event);
   }
 }
+
+/**
+ * Every card an advertiser is on, current and past, for the portal.
+ * Matching is by email first (exact), then by normalized business name,
+ * mirroring how advertiserAppearances resolves identity.
+ */
+export type AdvertiserCard = {
+  cardId: string;
+  zoneSlug: string;
+  zoneName: string;
+  mailMonth: string;
+  mailDateIso: string;
+  artworkDeadline: string;
+  households: string;
+  spotsTotal: number;
+  spotsTaken: number;
+  isPast: boolean;
+  status: UpcomingMailing["status"];
+  /** The advertiser's own record on that card. */
+  adSize: string;
+  category: string;
+  amountCents?: number;
+  paymentStatus?: string;
+};
+
+const normalizeName = (s: string) =>
+  s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+
+export async function getAdvertiserCards(match: {
+  name?: string;
+  email?: string;
+}): Promise<AdvertiserCard[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const normName = match.name ? normalizeName(match.name) : undefined;
+  const email = match.email?.toLowerCase();
+
+  const out: AdvertiserCard[] = [];
+  for (const card of cards) {
+    const mine = card.advertisers.find((a) => {
+      const aName = a.businessName ? normalizeName(a.businessName) : undefined;
+      return (
+        (email && a.email?.toLowerCase() === email) ||
+        (normName && aName && aName === normName)
+      );
+    });
+    if (!mine) continue;
+    out.push({
+      cardId: String(card.id),
+      zoneSlug: card.zoneSlug,
+      zoneName: card.zoneName,
+      mailMonth: card.mailMonth,
+      mailDateIso: card.mailDateIso,
+      artworkDeadline: card.artworkDeadline,
+      households: card.households,
+      spotsTotal: card.spotsTotal,
+      spotsTaken: card.spotsTaken,
+      isPast: card.isPast,
+      status: card.status,
+      adSize: str(mine.adSize, "Spot"),
+      category: str(mine.category ?? mine.primaryCategory),
+      amountCents:
+        typeof mine.totalAmount === "number"
+          ? Math.round(mine.totalAmount * 100)
+          : undefined,
+      paymentStatus: mine.paymentStatus,
+    });
+  }
+  return out.sort((a, b) => b.mailDateIso.localeCompare(a.mailDateIso));
+}

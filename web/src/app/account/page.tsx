@@ -1,146 +1,188 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, StatusChip } from "@/components/sections";
-import { LogoutButton } from "@/components/logout-button";
 import { getSession } from "@/lib/auth";
+import { getPortalContext } from "@/lib/portal";
+import { Card } from "@/components/sections";
 
 export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
-  title: "Advertiser Dashboard",
+  title: "Your account",
   robots: { index: false, follow: false },
 };
 
-/**
- * Advertiser portal dashboard. Campaign rows, listing status, QR scans,
- * and referral credit read from the database on staging; the shapes
- * below match those queries so the swap is data-only. This page replaces
- * the legacy dashboard.php + my-cards.php and the dead manage-listing.php.
- */
-const CAMPAIGNS = [
-  {
-    title: "Summerville · September card",
-    detail: "Medium spot · $349 · mails Sept 12",
-    chip: <StatusChip tone="warn">Artwork needed</StatusChip>,
-    action: { label: "Upload artwork", href: "/account" },
-  },
-  {
-    title: "Goose Creek · October card",
-    detail: "Medium spot · $349 · mails Oct 3",
-    chip: <StatusChip tone="ok">Approved for print</StatusChip>,
-    action: { label: "View proof", href: "/account" },
-  },
-  {
-    title: "Summerville · June card",
-    detail: "Mailed June 14 · 5,000 homes · 148 QR scans",
-    chip: <StatusChip tone="info">Completed</StatusChip>,
-    action: { label: "Results", href: "/account" },
-  },
-];
+const money = (cents?: number) =>
+  cents === undefined ? null : `$${(cents / 100).toLocaleString("en-US")}`;
 
-export default async function AccountPage() {
-  const user = await getSession();
-  if (!user) redirect("/login");
+/** Launchpad: what needs attention, a few figures, recent activity. */
+export default async function AccountHomePage() {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  const ctx = await getPortalContext(session);
+
+  const business = ctx.listings[0];
+  const nextCard = [...ctx.currentCards].sort((a, b) =>
+    a.mailDateIso.localeCompare(b.mailDateIso),
+  )[0];
+
+  const stats = [
+    {
+      label: "Next mailing",
+      value: nextCard?.mailMonth ?? "None booked",
+      note: nextCard ? `${nextCard.zoneName} card` : "Reserve a spot to start",
+      due: !!nextCard,
+    },
+    {
+      label: "Running cards",
+      value: String(ctx.currentCards.length),
+      note: ctx.currentCards.map((c) => c.zoneName).join(", ") || "Nothing running",
+    },
+    {
+      label: "Messages",
+      value: String(ctx.inquiries.length),
+      note: ctx.inquiries.length ? "From your listing" : "No enquiries yet",
+    },
+    {
+      label: "Cards run",
+      value: String(ctx.pastCards.length),
+      note: ctx.pastCards.length ? "Mailed to date" : "None yet",
+    },
+  ];
 
   return (
-    <div className="bg-surface min-h-full">
-      <div className="mx-auto max-w-[1120px] px-6 py-9">
-        <div className="flex items-end justify-between gap-4 flex-wrap mb-7">
-          <div>
-            <h1 className="text-[24px] font-bold tracking-[-0.02em]">
-              Welcome back{user.firstName ? `, ${user.firstName}` : ""}
-            </h1>
-            <p className="text-sm text-muted mt-1">
-              Here is how your campaigns are doing.
+    <>
+      <div className="mb-6">
+        <h1 className="text-[22px] font-bold tracking-[-0.025em]">
+          Welcome back{session.firstName ? `, ${session.firstName}` : ""}
+        </h1>
+        <p className="text-sm text-muted mt-1">
+          {business ? `Managing ${business.name}.` : "Here is your account."}
+        </p>
+      </div>
+
+      {ctx.warnings.map((w) => (
+        <p
+          key={w}
+          className="mb-4 text-[13px] text-body bg-surface border border-line rounded-[10px] px-4 py-2.5"
+        >
+          {w}
+        </p>
+      ))}
+
+      {ctx.listings.length === 0 && ctx.warnings.length === 0 && (
+        <Card className="p-6 grid gap-2 mb-4 border-l-[3px] border-l-cta bg-cta-tint">
+          <h2 className="text-[15.5px] font-bold">No listing linked yet</h2>
+          <p className="text-sm text-body">
+            We could not find a directory listing for {session.email}. If your
+            business is already listed, contact us and we will connect it to
+            this login.
+          </p>
+          <Link
+            href="/contact"
+            className="text-[13px] font-semibold text-brand-deep hover:underline"
+          >
+            Get this sorted
+          </Link>
+        </Card>
+      )}
+
+      {nextCard && (
+        <Card className="p-6 flex gap-4 items-start flex-wrap mb-4 border-l-[3px] border-l-cta bg-cta-tint">
+          <div className="flex-1 min-w-[240px]">
+            <h2 className="text-[15.5px] font-bold">
+              Your {nextCard.zoneName} card mails {nextCard.mailMonth}
+            </h2>
+            <p className="text-sm text-body mt-1">
+              Artwork deadline {nextCard.artworkDeadline}. Send us your art or
+              let us design it.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/coverage-map"
-              className="bg-navy-950 text-white font-semibold text-[13px] px-4 py-2 rounded-(--radius-btn) hover:bg-navy-800 transition-colors"
+          <Link
+            href="/account/cards"
+            className="bg-cta text-navy-950 text-[13.5px] font-bold px-4 py-2.5 rounded-(--radius-btn) hover:bg-[#FFA033]"
+          >
+            Open cards
+          </Link>
+        </Card>
+      )}
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {stats.map((s) => (
+          <Card key={s.label} className="p-5">
+            <div className="text-[10.5px] font-bold uppercase tracking-widest text-muted">
+              {s.label}
+            </div>
+            <div
+              className={`text-[22px] font-bold tracking-tight mt-1.5 ${
+                s.due ? "text-[#9a5c00]" : ""
+              }`}
             >
-              Book another mailing
-            </Link>
-            <LogoutButton />
-          </div>
-        </div>
+              {s.value}
+            </div>
+            <div className="text-[12.5px] text-muted mt-0.5">{s.note}</div>
+          </Card>
+        ))}
+      </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-          {[
-            { label: "Active campaigns", value: "2", note: "Summerville + Goose Creek" },
-            { label: "Artwork deadline", value: "Aug 4", note: "9 days away", warn: true },
-            { label: "Homes reached in 2026", value: "15,000", note: "+5,000 this quarter" },
-            { label: "QR scans", value: "312", note: "41 this week" },
-          ].map((t) => (
-            <Card key={t.label} className="p-5 grid gap-1">
-              <span className="text-[11.5px] font-semibold uppercase tracking-wider text-muted">
-                {t.label}
-              </span>
-              <b className={`text-[26px] font-bold tracking-[-0.025em] num ${t.warn ? "text-warn" : ""}`}>
-                {t.value}
-              </b>
-              <span className="text-[12.5px] text-muted">{t.note}</span>
-            </Card>
-          ))}
-        </div>
-
-        <h2 className="text-[16px] font-semibold tracking-tight mb-3">Your campaigns</h2>
-        <div className="grid gap-2.5 mb-9">
-          {CAMPAIGNS.map((c) => (
-            <Card key={c.title} className="px-5.5 py-4.5 flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <h3 className="text-[15px] font-semibold tracking-tight">{c.title}</h3>
-                <p className="text-[12.5px] text-muted mt-0.5 num">{c.detail}</p>
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                {c.chip}
+      {ctx.inquiries.length > 0 && (
+        <>
+          <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mt-8 mb-3">
+            Recent messages
+          </h2>
+          <Card>
+            {ctx.inquiries.slice(0, 4).map((q) => (
+              <div
+                key={q.id}
+                className="flex items-center gap-4 px-5 py-3.5 border-b border-line last:border-b-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <b className="text-[14.5px] font-semibold">{q.name}</b>
+                  <p className="text-[12.5px] text-muted truncate">{q.message}</p>
+                </div>
                 <Link
-                  href={c.action.href}
-                  className="text-[13px] font-semibold text-brand-deep hover:underline"
+                  href="/account/messages"
+                  className="text-[13px] font-semibold text-brand-deep hover:underline shrink-0"
                 >
-                  {c.action.label}
+                  Read
                 </Link>
               </div>
-            </Card>
-          ))}
-        </div>
+            ))}
+          </Card>
+        </>
+      )}
 
-        <div className="grid md:grid-cols-2 gap-3.5">
-          <Card className="p-6 grid gap-3 content-start">
-            <h2 className="text-[16px] font-semibold tracking-tight">Your directory listing</h2>
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <p className="text-[14.5px] font-semibold">Palmetto Plumbing Co.</p>
-                <p className="text-[12.5px] text-muted num">
-                  Plumbing · Summerville · 1,204 views
-                </p>
+      {ctx.currentCards.length > 0 && (
+        <>
+          <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mt-8 mb-3">
+            Running now
+          </h2>
+          <Card>
+            {ctx.currentCards.map((c) => (
+              <div
+                key={c.cardId}
+                className="flex items-center gap-4 px-5 py-3.5 border-b border-line last:border-b-0 flex-wrap"
+              >
+                <div className="flex-1 min-w-[200px]">
+                  <b className="text-[14.5px] font-semibold">
+                    {c.zoneName}, {c.mailMonth}
+                  </b>
+                  <p className="text-[12.5px] text-muted">
+                    {c.adSize}
+                    {money(c.amountCents) ? ` · ${money(c.amountCents)}` : ""} ·{" "}
+                    {c.households} homes
+                  </p>
+                </div>
+                <Link
+                  href="/account/cards"
+                  className="text-[13px] font-semibold text-brand-deep hover:underline"
+                >
+                  Details
+                </Link>
               </div>
-              <StatusChip tone="ok">Live · Premium</StatusChip>
-            </div>
-            <div className="flex gap-4 text-[13px] font-semibold text-brand-deep">
-              <Link href="/account" className="hover:underline">Edit listing</Link>
-              <Link href="/account" className="hover:underline">Photos</Link>
-              <Link href="/account" className="hover:underline">Hours</Link>
-              <Link href="/account" className="hover:underline">Offers</Link>
-            </div>
+            ))}
           </Card>
-
-          <Card className="p-6 grid gap-3 content-start border-l-[3px] border-l-cta">
-            <h2 className="text-[16px] font-semibold tracking-tight">
-              Give $50, get $50
-            </h2>
-            <p className="text-[13.5px] text-body leading-relaxed">
-              Refer another local business. When they book their first mailing,
-              you both get $50 off your next card.
-            </p>
-            <p className="text-[12.5px] text-muted">
-              Your referral credit: <b className="text-ink num">$0</b> · referrals
-              activate with the account system on staging
-            </p>
-          </Card>
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </>
   );
 }
