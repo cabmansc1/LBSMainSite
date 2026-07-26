@@ -282,19 +282,19 @@
     <nav class="nav" id="nav-desktop">
       <button data-panel="overview" aria-current="page">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
-        Overview
+        Home
+      </button>
+      <button data-panel="campaigns">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 4v16"/></svg>
+        Cards <span class="pill num">1</span>
+      </button>
+      <button data-panel="listing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
+        Listings
       </button>
       <button data-panel="messages">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
         Messages <span class="pill num">3</span>
-      </button>
-      <button data-panel="listing">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
-        Listing
-      </button>
-      <button data-panel="campaigns">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 4v16"/></svg>
-        Campaigns
       </button>
       <button data-panel="results">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
@@ -424,9 +424,11 @@
     <!-- ================= LISTING ================= -->
     <section class="panel wrap" id="listing" hidden>
       <div class="page-head">
-        <h1>Your listing</h1>
-        <p>This is your page in the directory. Edits are reviewed before they go public.</p>
+        <h1>Listings</h1>
+        <p>Your directory page and any deals you are running on LowcoDeals.</p>
       </div>
+
+      <div class="sec-label" style="margin-top:0">Directory listing</div>
 
       <div class="card pad" style="display:flex;gap:14px;align-items:center;background:var(--cta-tint);border-color:#f2ddba">
         <span class="chip wait"><span class="dot"></span>In review</span>
@@ -474,12 +476,44 @@
         <button class="btn">Submit for review</button>
         <button class="btn quiet">Preview public page</button>
       </div>
+
+      <div class="sec-label">Deals on LowcoDeals</div>
+      <div class="card">
+        <div class="row">
+          <div class="grow">
+            <h3>$50 off any water heater install</h3>
+            <div class="meta">$249 <span style="text-decoration:line-through;color:var(--faint)">$299</span> &middot; 14 claimed &middot; ends Sept 30</div>
+          </div>
+          <span class="chip good"><span class="dot"></span>Live</span>
+          <button class="btn quiet small">Edit on LowcoDeals</button>
+        </div>
+        <div class="row">
+          <div class="grow">
+            <h3>Drain cleaning, first visit</h3>
+            <div class="meta">$89 <span style="text-decoration:line-through;color:var(--faint)">$140</span> &middot; 6 claimed &middot; ends Aug 31</div>
+          </div>
+          <span class="chip good"><span class="dot"></span>Live</span>
+          <button class="btn quiet small">Edit on LowcoDeals</button>
+        </div>
+        <div class="row">
+          <div class="grow">
+            <h3>Spring tune-up bundle</h3>
+            <div class="meta">Ended June 30 &middot; 22 claimed</div>
+          </div>
+          <span class="chip done">Ended</span>
+          <button class="btn quiet small">Run again</button>
+        </div>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin:10px 0 0">
+        Live deals show as a chip on your directory listing and link straight to
+        LowcoDeals. Deals are created and edited on LowcoDeals.com.
+      </p>
     </section>
 
     <!-- ================= CAMPAIGNS ================= -->
     <section class="panel wrap" id="campaigns" hidden>
       <div class="page-head">
-        <h1>Campaigns</h1>
+        <h1>Cards</h1>
         <p>Cards you are on now, and every card you have run.</p>
       </div>
 
@@ -654,17 +688,17 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
     Home
   </button>
-  <button data-panel="messages">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
-    Messages<span class="pill num">3</span>
+  <button data-panel="campaigns">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 4v16"/></svg>
+    Cards<span class="pill num">1</span>
   </button>
   <button data-panel="listing">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
-    Listing
+    Listings
   </button>
-  <button data-panel="campaigns">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 4v16"/></svg>
-    Cards
+  <button data-panel="messages">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/></svg>
+    Messages<span class="pill num">3</span>
   </button>
   <button data-panel="results">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>

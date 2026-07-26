@@ -25,17 +25,30 @@ tables.
 
 ## Proposed structure
 
+Navigation order, left to right (sidebar on desktop, bottom bar on mobile):
+
 ```
-/account                     Overview
-/account/profile             Business + account settings
-/account/listing             Directory listing manager
-/account/campaigns           Current and upcoming cards
-/account/campaigns/[id]      One campaign: proof, artwork, deadline
-/account/history             Past cards archive
-/account/results             Scans, views, inquiries over time
-/account/billing             Receipts, payment methods, subscription
-/account/referrals           Give $50 / get $50
+/account                     Home       Launchpad, nothing editable
+/account/cards               Cards      Running cards, then the past card archive
+/account/cards/[id]          ...        One card: artwork, proof, deadline
+/account/listings            Listings   Directory listing + LowcoDeals deals
+/account/messages            Messages   Inquiry inbox
+/account/results             Results    Scans, views, inquiries over time
+/account/billing             Billing    Receipts, subscription, referral credit
+/account/profile             (avatar menu) Business and account settings
 ```
+
+Billing sits below the five main destinations on desktop and drops to the
+account menu on mobile: nobody needs one-tap access to receipts.
+
+**Listings covers both listings a business has with us**: their directory
+page here, and their deals on LowcoDeals. Deals are created and edited on
+LowcoDeals itself, so the portal reads them, shows live and ended state,
+and links out. Live deals already surface as a chip on the public
+directory listing, so this closes the loop.
+
+Mockup: `web/public/mockups/portal.html`, live at `/mockups/portal.html`
+on staging.
 
 ### Overview
 Next deadline with a countdown, current card status, scans this week,
