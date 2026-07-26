@@ -124,7 +124,7 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
           ))}
         </dl>
         <Link
-          href={`/${zone.slug}-direct-mail-marketing`}
+          href={`/postcards/${zone.slug}/checkout`}
           className="inline-flex items-center justify-center bg-cta text-navy-950 font-semibold text-[15px] px-6 py-3 rounded-(--radius-btn) hover:bg-cta-hover hover:text-white transition-colors"
         >
           Reserve in {zone.name}

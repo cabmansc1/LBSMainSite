@@ -76,27 +76,57 @@ export function PricingCards({
         ))}
       </div>
 
-      {zones.length > 0 && (
-        <div className="mt-4">
-          <label className="text-[12.5px] text-[#93A5B8] block mb-1.5">
-            Which neighborhood?
-          </label>
-          <select
-            value={zone}
-            onChange={(e) => setZone(e.target.value)}
-            className="text-[14px] font-medium px-3.5 py-2.5 rounded-[10px] bg-white text-navy-950 border border-white/20 min-w-[240px]"
-          >
-            <option value="">Choose a neighborhood</option>
-            {zones.map((z) => (
-              <option key={z.slug} value={z.slug}>
-                {z.name}
-              </option>
-            ))}
-          </select>
+      <div className="mt-6 bg-white/8 border border-white/16 rounded-xl p-5 max-w-[560px]">
+        <div className="flex items-center gap-2.5 mb-2.5">
+          <span className="w-6 h-6 rounded-full bg-cta text-navy-950 text-[12px] font-extrabold grid place-items-center">
+            1
+          </span>
+          <b className="text-[15px] text-white">Pick your neighborhood</b>
         </div>
-      )}
+        {zones.length > 0 ? (
+          <>
+            <select
+              value={zone}
+              onChange={(e) => setZone(e.target.value)}
+              aria-label="Neighborhood"
+              className="w-full text-[15px] font-medium px-4 py-3 rounded-[10px] bg-white text-navy-950 border border-white/20 cursor-pointer"
+            >
+              <option value="">Choose a neighborhood...</option>
+              {zones.map((z) => (
+                <option key={z.slug} value={z.slug}>
+                  {z.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-[12.5px] text-[#93A5B8] mt-2">
+              {zone
+                ? "Now pick an ad size below to reserve."
+                : `${zones.length} ${zones.length === 1 ? "neighborhood has" : "neighborhoods have"} spots open right now.`}
+            </p>
+          </>
+        ) : (
+          <p className="text-[13px] text-[#93A5B8]">
+            No neighborhoods are open for booking this minute.{" "}
+            <a href="/contact" className="text-brand hover:underline">
+              Tell us where you want to be
+            </a>{" "}
+            and we will hold you a spot on the next card.
+          </p>
+        )}
+      </div>
 
-      <div className="grid md:grid-cols-3 gap-3.5 -mt-16 relative z-10 pt-24">
+      <div className="flex items-center gap-2.5 mt-7 mb-3">
+        <span
+          className={`w-6 h-6 rounded-full text-[12px] font-extrabold grid place-items-center ${
+            zone ? "bg-cta text-navy-950" : "bg-white/15 text-[#93A5B8]"
+          }`}
+        >
+          2
+        </span>
+        <b className="text-[15px] text-white">Pick your ad size</b>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3.5 relative z-10">
         {SIZES.map((size) => {
           const meta = CARD_META[size];
           const tier = pricing[reach][size];
