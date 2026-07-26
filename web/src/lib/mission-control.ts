@@ -28,6 +28,16 @@ import { UPCOMING_MAILINGS, type UpcomingMailing } from "@/lib/mailings";
 
 export const mcEnabled = () => !!process.env.MC_BASE_URL;
 
+/**
+ * The key may be stored under any of the tiered names Mission Control
+ * issues. Read-only is enough for everything the public site does; the
+ * write-scoped key is only needed at cutover.
+ */
+const mcKey = () =>
+  process.env.MC_API_KEY ??
+  process.env.MC_API_KEY_READONLY ??
+  process.env.MC_API_KEY_WRITE;
+
 const mcFetch = async (path: string, init?: RequestInit) => {
   // Card/store reads cache for 60s; mutations and dedup lookups must
   // never be cached (a cached empty search result would create
@@ -37,10 +47,10 @@ const mcFetch = async (path: string, init?: RequestInit) => {
     ...init,
     redirect: "manual", // a 307 to /login means auth failed; never follow
     headers: {
-      ...(process.env.MC_API_KEY
+      ...(mcKey()
         ? {
-            Authorization: `Bearer ${process.env.MC_API_KEY}`,
-            "x-api-key": process.env.MC_API_KEY,
+            Authorization: `Bearer ${mcKey()}`,
+            "x-api-key": mcKey() as string,
           }
         : {}),
       "Content-Type": "application/json",
@@ -232,6 +242,7 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
     .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso));
   if (upcoming.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
   return upcoming.map((c) => ({
+    cardId: String(c.id),
     zoneSlug: c.zoneSlug,
     zoneName: c.zoneName,
     mailMonth: c.mailMonth,
@@ -243,9 +254,27 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
   }));
 }
 
-export async function getZoneMailing(zoneSlug: string) {
+/** Every card currently open in a zone, soonest first. */
+export async function getZoneMailings(zoneSlug: string): Promise<UpcomingMailing[]> {
   const all = await getUpcomingMailings();
-  return all.find((m) => m.zoneSlug === zoneSlug);
+  return all.filter((m) => m.zoneSlug === zoneSlug);
+}
+
+/** The soonest card in a zone. Prefer getZoneMailings where a zone can
+ *  have more than one card filling at the same time. */
+export async function getZoneMailing(zoneSlug: string) {
+  const all = await getZoneMailings(zoneSlug);
+  return all[0];
+}
+
+export async function getTakenCategoriesForCard(cardId: string): Promise<string[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const card = cards.find((c) => String(c.id) === String(cardId));
+  if (!card) return [];
+  return card.advertisers
+    .map(advertiserCategory)
+    .filter((c): c is string => !!c);
 }
 
 export async function getTakenCategories(zoneSlug: string): Promise<string[]> {

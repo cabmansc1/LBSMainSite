@@ -3,7 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
 import { zoneBySlug } from "@/lib/zones";
-import { getZoneMailing, getTakenCategories } from "@/lib/mission-control";
+import {
+  getZoneMailings,
+  getTakenCategoriesForCard,
+} from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +57,7 @@ export default async function PostcardCheckoutPage({
   searchParams,
 }: {
   params: Promise<{ zone: string }>;
-  searchParams: Promise<{ spot?: string; reach?: string }>;
+  searchParams: Promise<{ spot?: string; reach?: string; card?: string }>;
 }) {
   const { zone } = await params;
   const sp = await searchParams;
@@ -64,10 +67,98 @@ export default async function PostcardCheckoutPage({
   const z = zoneBySlug(zone);
   if (!z) notFound();
 
-  const [mailing, takenCategories] = await Promise.all([
-    getZoneMailing(zone),
-    getTakenCategories(zone),
-  ]);
+  // A zone can have several cards filling at once, so the card is chosen
+  // explicitly rather than assumed from the zone.
+  const openCards = (await getZoneMailings(zone)).filter(
+    (m) => m.status !== "waitlist",
+  );
+  const chosen =
+    openCards.find((m) => m.cardId && m.cardId === sp.card) ??
+    (openCards.length === 1 ? openCards[0] : undefined);
+  const mailing = chosen;
+  const takenCategories = chosen?.cardId
+    ? await getTakenCategoriesForCard(chosen.cardId)
+    : [];
+  if (!mailing && openCards.length > 1) {
+    return (
+      <>
+        <header className="bg-navy-950 text-white">
+          <div className="mx-auto max-w-[1120px] px-6 pt-11 pb-12">
+            <nav className="text-[12.5px] text-[#67768A] flex gap-2" aria-label="Breadcrumb">
+              <Link href="/coverage-map" className="hover:text-white">Coverage</Link>
+              <span>/</span>
+              <Link href={`/${zone}-direct-mail-marketing`} className="hover:text-white">
+                {z.name}
+              </Link>
+              <span>/</span>
+              <b className="text-white font-semibold">Choose a mailing</b>
+            </nav>
+            <h1 className="mt-4 text-[24px] md:text-[34px] font-bold tracking-[-0.03em]">
+              Which {z.name} card?
+            </h1>
+            <p className="text-[#93A5B8] text-[14.5px] mt-2 max-w-[54ch]">
+              {openCards.length} {z.name} cards are filling right now. Category
+              exclusivity applies per card, so pick the mailing you want to be
+              on.
+            </p>
+          </div>
+        </header>
+
+        <div className="mx-auto max-w-[720px] px-6 py-10 grid gap-3.5">
+          {openCards.map((m) => {
+            const left = Math.max(0, m.spotsTotal - m.spotsTaken);
+            const pct = Math.min(
+              100,
+              Math.round((m.spotsTaken / Math.max(1, m.spotsTotal)) * 100),
+            );
+            const query = new URLSearchParams({
+              ...(m.cardId ? { card: m.cardId } : {}),
+              ...(sp.spot ? { spot: sp.spot } : {}),
+              ...(sp.reach ? { reach: sp.reach } : {}),
+            });
+            return (
+              <Link
+                key={m.cardId ?? m.mailMonth}
+                href={`/postcards/${zone}/checkout?${query}`}
+                className="block bg-white border border-line rounded-(--radius-card) p-5 hover:border-faint transition-colors"
+              >
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <b className="text-[16px] font-bold tracking-tight">
+                      Mails {m.mailMonth}
+                    </b>
+                    <p className="text-[13px] text-muted mt-0.5 num">
+                      {m.households} households · artwork deadline{" "}
+                      {m.artworkDeadline}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 border ${
+                      left <= 3
+                        ? "bg-cta-tint border-[#f3ddbb] text-[#a05e00]"
+                        : "bg-brand-tint border-[#c2e4fb] text-brand-deep"
+                    }`}
+                  >
+                    {left <= 3 ? `${left} left` : "Open"}
+                  </span>
+                </div>
+                <div className="mt-3.5 h-1.5 rounded-full bg-line overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${pct >= 80 ? "bg-cta" : "bg-brand"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-[12.5px] text-muted num">
+                  {m.spotsTaken} of {m.spotsTotal} spots taken
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
   // An unknown zone is a 404; a zone with no card open right now is not.
   // Hard 404ing a money page on a transient Mission Control blip loses a
   // sale and looks broken, so explain and offer the waitlist instead.
@@ -153,6 +244,7 @@ export default async function PostcardCheckoutPage({
           mailMonth={mailing.mailMonth}
           reach={sp.reach === "10k" ? "10k" : "5k"}
           initialSize={initialSize}
+          cardId={mailing.cardId}
           availability={availabilityFrom(spotsLeft)}
           takenCategories={takenCategories}
           categories={CATEGORIES}

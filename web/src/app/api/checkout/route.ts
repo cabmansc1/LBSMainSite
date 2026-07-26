@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { stripeEnabled, createCheckoutSession } from "@/lib/stripe";
-import { pushToMissionControl, getTakenCategories } from "@/lib/mission-control";
+import {
+  pushToMissionControl,
+  getTakenCategories,
+  getTakenCategoriesForCard,
+} from "@/lib/mission-control";
 import {
   createPendingOrder,
   attachSession,
@@ -66,7 +70,14 @@ export async function POST(req: Request) {
     }
     // Category exclusivity is the product promise: never sell a category
     // Mission Control already shows as taken on that zone's card.
-    const taken = await getTakenCategories(zone.slug).catch(() => [] as string[]);
+    // Exclusivity is per card, not per zone: a zone can have several
+    // cards filling, and the same category may be free on one and taken
+    // on another.
+    const cardId = typeof body.cardId === "string" ? body.cardId : undefined;
+    const taken = await (cardId
+      ? getTakenCategoriesForCard(cardId)
+      : getTakenCategories(zone.slug)
+    ).catch(() => [] as string[]);
     const normalize = (v: string) => v.trim().toLowerCase();
     if (taken.some((t) => normalize(t) === normalize(category))) {
       return NextResponse.json(
@@ -82,6 +93,7 @@ export async function POST(req: Request) {
     metadata = {
       kind,
       zone: zone.slug,
+      ...(cardId ? { cardId } : {}),
       spotSize,
       reach,
       category,

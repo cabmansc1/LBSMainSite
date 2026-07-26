@@ -4,6 +4,8 @@
  * swap is a query change only.
  */
 export type UpcomingMailing = {
+  /** Mission Control card id. A zone can have several cards filling at once. */
+  cardId?: string;
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;

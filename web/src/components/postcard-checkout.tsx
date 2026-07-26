@@ -24,6 +24,7 @@ const SPOT_META: Record<SpotSize, { label: string; dims: string; note: string }>
  */
 export function PostcardCheckout({
   initialSize,
+  cardId,
   zoneSlug,
   zoneName,
   mailMonth,
@@ -34,6 +35,8 @@ export function PostcardCheckout({
 }: {
   /** Spot preselected from the pricing page link. */
   initialSize?: SpotSize;
+  /** Mission Control card being bought onto: a zone can have several. */
+  cardId?: string;
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
@@ -70,6 +73,7 @@ export function PostcardCheckout({
           kind: "postcard",
           zoneSlug,
           spotSize: size,
+          cardId,
           reach,
           businessName: business.trim(),
           category,
