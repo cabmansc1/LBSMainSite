@@ -68,7 +68,58 @@ export default async function PostcardCheckoutPage({
     getZoneMailing(zone),
     getTakenCategories(zone),
   ]);
-  if (!mailing || mailing.status === "waitlist") notFound();
+  // An unknown zone is a 404; a zone with no card open right now is not.
+  // Hard 404ing a money page on a transient Mission Control blip loses a
+  // sale and looks broken, so explain and offer the waitlist instead.
+  if (!mailing || mailing.status === "waitlist") {
+    return (
+      <>
+        <header className="bg-navy-950 text-white">
+          <div className="mx-auto max-w-[1120px] px-6 pt-11 pb-12">
+            <nav className="text-[12.5px] text-[#67768A] flex gap-2" aria-label="Breadcrumb">
+              <Link href="/coverage-map" className="hover:text-white">Coverage</Link>
+              <span>/</span>
+              <Link href={`/${zone}-direct-mail-marketing`} className="hover:text-white">
+                {z.name}
+              </Link>
+            </nav>
+            <h1 className="mt-4 text-[24px] md:text-[34px] font-bold tracking-[-0.03em]">
+              No {z.name} card is open right now
+            </h1>
+            <p className="text-[#93A5B8] text-[14.5px] mt-2 max-w-[52ch]">
+              The next {z.name} mailing has not opened for booking yet. Tell us
+              you want a spot and you get first pick of your category when it
+              does.
+            </p>
+          </div>
+        </header>
+
+        <div className="mx-auto max-w-[1120px] px-6 py-10 grid gap-3.5 max-w-[640px]">
+          <div className="flex gap-3 flex-wrap">
+            <Link
+              href="/contact"
+              className="bg-cta text-navy-950 font-bold text-[15px] px-5 py-3 rounded-(--radius-btn) hover:bg-[#FFA033]"
+            >
+              Ask about {z.name}
+            </Link>
+            <a
+              href="tel:+18432122969"
+              className="bg-white border border-line-strong font-semibold text-[15px] px-5 py-3 rounded-(--radius-btn) hover:border-faint"
+            >
+              Call 843-212-2969
+            </a>
+          </div>
+          <p className="text-[13px] text-muted">
+            Other neighborhoods may have spots today.{" "}
+            <Link href="/coverage-map" className="text-brand-deep font-semibold hover:underline">
+              See the coverage map
+            </Link>
+            .
+          </p>
+        </div>
+      </>
+    );
+  }
   const spotsLeft =
     mailing.status === "full" ? 0 : mailing.spotsTotal - mailing.spotsTaken;
 
