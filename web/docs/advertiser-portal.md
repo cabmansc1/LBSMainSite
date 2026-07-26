@@ -106,7 +106,23 @@ imported listings may have it empty. A claim flow covers that too.
   their listing generated, with contact details, not just counts. Also
   means the portal needs read access to `directory_business_inquiries`
   scoped to that advertiser's own listing, and nothing else.
-- **Login: passwordless preferred** (email a one-time code). See below.
+- **Login: passwordless** (email a one-time code), with password login
+  kept underneath as a fallback. See below.
+- **Accounts: one login, many listings.** A login can own more than one
+  business or location, with a switcher in the portal. Needs `user_id`
+  populated on `directory_businesses` plus a claim flow for imported
+  listings that have none.
+- **Listing edits: review queue.** An advertiser's edit does not touch the
+  public listing. It is stored as a pending change, shows in the portal as
+  "waiting for review", and an admin approves or rejects it. Requires a
+  pending-edits table holding the proposed values, plus a review screen in
+  the admin. Approving writes the values onto the live row.
+- **Email: Resend.** One provider for login codes, deadline reminders,
+  proof-ready notices, and results emails. Needs `lbspotlight.com` (or a
+  subdomain such as `mail.lbspotlight.com`) verified in Resend with SPF
+  and DKIM DNS records, plus a `RESEND_API_KEY`. Code will sit behind a
+  small email interface so the provider can be swapped without touching
+  callers.
 
 ## Passwordless login
 
@@ -146,20 +162,17 @@ handling.
 
 ## Open questions for Andrew
 
-1. One login per business, or several people per business? Any
-   multi-location owners who need one login across listings?
-2. Should a **directory listing** edit publish immediately or wait for
-   review? (Card artwork is a separate flow, covered above.)
-3. Past cards: show the entire printed card, or only their ad?
-4. Should the portal surface open categories in their zone as an upsell?
-5. Deadline reminders: email, SMS, or both, and how far out?
-6. Which sending service for login codes and notifications?
+1. Past cards: show the entire printed card, or only their ad?
+2. Should the portal surface open categories in their zone as an upsell?
+3. Deadline reminders: how far ahead, and do we want SMS as well as email?
+4. Does a rejected listing edit need a reason sent back to the advertiser?
 
 ## Sequencing when it is time to build
 
 0. Email sending, since passwordless login depends on it
 1. Identity linking, since nothing real renders without it
-2. Listing manager (useful to every member, not just advertisers)
+2. Listing manager with the pending-edit queue (useful to every member,
+   not just advertisers) plus the admin review screen that pairs with it
 3. Current cards and proofs
 4. Past cards archive
 5. Results
