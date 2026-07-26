@@ -31,7 +31,7 @@ Navigation order, left to right (sidebar on desktop, bottom bar on mobile):
 /account                     Home       Launchpad, nothing editable
 /account/cards               Cards      Running cards, then the past card archive
 /account/cards/[id]          ...        One card: artwork, proof, deadline
-/account/listings            Listings   Directory listing + LowcoDeals deals
+/account/listings            Listings   Directory listing + LowCoDeals deals
 /account/messages            Messages   Inquiry inbox
 /account/results             Results    Scans, views, inquiries over time
 /account/billing             Billing    Receipts, subscription, referral credit
@@ -42,8 +42,8 @@ Billing sits below the five main destinations on desktop and drops to the
 account menu on mobile: nobody needs one-tap access to receipts.
 
 **Listings covers both listings a business has with us**: their directory
-page here, and their deals on LowcoDeals. Deals are created and edited on
-LowcoDeals itself, so the portal reads them, shows live and ended state,
+page here, and their deals on LowCoDeals. Deals are created and edited on
+LowCoDeals itself, so the portal reads them, shows live and ended state,
 and links out. Live deals already surface as a chip on the public
 directory listing, so this closes the loop.
 
@@ -78,7 +78,7 @@ ran, and results. Doubles as social proof and a reorder prompt.
 
 ### Results
 QR scans over time per card, directory listing views, inquiries received,
-LowcoDeals clicks if they have deals. This is the renewal argument, so it
+LowCoDeals clicks if they have deals. This is the renewal argument, so it
 should be honest and specific rather than flattering.
 
 ### Billing

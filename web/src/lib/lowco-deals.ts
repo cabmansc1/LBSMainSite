@@ -1,10 +1,10 @@
 import "server-only";
 
 /**
- * LowcoDeals.com bridge (sister site). Reads the public deals API and
+ * LowCoDeals.com bridge (sister site). Reads the public deals API and
  * exposes matching helpers so directory listings can deep-link to a
  * business's live deals. Read-only by design; deals are managed on
- * LowcoDeals itself.
+ * LowCoDeals itself.
  */
 
 const API = () => process.env.LOWCODEALS_API ?? "https://lowcodeals.com/api/deals";
@@ -41,7 +41,7 @@ type RawDeal = {
 export const normalizeBizName = (s: string) =>
   s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
 
-export async function getLowcoDeals(): Promise<LowcoDeal[]> {
+export async function getLowCoDeals(): Promise<LowcoDeal[]> {
   try {
     const res = await fetch(API(), { next: { revalidate: 300 } });
     if (!res.ok) return [];
@@ -74,7 +74,7 @@ export async function getLowcoDeals(): Promise<LowcoDeal[]> {
 
 /** Map of normalized business name -> that business's deals. */
 export async function getDealsByBusiness(): Promise<Record<string, LowcoDeal[]>> {
-  const deals = await getLowcoDeals();
+  const deals = await getLowCoDeals();
   const map: Record<string, LowcoDeal[]> = {};
   for (const d of deals) {
     if (!d.businessName) continue;

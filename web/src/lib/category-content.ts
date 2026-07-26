@@ -12,7 +12,7 @@ export type CategoryContent = {
 export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
   restaurant: {
     intro:
-      "From shrimp and grits in downtown Charleston to family barbecue joints in Summerville, the Lowcountry eats well. This list covers locally owned restaurants, cafes, food trucks, and caterers across the Tri-County area. Many of them run current specials you can claim on LowcoDeals.",
+      "From shrimp and grits in downtown Charleston to family barbecue joints in Summerville, the Lowcountry eats well. This list covers locally owned restaurants, cafes, food trucks, and caterers across the Tri-County area. Many of them run current specials you can claim on LowCoDeals.",
     faqs: [
       {
         q: "How do restaurants get listed here?",
@@ -20,7 +20,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
       },
       {
         q: "Do any of these restaurants offer deals?",
-        a: "Yes. Listings with an active offer show it right on the card, and restaurants with live deals on our sister site LowcoDeals link straight to them so you can claim the deal in a couple of taps.",
+        a: "Yes. Listings with an active offer show it right on the card, and restaurants with live deals on our sister site LowCoDeals link straight to them so you can claim the deal in a couple of taps.",
       },
       {
         q: "I own a restaurant. How do I get on this page?",
@@ -92,7 +92,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
       },
       {
         q: "Do any listings offer new client specials?",
-        a: "Many do. Look for the orange offer chip on a listing card, and check their linked LowcoDeals offers for limited time specials.",
+        a: "Many do. Look for the orange offer chip on a listing card, and check their linked LowCoDeals offers for limited time specials.",
       },
       {
         q: "I run a studio. Is a listing really free?",
@@ -110,7 +110,7 @@ export const CATEGORY_CONTENT: Record<string, CategoryContent> = {
       },
       {
         q: "Do these stores run promotions?",
-        a: "Watch for the offer chip on listing cards and the green LowcoDeals chip, which links to live deals you can claim online.",
+        a: "Watch for the offer chip on listing cards and the green LowCoDeals chip, which links to live deals you can claim online.",
       },
       {
         q: "How does a shop get featured?",

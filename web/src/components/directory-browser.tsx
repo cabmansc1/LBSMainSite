@@ -155,7 +155,7 @@ function BusinessCard({
             )}
             {lowcoDeals > 0 && (
               <span className="text-xs font-semibold text-ok bg-[#e5f5ec] border border-[#bfe8d2] rounded-lg px-2.5 py-1">
-                {lowcoDeals} deal{lowcoDeals > 1 ? "s" : ""} on LowcoDeals
+                {lowcoDeals} deal{lowcoDeals > 1 ? "s" : ""} on LowCoDeals
               </span>
             )}
           </div>
@@ -214,7 +214,7 @@ export function DirectoryBrowser({
   activeCategory?: string;
   activeLocation?: string;
   activeTag?: string;
-  /** normalized business name -> live LowcoDeals count */
+  /** normalized business name -> live LowCoDeals count */
   lowcoDealCounts?: Record<string, number>;
 }) {
   const router = useRouter();

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CtaBand } from "@/components/sections";
-import { getLowcoDeals } from "@/lib/lowco-deals";
+import { getLowCoDeals } from "@/lib/lowco-deals";
 import { getBusinesses } from "@/lib/directory";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Local Deals: Current Offers from Lowcountry Businesses",
   description:
-    "Live deals and special offers from Charleston-area businesses, from LowcoDeals and Lowcountry Business Spotlight directory members.",
+    "Live deals and special offers from Charleston-area businesses, from LowCoDeals and Lowcountry Business Spotlight directory members.",
   alternates: { canonical: `${SITE_URL}/deals` },
   openGraph: {
     title: `Local Deals | ${SITE_NAME}`,
@@ -25,7 +25,7 @@ const money = (n?: number) =>
 
 export default async function DealsPage() {
   const [deals, businesses] = await Promise.all([
-    getLowcoDeals(),
+    getLowCoDeals(),
     getBusinesses(),
   ]);
   const listingOffers = businesses.filter((b) => b.offer);
@@ -55,7 +55,7 @@ export default async function DealsPage() {
             Real offers from Lowcountry businesses.
           </h1>
           <p className="mt-3 text-[#93A5B8] max-w-[56ch]">
-            Live deals from our sister site LowcoDeals, plus current offers
+            Live deals from our sister site LowCoDeals, plus current offers
             from directory members. New deals added all the time.
           </p>
         </div>
@@ -65,7 +65,7 @@ export default async function DealsPage() {
         {deals.length > 0 && (
           <section className="mb-14">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">
-              On LowcoDeals.com
+              On LowCoDeals.com
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {deals.map((d) => (
@@ -98,7 +98,7 @@ export default async function DealsPage() {
                         </p>
                       )}
                       <span className="text-[12.5px] font-semibold text-brand-deep mt-1">
-                        Claim on LowcoDeals →
+                        Claim on LowCoDeals →
                       </span>
                     </div>
                   </Card>
@@ -136,7 +136,7 @@ export default async function DealsPage() {
         <div className="mt-14">
           <CtaBand
             title="Want your deal in front of 5,000 mailboxes too?"
-            sub="Pair a LowcoDeals offer with a Spotlight Postcard and own your category."
+            sub="Pair a LowCoDeals offer with a Spotlight Postcard and own your category."
             ctaLabel="See Postcard Pricing"
             ctaHref="/pricing"
           />

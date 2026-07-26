@@ -215,7 +215,7 @@ export default async function BusinessPage({
           {lowcoDeals.length > 0 && (
             <Card className="p-6.5 grid gap-3 border-l-[3px] border-l-ok">
               <span className="text-xs font-semibold uppercase tracking-widest text-muted">
-                Live deals on LowcoDeals
+                Live deals on LowCoDeals
               </span>
               <div className="grid gap-2.5">
                 {lowcoDeals.map((d) => (
@@ -243,7 +243,7 @@ export default async function BusinessPage({
                 ))}
               </div>
               <p className="text-xs text-muted">
-                Deals are claimed on our sister site LowcoDeals.com.
+                Deals are claimed on our sister site LowCoDeals.com.
               </p>
             </Card>
           )}
