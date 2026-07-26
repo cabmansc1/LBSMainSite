@@ -266,6 +266,7 @@ export default async function PostcardCheckoutPage({
           zoneSlug={zone}
           zoneName={z.name}
           mailMonth={mailing.mailMonth}
+          orientation={capacity.orientation}
           reach={sp.reach === "10k" ? "10k" : "5k"}
           initialSize={initialSize}
           cardId={mailing.cardId}

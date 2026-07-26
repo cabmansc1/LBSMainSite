@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CardPreview } from "@/components/card-preview";
+import type { Orientation } from "@/lib/card-capacity";
 import {
   isOffered,
   POSTCARD_PRICING,
@@ -21,6 +22,20 @@ const SPOT_META: Record<SpotSize, { label: string; dims: string; note: string }>
 };
 
 /**
+ * Swatches drawn to scale against each other: a medium is twice a small,
+ * a large twice a medium, and so on up to the quad at eight smalls. The
+ * old fixed classes gave triple and quad the large swatch, which made
+ * the two biggest formats look identical to the one below them.
+ */
+const SWATCH: Record<SpotSize, { width: number; height: number }> = {
+  small: { width: 26, height: 14 },
+  medium: { width: 26, height: 28 },
+  large: { width: 52, height: 28 },
+  triple: { width: 52, height: 42 },
+  quad: { width: 52, height: 56 },
+};
+
+/**
  * Self-serve Spotlight Postcard checkout: spot size with live counts,
  * business details, category lock, and a live ad preview that renders
  * the buyer's business name onto the card as they type. Falls through
@@ -32,6 +47,7 @@ export function PostcardCheckout({
   zoneSlug,
   zoneName,
   mailMonth,
+  orientation,
   reach,
   availability,
   takenCategories,
@@ -44,6 +60,8 @@ export function PostcardCheckout({
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
+  /** How the card is printed, which decides how the preview lays out. */
+  orientation: Orientation;
   reach: Reach;
   availability: SpotAvail[];
   takenCategories: string[];
@@ -144,9 +162,8 @@ export function PostcardCheckout({
                 }`}
               >
                 <span
-                  className={`rounded border border-[#cbe7fa] bg-brand-tint ${
-                    s === "small" ? "w-10 h-7" : s === "medium" ? "w-10 h-13" : "w-13 h-20"
-                  }`}
+                  style={SWATCH[s]}
+                  className="rounded border border-[#cbe7fa] bg-brand-tint block shrink-0"
                 />
                 <span>
                   <b className="block text-[15px] font-semibold tracking-tight">
@@ -278,6 +295,7 @@ export function PostcardCheckout({
           business={business}
           zoneName={zoneName}
           mailMonth={mailMonth}
+          orientation={orientation}
         />
 
         <div className="bg-white border border-line rounded-(--radius-card) p-6 grid gap-3">
