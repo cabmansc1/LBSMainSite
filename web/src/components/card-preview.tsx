@@ -279,7 +279,7 @@ export function CardPreview({
     <div className="bg-white rounded-[10px] border border-line p-4 shadow-[0_12px_30px_rgba(11,31,51,.12)] grid gap-2.5">
       <div className="grid sm:grid-cols-2 gap-2.5">
         <Side
-          label="Postage side · other advertisers"
+          label="Standard layout · postage side"
           size={size}
           business={business}
           addressSide
@@ -288,7 +288,9 @@ export function CardPreview({
         />
         <Side
           label={
-            size === "full" ? "Your side · all yours" : "Back · your ad runs here"
+            size === "full"
+              ? "Your full page · one whole side"
+              : "Your ad size, to scale"
           }
           size={size}
           business={business}
@@ -312,11 +314,11 @@ export function CardPreview({
             </>
           ) : (
             <>
-              <b className="font-semibold">Example layout only.</b> Your ad runs
-              once, on one side of the card. It is drawn here at its true size,{" "}
-              {GRID[orientation].footprints[size].note}, but the position and
-              side are set during production and confirmed on your proof. Both
-              sides are shown so you can see the whole card you are on.
+              <b className="font-semibold">Example only.</b> On the left is the
+              standard card layout with the postage mark. On the right your ad
+              is drawn at its true size, {GRID[orientation].footprints[size].note}.
+              Your ad runs once, and where it lands is set during production and
+              confirmed on your proof.
             </>
           )}
         </p>

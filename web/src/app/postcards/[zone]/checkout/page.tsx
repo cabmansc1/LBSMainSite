@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
-import { ALL_SIZES } from "@/lib/pricing";
+import { ALL_SIZES, type SpotSize } from "@/lib/pricing";
 import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
@@ -66,8 +66,8 @@ export default async function PostcardCheckoutPage({
 }) {
   const { zone } = await params;
   const sp = await searchParams;
-  const initialSize = ["small", "medium", "large"].includes(sp.spot ?? "")
-    ? (sp.spot as "small" | "medium" | "large")
+  const initialSize = ALL_SIZES.includes(sp.spot as SpotSize)
+    ? (sp.spot as SpotSize)
     : undefined;
   const z = zoneBySlug(zone);
   if (!z) notFound();

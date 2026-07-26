@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BIG_SIZES,
@@ -58,23 +58,73 @@ const CARD_META: Record<
 const SIZES = CORE_SIZES;
 const BIG = BIG_SIZES;
 
+export type OpenCard = {
+  /** Mission Control card id, so a zone with two cards filling at once
+   *  sends the buyer to the right one. */
+  cardId?: string;
+  zoneSlug: string;
+  zoneName: string;
+  mailMonth: string;
+};
+
 export function PricingCards({
   pricing = POSTCARD_PRICING,
-  zones = [],
+  cards = [],
+  initialCard = "",
+  initialReach = "5k",
 }: {
   pricing?: typeof POSTCARD_PRICING;
-  /** Zones with an open card, so a spot choice can go straight to checkout. */
-  zones?: { slug: string; name: string }[];
+  /** Every card open for booking, one entry per card and not per zone. */
+  cards?: OpenCard[];
+  /** Selection restored from the URL, so the back button keeps it. */
+  initialCard?: string;
+  initialReach?: Reach;
 } = {}) {
-  const [reach, setReach] = useState<Reach>("5k");
-  const [zone, setZone] = useState("");
+  const [reach, setReach] = useState<Reach>(initialReach);
+  // Keyed by card id where MC gives one, else by zone slug.
+  const keyOf = (c: OpenCard) => c.cardId ?? c.zoneSlug;
+  const [picked, setPicked] = useState(initialCard);
+  const card = cards.find((c) => keyOf(c) === picked);
 
-  // Without a zone we cannot know which card they are buying onto, so the
+  // A zone can be filling more than one card at a time, and each card has
+  // its own inventory and its own category locks, so the label has to name
+  // the mailing when there is a choice to make.
+  const zoneCounts = new Map<string, number>();
+  for (const c of cards) {
+    zoneCounts.set(c.zoneSlug, (zoneCounts.get(c.zoneSlug) ?? 0) + 1);
+  }
+  const labelFor = (c: OpenCard) =>
+    (zoneCounts.get(c.zoneSlug) ?? 0) > 1
+      ? `${c.zoneName} · mails ${c.mailMonth}`
+      : c.zoneName;
+
+  // Keep the choice in the URL. Coming back from checkout then restores
+  // it instead of dropping the buyer back on step one.
+  const remember = (nextCard: string, nextReach: Reach) => {
+    const q = new URLSearchParams();
+    if (nextCard) q.set("card", nextCard);
+    q.set("reach", nextReach);
+    window.history.replaceState(null, "", `/pricing?${q}`);
+  };
+
+  // On the way back from checkout the router serves the cached render of
+  // this page, which was built before a card was picked, so the props
+  // cannot carry the choice. The URL still does. Read it on mount.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const fromUrl = q.get("card");
+    if (fromUrl) setPicked(fromUrl);
+    if (q.get("reach") === "10k") setReach("10k");
+  }, []);
+
+  // Without a card we cannot know what they are buying onto, so the
   // button asks for one first rather than dropping them on a contact form.
-  const hrefFor = (size: SpotSize) =>
-    zone
-      ? `/postcards/${zone}/checkout?spot=${size}&reach=${reach}`
-      : "/coverage-map";
+  const hrefFor = (size: SpotSize) => {
+    if (!card) return "/coverage-map";
+    const q = new URLSearchParams({ spot: size, reach });
+    if (card.cardId) q.set("card", card.cardId);
+    return `/postcards/${card.zoneSlug}/checkout?${q}`;
+  };
 
   return (
     <>
@@ -86,7 +136,10 @@ export function PricingCards({
         {(["5k", "10k"] as Reach[]).map((r) => (
           <button
             key={r}
-            onClick={() => setReach(r)}
+            onClick={() => {
+              setReach(r);
+              remember(picked, r);
+            }}
             className={`text-[13.5px] font-semibold px-5 py-2 rounded-lg transition-colors ${
               reach === r ? "bg-navy-950 text-white" : "text-muted hover:text-body"
             }`}
@@ -104,25 +157,28 @@ export function PricingCards({
           </span>
           <b className="text-[15px]">Pick your neighborhood</b>
         </div>
-        {zones.length > 0 ? (
+        {cards.length > 0 ? (
           <>
             <select
-              value={zone}
-              onChange={(e) => setZone(e.target.value)}
+              value={picked}
+              onChange={(e) => {
+                setPicked(e.target.value);
+                remember(e.target.value, reach);
+              }}
               aria-label="Neighborhood"
               className="w-full text-[15px] font-medium px-4 py-3 rounded-[10px] bg-white text-navy-950 border border-line-strong cursor-pointer focus:outline-none focus:border-navy-950"
             >
               <option value="">Choose a neighborhood...</option>
-              {zones.map((z) => (
-                <option key={z.slug} value={z.slug}>
-                  {z.name}
+              {cards.map((c) => (
+                <option key={keyOf(c)} value={keyOf(c)}>
+                  {labelFor(c)}
                 </option>
               ))}
             </select>
             <p className="text-[12.5px] text-muted mt-2">
-              {zone
-                ? "Now pick an ad size below to reserve."
-                : `${zones.length} ${zones.length === 1 ? "neighborhood has" : "neighborhoods have"} spots open right now.`}
+              {card
+                ? `Mails ${card.mailMonth}. Now pick an ad size below to reserve.`
+                : `${cards.length} ${cards.length === 1 ? "card is" : "cards are"} open for booking right now.`}
             </p>
           </>
         ) : (
@@ -139,7 +195,7 @@ export function PricingCards({
       <div className="flex items-center gap-2.5 mt-7 mb-3">
         <span
           className={`w-6 h-6 rounded-full text-[12px] font-extrabold grid place-items-center ${
-            zone ? "bg-cta text-navy-950" : "bg-surface border border-line text-muted"
+            card ? "bg-cta text-navy-950" : "bg-surface border border-line text-muted"
           }`}
         >
           2
@@ -200,7 +256,7 @@ export function PricingCards({
                     : "bg-white text-ink border border-line-strong hover:border-faint"
                 }`}
               >
-                {zone ? `Reserve ${meta.label}` : `Choose ${meta.label}`}
+                {card ? `Reserve ${meta.label}` : `Choose ${meta.label}`}
               </Link>
             </div>
           );
@@ -251,7 +307,7 @@ export function PricingCards({
                 className="inline-flex items-center justify-center font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) bg-white text-ink border border-line-strong hover:border-faint transition-colors"
               >
                 {priced
-                  ? zone
+                  ? card
                     ? `Reserve ${meta.label}`
                     : `Choose ${meta.label}`
                   : "Talk to us"}

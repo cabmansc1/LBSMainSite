@@ -47,15 +47,27 @@ const faqJsonLd = {
 // Prices are admin-editable, so never serve a build-time snapshot.
 export const dynamic = "force-dynamic";
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ card?: string; reach?: string }>;
+}) {
+  const sp = await searchParams;
   const [pricing, mailings] = await Promise.all([
     getLivePricing(),
     getUpcomingMailings(),
   ]);
-  // Only offer zones you can actually buy onto right now.
-  const openZones = mailings
+  // Only cards you can actually buy onto right now. One entry per card,
+  // because a zone can be filling several at once and each carries its
+  // own inventory and category locks.
+  const openCards = mailings
     .filter((m) => m.status !== "waitlist" && m.status !== "full")
-    .map((m) => ({ slug: m.zoneSlug, name: m.zoneName }));
+    .map((m) => ({
+      cardId: m.cardId,
+      zoneSlug: m.zoneSlug,
+      zoneName: m.zoneName,
+      mailMonth: m.mailMonth,
+    }));
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -74,7 +86,12 @@ export default async function PricingPage() {
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6">
-        <PricingCards pricing={pricing} zones={openZones} />
+        <PricingCards
+          pricing={pricing}
+          cards={openCards}
+          initialCard={sp.card ?? ""}
+          initialReach={sp.reach === "10k" ? "10k" : "5k"}
+        />
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           {INCLUDED.map((item) => (
