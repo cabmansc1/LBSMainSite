@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/sections";
 import { InquiryForm } from "@/components/inquiry-form";
+import { getPastCards } from "@/lib/past-cards";
 import { getBusinesses, getBusiness } from "@/lib/directory";
 import { dealsForBusiness } from "@/lib/lowco-deals";
 import { advertiserAppearances } from "@/lib/mission-control";
@@ -56,13 +57,14 @@ export default async function BusinessPage({
 
   // Cross-site and Mission Control lookups are best-effort extras; the
   // page renders fine when either source is unreachable.
-  const [related, lowcoDeals, appearances] = await Promise.all([
+  const [related, lowcoDeals, archive, appearances] = await Promise.all([
     // "More X Businesses" on the legacy page: internal links that keep a
     // visitor in the directory and spread crawl depth across listings.
     getBusinesses({ category: b.categorySlug })
       .then((rows) => rows.filter((r) => r.slug !== b.slug).slice(0, 6))
       .catch(() => []),
     dealsForBusiness(b.name).catch(() => []),
+    getPastCards({ publishedOnly: true }).catch(() => []),
     advertiserAppearances({ name: b.name }).catch(
       () => [] as { zoneName: string; mailMonth: string }[],
     ),
@@ -250,12 +252,39 @@ export default async function BusinessPage({
                   .join(" and ")}
                 , mailed to local homes.
               </p>
-              <Link
-                href="/gallery"
-                className="text-[13px] font-semibold text-brand-deep hover:underline"
-              >
-                Browse past cards →
-              </Link>
+              {/* Where that card is in the archive, link to it: the
+                  listing and the card page each make the other real. */}
+              {(() => {
+                const seen = appearances
+                  .map((a) =>
+                    archive.find(
+                      (c) =>
+                        c.zoneName === a.zoneName && c.mailMonth === a.mailMonth,
+                    ),
+                  )
+                  .filter((c): c is (typeof archive)[number] => !!c);
+                return seen.length > 0 ? (
+                  <ul className="grid gap-1.5">
+                    {seen.map((c) => (
+                      <li key={c.slug}>
+                        <Link
+                          href={`/cards/${c.slug}`}
+                          className="text-[13px] font-semibold text-brand-deep hover:underline"
+                        >
+                          See the {c.cardName ?? c.zoneName} card, {c.mailMonth}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <Link
+                    href="/gallery"
+                    className="text-[13px] font-semibold text-brand-deep hover:underline"
+                  >
+                    Browse past cards
+                  </Link>
+                );
+              })()}
             </Card>
           )}
 

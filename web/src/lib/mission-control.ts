@@ -806,3 +806,84 @@ export async function getCategoryVocabulary(): Promise<CategoryVocabulary> {
     : "derived";
   return { source, categories };
 }
+
+/**
+ * One card by Mission Control id, past ones included, with the
+ * advertisers that rode it.
+ *
+ * A mailed card is public by definition: it went to thousands of
+ * mailboxes. Only the business name and category come back, which is
+ * what was printed on it. Payment state, amounts and contact details
+ * stay where they belong.
+ */
+export async function getMcCardById(cardId: string): Promise<
+  | {
+      cardId: string;
+      cardName?: string;
+      zoneSlug: string;
+      zoneName: string;
+      mailMonth: string;
+      mailDateIso: string;
+      households: string;
+      routes: CardRoute[];
+      advertisers: { businessName: string; category?: string }[];
+    }
+  | undefined
+> {
+  const cards = await fetchCards();
+  const card = cards?.find((c) => String(c.id) === String(cardId));
+  if (!card) return undefined;
+  const seen = new Set<string>();
+  const advertisers = card.advertisers
+    .map((a) => ({
+      businessName: (a.businessName ?? "").trim(),
+      category: (a.category ?? a.primaryCategory ?? "").trim() || undefined,
+    }))
+    .filter((a) => {
+      const key = a.businessName.toLowerCase();
+      if (!a.businessName || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+  return {
+    cardId: String(card.id),
+    cardName: card.cardName || undefined,
+    zoneSlug: card.zoneSlug,
+    zoneName: card.zoneName,
+    mailMonth: card.mailMonth,
+    mailDateIso: card.mailDateIso,
+    households: card.households,
+    routes: card.routes,
+    advertisers,
+  };
+}
+
+/** Every card Mission Control knows about, newest first. Powers the
+ *  admin picker, which has to offer cards that have already mailed. */
+export async function getAllMcCards(): Promise<
+  {
+    cardId: string;
+    cardName?: string;
+    zoneSlug: string;
+    zoneName: string;
+    mailMonth: string;
+    mailDateIso: string;
+    isPast: boolean;
+  }[]
+> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  return cards
+    .filter((c) => c.zoneName)
+    .sort((a, b) => b.mailDateIso.localeCompare(a.mailDateIso))
+    .map((c) => ({
+      cardId: String(c.id),
+      cardName: c.cardName || undefined,
+      zoneSlug: c.zoneSlug,
+      zoneName: c.zoneName,
+      mailMonth: c.mailMonth,
+      mailDateIso: c.mailDateIso,
+      isPast: c.isPast,
+    }));
+}

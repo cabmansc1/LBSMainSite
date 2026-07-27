@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 import { ZONES } from "@/lib/zones";
 import { getBusinesses, getFilterOptions } from "@/lib/directory";
 import { getPosts } from "@/lib/blog";
+import { getPastCards } from "@/lib/past-cards";
 
 /**
  * Successor to sitemap.php: static pages, the 11 zone pages, and
@@ -35,10 +36,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/terms", priority: 0.2 },
   ];
 
-  const [businesses, options, posts] = await Promise.all([
+  const [businesses, options, posts, pastCards] = await Promise.all([
     getBusinesses(),
     getFilterOptions(),
     getPosts(),
+    getPastCards({ publishedOnly: true }).catch(() => []),
   ]);
 
   return [
@@ -64,6 +66,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...posts.map((p) => ({
       url: `${SITE_URL}/blog/${p.slug}`,
+      priority: 0.5,
+    })),
+    // A page per mailed card: fresh every mailing, and the link between
+    // the zone pages and the directory listings.
+    ...pastCards.map((c) => ({
+      url: `${SITE_URL}/cards/${c.slug}`,
+      lastModified: c.mailDate ? new Date(c.mailDate) : undefined,
       priority: 0.5,
     })),
   ];
