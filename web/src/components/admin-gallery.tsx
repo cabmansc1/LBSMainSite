@@ -267,6 +267,43 @@ export function AdminGallery({
               </div>
             </div>
 
+            <div className="grid sm:grid-cols-[1fr_1fr] gap-3">
+              <div>
+                <label
+                  htmlFor={`name-${c.slug}`}
+                  className="text-[11px] uppercase tracking-wider text-muted font-semibold block mb-1.5"
+                >
+                  Public name
+                </label>
+                <input
+                  id={`name-${c.slug}`}
+                  defaultValue={c.cardName ?? ""}
+                  maxLength={120}
+                  onBlur={(e) => {
+                    if (e.target.value !== (c.cardName ?? "")) {
+                      save(c, { cardName: e.target.value || undefined });
+                    }
+                  }}
+                  placeholder={c.zoneName}
+                  className="w-full text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
+                />
+                <p className="text-[11.5px] text-muted mt-1">
+                  Shown as the page heading. Mission Control names cards for
+                  the print run, which rarely reads well to a buyer.
+                </p>
+              </div>
+              <div className="grid content-start">
+                <span className="text-[11px] uppercase tracking-wider text-muted font-semibold block mb-1.5">
+                  Coverage
+                </span>
+                <p className="text-[12.5px] text-muted">
+                  ZIPs and address counts come from the route table in this
+                  card's Mission Control notes. Paste the USPS route rows there
+                  and they appear on the page.
+                </p>
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor={`desc-${c.slug}`}

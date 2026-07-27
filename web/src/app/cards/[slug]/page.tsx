@@ -69,6 +69,13 @@ export default async function PastCardPage({
 
   // Link an advertiser to their directory listing where we have one.
   const listings = await getBusinesses().catch(() => []);
+  // Mission Control stores "Other" when nobody has classified an
+  // advertiser yet. Printing that on a public page tells a reader
+  // nothing, so it counts as unknown and the directory listing's real
+  // category wins.
+  const realCategory = (c?: string) =>
+    c && c.trim().toLowerCase() !== "other" ? c.trim() : undefined;
+
   const advertisers = (mc?.advertisers ?? []).map((a) => {
     const listing = listings.find((b) => norm(b.name) === norm(a.businessName));
     return {
@@ -80,7 +87,7 @@ export default async function PastCardPage({
       // something the card ever showed.
       phone: listing?.phone,
       website: listing?.website,
-      category: a.category ?? listing?.category,
+      category: realCategory(a.category) ?? realCategory(listing?.category),
     };
   });
 
