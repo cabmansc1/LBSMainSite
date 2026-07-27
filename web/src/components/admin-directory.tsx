@@ -386,6 +386,8 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
   const categories = [...new Set(businesses.map((b) => b.category).filter(Boolean))].sort() as string[];
   const locations = [...new Set(businesses.map((b) => b.locationArea).filter(Boolean))].sort() as string[];
 
+  const [sort, setSort] = useState<"name" | "newest">("name");
+
   const visible = businesses.filter((b) => {
     if (query.trim()) {
       const hay = [b.name, b.slug, b.category, b.locationArea, b.email]
@@ -398,6 +400,10 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
     if (status && statusOf(b) !== status) return false;
     return true;
   });
+
+  if (sort === "newest") {
+    visible.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  }
 
   async function runRow(id: number, action: string, confirmText?: string) {
     if (confirmText && !window.confirm(confirmText)) return;
@@ -528,6 +534,15 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
           ))}
         </select>
         <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as "name" | "newest")}
+          aria-label="Sort"
+          className="text-sm px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white"
+        >
+          <option value="name">A to Z</option>
+          <option value="newest">Newest first</option>
+        </select>
+        <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           aria-label="Status"
@@ -598,7 +613,7 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                   }
                 />
               </th>
-              {["Business", "Category / area", "Status", "Views", "Plan", "Actions"].map(
+              {["Business", "Category / area", "Status", "Views", "Plan", "Added", "Actions"].map(
                 (h) => (
                   <th
                     key={h}
@@ -630,15 +645,34 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                     />
                   </td>
                   <td className="px-4 py-3.5 border-b border-line">
-                    <b className="block font-semibold">{b.name}</b>
-                    <a
-                      href={`/business/${b.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[12px] text-muted hover:text-brand-deep"
-                    >
-                      /business/{b.slug}
-                    </a>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-9 h-9 rounded-[6px] border border-line bg-surface overflow-hidden shrink-0 grid place-items-center">
+                        {b.logoUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={b.logoUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="text-[11px] font-bold text-faint">
+                            {b.name.slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </span>
+                      <span className="min-w-0">
+                        <b className="block font-semibold">{b.name}</b>
+                        <a
+                          href={`/business/${b.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[12px] text-muted hover:text-brand-deep truncate block"
+                        >
+                          /business/{b.slug}
+                        </a>
+                      </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3.5 border-b border-line">
                     <span className="block">{b.category ?? "-"}</span>
@@ -664,6 +698,15 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                   </td>
                   <td className="px-4 py-3.5 border-b border-line capitalize">
                     {b.planType ?? "basic"}
+                  </td>
+                  <td className="px-4 py-3.5 border-b border-line text-muted whitespace-nowrap num">
+                    {b.createdAt
+                      ? new Date(b.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "-"}
                   </td>
                   <td className="px-4 py-3.5 border-b border-line">
                     <div className="flex gap-1.5 flex-wrap">

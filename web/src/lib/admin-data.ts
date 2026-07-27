@@ -43,6 +43,8 @@ export type AdminBusiness = {
   isActive: boolean;
   views: number;
   inquiries: number;
+  /** Primary photo, so a listing is recognisable at a glance in the list. */
+  logoUrl: string | null;
   createdAt: string | null;
 };
 
@@ -67,6 +69,36 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
             FROM directory_businesses ORDER BY business_name LIMIT 500`,
       )) as unknown as [Record<string, unknown>[]]);
 
+  // One query for the primary photo of everything on the page, rather
+  // than one per row.
+  const ids = (rows[0] ?? []).map((r) => Number(r.id)).filter(Boolean);
+  const logos = new Map<number, string>();
+  if (ids.length > 0) {
+    try {
+      const base = (
+        process.env.UPLOADS_BASE_URL ??
+        "https://www.lowcountrybusinessspotlight.com/uploads"
+      ).replace(/\/$/, "");
+      const photoRows = (await db.execute(
+        sql`SELECT business_id, filename
+            FROM directory_business_photos
+            WHERE business_id IN (${sql.join(
+              ids.map((id) => sql`${id}`),
+              sql`, `,
+            )})
+            ORDER BY is_primary DESC, sort_order ASC, id ASC`,
+      )) as unknown as [Record<string, unknown>[]];
+      for (const p of photoRows[0] ?? []) {
+        const id = Number(p.business_id);
+        if (!p.filename || logos.has(id)) continue;
+        logos.set(id, `${base}/${String(p.filename).replace(/^\//, "")}`);
+      }
+    } catch (e) {
+      // A listing without a thumbnail is a cosmetic loss, not a failure.
+      console.error("[admin] listing photos read failed:", e);
+    }
+  }
+
   return (rows[0] ?? []).map((r) => ({
     id: Number(r.id),
     slug: String(r.slug ?? ""),
@@ -85,6 +117,7 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
     isActive: bool(r.is_active),
     views: Number(r.views_count ?? 0),
     inquiries: Number(r.inquiries_count ?? 0),
+    logoUrl: logos.get(Number(r.id)) ?? null,
     createdAt: r.created_at ? String(r.created_at) : null,
   }));
 }
