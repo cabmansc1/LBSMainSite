@@ -138,6 +138,7 @@ type McHold = {
 
 type McAccount = {
   id?: string;
+  businessName?: string;
   category?: string;
   primaryCategory?: string;
   subcategory?: string;
@@ -196,6 +197,14 @@ const formatMailMonth = (iso: string): string => {
   if (isNaN(d.getTime())) return iso || "TBD";
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 };
+
+/**
+ * "Other" is Mission Control's placeholder for unclassified, not a
+ * category. Treating it as one is how a card full of advertisers ends up
+ * blocking nothing and describing nothing.
+ */
+const realCategory = (c?: string) =>
+  c && c.trim() && c.trim().toLowerCase() !== "other" ? c.trim() : undefined;
 
 const num = (v: string) => {
   const n = Number(String(v).replace(/[$,\s%]/g, ""));
@@ -285,10 +294,22 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   };
 }
 
-/** Category an advertiser holds exclusively on their card. */
+/**
+ * Category an advertiser holds exclusively on their card.
+ *
+ * "Other" is not a category to lock: locking it would block every
+ * unclassified business at once, and locking nothing lets a competitor
+ * onto a card that already has one. Advertisers are enriched from their
+ * account before this runs, so by here the real classification is
+ * usually present.
+ */
 const advertiserCategory = (a: McAdvertiser): string | undefined => {
-  if (a.exclusivity === true) return a.category ?? a.primaryCategory;
-  if (typeof a.exclusivity === "string" && a.exclusivity) return a.exclusivity;
+  if (a.exclusivity === true) {
+    return realCategory(a.category) ?? realCategory(a.primaryCategory);
+  }
+  if (typeof a.exclusivity === "string" && a.exclusivity) {
+    return realCategory(a.exclusivity);
+  }
   return undefined;
 };
 
@@ -326,10 +347,38 @@ async function fetchCards(): Promise<McCard[] | null> {
     {
       const store = (await fetchStore()) ?? {};
       if (Array.isArray(store.pipelineCards)) {
+        // An advertiser row is a snapshot taken when the business was
+        // placed on the card, and it goes stale: nearly all of them still
+        // read category "Other" while the account behind them says HVAC or
+        // Roofing, and a business renamed in Mission Control keeps its old
+        // name on every card it ever rode. The account is the record that
+        // gets maintained, so it wins.
+        const accounts = new Map(
+          (store.accounts ?? [])
+            .filter((a) => a.id)
+            .map((a) => [String(a.id), a]),
+        );
+        const enrich = (a: McAdvertiser): McAdvertiser => {
+          const acct = a.accountId ? accounts.get(String(a.accountId)) : undefined;
+          if (!acct) return a;
+          return {
+            ...a,
+            businessName: acct.businessName?.trim() || a.businessName,
+            // The card-specific category wins when it says something, since
+            // that is the exclusivity that was actually sold; otherwise the
+            // account's classification fills the gap.
+            category:
+              realCategory(a.category) ??
+              realCategory(acct.category) ??
+              realCategory(acct.primaryCategory) ??
+              a.category,
+          };
+        };
+
         const byCard = new Map<string, McAdvertiser[]>();
         for (const a of store.pipelineAdvertisers ?? []) {
           const key = String(a.cardId);
-          byCard.set(key, [...(byCard.get(key) ?? []), a]);
+          byCard.set(key, [...(byCard.get(key) ?? []), enrich(a)]);
         }
         return store.pipelineCards
           .map((c) => normalizeCard(c, byCard.get(String(c.id)) ?? []))
