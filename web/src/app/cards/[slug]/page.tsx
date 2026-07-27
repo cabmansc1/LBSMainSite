@@ -7,6 +7,7 @@ import { Card } from "@/components/sections";
 import { getPastCard, getPastCards } from "@/lib/past-cards";
 import { getMcCardById } from "@/lib/mission-control";
 import { getBusinesses } from "@/lib/directory";
+import { findBusiness } from "@/lib/name-match";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -22,8 +23,6 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
  */
 
 export const dynamic = "force-dynamic";
-
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 export async function generateMetadata({
   params,
@@ -77,7 +76,10 @@ export default async function PastCardPage({
     c && c.trim().toLowerCase() !== "other" ? c.trim() : undefined;
 
   const advertisers = (mc?.advertisers ?? []).map((a) => {
-    const listing = listings.find((b) => norm(b.name) === norm(a.businessName));
+    // Mission Control and the directory are typed by different hands, so
+    // an exact compare misses real matches: "Colucci's" against
+    // "Colucci's Jewelers" and so on.
+    const listing = findBusiness(a.businessName, listings);
     return {
       ...a,
       listing,

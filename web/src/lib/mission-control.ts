@@ -4,6 +4,7 @@ import {
   type CardRoute,
   type UpcomingMailing,
 } from "@/lib/mailings";
+import { sameBusiness } from "@/lib/name-match";
 
 /**
  * Mission Control adapter, locked to MC's real contract (from its type
@@ -458,20 +459,15 @@ export async function advertiserAppearances(match: {
 }): Promise<{ zoneName: string; mailMonth: string }[]> {
   const cards = await fetchCards();
   if (!cards) return [];
-  const normName = match.name
-    ? match.name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")
-    : undefined;
   const email = match.email?.toLowerCase();
   const seen: { zoneName: string; mailMonth: string }[] = [];
   for (const card of cards) {
     for (const a of card.advertisers) {
-      const aName = a.businessName
-        ?.toLowerCase()
-        .replace(/&/g, "and")
-        .replace(/[^a-z0-9]/g, "");
+      // Names differ between the two systems more often than not, so an
+      // exact compare quietly denies a listing the card it was on.
       if (
         (email && a.email?.toLowerCase() === email) ||
-        (normName && aName && aName === normName)
+        (match.name && a.businessName && sameBusiness(match.name, a.businessName))
       ) {
         seen.push({ zoneName: card.zoneName, mailMonth: card.mailMonth });
         break;
@@ -624,27 +620,21 @@ export type AdvertiserCard = {
   paymentStatus?: string;
 };
 
-const normalizeName = (s: string) =>
-  s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
-
 export async function getAdvertiserCards(match: {
   name?: string;
   email?: string;
 }): Promise<AdvertiserCard[]> {
   const cards = await fetchCards();
   if (!cards) return [];
-  const normName = match.name ? normalizeName(match.name) : undefined;
   const email = match.email?.toLowerCase();
 
   const out: AdvertiserCard[] = [];
   for (const card of cards) {
-    const mine = card.advertisers.find((a) => {
-      const aName = a.businessName ? normalizeName(a.businessName) : undefined;
-      return (
+    const mine = card.advertisers.find(
+      (a) =>
         (email && a.email?.toLowerCase() === email) ||
-        (normName && aName && aName === normName)
-      );
-    });
+        (match.name && a.businessName && sameBusiness(match.name, a.businessName)),
+    );
     if (!mine) continue;
     out.push({
       cardId: String(card.id),
