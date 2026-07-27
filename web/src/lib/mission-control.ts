@@ -5,6 +5,7 @@ import {
   type UpcomingMailing,
 } from "@/lib/mailings";
 import { sameBusiness } from "@/lib/name-match";
+import { ZONES } from "@/lib/zones";
 
 /**
  * Mission Control adapter, locked to MC's real contract (from its type
@@ -249,8 +250,37 @@ function parseRoutes(notes?: string | null): CardRoute[] {
   return out;
 }
 
+/**
+ * A card's zone, from its area, or from its name when the area does not
+ * identify one.
+ *
+ * Mission Control's area list does not cover every zone we sell, so a
+ * card for a missing one gets filed under "Other". That happened to the
+ * August Moncks Corner card, and because the site drops "Other" rather
+ * than publishing a zone page for it, the card vanished from the site
+ * while filling. The card name says what the area could not, so it is
+ * worth reading before giving up.
+ */
+function zoneFromCard(area: string, cardName: string) {
+  const areaSlug = slugify(area);
+  const mapped = ZONE_ALIASES[areaSlug] ?? areaSlug;
+  if (mapped && mapped !== "other" && ZONES.some((z) => z.slug === mapped)) {
+    return { slug: mapped, name: area };
+  }
+
+  const nameSlug = slugify(cardName);
+  const byName = ZONES.find(
+    (z) => nameSlug === z.slug || nameSlug.startsWith(`${z.slug}-`),
+  );
+  if (byName) return { slug: byName.slug, name: byName.name };
+
+  return { slug: mapped, name: area };
+}
+
 function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
-  const zoneName = str(raw.area ?? raw.name ?? raw.title);
+  const rawArea = str(raw.area ?? raw.name ?? raw.title);
+  const zone = zoneFromCard(rawArea, str(raw.cardName));
+  const zoneName = zone.name;
   const spotsTotal = Number(raw.totalSpots ?? 11);
   // Enriched rows carry spotsFilled; raw store rows fall back to
   // summing each advertiser's consumed spots.
@@ -271,13 +301,12 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
 
   const mailDate = str(raw.mailDate ?? raw.mailMonth ?? raw.month);
   const households = raw.distribution ?? raw.cardsMailed ?? raw.households;
-  const rawSlug = slugify(zoneName);
 
   return {
     id: raw.id,
     cardName: str(raw.cardName),
     routes: parseRoutes(raw.notes),
-    zoneSlug: ZONE_ALIASES[rawSlug] ?? rawSlug,
+    zoneSlug: zone.slug,
     zoneName,
     mailMonth: formatMailMonth(mailDate),
     artworkDeadline: str(raw.artworkDeadline ?? raw.deadline, "Ask us"),
