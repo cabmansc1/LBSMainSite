@@ -292,9 +292,19 @@ export function AdminGallery({
             </div>
 
             <div className="grid gap-3">
-              <div className="flex gap-2 flex-wrap">
-                {(["front", "back", "detail"] as const).map((side) => (
-                  <div key={side}>
+              <div className="flex gap-2 flex-wrap items-start">
+                {(
+                  [
+                    { side: "front", label: "Front", hint: "the ad side" },
+                    { side: "back", label: "Back", hint: "postage side" },
+                    {
+                      side: "detail",
+                      label: "Close-up",
+                      hint: "one ad, printed size",
+                    },
+                  ] as const
+                ).map(({ side, label, hint }) => (
+                  <div key={side} className="grid gap-1 justify-items-center">
                     <input
                       ref={(el) => {
                         fileInputs.current[`${c.slug}-${side}`] = el;
@@ -312,10 +322,11 @@ export function AdminGallery({
                       type="button"
                       onClick={() => fileInputs.current[`${c.slug}-${side}`]?.click()}
                       disabled={busy === c.slug}
-                      className="text-[13px] font-semibold px-3.5 py-2 rounded-[10px] border border-line-strong hover:border-faint capitalize disabled:opacity-40"
+                      className="text-[13px] font-semibold px-3.5 py-2 rounded-[10px] border border-line-strong hover:border-faint disabled:opacity-40 w-full"
                     >
-                      Upload {side}
+                      Upload {label}
                     </button>
+                    <span className="text-[11px] text-muted">{hint}</span>
                   </div>
                 ))}
               </div>
@@ -331,8 +342,8 @@ export function AdminGallery({
                         className="w-full h-auto rounded-[8px] border border-line"
                       />
                       <figcaption className="flex items-center justify-between gap-2">
-                        <span className="text-[11.5px] text-muted capitalize">
-                          {img.side}
+                        <span className="text-[11.5px] text-muted">
+                          {img.side === "detail" ? "Close-up" : img.side === "back" ? "Back" : "Front"}
                         </span>
                         <button
                           type="button"

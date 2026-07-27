@@ -60,7 +60,11 @@ export async function POST(req: Request) {
     const meta = await sharp(bytes).metadata();
 
     const sideLabel =
-      side === "front" ? "front" : side === "back" ? "back" : "detail";
+      side === "front"
+        ? "front"
+        : side === "back"
+          ? "postage side"
+          : "close-up of one ad";
     const alt = `${card.cardName ?? card.zoneName} Spotlight Postcard, ${card.mailMonth}, ${sideLabel}`;
 
     const id = await addCardImage({

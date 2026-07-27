@@ -8,6 +8,9 @@ const LINKS = [
   { href: "/", label: "Home" },
   { href: "/coverage-map", label: "Service Areas" },
   { href: "/pricing", label: "Advertise" },
+  // The archive of mailed cards is the strongest proof the product is
+  // real, so it belongs in the nav rather than buried in the footer.
+  { href: "/gallery", label: "Past Cards" },
   { href: "/directory", label: "Directory" },
   { href: "/blog", label: "Blog" },
 ];

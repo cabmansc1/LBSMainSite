@@ -11,6 +11,7 @@ import { formatPrice } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { zoneContent } from "@/lib/zone-content";
+import { getPastCards } from "@/lib/past-cards";
 
 /**
  * Zone landing pages at their EXACT legacy URLs:
@@ -66,6 +67,12 @@ export default async function ZonePage({
   if (!zone) notFound();
 
   const mailing = await getZoneMailing(zone.slug);
+  // Cards already mailed here: the proof that this zone is a real route
+  // and not a map we drew, and a link into the directory listings.
+  const mailed = await getPastCards({
+    publishedOnly: true,
+    zoneSlug: zone.slug,
+  }).catch(() => []);
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
   const nearby = ZONES.filter((z) => z.slug !== zone.slug).slice(0, 4);
@@ -228,6 +235,55 @@ export default async function ZonePage({
           </Card>
         </div>
       </section>
+
+      {mailed.length > 0 && (
+        <section className="bg-surface border-t border-line">
+          <div className="mx-auto max-w-[1120px] px-6 py-16">
+            <SectionHeading
+              eyebrow="Proof"
+              title={`Cards we have mailed in ${zone.name}`}
+              sub="Real printed cards, the neighborhoods they reached, and the businesses that rode them."
+            />
+            <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-8">
+              {mailed.slice(0, 6).map((c) => {
+                const img =
+                  c.images.find((i) => i.side === "front") ?? c.images[0];
+                return (
+                  <li key={c.slug}>
+                    <Link
+                      href={`/cards/${c.slug}`}
+                      className="block bg-white border border-line rounded-(--radius-card) overflow-hidden hover:border-faint transition-colors"
+                    >
+                      {img && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={`/api/card-image/${img.id}`}
+                          alt={img.alt}
+                          className="w-full h-auto"
+                          loading="lazy"
+                        />
+                      )}
+                      <span className="block px-4 py-3">
+                        <b className="block text-[14.5px] font-semibold">
+                          {c.cardName ?? c.zoneName}
+                        </b>
+                        <span className="text-[12.5px] text-muted">
+                          Mailed {c.mailMonth}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-7">
+              <Button href="/gallery" variant="quiet" small>
+                See every card we have mailed
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {content?.prose && (
         <section className="border-t border-line">
