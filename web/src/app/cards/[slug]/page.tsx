@@ -69,14 +69,31 @@ export default async function PastCardPage({
 
   // Link an advertiser to their directory listing where we have one.
   const listings = await getBusinesses().catch(() => []);
-  const advertisers = (mc?.advertisers ?? []).map((a) => ({
-    ...a,
-    listing: listings.find((b) => norm(b.name) === norm(a.businessName)),
-  }));
+  const advertisers = (mc?.advertisers ?? []).map((a) => {
+    const listing = listings.find((b) => norm(b.name) === norm(a.businessName));
+    return {
+      ...a,
+      listing,
+      // A mailed card printed these details for thousands of homes, and
+      // the directory already publishes them, so the phone and the site
+      // belong here. Email does not: that is the owner's inbox, not
+      // something the card ever showed.
+      phone: listing?.phone,
+      website: listing?.website,
+      category: a.category ?? listing?.category,
+    };
+  });
 
-  const others = (await getPastCards({ publishedOnly: true }))
-    .filter((c) => c.slug !== card.slug)
-    .slice(0, 3);
+  const inZone = (
+    await getPastCards({ publishedOnly: true, zoneSlug: card.zoneSlug })
+  ).filter((c) => c.slug !== card.slug);
+  const others = (
+    inZone.length > 0
+      ? inZone
+      : (await getPastCards({ publishedOnly: true })).filter(
+          (c) => c.slug !== card.slug,
+        )
+  ).slice(0, 3);
 
   const hero = card.images.find((i) => i.side === "front") ?? card.images[0];
   const rest = card.images.filter((i) => i.id !== hero.id);
@@ -110,6 +127,12 @@ export default async function PastCardPage({
       {
         "@type": "ListItem",
         position: 3,
+        name: card.zoneName,
+        item: `${SITE_URL}/gallery/${card.zoneSlug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
         name: `${name}, ${card.mailMonth}`,
         item: `${SITE_URL}/cards/${card.slug}`,
       },
@@ -125,7 +148,11 @@ export default async function PastCardPage({
               Card gallery
             </Link>
             <span>/</span>
-            <b className="text-white font-semibold">{name}</b>
+            <Link href={`/gallery/${card.zoneSlug}`} className="hover:text-white">
+              {card.zoneName}
+            </Link>
+            <span>/</span>
+            <b className="text-white font-semibold">{card.mailMonth}</b>
           </nav>
           <h1 className="mt-4 text-[26px] md:text-[38px] font-bold tracking-[-0.03em] max-w-[24ch] text-balance">
             {name} Spotlight Postcard, {card.mailMonth}
@@ -205,28 +232,58 @@ export default async function PastCardPage({
                 had the category to themselves.
               </p>
             </div>
-            <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {advertisers.map((a) => (
-                <li key={a.businessName}>
-                  {a.listing ? (
+                <li
+                  key={a.businessName}
+                  className="border border-line rounded-(--radius-card) px-5 py-4 bg-white grid gap-2 content-start"
+                >
+                  <div>
+                    <b className="block text-[15px] font-semibold tracking-tight">
+                      {a.listing ? (
+                        <Link
+                          href={`/business/${a.listing.slug}`}
+                          className="hover:text-brand-deep"
+                        >
+                          {a.businessName}
+                        </Link>
+                      ) : (
+                        a.businessName
+                      )}
+                    </b>
+                    {a.category && (
+                      <span className="text-[12.5px] text-muted">{a.category}</span>
+                    )}
+                  </div>
+                  {(a.phone || a.website) && (
+                    <div className="grid gap-1 text-[13px]">
+                      {a.phone && (
+                        <a
+                          href={`tel:${a.phone.replace(/[^0-9+]/g, "")}`}
+                          className="font-medium text-body hover:text-brand-deep num"
+                        >
+                          {a.phone}
+                        </a>
+                      )}
+                      {a.website && (
+                        <a
+                          href={a.website}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="font-medium text-brand-deep hover:underline truncate"
+                        >
+                          {a.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {a.listing && (
                     <Link
                       href={`/business/${a.listing.slug}`}
-                      className="block border border-line rounded-[10px] px-4 py-3 bg-white hover:border-faint transition-colors"
+                      className="text-[12.5px] font-semibold text-brand-deep hover:underline"
                     >
-                      <b className="block text-[14px] font-semibold">
-                        {a.businessName}
-                      </b>
-                      <span className="text-[12.5px] text-muted">
-                        {a.category ?? a.listing.category}
-                      </span>
+                      View directory listing
                     </Link>
-                  ) : (
-                    <div className="border border-line rounded-[10px] px-4 py-3 bg-white">
-                      <b className="block text-[14px] font-semibold">
-                        {a.businessName}
-                      </b>
-                      <span className="text-[12.5px] text-muted">{a.category}</span>
-                    </div>
                   )}
                 </li>
               ))}

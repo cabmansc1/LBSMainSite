@@ -68,6 +68,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/blog/${p.slug}`,
       priority: 0.5,
     })),
+    // One index per neighborhood with cards in it.
+    ...[...new Set(pastCards.map((c) => c.zoneSlug))].map((zoneSlug) => ({
+      url: `${SITE_URL}/gallery/${zoneSlug}`,
+      priority: 0.5,
+    })),
     // A page per mailed card: fresh every mailing, and the link between
     // the zone pages and the directory listings.
     ...pastCards.map((c) => ({

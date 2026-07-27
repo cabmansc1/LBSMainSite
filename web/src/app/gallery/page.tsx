@@ -8,11 +8,11 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "Past Card Gallery: Real Mailed Postcards",
   description:
-    "Browse real Spotlight Postcards mailed across the Charleston Lowcountry. See the print quality, the neighborhoods each card reached, and the businesses that advertised on them.",
+    "Browse real Spotlight Postcards mailed across the Charleston Lowcountry by neighborhood. See the print quality, the routes each card reached, and the local businesses that advertised on them.",
   alternates: { canonical: `${SITE_URL}/gallery` },
   openGraph: {
     title: `Card Gallery | ${SITE_NAME}`,
-    description: "Real mailed Spotlight Postcards.",
+    description: "Real mailed Spotlight Postcards, by neighborhood.",
     siteName: SITE_NAME,
     type: "website",
   },
@@ -31,8 +31,32 @@ const SAMPLES = [
   { src: "/cards/card-detail.webp", caption: "Ad detail, medium spot", w: 800, h: 534 },
 ];
 
+/**
+ * The archive, by neighborhood.
+ *
+ * Cards mean nothing as an undifferentiated pile: someone looking at this
+ * is asking "do you mail my part of town, and how often". So the index
+ * is one tile per zone with a count, and the cards themselves live a
+ * click deeper.
+ */
 export default async function GalleryPage() {
   const cards = await getPastCards({ publishedOnly: true });
+
+  const zones = [...new Map(cards.map((c) => [c.zoneSlug, c])).keys()]
+    .map((slug) => {
+      const inZone = cards.filter((c) => c.zoneSlug === slug);
+      const latest = inZone[0];
+      const cover =
+        latest.images.find((i) => i.side === "front") ?? latest.images[0];
+      return {
+        slug,
+        name: latest.zoneName,
+        count: inZone.length,
+        latestMonth: latest.mailMonth,
+        cover,
+      };
+    })
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
   const jsonLd = cards.length
     ? {
@@ -59,49 +83,52 @@ export default async function GalleryPage() {
             Real cards we mailed.
           </h1>
           <p className="mt-3 text-[#93A5B8] max-w-[56ch]">
-            Print quality sells the product better than any pitch. These are
-            actual Spotlight Postcards from recent mailings, with the
-            neighborhoods each one reached and the businesses that rode it.
+            Every card we have printed, by neighborhood. Open one to see the
+            card itself, the routes it reached, and the local businesses that
+            advertised on it.
           </p>
+          {cards.length > 0 && (
+            <p className="mt-4 text-[13px] text-[#67768A] num">
+              {cards.length} {cards.length === 1 ? "card" : "cards"} across{" "}
+              {zones.length} {zones.length === 1 ? "neighborhood" : "neighborhoods"}
+            </p>
+          )}
         </div>
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6 py-12">
-        {cards.length > 0 ? (
+        {zones.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {cards.map((c) => {
-              const img = c.images.find((i) => i.side === "front") ?? c.images[0];
-              return (
-                <Link
-                  key={c.slug}
-                  href={`/cards/${c.slug}`}
-                  className="block border border-line rounded-(--radius-card) overflow-hidden bg-white hover:border-faint transition-colors"
-                >
-                  {img && (
-                    <Image
-                      src={`/api/card-image/${img.id}`}
-                      alt={img.alt}
-                      width={img.width || 800}
-                      height={img.height || 534}
-                      className="w-full h-auto"
-                    />
-                  )}
-                  <span className="block px-5 py-4">
-                    <b className="block text-[15px] font-semibold tracking-tight">
-                      {c.cardName ?? c.zoneName}
+            {zones.map((z) => (
+              <Link
+                key={z.slug}
+                href={`/gallery/${z.slug}`}
+                className="block border border-line rounded-(--radius-card) overflow-hidden bg-white hover:border-faint transition-colors"
+              >
+                {z.cover && (
+                  <Image
+                    src={`/api/card-image/${z.cover.id}`}
+                    alt={z.cover.alt}
+                    width={z.cover.width || 800}
+                    height={z.cover.height || 534}
+                    className="w-full h-auto"
+                  />
+                )}
+                <span className="flex items-start justify-between gap-3 px-5 py-4">
+                  <span>
+                    <b className="block text-[16px] font-bold tracking-tight">
+                      {z.name}
                     </b>
-                    <span className="text-[13px] text-muted">
-                      Mailed {c.mailMonth}
+                    <span className="text-[12.5px] text-muted">
+                      Latest mailed {z.latestMonth}
                     </span>
-                    {c.description && (
-                      <span className="block text-[12.5px] text-muted mt-1.5 line-clamp-2">
-                        {c.description}
-                      </span>
-                    )}
                   </span>
-                </Link>
-              );
-            })}
+                  <span className="text-[11.5px] font-bold uppercase tracking-wider text-brand-deep bg-brand-tint border border-[#cbe7fa] rounded-full px-2.5 py-1 whitespace-nowrap num">
+                    {z.count} {z.count === 1 ? "card" : "cards"}
+                  </span>
+                </span>
+              </Link>
+            ))}
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
