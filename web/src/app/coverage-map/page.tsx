@@ -92,7 +92,11 @@ export default async function CoverageMapPage() {
                       ? { text: "Full", cls: "text-[#93A5B8] border-white/20" }
                       : left <= 3
                         ? { text: `${left} left`, cls: "text-cta border-cta/50" }
-                        : { text: "Open", cls: "text-brand border-brand/50" };
+                        // Open is the default state and sat on almost every
+                        // card in brand blue, so the one card that was
+                        // nearly gone had to shout over eleven that were
+                        // not. Scarcity is the only status worth a colour.
+                        : { text: "Open", cls: "text-[#C6D3E0] border-white/25" };
                 return (
                   <div
                     key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`}
@@ -102,8 +106,13 @@ export default async function CoverageMapPage() {
                       <div>
                         <h3 className="text-[15.5px] font-semibold leading-snug">
                           {m.zoneName}
+                          {/* The coverage area names the card, it does not
+                              ask for anything, so it reads as a second
+                              line of the heading rather than as a third
+                              blue thing competing with the one that
+                              does. */}
                           {cardCoverage(m).name && (
-                            <span className="block text-[12.5px] font-medium text-brand">
+                            <span className="block text-[12.5px] font-medium text-[#C6D3E0]">
                               {cardCoverage(m).name}
                             </span>
                           )}
@@ -146,19 +155,33 @@ export default async function CoverageMapPage() {
                       <span className="text-[#93A5B8] num">
                         {m.spotsTaken}/{m.spotsTotal} spots filled
                       </span>
+                      {/* Reserving is the one thing this card exists to
+                          get someone to do, so it gets the orange the
+                          rest of the site reserves for buying. Joining a
+                          waitlist is not that: it is what is left when
+                          the card is full, and dressing it as the same
+                          action makes a closed card look open. It stays
+                          a quiet link. */}
                       {zoneBySlug(m.zoneSlug) ? (
-                        <Link
-                          href={`/${m.zoneSlug}-direct-mail-marketing`}
-                          className="font-semibold text-brand hover:underline whitespace-nowrap"
-                        >
-                          {m.status === "waitlist" || m.status === "full" || left === 0
-                            ? "Join waitlist"
-                            : "Reserve a spot"}
-                        </Link>
+                        m.status === "waitlist" || m.status === "full" || left === 0 ? (
+                          <Link
+                            href={`/${m.zoneSlug}-direct-mail-marketing`}
+                            className="font-semibold text-brand hover:underline whitespace-nowrap"
+                          >
+                            Join waitlist
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/${m.zoneSlug}-direct-mail-marketing`}
+                            className="bg-cta text-navy-950 text-[12.5px] font-bold px-3.5 py-1.5 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
+                          >
+                            Reserve a spot
+                          </Link>
+                        )
                       ) : (
                         <a
                           href="tel:+18432122969"
-                          className="font-semibold text-brand hover:underline whitespace-nowrap"
+                          className="bg-cta text-navy-950 text-[12.5px] font-bold px-3.5 py-1.5 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
                         >
                           Call to book
                         </a>
