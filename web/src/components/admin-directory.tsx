@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { AdminBusiness } from "@/lib/admin-data";
 
 const PLANS = ["basic", "featured", "elite"];
@@ -384,74 +385,105 @@ function RowMenu({
   busy: boolean;
   onAction: (id: number, action: string, confirmText?: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const wrap = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState<{ top: number; right: number } | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const open = at !== null;
+
+  // Rendered into the body rather than in place. The table scrolls
+  // horizontally, and overflow-x:auto forces overflow-y to auto too, so
+  // a menu positioned inside the cell gets clipped by the wrapper: the
+  // first two items show and the rest are simply gone.
+  const place = () => {
+    const r = btn.current?.getBoundingClientRect();
+    if (!r) return;
+    setAt({ top: r.bottom + 4, right: window.innerWidth - r.right });
+  };
 
   useEffect(() => {
     if (!open) return;
     const down = (e: MouseEvent) => {
-      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (!btn.current?.contains(t) && !menu.current?.contains(t)) setAt(null);
     };
-    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setAt(null);
+    // Fixed coordinates go stale the moment anything scrolls, and a menu
+    // floating away from its button is worse than one that closed.
+    const bail = () => setAt(null);
     document.addEventListener("mousedown", down);
     document.addEventListener("keydown", key);
+    window.addEventListener("scroll", bail, true);
+    window.addEventListener("resize", bail);
     return () => {
       document.removeEventListener("mousedown", down);
       document.removeEventListener("keydown", key);
+      window.removeEventListener("scroll", bail, true);
+      window.removeEventListener("resize", bail);
     };
   }, [open]);
 
   const run = (action: string, confirmText?: string) => {
-    setOpen(false);
+    setAt(null);
     onAction(business.id, action, confirmText);
   };
 
   const item =
-    "w-full text-left px-4 py-2.5 text-[13px] hover:bg-surface disabled:opacity-40 border-b border-line last:border-b-0";
+    "w-full text-left px-4 py-2.5 text-[13px] hover:bg-surface border-b border-line last:border-b-0";
 
   return (
-    <div ref={wrap} className="relative">
+    <>
       <button
+        ref={btn}
         type="button"
         aria-label={`More actions for ${business.name}`}
         aria-expanded={open}
         disabled={busy}
-        onClick={() => setOpen(!open)}
+        onClick={() => (open ? setAt(null) : place())}
         className="text-[13px] font-bold px-2.5 py-1.5 rounded-[8px] border border-line-strong leading-none disabled:opacity-40"
       >
         ···
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 z-30 w-[190px] bg-white border border-line rounded-[10px] shadow-[0_12px_30px_rgba(8,21,39,.2)] overflow-hidden">
-          <button type="button" className={item} onClick={() => run("toggle_active")}>
-            {business.isActive ? "Deactivate" : "Activate"}
-          </button>
-          <button type="button" className={item} onClick={() => run("toggle_hidden")}>
-            {business.isHidden ? "Unhide" : "Hide"}
-          </button>
-          <button type="button" className={item} onClick={() => run("toggle_featured")}>
-            {business.isFeatured ? "Unfeature" : "Feature"}
-          </button>
-          <a
-            href={`/business/${business.slug}`}
-            target="_blank"
-            rel="noopener"
-            className={`${item} block`}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menu}
+            style={{ position: "fixed", top: at.top, right: at.right }}
+            className="z-50 w-[190px] bg-white border border-line rounded-[10px] shadow-[0_12px_30px_rgba(8,21,39,.2)] overflow-hidden"
           >
-            View on the site
-          </a>
-          <button
-            type="button"
-            className={`${item} text-danger font-semibold border-t border-line`}
-            onClick={() =>
-              run("delete", `Delete ${business.name}? This cannot be undone.`)
-            }
-          >
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
+            <button type="button" className={item} onClick={() => run("toggle_active")}>
+              {business.isActive ? "Deactivate" : "Activate"}
+            </button>
+            <button type="button" className={item} onClick={() => run("toggle_hidden")}>
+              {business.isHidden ? "Unhide" : "Hide"}
+            </button>
+            <button type="button" className={item} onClick={() => run("toggle_featured")}>
+              {business.isFeatured ? "Unfeature" : "Feature"}
+            </button>
+            <a
+              href={`/business/${business.slug}`}
+              target="_blank"
+              rel="noopener"
+              className={`${item} block`}
+              onClick={() => setAt(null)}
+            >
+              View on the site
+            </a>
+            {/* Last, separated, red. The distance between "Feature" and
+                "delete this business forever" should not be two pixels. */}
+            <button
+              type="button"
+              className={`${item} text-danger font-semibold border-t border-line`}
+              onClick={() =>
+                run("delete", `Delete ${business.name}? This cannot be undone.`)
+              }
+            >
+              Delete
+            </button>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
@@ -710,7 +742,12 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                   <th
                     key={h}
                     className={`text-[11px] uppercase tracking-wider text-muted font-semibold px-4 py-3 border-b border-line bg-surface ${
-                      h === "Actions" ? "text-right" : "text-left"
+                      h === "Actions"
+                        ? // Pinned, so the actions are reachable without
+                          // hunting for a horizontal scrollbar that gives
+                          // no sign it exists.
+                          "text-right sticky right-0 z-20 border-l border-line"
+                        : "text-left"
                     }`}
                   >
                     {h}
@@ -723,7 +760,7 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
             {visible.map((b) => {
               const st = statusOf(b);
               return (
-                <tr key={b.id} className="hover:bg-surface align-top">
+                <tr key={b.id} className="group hover:bg-surface align-top">
                   <td className="px-4 py-3.5 border-b border-line">
                     <input
                       type="checkbox"
@@ -815,7 +852,7 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                         })
                       : "-"}
                   </td>
-                  <td className="px-4 py-3.5 border-b border-line">
+                  <td className="px-4 py-3.5 border-b border-line sticky right-0 z-10 bg-white group-hover:bg-surface border-l border-line">
                     <div className="flex gap-1.5 items-center justify-end">
                       {/* Approve and Deny stay in the open: they are the
                           only actions with a queue behind them, and
