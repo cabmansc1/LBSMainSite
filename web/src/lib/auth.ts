@@ -21,7 +21,20 @@ export type SessionUser = {
   email: string;
   firstName: string;
   role?: "admin";
+  /**
+   * Set when an admin is viewing the portal as this advertiser.
+   *
+   * Carried inside the signed session, so it cannot be removed or
+   * forged to escape the restrictions that come with it. Its presence
+   * is what blocks buying and password changes: support should be able
+   * to see what a customer sees, and nothing more.
+   */
+  impersonatedBy?: { id: number; email: string };
 };
+
+/** True when this session is an admin looking through someone's eyes. */
+export const isImpersonating = (u: SessionUser | null): boolean =>
+  !!u?.impersonatedBy;
 
 const secret = () => process.env.AUTH_SECRET ?? "dev-only-secret-change-me";
 
@@ -45,11 +58,16 @@ export function decodeSession(token: string): SessionUser | null {
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString());
     if (typeof data.exp !== "number" || data.exp < Date.now()) return null;
+    const by = data.impersonatedBy;
     return {
       id: data.id,
       email: data.email,
       firstName: data.firstName,
       role: data.role === "admin" ? "admin" : undefined,
+      impersonatedBy:
+        by && typeof by.id === "number" && typeof by.email === "string"
+          ? { id: by.id, email: by.email }
+          : undefined,
     };
   } catch {
     return null;

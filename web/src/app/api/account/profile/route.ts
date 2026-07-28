@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession, setSessionCookie } from "@/lib/auth";
+import { getSession, isImpersonating, setSessionCookie } from "@/lib/auth";
 import {
   looksLikePhone,
   saveProfileName,
@@ -23,6 +23,15 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+  // Support can look, not touch. Changing a customer's password or
+  // contact details from inside their account is exactly the thing
+  // impersonation must never make easy.
+  if (isImpersonating(session)) {
+    return NextResponse.json(
+      { error: "You are viewing as this advertiser. Stop to make changes." },
+      { status: 403 },
+    );
   }
 
   let body: Record<string, unknown>;

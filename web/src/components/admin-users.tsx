@@ -44,6 +44,24 @@ function UserRow({ u }: { u: AdminUser }) {
     }
   }
 
+  async function viewAs() {
+    setState("busy");
+    setMessage("");
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ userId: u.id }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "Could not open that account");
+      window.location.href = "/account";
+    } catch (e) {
+      setState("error");
+      setMessage(String(e instanceof Error ? e.message : e));
+    }
+  }
+
   async function toggleActive() {
     const next = !active;
     setActive(next);
@@ -83,16 +101,27 @@ function UserRow({ u }: { u: AdminUser }) {
           </button>
         </td>
         <td className="px-4 py-3 border-b border-line whitespace-nowrap">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(!open);
-              if (!password) setPassword(suggestPassword());
-            }}
-            className="text-[13px] font-semibold text-brand-deep hover:underline"
-          >
-            {open ? "Cancel" : "Set password"}
-          </button>
+          <div className="flex gap-3 items-center">
+            {/* Preferred over setting a password to look around: it
+                changes nothing about the account and sends no email. */}
+            <button
+              type="button"
+              onClick={viewAs}
+              className="text-[13px] font-semibold text-brand-deep hover:underline"
+            >
+              View as
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(!open);
+                if (!password) setPassword(suggestPassword());
+              }}
+              className="text-[13px] font-semibold text-muted hover:text-navy-950"
+            >
+              {open ? "Cancel" : "Set password"}
+            </button>
+          </div>
         </td>
       </tr>
       {open && (

@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
 import { PortalNav } from "@/components/portal-nav";
 import { LogoutButton } from "@/components/logout-button";
+import { ImpersonationBanner } from "@/components/impersonation-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,8 @@ export default async function AccountLayout({
   const needsAction = currentCards.filter((c) => c.status !== "waitlist").length;
 
   return (
+    <>
+      {session.impersonatedBy && <ImpersonationBanner email={session.email} />}
     <div className="bg-surface min-h-full md:flex md:items-stretch">
       <aside className="hidden md:flex w-[224px] shrink-0 bg-navy-950 text-white p-5 flex-col gap-6 sticky top-0 h-screen">
         <Link href="/" className="flex items-center gap-2.5">
@@ -70,5 +73,6 @@ export default async function AccountLayout({
         cardsNeedingAction={needsAction}
       />
     </div>
+    </>
   );
 }

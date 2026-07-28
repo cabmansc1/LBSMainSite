@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSession, isImpersonating } from "@/lib/auth";
 import { stripeEnabled, createCheckoutSession } from "@/lib/stripe";
 import {
   pushToMissionControl,
@@ -26,6 +27,16 @@ import { getCard } from "@/lib/cards";
  * full flow is clickable end to end.
  */
 export async function POST(req: Request) {
+  // Checkout is open to signed-out visitors, so this only rejects the
+  // one case that must never happen: an admin viewing as someone else
+  // starting a payment in their name.
+  if (isImpersonating(await getSession().catch(() => null))) {
+    return NextResponse.json(
+      { error: "You are viewing as an advertiser. Stop before buying." },
+      { status: 403 },
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
