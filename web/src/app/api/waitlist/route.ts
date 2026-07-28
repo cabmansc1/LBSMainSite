@@ -8,6 +8,13 @@ import { pushToMissionControl } from "@/lib/mission-control";
  * card in that zone opens. Writes to waitlist_entries once the DB
  * connects; validates and accepts in preview mode.
  */
+
+/**
+ * Stored in the category column for smaller-card interest, so these
+ * rows are one query away in the admin and in Mission Control without
+ * needing a second table for a list we hope stays short.
+ */
+const SMALLER_CARD_INTEREST = "Interest: 2,500 household card";
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
   try {
@@ -17,12 +24,25 @@ export async function POST(req: Request) {
   }
 
   const zone = zoneBySlug(String(body.zoneSlug ?? ""));
-  const category = String(body.category ?? "").trim();
   const email = String(body.email ?? "").trim();
+
+  // Two different waits share this endpoint. The original is "your
+  // category is taken on this card, tell me when it frees up", which
+  // needs a category. The other is "I want the smaller card when you
+  // price it", which has no category to reserve: there is no card yet.
+  // Both are the same promise to email someone when something opens.
+  const smallerCard = body.interest === "smaller-card";
+  const category = smallerCard
+    ? SMALLER_CARD_INTEREST
+    : String(body.category ?? "").trim();
 
   if (!zone || !category || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json(
-      { error: "Zone, category, and a valid email are required." },
+      {
+        error: smallerCard
+          ? "Pick a neighborhood and give us a valid email."
+          : "Zone, category, and a valid email are required.",
+      },
       { status: 422 },
     );
   }

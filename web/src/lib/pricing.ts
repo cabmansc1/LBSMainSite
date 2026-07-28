@@ -51,6 +51,33 @@ export const isOffered = (tier?: SpotTier) => !!tier && tier.priceCents > 0;
 
 export const HOUSEHOLDS: Record<Reach, number> = { "5k": 5000, "10k": 10000 };
 
+/**
+ * The card we sell by default. 10,000 is the step up and 2,500 is the
+ * step down, but 5,000 is the product.
+ *
+ * It used to win only by being the initial state, which a buyer cannot
+ * see. Naming it here lets the pricing toggle say so out loud, and means
+ * a future third option does not quietly become an equal.
+ */
+export const FLAGSHIP_REACH: Reach = "5k";
+
+/**
+ * Reach we intend to offer but cannot price yet.
+ *
+ * A smaller run for businesses whose service area does not justify
+ * 5,000 homes. Deliberately not a button on the pricing toggle: an
+ * option with no price gives a hesitant buyer a reason to wait for a
+ * number nobody can quote them. It captures interest instead, which is
+ * also the demand data needed to price it.
+ */
+export const PLANNED_REACH = {
+  households: 2500,
+  /** Standing alone: "2,500 households". */
+  label: "2,500 households",
+  /** In front of a noun: "a 2,500 household card", not "households card". */
+  attributive: "2,500 household",
+};
+
 export const formatPrice = (cents: number) =>
   `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 

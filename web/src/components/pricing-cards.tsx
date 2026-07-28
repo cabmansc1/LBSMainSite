@@ -5,12 +5,137 @@ import Link from "next/link";
 import {
   BIG_SIZES,
   CORE_SIZES,
+  FLAGSHIP_REACH,
+  PLANNED_REACH,
   POSTCARD_PRICING,
   formatPrice,
   centsPerHome,
   type Reach,
   type SpotSize,
 } from "@/lib/pricing";
+import { ZONES } from "@/lib/zones";
+
+/**
+ * Interest capture for the smaller card we do not sell yet.
+ *
+ * Deliberately quiet and deliberately not a third button on the reach
+ * toggle. Three equal options turn a flagship into a menu, and an option
+ * with no price gives a hesitant buyer a reason to wait rather than buy.
+ * This catches the person who would otherwise leave believing 5,000 is
+ * our floor, and it records which zone they wanted, which is the demand
+ * data needed to price the thing.
+ */
+function SmallerCardInterest({ zoneSlug }: { zoneSlug?: string }) {
+  const [open, setOpen] = useState(false);
+  const [zone, setZone] = useState(zoneSlug ?? "");
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [error, setError] = useState("");
+
+  // Picking a neighborhood above should carry down here, but never
+  // overwrite a choice already made in this form.
+  useEffect(() => {
+    if (zoneSlug) setZone((z) => z || zoneSlug);
+  }, [zoneSlug]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setState("sending");
+    setError("");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interest: "smaller-card", zoneSlug: zone, email }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "That did not go through.");
+      setState("done");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That did not go through.");
+      setState("error");
+    }
+  };
+
+  if (state === "done") {
+    return (
+      <p className="text-[13px] text-body mt-3.5 max-w-[560px]">
+        Got it. We will email you as soon as the {PLANNED_REACH.attributive} card is
+        priced in that neighborhood.
+      </p>
+    );
+  }
+
+  if (!open) {
+    return (
+      <p className="text-[13px] text-muted mt-3.5 max-w-[560px]">
+        Planning a smaller run? A {PLANNED_REACH.attributive} card is coming.{" "}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="font-semibold text-brand-deep hover:underline"
+        >
+          Tell us your neighborhood
+        </button>{" "}
+        and we will price it for you first.
+      </p>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="mt-3.5 max-w-[560px] bg-surface border border-line rounded-xl p-4 grid gap-2.5"
+    >
+      <p className="text-[13px] text-body">
+        A {PLANNED_REACH.attributive} card is coming. Tell us where you want it and we
+        will price it for you first.
+      </p>
+      <div className="flex gap-2.5 flex-wrap">
+        <select
+          value={zone}
+          onChange={(e) => setZone(e.target.value)}
+          required
+          aria-label="Neighborhood"
+          className="flex-1 min-w-[170px] text-[14px] px-3 py-2.5 rounded-[10px] bg-white text-navy-950 border border-line-strong cursor-pointer focus:outline-none focus:border-navy-950"
+        >
+          <option value="">Which neighborhood?</option>
+          {ZONES.map((z) => (
+            <option key={z.slug} value={z.slug}>
+              {z.name}
+            </option>
+          ))}
+        </select>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="you@business.com"
+          aria-label="Email"
+          className="flex-1 min-w-[170px] text-[14px] px-3 py-2.5 rounded-[10px] bg-white text-navy-950 border border-line-strong focus:outline-none focus:border-navy-950"
+        />
+      </div>
+      {error && <p className="text-[12.5px] text-[#b42318]">{error}</p>}
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={state === "sending"}
+          className="text-[14px] font-semibold px-4 py-2.5 rounded-(--radius-btn) bg-navy-950 text-white disabled:opacity-60"
+        >
+          {state === "sending" ? "Sending..." : "Keep me posted"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-[13px] text-muted hover:text-body"
+        >
+          Never mind
+        </button>
+      </div>
+    </form>
+  );
+}
 
 const CARD_META: Record<
   SpotSize,
@@ -150,15 +275,30 @@ export function PricingCards({
               setReach(r);
               remember(picked, r);
             }}
-            className={`text-[13.5px] font-semibold px-5 py-2 rounded-lg transition-colors ${
+            className={`text-[13.5px] font-semibold px-5 py-2 rounded-lg transition-colors inline-flex items-center gap-2 ${
               reach === r ? "bg-navy-950 text-white" : "text-muted hover:text-body"
             }`}
             aria-pressed={reach === r}
           >
             {r === "5k" ? "5,000 households" : "10,000 households"}
+            {/* The flagship used to win by being the initial state, which
+                is invisible. Say it. */}
+            {r === FLAGSHIP_REACH && (
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                  reach === r
+                    ? "bg-white/15 text-white"
+                    : "bg-line text-muted"
+                }`}
+              >
+                Standard
+              </span>
+            )}
           </button>
         ))}
       </div>
+
+      <SmallerCardInterest zoneSlug={card?.zoneSlug} />
 
       <div className="mt-6 bg-surface border border-line rounded-xl p-5 max-w-[560px]">
         <div className="flex items-center gap-2.5 mb-2.5">
