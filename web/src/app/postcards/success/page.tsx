@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/sections";
 import { OrderStatus } from "@/components/order-status";
+import { LeadConversion } from "@/components/analytics";
 import { getSession } from "@/lib/auth";
 import { getOrderBySession } from "@/lib/orders";
 
@@ -29,6 +30,14 @@ export default async function CheckoutSuccessPage({
 
   return (
     <div className="mx-auto max-w-[640px] px-6 py-20">
+      {/* thank_you.php's conversion pair, at the same moment: a real
+          checkout came back from Stripe. Preview mode is skipped because
+          nothing was charged, which is the same reason the PHP gated the
+          Ads conversion on a genuine submission rather than on the page
+          simply being open. */}
+      {!isPreview && sp.session_id && (
+        <LeadConversion dedupeKey={sp.session_id} />
+      )}
       <Card className="p-9 grid gap-4 text-center justify-items-center">
         <span className="w-13 h-13 rounded-full bg-[#e5f5ec] text-ok flex items-center justify-center">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

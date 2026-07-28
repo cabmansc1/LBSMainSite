@@ -11,6 +11,7 @@ import {
   type SpotSize,
 } from "@/lib/pricing";
 import { EmailCapture } from "@/components/lead-capture";
+import { trackQuizComplete } from "@/components/analytics";
 
 /**
  * The four step ad finder, rebuilt from find-your-ad.php. Same questions,
@@ -285,7 +286,16 @@ export function AdFinder({
           </button>
         )}
         <button
-          onClick={() => (step === STEPS.length - 1 ? setDone(true) : setStep(step + 1))}
+          onClick={() => {
+            if (step < STEPS.length - 1) {
+              setStep(step + 1);
+              return;
+            }
+            setDone(true);
+            // The moment showResults() fired these in find-your-ad.php:
+            // a recommendation is on screen, so the visitor is a lead.
+            trackQuizComplete(businessType, goal);
+          }}
           disabled={!canAdvance}
           className="bg-cta text-navy-950 font-semibold text-[15px] px-6 py-3 rounded-(--radius-btn) hover:bg-cta-hover hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >

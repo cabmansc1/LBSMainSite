@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/nav-bar";
 import { SiteFooter } from "@/components/site-footer";
+import { Analytics } from "@/components/analytics";
+import { ChatWidget } from "@/components/chat-widget";
 import { SITE_NAME } from "@/lib/seo";
 
 const geistSans = Geist({
@@ -41,6 +43,12 @@ export default function RootLayout({
         <NavBar />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        {/* Both sit at the end of <body> and load after hydration, so
+            neither is on the path to first paint. seo_head.php had the
+            trackers in <head> only because PHP had nowhere later to put
+            them. */}
+        <Analytics />
+        <ChatWidget />
       </body>
     </html>
   );
