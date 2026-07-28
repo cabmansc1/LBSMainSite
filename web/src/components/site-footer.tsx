@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NewsletterSignup } from "@/components/newsletter-signup";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
@@ -97,6 +98,9 @@ const localBusinessJsonLd = {
 export function SiteFooter() {
   return (
     <footer className="bg-navy-950 text-[#93A5B8] text-[13.5px] mt-auto">
+      {/* Renders its own band, and nothing at all on the signed-in and
+          admin routes this footer also reaches. */}
+      <NewsletterSignup />
       <div className="mx-auto max-w-[1120px] px-6 py-13 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-3 mb-3.5">
