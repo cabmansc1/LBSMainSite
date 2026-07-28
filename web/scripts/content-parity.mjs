@@ -14,8 +14,14 @@ const argv = process.argv.slice(2);
 const jsonFlag = argv.indexOf("--json");
 const JSON_OUT = jsonFlag > -1 ? argv[jsonFlag + 1] : null;
 // Drop the flag and its value before reading the positional bases.
+// Guard on jsonFlag > -1: without --json it is -1, so `jsonFlag + 1`
+// is 0 and this quietly ate the first positional argument. Both base
+// URLs then shifted by one and the run compared the wrong pair of
+// sites while looking perfectly healthy.
 const args = argv.filter(
-  (a, i) => i !== jsonFlag && i !== jsonFlag + 1 && !a.startsWith("--"),
+  (a, i) =>
+    (jsonFlag === -1 || (i !== jsonFlag && i !== jsonFlag + 1)) &&
+    !a.startsWith("--"),
 );
 const STAGING = args[0] ?? "https://lbs-next-staging-production.up.railway.app";
 const LIVE = args[1] ?? "https://www.lowcountrybusinessspotlight.com";
