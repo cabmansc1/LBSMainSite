@@ -96,10 +96,23 @@ async function grab(url) {
   }
 }
 
+/**
+ * The live sitemap lists .php URLs; the rebuild serves clean ones. Feed
+ * a .php path straight to staging and every page looks like it lost
+ * 100% of its copy, because what came back was a 404.
+ *
+ * Mirrors the .htaccess rewrites: drop the extension, and index.php is
+ * the root.
+ */
+const stagingPath = (path) => {
+  if (path === "/index.php") return "/";
+  return path.replace(/\.php$/, "");
+};
+
 async function compare(path) {
   const [live, next] = await Promise.all([
     grab(LIVE + path),
-    grab(STAGING + path),
+    grab(STAGING + stagingPath(path)),
   ]);
   const issues = [];
 
