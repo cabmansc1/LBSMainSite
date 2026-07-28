@@ -103,6 +103,18 @@ export function PortalNav({
       icon: icon(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />),
     },
     {
+      href: "/account/profile",
+      label: "Profile",
+      short: "Profile",
+      mobile: false,
+      icon: icon(
+        <>
+          <circle cx="12" cy="8" r="3.5" />
+          <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+        </>,
+      ),
+    },
+    {
       href: "/account/billing",
       label: "Billing",
       short: "Billing",

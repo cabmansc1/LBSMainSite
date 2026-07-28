@@ -100,3 +100,109 @@ export async function saveProfilePhone(email: string, phone: string): Promise<bo
  */
 export const looksLikePhone = (v: string) =>
   (v.match(/\d/g) ?? []).length >= 10;
+
+/** The account's own contact details, for the profile screen. */
+export type ProfileDetails = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  /** Best phone we hold, from their most recent order. */
+  phone: string;
+  hasPassword: boolean;
+};
+
+/**
+ * Reads the profile, including whether a password exists.
+ *
+ * Accounts created by a purchase carry a hash bcrypt can never match, so
+ * "has a password" is not the same as "the column is populated". The
+ * marker is what distinguishes them, and the screen needs to know so it
+ * can offer "set a password" rather than "change" to someone who has
+ * never had one.
+ */
+export async function getProfileDetails(
+  userId: number,
+  email: string,
+): Promise<ProfileDetails> {
+  const base: ProfileDetails = {
+    email,
+    firstName: "",
+    lastName: "",
+    phone: "",
+    hasPassword: false,
+  };
+  try {
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT first_name, last_name, password_hash FROM directory_users
+          WHERE id = ${userId} LIMIT 1`,
+    )) as unknown as [
+      { first_name: string; last_name: string; password_hash: string }[],
+    ];
+    const u = rows[0]?.[0];
+    if (u) {
+      base.firstName = u.first_name ?? "";
+      base.lastName = u.last_name ?? "";
+      base.hasPassword = !isUnusableHash(u.password_hash ?? "");
+    }
+    const ph = (await db.execute(
+      sql`SELECT phone FROM lbs_orders
+          WHERE email = ${email} AND phone <> ''
+          ORDER BY id DESC LIMIT 1`,
+    )) as unknown as [{ phone: string }[]];
+    base.phone = ph[0]?.[0]?.phone ?? "";
+  } catch (e) {
+    console.error("[profile] could not read details:", e);
+  }
+  return base;
+}
+
+/**
+ * A hash that cannot match any password, written when an account is
+ * created by a purchase. Recognised rather than guessed at, so the
+ * profile screen never tells someone they have a password they have
+ * never set.
+ */
+export const isUnusableHash = (hash: string) =>
+  !hash || /^\$2[aby]\$\d+\$\.+$/.test(hash);
+
+export async function saveProfileName(
+  userId: number,
+  firstName: string,
+  lastName: string,
+): Promise<boolean> {
+  try {
+    const { db } = await import("@/lib/db");
+    await db.execute(
+      sql`UPDATE directory_users
+          SET first_name = ${firstName.trim().slice(0, 80)},
+              last_name  = ${lastName.trim().slice(0, 80)}
+          WHERE id = ${userId}`,
+    );
+    return true;
+  } catch (e) {
+    console.error("[profile] could not save name:", e);
+    return false;
+  }
+}
+
+/** Cost 12, matching what PHP's password_hash uses, so the legacy site
+ *  accepts a password set here. */
+export async function saveProfilePassword(
+  userId: number,
+  password: string,
+): Promise<boolean> {
+  if (password.length < 8) return false;
+  try {
+    const bcrypt = (await import("bcryptjs")).default;
+    const { db } = await import("@/lib/db");
+    const hash = await bcrypt.hash(password, 12);
+    await db.execute(
+      sql`UPDATE directory_users SET password_hash = ${hash} WHERE id = ${userId}`,
+    );
+    return true;
+  } catch (e) {
+    console.error("[profile] could not save password:", e);
+    return false;
+  }
+}
