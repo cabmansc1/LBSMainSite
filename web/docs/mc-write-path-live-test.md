@@ -191,13 +191,17 @@ it a retry would place the advertiser on the card twice.
 The consequence is that the push gets exactly one attempt, and if it
 fails, the customer has paid, the order says paid, and nobody is on the
 card. Nothing is lost, because you have the order row and the Stripe
-payment, and adding them in MC by hand takes a few seconds. But nothing
-tells you either, beyond a line in the Railway log.
+payment, and adding them in MC by hand takes a few seconds.
 
-That is acceptable while you are watching a deliberate test. It is not
-acceptable at cutover unattended. The fix is a reconciliation check: a
-paid order whose business does not appear on its card in MC. Worth
-building before the live switch, not after.
+**This is the gap the reconciliation check now closes.** `/admin/orders`
+asks Mission Control directly whether each paid order is on its card,
+and leads with anything it cannot find. So the failure is no longer
+silent, which is why this test no longer has to be watched.
+
+One thing that check deliberately will not do: an unreachable Mission
+Control reports "unknown", never "missing". Silence from MC would
+otherwise look identical to all clear. If you see the note saying MC did
+not answer, reload before drawing any conclusion.
 
 ## What this still does not prove
 
