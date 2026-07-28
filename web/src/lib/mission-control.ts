@@ -199,6 +199,18 @@ const ZONE_ALIASES: Record<string, string> = {
   nexton: "summerville",
 };
 
+/**
+ * Card names that name a place more precisely than the card's area does.
+ *
+ * The Kiawah/Seabrook card is filed under Mount Pleasant in Mission
+ * Control, but those islands share ZIP 29455 with Johns Island and mail
+ * with it, so the area is wrong and the name is right. A name only wins
+ * when it matches one of these deliberately, never by guess.
+ */
+const CARD_NAME_ZONES: { match: RegExp; zone: string }[] = [
+  { match: /\bkiawah\b|\bseabrook\b/i, zone: "johns-island" },
+];
+
 /** Live MC statuses: filling = selling now; in_production = closed for
  * print; mailed = history. */
 const isPastStatus = (s: string) =>
@@ -273,6 +285,13 @@ function parseRoutes(notes?: string | null): CardRoute[] {
  * worth reading before giving up.
  */
 function zoneFromCard(area: string, cardName: string) {
+  // A name that names a place beats an area that contradicts it.
+  const named = CARD_NAME_ZONES.find((c) => c.match.test(cardName));
+  if (named) {
+    const zone = ZONES.find((z) => z.slug === named.zone);
+    if (zone) return { slug: zone.slug, name: zone.name };
+  }
+
   const areaSlug = slugify(area);
   const mapped = ZONE_ALIASES[areaSlug] ?? areaSlug;
   if (mapped && mapped !== "other" && ZONES.some((z) => z.slug === mapped)) {
