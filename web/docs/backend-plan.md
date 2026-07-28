@@ -6,6 +6,37 @@ Written 2026-07-28, against the code as it stands on
 The site can already take money. What it cannot do is tell anyone
 anything afterwards. This plan is mostly about that gap.
 
+## Decisions taken
+
+Settled 2026-07-28. The rest of the document assumes these.
+
+| Question | Decision |
+|---|---|
+| Production domain | `lowcountrybusinessspotlight.com`. `SITE_URL` already names it. |
+| Email | Both. Transactional from the app, marketing from GoHighLevel. |
+| Lead capture | GHL owns everyone who wants more info but does not buy. |
+| Login | Emailed numeric code, not a clickable link. |
+| Proof timeout | Never auto-approve. Hold and flag for the owner. |
+| Proof source | Owner designs it and uploads. No generation. |
+| Artwork deadline | Computed from the mail date, because mail dates move. |
+| SMS | Artwork and proof deadlines only. |
+
+Two of those carry consequences worth stating up front.
+
+**Mail dates change, so deadlines are derived and never stored.** The
+artwork deadline is computed from the card's *current* mail date in
+Mission Control every time it is read. Freezing it at purchase would
+mean a card that slips two weeks keeps chasing advertisers against a
+date that no longer exists, and a card that moves earlier stops chasing
+in time. Anything scheduled off a deadline recomputes when the mail date
+moves, and an advertiser whose deadline shifts gets told.
+
+**Nothing auto-approves, so the queue has to be trustworthy.** With no
+timer to fall back on, a proof that goes unanswered is only ever caught
+by the owner seeing it. That makes the work queue in Part 3 load-bearing
+rather than a convenience, and it needs an explicit "approve on their
+behalf" action that records who did it and why.
+
 ---
 
 ## Part 1. What exists today, honestly
@@ -60,7 +91,15 @@ before is good enough to launch on.
    artwork due 24 July, here is your reference, here is the one thing we
    need from you.
 3. **Receipt email within seconds**, from us, with the same three facts
-   and a magic link into the portal. No password to invent.
+   and a sign-in code. No password to invent.
+
+   **Code, not a clickable link.** Type your email, get six digits,
+   type them in, you are in. It survives forwarded emails, corporate
+   link scanners that pre-click links and burn them, and the customer
+   reading the email on their phone while sitting at their desktop.
+   Ten minute expiry, single use, rate limited per email and per IP,
+   and the code is never shown in a URL so it cannot leak through a
+   referrer header.
 4. **Portal shows one open task**: "Send your artwork, or ask us to
    design it." Two buttons, not a form.
 5. **If they ask us to design it**: a short intake (logo, offer, phone,
@@ -156,7 +195,8 @@ pending
   → artwork_received         (advertiser uploads, or we do on their behalf)
   → proof_sent               (we upload a proof)
   → changes_requested        (advertiser asks, loops to proof_sent)
-  → approved                 (advertiser approves, or auto after N days)
+  → approved                 (advertiser approves, or owner approves for
+                              them with a recorded reason)
   → on_card                  (confirmed placed in MC)
   → printing                 (MC card hits in_production)
   → mailed                   (MC card hits mailed)
@@ -170,10 +210,12 @@ design:
   timestamp and note. That table is the advertiser's timeline, your
   audit trail, and the trigger source for notifications. One mechanism,
   three uses.
-- **`approved` can happen on a timer.** If a proof sits unanswered past
-  the artwork deadline, it auto-approves with a warning email, because a
-  print date is a hard date. This needs your sign-off; it is a business
-  decision, not a technical one.
+- **`approved` never happens on a timer.** A proof that sits unanswered
+  escalates in the owner's queue instead, and stays there. The owner can
+  approve on the advertiser's behalf, which writes an event naming them
+  as the actor, so "I never approved that" has an answer. A stalled
+  proof inside 48 hours of print is the highest priority row in the
+  queue, above everything else in Part 3.
 
 ---
 
@@ -189,11 +231,14 @@ the ones that matter.
 
 | Trigger | Channel | Timing | Content |
 |---|---|---|---|
-| Order paid | Email | Immediately | Receipt, mail date, artwork deadline, magic link |
+| Order paid | Email | Immediately | Receipt, mail date, artwork deadline, sign-in code |
 | Artwork not received | Email | 7 days before deadline, then 3, then 1 | One button: upload or ask us to design |
+| Artwork not received | **SMS** | 1 day before deadline | One line and a link. Only where a missed email costs the slot. |
 | Artwork received | Email | Immediately | We have it, proof in 2 business days |
 | Proof ready | Email | Immediately | Preview in context, approve or request changes |
-| Proof not answered | Email | 48h, then 24h before lockout | Warns that it auto-approves |
+| Proof not answered | Email | 48h, then 24h before lockout | We need your yes to print. Says what happens if we do not hear: we call you. |
+| Proof not answered | **SMS** | 24h before lockout | Same, one line. |
+| Mail date moved | Email | On MC change | New mail date, new artwork deadline. Only when a deadline they were given actually changes. |
 | Approved | Email | Immediately | Locked in, what happens next, mail date |
 | Card printing | Email | On MC status change | Short. No action needed. |
 | Mailing this week | Email | Monday of mail week | Watch your QR page, here is the link |
@@ -201,10 +246,12 @@ the ones that matter.
 | Category freed (waitlist) | Email | On MC change | Time-limited claim link |
 | Smaller card priced | Email | When 2,500 goes live | Only to the interest list |
 
-**SMS**: only for the artwork deadline and the proof lockout. Those are
-the two where a missed email costs a print slot. The legacy site already
-has an SMS consent logger, so consent is being captured; check it covers
-transactional.
+**SMS is exactly two messages per campaign**, both above, both where a
+missed email costs a print slot. Anything beyond that and people stop
+reading the two that matter. The legacy site already has an SMS consent
+logger (`includes/sms_consent.php`), so consent is being captured;
+confirm its wording covers transactional sends before the first one
+goes out.
 
 ### To you
 
@@ -212,9 +259,11 @@ transactional.
 |---|---|---|
 | Order paid | Push or SMS | You want to know a sale happened |
 | MC placement failed | Email, immediately | Category is unlocked until fixed |
-| Artwork uploaded | Digest, twice daily | Batch work, not interrupt work |
+| Artwork uploaded | Digest, twice daily | Batch work, not interrupt work. It is your cue to design. |
 | Changes requested on a proof | Email | Someone is waiting on you |
+| **Proof unanswered inside 48h of print** | **SMS** | Nothing auto-approves, so this only gets caught if it reaches you |
 | Card 7 days from artwork deadline with gaps | Email, daily | The chase list |
+| Mail date moved in MC | Email | Every deadline behind it just moved too |
 | Card full | Push | Good news, and it changes what you sell |
 | Refund requested | Email | Time-sensitive |
 | Stripe webhook failing | Email | Silent money problem |
@@ -309,19 +358,33 @@ currently reaches your CRM stops reaching it the day DNS moves.
 GHL can send email and SMS. So can we. Doing both is how people end up
 sending two receipts for one order.
 
-**Recommendation**: transactional from the app, marketing from GHL.
+**Decided: both, split by job.**
 
-- **App sends**: receipt, artwork chase, proof ready, approval, mail
-  week, results. These need order state and a magic link, and GHL does
-  not have either.
-- **GHL sends**: nurture for unconverted leads, seasonal campaigns,
-  reactivation, newsletter.
-- **App tells GHL** about every state change via webhook, so GHL has the
-  segments without owning the sending.
+- **App sends** receipt, artwork chase, proof ready, approval, mail
+  week, results, and the two SMS deadlines. These need order state and a
+  sign-in code, and GHL has neither.
+- **GHL sends** nurture for people who asked but did not buy, seasonal
+  campaigns, reactivation, newsletter.
+- **App tells GHL** about every state change by webhook, so GHL keeps
+  its segments without owning the sending.
 
-This needs your call, because if you would rather all sending happen in
-GHL, the app's job shrinks to firing well-shaped events and the email
-templates move into your existing tooling.
+**GHL owns everyone who wants more info and does not buy.** That is the
+larger half of the funnel and nothing currently catches it. Every form
+on the site feeds GHL: contact, quiz, newsletter, directory signup,
+category waitlist, smaller-card interest. Two more worth adding, because
+they are the highest-intent misses on the site today:
+
+- **Abandoned checkout.** We create a pending order before Stripe and
+  know the email. A pending order with no payment after an hour is
+  someone who picked a zone, picked a size, typed their details and
+  stopped. That is the best lead the site produces and right now it goes
+  in a database row nobody reads.
+- **Category blocked.** Someone who tried to buy a category that was
+  already taken. They are qualified, they wanted in, and there is
+  another card in another month.
+
+Both should reach GHL tagged with what they wanted, so the follow-up can
+say something specific rather than "just checking in".
 
 ---
 
@@ -331,11 +394,13 @@ Each phase is independently shippable and useful on its own.
 
 **Phase A, the launch blockers.** Nothing ships without these.
 
-1. GHL port with payload parity, plus paid orders
-2. Transactional email: receipt with magic link
-3. Magic-link auth, so buying produces a way in without inventing a
+1. GHL port with payload parity, plus paid orders, abandoned checkouts
+   and blocked-category attempts
+2. Transactional email: receipt with the sign-in code
+3. Code-based sign-in, so buying produces a way in without inventing a
    password
-4. Decide what `lbspotlight.com` is for (see the open question below)
+4. Derived artwork deadlines, computed from the current mail date, since
+   every chase and reminder below depends on them
 
 **Phase B, the self-service core.** This is what "self-serve ordering
 and tracking" actually means.
@@ -344,63 +409,75 @@ and tracking" actually means.
 6. Artwork upload in the portal, and "design it for me" intake
 7. Proof upload from admin, approve or request changes in the portal
 8. Portal task list driven by order state
-9. Artwork chase automation
+9. Artwork chase automation, email plus the one deadline SMS
+10. Mail-date change detection, so moved dates re-derive every deadline
+    and tell the advertisers affected
 
-**Phase C, the owner's day.**
+**Phase C, the owner's day.** Load-bearing now that nothing
+auto-approves.
 
-10. `/admin` as a work queue
-11. Card readiness view with one-click chase
-12. Daily digest
-13. MC placement retry sweep
+11. `/admin` as a work queue, stalled proofs at the top
+12. Card readiness view with one-click chase
+13. Approve on behalf, with the actor recorded
+14. Daily digest
+15. MC placement retry sweep
 
 **Phase D, retention.**
 
-14. Results email with scans and calls
-15. One-click rebook
-16. Waitlist auto-notify
-17. Category-gap sales list
+16. Results email with scans and calls
+17. One-click rebook
+18. Waitlist auto-notify
+19. Category-gap sales list
 
 **Phase E, the fun.** Items 10 to 13 in Part 6, cheapest first.
 
 ---
 
-## Open questions
+## Loose ends
 
-These change the work, so they are worth answering before Phase A.
+All six original questions are answered and recorded at the top of this
+document. What is left is not a question for the plan, it is one job on
+a domain outside this repo, plus the things I will need from you as each
+phase starts.
 
-1. ~~Which domain is production?~~ **Settled: `lowcountrybusinessspotlight.com`.**
-   `SITE_URL` already names it, so nothing changes. The live site's
-   clean URLs 404 today and only `.php` works; the rebuild serves clean
-   URLs and 308s all 26 legacy `.php` paths to them, verified.
+### `lbspotlight.com`
 
-   **One loose end, on a domain outside this repo.**
-   `www.lbspotlight.com` is a single-page-app shell that returns 200 for
-   every path, including `/robots.txt` and paths that cannot exist. It
-   carries the title "Lowcountry Business Spotlight", has no `robots`
-   meta, no `X-Robots-Tag` and no canonical, so it is fully indexable
-   under your brand with effectively no crawlable text.
+Confirmed as yours: it houses Mission Control, and the short email
+address is a convenience. Both fine. The issue is only the root domain.
 
-   That is a soft-404 farm on a brand domain, competing with the real
-   site for brand queries. Cheapest fix in order of preference: 301 the
-   whole domain to `lowcountrybusinessspotlight.com`, or serve a real
-   `robots.txt` disallowing everything, or add `noindex`. Worth doing
-   before cutover, because a migration is when search engines look
-   hardest at which domain to trust. Not a code change here, and not
-   mine to make.
+It serves a single-page-app shell that returns 200 for every path,
+including `/robots.txt` and paths that cannot exist. It carries the
+title "Lowcountry Business Spotlight", and has no `robots` meta, no
+`X-Robots-Tag` and no canonical, so it is fully indexable under your
+brand while serving effectively no crawlable text.
 
-2. **Email sending: app, GHL, or both?** See Part 7. Changes roughly a
-   third of the build.
+That is a soft-404 farm on a brand domain competing with the real site
+for brand queries, and cutover is when search engines look hardest at
+which domain to trust. Cheapest fix first: 301 the root to
+`lowcountrybusinessspotlight.com`, or serve a real `robots.txt`
+disallowing everything, or add `noindex`. `mc.lbspotlight.com` is
+unaffected either way, and so is your email.
 
-3. **Auto-approve proofs on the deadline?** Business decision. Protects
-   print dates, mildly risky with a slow customer.
+### Things I will ask for, when we get to them
 
-4. **Should buying create a login automatically**, or stay magic-link
-   only? Magic link is less friction and fewer support requests;
-   accounts are better for repeat advertisers.
+**Phase A.** The GHL webhook URLs currently in the live environment
+(`GHL_WEBHOOK_*`), an email sending provider and its API key, and a
+from-address that passes SPF and DKIM on
+`lowcountrybusinessspotlight.com`. Receipts landing in spam would be
+worse than no receipts.
 
-5. **Who writes the proof?** If your design is in Canva, the proof step
-   is an upload. If we generate proofs from the card preview component,
-   that is real work and worth planning separately.
+**Phase A.** How many days before the mail date artwork is due. I have
+assumed 14 throughout; say the word if it differs.
 
-6. **SMS: transactional only, or does GHL own it?** The legacy consent
-   logger suggests consent exists; worth confirming its scope.
+**Phase B.** One real proof, of any advertiser, so the approval screen
+is built against the actual file type and shape you produce rather than
+a guess.
+
+**Phase B.** What the "design it for us" intake should ask. My starting
+list is logo, offer, phone, website, and anything they do not want
+mentioned; you will know what is actually missing when a job lands on
+your desk.
+
+**Phase D.** Whether QR scan and call data is good enough to put in a
+results email. If the numbers are thin, the email undersells the product
+and is better delayed than sent weak.
