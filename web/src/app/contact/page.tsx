@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ContactForm } from "@/components/contact-form";
 import { Card, SectionHeading } from "@/components/sections";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -74,9 +75,20 @@ export default function ContactPage() {
 
         <section className="pt-16">
           <SectionHeading
+            eyebrow="Send a message"
+            title="Tell us what you are working on"
+            sub="Business name, your name, and an email are all we need. The more you tell us about your industry and neighborhood, the more useful the reply."
+          />
+          <div className="mt-6 max-w-[720px]">
+            <ContactForm />
+          </div>
+        </section>
+
+        <section className="pt-16">
+          <SectionHeading
             eyebrow="Office hours"
             title="Summerville, SC"
-            sub="Monday to Friday, 9am to 5pm Eastern. The lead form with instant zone recommendations arrives with the commerce phase; until then, calls and email reach us directly."
+            sub="Monday to Friday, 9am to 5pm Eastern. Calls, texts, and email all reach us directly."
           />
         </section>
       </div>

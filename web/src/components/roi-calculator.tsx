@@ -9,6 +9,7 @@ import {
   type Reach,
   type SpotSize,
 } from "@/lib/pricing";
+import { EmailCapture } from "@/components/lead-capture";
 
 const RATES = [0.0025, 0.005, 0.0075, 0.01, 0.02, 0.025];
 
@@ -137,6 +138,28 @@ export function RoiCalculator({
           Estimates only. Actual results vary by offer, season, and category.
         </p>
       </aside>
+
+      {/* The numbers on screen are what a follow-up call is about, so
+          they go with the email. The legacy calculator captured nothing
+          at all, which made every visit to this page anonymous. */}
+      <div className="lg:col-span-2 max-w-[720px]">
+        <EmailCapture
+          source="roi"
+          details={{
+            households: homes,
+            adSize: `${active[0].toUpperCase()}${active.slice(1)} (${pricing[reach][active].size})`,
+            price: investment,
+            responseRate: rate,
+            avgSale,
+            customers,
+            revenue,
+            roi,
+          }}
+          blurb="Want these numbers checked against what your category actually costs on the next card? Leave your email."
+          action="Send me the numbers"
+          confirmation="Got it. We will come back with real numbers for your category and neighborhood."
+        />
+      </div>
     </div>
   );
 }

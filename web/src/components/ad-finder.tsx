@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   CORE_SIZES,
+  HOUSEHOLDS,
   POSTCARD_PRICING,
   formatPrice,
   type Reach,
   type SpotSize,
 } from "@/lib/pricing";
+import { EmailCapture } from "@/components/lead-capture";
 
 /**
  * The four step ad finder, rebuilt from find-your-ad.php. Same questions,
@@ -77,6 +79,9 @@ export function AdFinder({
       active ? "border-navy-950 border-[1.5px]" : "border-line hover:border-faint"
     }`;
 
+  const businessLabel = BUSINESS_TYPES.find((b) => b.value === businessType)?.label;
+  const goalLabel = GOALS.find((g) => g.value === goal)?.label;
+
   if (done) {
     return (
       <div className="grid gap-4 max-w-[720px]">
@@ -101,8 +106,8 @@ export function AdFinder({
           </div>
           <dl className="grid sm:grid-cols-2 gap-2.5">
             {[
-              ["Business", BUSINESS_TYPES.find((b) => b.value === businessType)?.label],
-              ["Goal", GOALS.find((g) => g.value === goal)?.label],
+              ["Business", businessLabel],
+              ["Goal", goalLabel],
               ["Reach", `${homes} homes`],
               ["Budget", formatPrice(budget)],
             ].map(([k, v]) => (
@@ -135,6 +140,23 @@ export function AdFinder({
             </button>
           </div>
         </div>
+        {/* Answers plus an email is a lead with a stated budget on it,
+            which is the most qualified thing this site collects short of
+            a sale. save-quiz-lead.php recorded exactly these fields. */}
+        <EmailCapture
+          source="quiz"
+          details={{
+            businessTypeLabel: businessLabel ?? "",
+            goalLabel: goalLabel ?? "",
+            mailingSize: HOUSEHOLDS[reach],
+            budget: budget / 100,
+            recommendedAdSize: `${recommended[0].toUpperCase()}${recommended.slice(1)} (${tier.size})`,
+            recommendedPrice: tier.priceCents / 100,
+          }}
+          blurb="Leave your email and we will follow up with what is still open on the next card in your area."
+          action="Save my result"
+          confirmation="Got it. We have your recommendation on file and will be in touch about what is open near you."
+        />
         <p className="text-[13px] text-muted">
           Category exclusivity, ad design, print, and postage are included at
           every size.
