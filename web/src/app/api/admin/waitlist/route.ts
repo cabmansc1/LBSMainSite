@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { setWaitlistNotified, deleteWaitlistEntries } from "@/lib/waitlist";
+import {
+  setWaitlistNotified,
+  deleteWaitlistEntries,
+  notifyWaitlistEntries,
+} from "@/lib/waitlist";
 
-/** Working the waitlist queue: mark handled, undo, or remove. Admin only. */
+/**
+ * How many notices go out in one click.
+ *
+ * The sends are sequential and paced, so the batch size is really a
+ * budget for how long this request may run. It is also a hand on the
+ * brake: the difference between a mistaken click and an apology to
+ * everyone on the list is worth a second confirmation.
+ */
+const MAX_PER_SEND = 20;
+
+/** Working the waitlist queue: send the notice, mark handled, undo, or remove. Admin only. */
 export async function POST(req: Request) {
   await requireAdmin();
 
@@ -19,6 +33,22 @@ export async function POST(req: Request) {
   }
 
   const action = String(body.action ?? "");
+
+  // The action the button's label promises: mail them, then record it.
+  if (action === "notify") {
+    if (ids.length > MAX_PER_SEND) {
+      return NextResponse.json(
+        { error: `Send to ${MAX_PER_SEND} at a time or fewer.` },
+        { status: 422 },
+      );
+    }
+    const result = await notifyWaitlistEntries(ids);
+    // ok means the run happened, not that every address took it. Who
+    // did and did not go is in outcomes, and the client shows it rather
+    // than collapsing a partial send into one word.
+    return NextResponse.json({ ok: true, ...result });
+  }
+
   if (action === "notified" || action === "waiting") {
     const changed = await setWaitlistNotified(ids, action === "notified");
     return NextResponse.json({ ok: true, changed });

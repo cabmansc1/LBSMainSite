@@ -5,6 +5,7 @@ import {
   countLegacyWaitlistRows,
 } from "@/lib/waitlist";
 import { ZONES } from "@/lib/zones";
+import { emailEnabled } from "@/lib/email";
 import { AdminWaitlist } from "@/components/admin-waitlist";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +30,9 @@ export default async function AdminWaitlistPage() {
         <p className="text-sm text-muted mt-1 max-w-[74ch]">
           Businesses whose category was already taken on the card that was
           filling, plus anyone who asked about the 2,500 household card. Each
-          one was promised a message when something opens. Nothing sends that
-          message automatically yet, so this list is the promise.
+          one was promised a message when something opens. Send notice writes
+          that message and marks the row, and it only marks the addresses the
+          mail actually reached.
         </p>
       </div>
 
@@ -42,7 +44,11 @@ export default async function AdminWaitlistPage() {
         </p>
       )}
 
-      <AdminWaitlist entries={entries} zoneNames={zoneNames} />
+      <AdminWaitlist
+        entries={entries}
+        zoneNames={zoneNames}
+        emailConfigured={emailEnabled()}
+      />
     </div>
   );
 }

@@ -154,6 +154,159 @@ export async function setWaitlistNotified(
   }
 }
 
+async function getWaitlistEntriesByIds(ids: number[]): Promise<WaitlistEntry[]> {
+  if (ids.length === 0) return [];
+  await ensureTable();
+  const { db } = await import("@/lib/db");
+  const rows = (await db.execute(
+    sql`SELECT * FROM lbs_waitlist WHERE id IN (${sql.join(
+      ids.map((id) => sql`${id}`),
+      sql`, `,
+    )})`,
+  )) as unknown as [Record<string, unknown>[]];
+  return (rows[0] ?? []).map(row);
+}
+
+export type WaitlistSendOutcome = {
+  id: number;
+  email: string;
+  sent: boolean;
+  /** Why it did not go, phrased for the person looking at the queue. */
+  error?: string;
+};
+
+export type NotifyWaitlistResult = {
+  outcomes: WaitlistSendOutcome[];
+  sent: number;
+  failed: number;
+  /** Rows actually flipped to notified, which is only the ones that sent. */
+  marked: number;
+};
+
+/**
+ * Sending is what "notified" means, so the send happens first and only
+ * the addresses the provider accepted get the timestamp.
+ *
+ * The old button set the flag on its own, which meant the queue could
+ * reach empty with nobody having heard anything. A timestamp that
+ * records an email nobody sent is worse than no timestamp: it retires
+ * the row, so the promise is never kept and nothing is left to show it
+ * was broken.
+ *
+ * One bad address does not stop the batch. A typo in row three is not a
+ * reason the other nineteen should stay waiting, and every failure comes
+ * back per recipient so the admin can see exactly who to chase. What
+ * does stop the batch is a run of failures from the very start, because
+ * that shape is a dead key or an unverified domain rather than a bad
+ * address, and hammering the provider seventeen more times to collect
+ * seventeen copies of the same error helps nobody.
+ */
+export async function notifyWaitlistEntries(
+  ids: number[],
+): Promise<NotifyWaitlistResult> {
+  const clean = [
+    ...new Set(ids.map(Number).filter((n) => Number.isInteger(n) && n > 0)),
+  ];
+  const empty = { outcomes: [], sent: 0, failed: 0, marked: 0 };
+  if (clean.length === 0) return empty;
+
+  // Imported here rather than at the top of the file: the public
+  // waitlist form imports this module on every submission and has no
+  // use for a mailer or for Mission Control.
+  const [{ sendEmail, emailEnabled }, { composeWaitlistNotice }] =
+    await Promise.all([import("@/lib/email"), import("@/lib/waitlist-email")]);
+
+  let entries: WaitlistEntry[];
+  try {
+    entries = await getWaitlistEntriesByIds(clean);
+  } catch (e) {
+    console.error("[waitlist] could not load rows to notify:", e);
+    return empty;
+  }
+
+  // One lookup for the whole batch. A card that cannot be read just
+  // means the notice goes out without a mail month, which the copy is
+  // written to survive.
+  const mailMonths = new Map<string, string>();
+  try {
+    const { getUpcomingMailings } = await import("@/lib/mission-control");
+    for (const m of await getUpcomingMailings()) {
+      if (m.mailMonth && !mailMonths.has(m.zoneSlug)) {
+        mailMonths.set(m.zoneSlug, m.mailMonth);
+      }
+    }
+  } catch (e) {
+    console.error("[waitlist] no mail dates for notices:", e);
+  }
+
+  const preview = !emailEnabled();
+  const outcomes: WaitlistSendOutcome[] = [];
+  const delivered: number[] = [];
+  let attempted = 0;
+  let abandoned = false;
+
+  for (const entry of entries) {
+    if (abandoned) {
+      outcomes.push({
+        id: entry.id,
+        email: entry.email,
+        sent: false,
+        error: "Not attempted. Sending stopped after the first tries failed.",
+      });
+      continue;
+    }
+
+    // Resend rate limits, and a queue of twenty is exactly the shape
+    // that trips it. A pause between sends costs the admin seconds and
+    // saves a batch that would otherwise come back half 429.
+    if (attempted > 0 && !preview) await new Promise((r) => setTimeout(r, 350));
+
+    const notice = composeWaitlistNotice({
+      zoneSlug: entry.zoneSlug,
+      category: entry.category,
+      businessName: entry.businessName || undefined,
+      mailMonth: mailMonths.get(entry.zoneSlug),
+    });
+
+    const result = await sendEmail({
+      to: entry.email,
+      subject: notice.subject,
+      text: notice.text,
+      html: notice.html,
+    });
+    attempted++;
+
+    if (result.sent) {
+      delivered.push(entry.id);
+      outcomes.push({ id: entry.id, email: entry.email, sent: true });
+    } else {
+      outcomes.push({
+        id: entry.id,
+        email: entry.email,
+        sent: false,
+        // Preview mode is not a fault, but it is also not a send, and
+        // the row stays waiting either way.
+        error: preview
+          ? "Nothing sent. Email is not configured in this environment."
+          : (result.error ?? "The mail provider rejected it."),
+      });
+    }
+
+    if (attempted >= 3 && delivered.length === 0) abandoned = true;
+  }
+
+  const marked = delivered.length
+    ? await setWaitlistNotified(delivered, true)
+    : 0;
+
+  return {
+    outcomes,
+    sent: delivered.length,
+    failed: outcomes.length - delivered.length,
+    marked,
+  };
+}
+
 export async function deleteWaitlistEntries(ids: number[]): Promise<number> {
   const clean = ids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
   if (clean.length === 0) return 0;
