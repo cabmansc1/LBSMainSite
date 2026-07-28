@@ -860,6 +860,15 @@ export async function pushToMissionControl(event: SignupEvent): Promise<void> {
             totalAmount: dollars,
             amountPaid: dollars,
             paymentStatus: "paid",
+            // Both, because they mean different things to MC. Its
+            // handler treats `exclusivity` as a boolean flag, so a
+            // category name sent there is coerced to `true` and the
+            // category never reaches the advertiser row. The site still
+            // resolved it, by enriching from the account MC creates
+            // alongside, but MC's own views read the row and showed a
+            // blank category on a paid advertiser.
+            category: event.category,
+            primaryCategory: event.category,
             exclusivity: event.category,
           }),
         },
