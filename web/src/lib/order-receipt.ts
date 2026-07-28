@@ -236,6 +236,15 @@ async function scheduleFor(order: {
   try {
     const mc = await import("@/lib/mission-control");
 
+    // With Mission Control unconfigured, the lookups below fall back to
+    // the sample schedule in mailings.ts. That is fine on a web page,
+    // which anyone can reload once the real date is known. An email
+    // cannot be taken back: a sample mail date becomes a written promise
+    // about when somebody's ad reaches mailboxes. The copy already reads
+    // properly with no date, so say nothing rather than something made
+    // up.
+    if (!mc.mcEnabled()) return {};
+
     // The card id is the precise answer. A zone can be filling two cards
     // at once, and quoting the zone's soonest date to someone who bought
     // the other one puts a wrong deadline in writing.

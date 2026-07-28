@@ -229,10 +229,19 @@ export async function notifyWaitlistEntries(
   // written to survive.
   const mailMonths = new Map<string, string>();
   try {
-    const { getUpcomingMailings } = await import("@/lib/mission-control");
-    for (const m of await getUpcomingMailings()) {
-      if (m.mailMonth && !mailMonths.has(m.zoneSlug)) {
-        mailMonths.set(m.zoneSlug, m.mailMonth);
+    const { getUpcomingMailings, mcEnabled } = await import(
+      "@/lib/mission-control"
+    );
+    // Unconfigured Mission Control means getUpcomingMailings serves the
+    // sample schedule. A web page showing a sample date can be reloaded
+    // once the real one exists; an email cannot be taken back, and the
+    // date in it is a written promise about when somebody's ad mails.
+    // The notice reads correctly with no month, so it goes without one.
+    if (mcEnabled()) {
+      for (const m of await getUpcomingMailings()) {
+        if (m.mailMonth && !mailMonths.has(m.zoneSlug)) {
+          mailMonths.set(m.zoneSlug, m.mailMonth);
+        }
       }
     }
   } catch (e) {
