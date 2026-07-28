@@ -95,7 +95,16 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
             <i className="w-2 h-2 rounded-full bg-cta inline-block" />
             Selected
           </span>
-          <span>Bubble size reflects households reached</span>
+          {/* This said "households reached", which is the one thing the
+              bubbles do not show. Every card mails the same 5,000 homes
+              whether it goes to Summerville or Sullivan's Island, so
+              that reading told people a small bubble meant a smaller
+              mailing. radiusFor() scales by population, square rooted so
+              area rather than radius carries the number. */}
+          <span>
+            Bubble size reflects each area&rsquo;s population, not the size of
+            the mailing
+          </span>
         </div>
       </div>
 
