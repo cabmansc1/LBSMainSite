@@ -380,22 +380,32 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
 }
 
 /**
- * Category an advertiser holds exclusively on their card.
+ * Category an advertiser holds on their card. Being on the card is what
+ * holds it: the product is one business per category per card, so an
+ * advertiser with a category has that category, full stop.
  *
- * "Other" is not a category to lock: locking it would block every
- * unclassified business at once, and locking nothing lets a competitor
- * onto a card that already has one. Advertisers are enriched from their
+ * This used to require the exclusivity flag to be set, which made the
+ * whole promise depend on a checkbox somebody remembered to tick. It
+ * was not always ticked. Dip My Ryde sat on the Downtown Summerville
+ * card as Automotive with the flag off, so checkout happily offered
+ * Automotive to the next automotive business that came along. Selling
+ * the same category twice costs a refund and the reputation of the one
+ * thing we promise; a wrong block costs a phone call.
+ *
+ * "Other" is still not a category to lock. It is Mission Control's
+ * placeholder for unclassified, and locking it would block every
+ * unclassified business at once. Advertisers are enriched from their
  * account before this runs, so by here the real classification is
  * usually present.
  */
 const advertiserCategory = (a: McAdvertiser): string | undefined => {
-  if (a.exclusivity === true) {
-    return realCategory(a.category) ?? realCategory(a.primaryCategory);
-  }
+  // A string exclusivity names the locked category outright and beats
+  // the advertiser's own classification.
   if (typeof a.exclusivity === "string" && a.exclusivity) {
-    return realCategory(a.exclusivity);
+    const named = realCategory(a.exclusivity);
+    if (named) return named;
   }
-  return undefined;
+  return realCategory(a.category) ?? realCategory(a.primaryCategory);
 };
 
 /* ---------- reads ---------- */
