@@ -241,50 +241,57 @@ export default async function BusinessPage({
           </Card>
 
           {appearances.length > 0 && (
-            <Card className="p-6.5 grid gap-2 bg-brand-tint border-brand/25">
-              <span className="text-xs font-semibold uppercase tracking-widest text-brand-deep">
-                As seen in mailboxes
-              </span>
-              <p className="text-sm text-body leading-relaxed">
-                {b.name} appeared on{" "}
-                {appearances
-                  .map((a) => `the ${a.mailMonth} ${a.zoneName} Spotlight card`)
-                  .join(" and ")}
-                , mailed to local homes.
-              </p>
-              {/* Where that card is in the archive, link to it: the
+            <Card className="p-6.5 grid gap-3 bg-brand-tint border-brand/25">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-brand-deep">
+                  As seen in mailboxes
+                </span>
+                <p className="text-sm text-body leading-relaxed mt-1">
+                  {b.name} has appeared on {appearances.length}{" "}
+                  {appearances.length === 1 ? "Spotlight card" : "Spotlight cards"}{" "}
+                  mailed to local homes.
+                </p>
+              </div>
+              {/* One line per card, because prose joined with "and" turns
+                  unreadable the moment a business has ridden three of
+                  them. Cards in the archive link to their own page: the
                   listing and the card page each make the other real. */}
-              {(() => {
-                const seen = appearances
-                  .map((a) =>
-                    archive.find(
-                      (c) =>
-                        c.zoneName === a.zoneName && c.mailMonth === a.mailMonth,
-                    ),
-                  )
-                  .filter((c): c is (typeof archive)[number] => !!c);
-                return seen.length > 0 ? (
-                  <ul className="grid gap-1.5">
-                    {seen.map((c) => (
-                      <li key={c.slug}>
+              <ul className="grid gap-1.5">
+                {appearances.map((a) => {
+                  const inArchive = archive.find(
+                    (c) => c.zoneName === a.zoneName && c.mailMonth === a.mailMonth,
+                  );
+                  return (
+                    <li
+                      key={`${a.zoneName}-${a.mailMonth}`}
+                      className="flex items-baseline gap-2 text-sm"
+                    >
+                      <span
+                        aria-hidden
+                        className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 translate-y-[-2px]"
+                      />
+                      {inArchive ? (
                         <Link
-                          href={`/cards/${c.slug}`}
-                          className="text-[13px] font-semibold text-brand-deep hover:underline"
+                          href={`/cards/${inArchive.slug}`}
+                          className="font-semibold text-brand-deep hover:underline"
                         >
-                          See the {c.cardName ?? c.zoneName} card, {c.mailMonth}
+                          {a.zoneName}, {a.mailMonth}
                         </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <Link
-                    href="/gallery"
-                    className="text-[13px] font-semibold text-brand-deep hover:underline"
-                  >
-                    Browse past cards
-                  </Link>
-                );
-              })()}
+                      ) : (
+                        <span className="text-body">
+                          {a.zoneName}, {a.mailMonth}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <Link
+                href="/gallery"
+                className="text-[13px] font-semibold text-brand-deep hover:underline"
+              >
+                Browse past cards
+              </Link>
             </Card>
           )}
 
