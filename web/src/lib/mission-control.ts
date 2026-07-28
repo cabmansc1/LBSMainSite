@@ -35,22 +35,42 @@ import { ZONES } from "@/lib/zones";
 export const mcEnabled = () => !!process.env.MC_BASE_URL;
 
 /**
- * The key may be stored under any of the tiered names Mission Control
- * issues. Read-only is enough for everything the public site does; the
- * write-scoped key is only needed at cutover.
+ * Mission Control issues three tiers, and the key is chosen by what it
+ * can do rather than by the order somebody happened to write them in.
+ *
+ *   MC_API_KEY            master:   everything
+ *   MC_API_KEY_WRITE      write:    all GET/HEAD, plus exactly the three
+ *                                   POSTs this adapter needs
+ *   MC_API_KEY_READONLY   readonly: all GET/HEAD, no writes
+ *
+ * The write tier is a superset of readonly, so it must be preferred over
+ * it. The old order put MC_API_KEY_WRITE last, behind readonly, which
+ * meant a variable named for writing could never take effect while a
+ * read-only key existed. Setting the write key did nothing, gave no
+ * error, and looked exactly like setting it correctly.
  */
-export const mcKey = () => {
-  // Trimmed, because a key pasted into a hosting dashboard picks up
-  // whitespace and newlines with no visible sign. A stray newline makes
-  // an invalid HTTP header, which throws inside fetch and takes down
-  // every read as well as every write: no cards, no categories, no
-  // availability anywhere on the site.
-  const raw =
-    process.env.MC_API_KEY ||
-    process.env.MC_API_KEY_READONLY ||
-    process.env.MC_API_KEY_WRITE;
-  return raw?.trim() || undefined;
+export const mcKey = () => rawKey()?.trim() || undefined;
+
+/**
+ * Which variable supplied the key. Reported by /api/version, because
+ * "the key is wrong" and "the key came from somewhere you did not
+ * expect" look identical from outside and one of them cost us a day.
+ */
+export const mcKeySource = (): string => {
+  if (process.env.MC_API_KEY?.trim()) return "MC_API_KEY (master)";
+  if (process.env.MC_API_KEY_WRITE?.trim()) return "MC_API_KEY_WRITE (read+write)";
+  if (process.env.MC_API_KEY_READONLY?.trim()) return "MC_API_KEY_READONLY (read only)";
+  return "none";
 };
+
+const rawKey = () =>
+  // Trimmed at the boundary: a key pasted into a hosting dashboard picks
+  // up whitespace with no visible sign, and a stray newline is not a
+  // valid header value, which throws inside fetch and takes down every
+  // read as well as every write.
+  process.env.MC_API_KEY ||
+  process.env.MC_API_KEY_WRITE ||
+  process.env.MC_API_KEY_READONLY;
 
 /**
  * Mission Control is a different box on a different network, and a page
