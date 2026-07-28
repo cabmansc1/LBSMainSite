@@ -66,7 +66,14 @@ export default async function BusinessPage({
     dealsForBusiness(b.name).catch(() => []),
     getPastCards({ publishedOnly: true }).catch(() => []),
     advertiserAppearances({ name: b.name }).catch(
-      () => [] as { zoneName: string; mailMonth: string; mailDateIso: string }[],
+      () =>
+        [] as {
+          cardId: string;
+          cardName?: string;
+          zoneName: string;
+          mailMonth: string;
+          mailDateIso: string;
+        }[],
     ),
   ]);
 
@@ -261,11 +268,23 @@ export default async function BusinessPage({
               <ul className="grid gap-1.5">
                 {appearances.slice(0, 6).map((a) => {
                   const inArchive = archive.find(
-                    (c) => c.zoneName === a.zoneName && c.mailMonth === a.mailMonth,
+                    (c) =>
+                      c.mcCardId === a.cardId ||
+                      (c.zoneName === a.zoneName && c.mailMonth === a.mailMonth),
                   );
+                  // Two cards can share a zone and a month, so name the
+                  // card when that happens rather than printing the same
+                  // line twice.
+                  const sameMonth = appearances.filter(
+                    (x) => x.zoneName === a.zoneName && x.mailMonth === a.mailMonth,
+                  );
+                  const label =
+                    sameMonth.length > 1 && a.cardName
+                      ? `${a.zoneName}, ${a.mailMonth} (${a.cardName})`
+                      : `${a.zoneName}, ${a.mailMonth}`;
                   return (
                     <li
-                      key={`${a.zoneName}-${a.mailMonth}`}
+                      key={a.cardId}
                       className="flex items-baseline gap-2 text-sm"
                     >
                       <span
@@ -277,12 +296,10 @@ export default async function BusinessPage({
                           href={`/cards/${inArchive.slug}`}
                           className="font-semibold text-brand-deep hover:underline"
                         >
-                          {a.zoneName}, {a.mailMonth}
+                          {label}
                         </Link>
                       ) : (
-                        <span className="text-body">
-                          {a.zoneName}, {a.mailMonth}
-                        </span>
+                        <span className="text-body">{label}</span>
                       )}
                     </li>
                   );

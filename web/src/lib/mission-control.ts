@@ -564,11 +564,25 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
 export async function advertiserAppearances(match: {
   name?: string;
   email?: string;
-}): Promise<{ zoneName: string; mailMonth: string; mailDateIso: string }[]> {
+}): Promise<
+  {
+    cardId: string;
+    cardName?: string;
+    zoneName: string;
+    mailMonth: string;
+    mailDateIso: string;
+  }[]
+> {
   const cards = await fetchCards();
   if (!cards) return [];
   const email = match.email?.toLowerCase();
-  const seen: { zoneName: string; mailMonth: string; mailDateIso: string }[] = [];
+  const seen: {
+    cardId: string;
+    cardName?: string;
+    zoneName: string;
+    mailMonth: string;
+    mailDateIso: string;
+  }[] = [];
   for (const card of cards) {
     for (const a of card.advertisers) {
       // Names differ between the two systems more often than not, so an
@@ -578,6 +592,8 @@ export async function advertiserAppearances(match: {
         (match.name && a.businessName && sameBusiness(match.name, a.businessName))
       ) {
         seen.push({
+          cardId: String(card.id),
+          cardName: card.cardName || undefined,
           zoneName: card.zoneName,
           mailMonth: card.mailMonth,
           mailDateIso: card.mailDateIso,
@@ -586,12 +602,13 @@ export async function advertiserAppearances(match: {
       }
     }
   }
-  // A zone can print two cards in the same month, and a business on both
-  // is still one appearance to a reader. Newest first.
+  // Deduped by card, not by zone and month. A zone can print two cards
+  // in the same month, and a business on both really did ride two cards;
+  // collapsing them undercounts what they paid for. The listing tells
+  // them apart by card name. Newest first.
   const unique = new Map<string, (typeof seen)[number]>();
   for (const a of seen) {
-    const key = `${a.zoneName}|${a.mailMonth}`.toLowerCase();
-    if (!unique.has(key)) unique.set(key, a);
+    if (!unique.has(a.cardId)) unique.set(a.cardId, a);
   }
   return [...unique.values()].sort((a, b) =>
     (b.mailDateIso ?? "").localeCompare(a.mailDateIso ?? ""),

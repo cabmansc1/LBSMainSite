@@ -22,7 +22,9 @@ export type Zone = {
 };
 
 export const ZONES: Zone[] = [
-  { slug: "summerville", name: "Summerville", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29483", "29485", "29486"], population: 130_000 /* 52,000+ households on our page, at 2.5 each */ },
+  { slug: "summerville", name: "Summerville", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29483", "29485", "29486"], population: 160_000 /* 29483, 29485 and 29486 reach across Dorchester,
+      Berkeley and Charleston counties, which is wider than the 52,000+
+      households our zone page counts */ },
   { slug: "mount-pleasant", name: "Mount Pleasant", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29464", "29466"], population: 92_600 /* published on the zone page */ },
   { slug: "daniel-island", name: "Daniel Island & Clements Ferry", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29492"], population: 37_500 /* 15,000+ homes on our page, at 2.5 each */ },
   { slug: "north-charleston", name: "North Charleston", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29405", "29406", "29418", "29420"], population: 115_000 /* published on the zone page */ },
