@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CardPreview } from "@/components/card-preview";
+import { CategoryPicker } from "@/components/category-picker";
 import type { Orientation } from "@/lib/card-capacity";
 import {
   ALL_SIZES,
@@ -234,26 +235,19 @@ export function PostcardCheckout({
             <label htmlFor="pc-cat" className="text-[12.5px] font-semibold text-body block mb-1.5">
               Industry category
             </label>
-            <select
+            {/* Searchable rather than a native select: the category list
+                runs to the low hundreds, and scrolling to find yours is
+                the worst moment in the purchase. Taken categories stay
+                listed and marked, so exclusivity reads as the product
+                rather than as a missing option. */}
+            <CategoryPicker
               id="pc-cat"
+              categories={categories}
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg bg-white focus:outline-none focus:border-navy-950"
-            >
-              <option value="">Choose a category</option>
-              {categories.map((c) => (
-                <option
-                  key={c}
-                  value={c}
-                  // Taken categories stay visible so the exclusivity is
-                  // obvious, but cannot be chosen.
-                  disabled={isTaken(c)}
-                >
-                  {c}
-                  {isTaken(c) ? " (taken on this card)" : ""}
-                </option>
-              ))}
-            </select>
+              onChange={setCategory}
+              isTaken={isTaken}
+              placeholder="Search categories..."
+            />
           </div>
           {takenHere.length > 0 && (
             <div className="bg-surface border border-line rounded-[10px] px-4 py-3.5 grid gap-2.5">
