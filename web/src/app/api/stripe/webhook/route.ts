@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe, stripeEnabled } from "@/lib/stripe";
 import { pushToMissionControl } from "@/lib/mission-control";
 import { markPaid, markRefunded } from "@/lib/orders";
+import { findOrCreatePortalUser } from "@/lib/auth";
 
 /**
  * Stripe webhook: the single source of truth for payment state.
@@ -60,6 +61,21 @@ export async function POST(req: Request) {
         // Only push the first time, so a retried webhook cannot place the
         // same advertiser on a card twice in Mission Control.
         if (firstTime) {
+          // Buying is what creates the account. Without this the
+          // customer pays and then meets a login wall, which is the
+          // dead end the success page used to point them at.
+          //
+          // Fire and forget, and it returns null rather than throwing:
+          // a payment must never fail because a login could not be
+          // made. The same lookup runs at sign-in, so a failure here
+          // self-heals the first time they ask for a code.
+          const buyerEmail = s.customer_email ?? md.email;
+          if (buyerEmail) {
+            void findOrCreatePortalUser(buyerEmail).catch((e) =>
+              console.error("[stripe] could not create portal user:", e),
+            );
+          }
+
           void pushToMissionControl({
             type: "order_paid",
             businessName: md.businessName,

@@ -165,3 +165,90 @@ export async function verifyCredentials(
     ? { id: user.id, email: user.email, firstName: user.first_name ?? "" }
     : null;
 }
+
+/**
+ * The portal account for an email, creating one if the address has
+ * earned it.
+ *
+ * Buying is what creates an account, so by the time someone signs in
+ * they normally have one. The order lookup here is for the people who
+ * bought before that existed, and for the case where the webhook's
+ * account creation failed while the payment succeeded. Without it those
+ * customers would have orders they could never see.
+ *
+ * An address with no account, no orders and no listing gets nothing.
+ * Sign-in must not be a way to mint accounts for arbitrary emails.
+ */
+export async function findOrCreatePortalUser(
+  emailRaw: string,
+): Promise<SessionUser | null> {
+  const email = emailRaw.trim().toLowerCase();
+  if (!email) return null;
+
+  if (!process.env.DB_HOST) {
+    return email === PREVIEW_USER.email ? PREVIEW_USER.user : null;
+  }
+
+  const { db } = await import("@/lib/db");
+  const { sql } = await import("drizzle-orm");
+
+  const existing = (await db.execute(
+    sql`SELECT id, email, first_name FROM directory_users
+        WHERE email = ${email} AND is_active = 1 LIMIT 1`,
+  )) as unknown as [{ id: number; email: string; first_name: string }[]];
+  const found = existing[0]?.[0];
+  if (found) {
+    return { id: found.id, email: found.email, firstName: found.first_name ?? "" };
+  }
+
+  // Earned it? An order or a directory listing under this address.
+  const claim = (await db.execute(
+    sql`SELECT
+          (SELECT COUNT(*) FROM lbs_orders WHERE email = ${email}) AS orders,
+          (SELECT COUNT(*) FROM directory_businesses WHERE email = ${email}) AS listings`,
+  )) as unknown as [{ orders: number | string; listings: number | string }[]];
+  const row = claim[0]?.[0];
+  if (Number(row?.orders ?? 0) === 0 && Number(row?.listings ?? 0) === 0) {
+    return null;
+  }
+
+  return createPortalUser(email);
+}
+
+/**
+ * Creates a portal login for an address.
+ *
+ * password_hash gets a value bcrypt can never match, rather than being
+ * left empty. An empty hash is the kind of thing a future comparison
+ * treats as "any password works", and this table is also read by the
+ * legacy PHP site, which we are not changing. Codes are the way in
+ * until the owner sets a password of their own.
+ */
+export async function createPortalUser(
+  emailRaw: string,
+  firstName = "",
+): Promise<SessionUser | null> {
+  const email = emailRaw.trim().toLowerCase();
+  if (!email) return null;
+  try {
+    const { db } = await import("@/lib/db");
+    const { sql } = await import("drizzle-orm");
+    const unusable = `$2a$12$${"." .repeat(53)}`;
+    await db.execute(
+      sql`INSERT INTO directory_users (email, password_hash, first_name, is_active)
+          VALUES (${email}, ${unusable}, ${firstName}, 1)`,
+    );
+    const rows = (await db.execute(
+      sql`SELECT id, email, first_name FROM directory_users
+          WHERE email = ${email} ORDER BY id DESC LIMIT 1`,
+    )) as unknown as [{ id: number; email: string; first_name: string }[]];
+    const u = rows[0]?.[0];
+    return u ? { id: u.id, email: u.email, firstName: u.first_name ?? "" } : null;
+  } catch (e) {
+    // Never fatal to the caller. A checkout must not fail because a
+    // login could not be created, and a sign-in attempt should say
+    // "could not sign you in" rather than surface a database error.
+    console.error("[auth] could not create portal user:", e);
+    return null;
+  }
+}

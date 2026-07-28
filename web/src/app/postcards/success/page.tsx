@@ -20,30 +20,12 @@ export default async function CheckoutSuccessPage({
   const sp = await searchParams;
   const isPreview = sp.preview === "1";
 
-  // Buying does not create a login, so this page used to offer everyone
-  // a "Go to your dashboard" button that bounced a brand new customer
-  // to a login screen they had no password for, seconds after they
-  // paid. Ask who they are before offering it.
+  // The order is read for the email, so the sign-in link can carry it
+  // and the customer never retypes what they just typed at checkout.
   const session = await getSession().catch(() => null);
   const order = sp.session_id
     ? await getOrderBySession(sp.session_id).catch(() => null)
     : null;
-
-  // Prefilled so the team can find the order without a back and forth,
-  // and so the customer does not have to explain themselves twice.
-  const setupHref =
-    "mailto:hello@lbspotlight.com" +
-    `?subject=${encodeURIComponent("Dashboard access" + (order?.reference ? ` for order ${order.reference}` : ""))}` +
-    `&body=${encodeURIComponent(
-      [
-        "Please set up my advertiser dashboard.",
-        order?.businessName ? `Business: ${order.businessName}` : "",
-        order?.email ? `Email: ${order.email}` : "",
-        order?.reference ? `Order: ${order.reference}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    )}`;
 
   return (
     <div className="mx-auto max-w-[640px] px-6 py-20">
@@ -74,28 +56,30 @@ export default async function CheckoutSuccessPage({
         {!isPreview && !session && (
           <p className="text-[13.5px] text-body max-w-[46ch] bg-surface border border-line rounded-[10px] px-4 py-3">
             <b>What happens next.</b> We will email you about your ad artwork,
-            and design it for you if you would rather. You do not need an
-            account for any of that. If you want a dashboard to track this
-            campaign and your future ones, ask us and we will set it up.
+            and design it for you if you would rather. Your dashboard is
+            already set up: sign in with{" "}
+            {order?.email ? <b>{order.email}</b> : "the email you just used"}{" "}
+            and we will send you a code. No password to invent.
           </p>
         )}
 
         <div className="flex gap-3 flex-wrap justify-center mt-2">
-          {session ? (
-            <Link
-              href="/account"
-              className="bg-navy-950 text-white font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:bg-navy-800 transition-colors"
-            >
-              Go to your dashboard
-            </Link>
-          ) : (
-            <a
-              href={setupHref}
-              className="bg-navy-950 text-white font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:bg-navy-800 transition-colors"
-            >
-              Set up my dashboard
-            </a>
-          )}
+          {/* Signed in already, or straight to sign-in with the email
+              they just paid with filled in. Either way the button means
+              the same thing now, which it did not before the account
+              was created at purchase. */}
+          <Link
+            href={
+              session
+                ? "/account"
+                : order?.email
+                  ? `/login?email=${encodeURIComponent(order.email)}`
+                  : "/login"
+            }
+            className="bg-navy-950 text-white font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:bg-navy-800 transition-colors"
+          >
+            Go to your dashboard
+          </Link>
           <Link
             href="/"
             className="bg-white text-ink border border-line-strong font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:border-faint transition-colors"
