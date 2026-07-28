@@ -3,6 +3,7 @@ import { getStripe, stripeEnabled } from "@/lib/stripe";
 import { pushToMissionControl } from "@/lib/mission-control";
 import { markPaid, markRefunded } from "@/lib/orders";
 import { findOrCreatePortalUser } from "@/lib/auth";
+import { sendOrderReceipt } from "@/lib/order-receipt";
 
 /**
  * Stripe webhook: the single source of truth for payment state.
@@ -91,6 +92,21 @@ export async function POST(req: Request) {
             amountCents: s.amount_total ?? undefined,
             reference: md.reference ?? s.id,
           });
+
+          // Inside the same guard as the placement, for the same reason:
+          // Stripe delivers an event more than once, and a second
+          // receipt for one payment reads as a second charge.
+          //
+          // Fire and forget, and it swallows its own failures. Returning
+          // a non-2xx because Resend was down would make Stripe retry
+          // the whole event, and the retry re-runs everything above to
+          // fix an email that is not worth re-running any of it.
+          void sendOrderReceipt({
+            sessionId: s.id,
+            email: s.customer_email ?? md.email,
+            amountCents: s.amount_total ?? undefined,
+            metadata: md,
+          }).catch((e) => console.error("[stripe] receipt failed:", e));
         }
         break;
       }
