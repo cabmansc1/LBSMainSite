@@ -16,12 +16,12 @@ Settled 2026-07-28. The rest of the document assumes these.
 | Email | Both. Transactional from the app, marketing from GoHighLevel. |
 | Lead capture | GHL owns everyone who wants more info but does not buy. |
 | Login | Emailed numeric code, not a clickable link. |
-| Proof timeout | Never auto-approve. Hold and flag for the owner. |
+| Proof timeout | Auto-approve after two warnings, so print dates hold. |
 | Proof source | Owner designs it and uploads. No generation. |
 | Artwork deadline | Computed from the **tentative mail date**, 14 days before. |
 | SMS | Artwork and proof deadlines only. |
 
-Two of those carry consequences worth stating up front.
+One of those carries a consequence worth stating up front.
 
 **Mail dates are tentative, and the site now says so.** Upcoming cards
 read "Tentatively mails September 2026" rather than "Mails September
@@ -41,12 +41,6 @@ whose deadline shifts gets told.
 `ARTWORK_LEAD_DAYS` and `artworkDeadlineFrom()` live in
 `lib/mailings.ts` alongside the wording, so the number and the promise
 cannot drift apart.
-
-**Nothing auto-approves, so the queue has to be trustworthy.** With no
-timer to fall back on, a proof that goes unanswered is only ever caught
-by the owner seeing it. That makes the work queue in Part 3 load-bearing
-rather than a convenience, and it needs an explicit "approve on their
-behalf" action that records who did it and why.
 
 ---
 
@@ -152,8 +146,8 @@ counts; `/admin/orders` has a table. Neither says *do this next*.
 1. Paid orders not on a card in Mission Control (built, currently on the
    orders page, belongs here too)
 2. Paid orders with no artwork, sorted by artwork deadline ascending
-3. Proofs waiting on you, and proofs waiting on the advertiser more than
-   3 days
+3. Proofs waiting on you, and proofs the advertiser cannot have seen
+   (bounced email), which never auto-approve
 4. Cards inside 7 days of artwork deadline with open spots
 5. Refund requests
 6. Category waitlist entries that are now free
@@ -221,12 +215,16 @@ design:
   timestamp and note. That table is the advertiser's timeline, your
   audit trail, and the trigger source for notifications. One mechanism,
   three uses.
-- **`approved` never happens on a timer.** A proof that sits unanswered
-  escalates in the owner's queue instead, and stays there. The owner can
-  approve on the advertiser's behalf, which writes an event naming them
-  as the actor, so "I never approved that" has an answer. A stalled
-  proof inside 48 hours of print is the highest priority row in the
-  queue, above everything else in Part 3.
+- **`approved` can happen on a timer.** A proof unanswered by the
+  artwork deadline auto-approves, after warnings at 48 and 24 hours that
+  say plainly that it will. A print date is a hard date, and an ad that
+  runs as proofed beats an ad that does not run.
+
+  Two guardrails. It only fires where the advertiser has *seen* the
+  proof, so an email that bounced escalates to the owner instead of
+  approving silently. And the auto-approval writes an event naming the
+  timer as the actor, distinct from the owner approving on someone's
+  behalf, so the record says which of the two happened.
 
 ---
 
@@ -247,7 +245,7 @@ the ones that matter.
 | Artwork not received | **SMS** | 1 day before deadline | One line and a link. Only where a missed email costs the slot. |
 | Artwork received | Email | Immediately | We have it, proof in 2 business days |
 | Proof ready | Email | Immediately | Preview in context, approve or request changes |
-| Proof not answered | Email | 48h, then 24h before lockout | We need your yes to print. Says what happens if we do not hear: we call you. |
+| Proof not answered | Email | 48h, then 24h before lockout | We need your yes to print. Says plainly that it approves itself if we do not hear. |
 | Proof not answered | **SMS** | 24h before lockout | Same, one line. |
 | Mail date moved | Email | On MC change | New mail date, new artwork deadline. Only when a deadline they were given actually changes. |
 | Approved | Email | Immediately | Locked in, what happens next, mail date |
@@ -272,7 +270,7 @@ goes out.
 | MC placement failed | Email, immediately | Category is unlocked until fixed |
 | Artwork uploaded | Digest, twice daily | Batch work, not interrupt work. It is your cue to design. |
 | Changes requested on a proof | Email | Someone is waiting on you |
-| **Proof unanswered inside 48h of print** | **SMS** | Nothing auto-approves, so this only gets caught if it reaches you |
+| Proof auto-approved on the timer | Email | So a print you did not personally sign off is never a surprise |
 | Card 7 days from artwork deadline with gaps | Email, daily | The chase list |
 | Mail date moved in MC | Email | Every deadline behind it just moved too |
 | Card full | Push | Good news, and it changes what you sell |
@@ -424,10 +422,9 @@ and tracking" actually means.
 10. Mail-date change detection, so moved dates re-derive every deadline
     and tell the advertisers affected
 
-**Phase C, the owner's day.** Load-bearing now that nothing
-auto-approves.
+**Phase C, the owner's day.**
 
-11. `/admin` as a work queue, stalled proofs at the top
+11. `/admin` as a work queue
 12. Card readiness view with one-click chase
 13. Approve on behalf, with the actor recorded
 14. Daily digest
