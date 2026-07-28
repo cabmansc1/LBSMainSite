@@ -23,7 +23,7 @@ export async function GET() {
       // a 307 to /login. Two outages were diagnosed slowly because of
       // that. Report what actually happened at the end of the chain.
       const clean = key?.trim();
-      const headers = clean
+      const headers: Record<string, string> = clean
         ? { "x-api-key": clean, Authorization: `Bearer ${clean}` }
         : {};
       let res = await fetch(`${process.env.MC_BASE_URL}/api/store`, {
