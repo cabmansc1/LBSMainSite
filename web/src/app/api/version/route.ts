@@ -26,7 +26,20 @@ export async function GET() {
       const loc = res.headers.get("location");
       return loc ? `http ${res.status} -> ${loc}` : `http ${res.status}`;
     } catch (e) {
-      return `unreachable: ${String(e).slice(0, 120)}`;
+      // Never the raw error. This endpoint is public and unauthenticated,
+      // and a malformed key produces a TypeError from Headers.append that
+      // quotes the offending value in full. That published a live API key
+      // to anyone who asked for /api/version.
+      //
+      // Report the class of failure, which is all this endpoint is for,
+      // and keep the detail in the server log where it belongs.
+      console.error("[version] Mission Control unreachable:", e);
+      const msg = String(e);
+      if (/Headers\.append|invalid header|ERR_INVALID_HTTP_TOKEN/i.test(msg)) {
+        return "misconfigured: MC_API_KEY is not a valid header value (stray newline or the variable name pasted into the value?)";
+      }
+      if (/timeout|abort/i.test(msg)) return "unreachable: timed out";
+      return "unreachable";
     }
   })();
 

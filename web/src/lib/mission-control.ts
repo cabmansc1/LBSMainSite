@@ -39,10 +39,18 @@ export const mcEnabled = () => !!process.env.MC_BASE_URL;
  * issues. Read-only is enough for everything the public site does; the
  * write-scoped key is only needed at cutover.
  */
-const mcKey = () =>
-  process.env.MC_API_KEY ??
-  process.env.MC_API_KEY_READONLY ??
-  process.env.MC_API_KEY_WRITE;
+const mcKey = () => {
+  // Trimmed, because a key pasted into a hosting dashboard picks up
+  // whitespace and newlines with no visible sign. A stray newline makes
+  // an invalid HTTP header, which throws inside fetch and takes down
+  // every read as well as every write: no cards, no categories, no
+  // availability anywhere on the site.
+  const raw =
+    process.env.MC_API_KEY ||
+    process.env.MC_API_KEY_READONLY ||
+    process.env.MC_API_KEY_WRITE;
+  return raw?.trim() || undefined;
+};
 
 /**
  * Mission Control is a different box on a different network, and a page
