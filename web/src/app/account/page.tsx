@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
 import { Card } from "@/components/sections";
+import { ProfileGaps } from "@/components/profile-gaps";
+import { missingProfileFields } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -19,6 +21,9 @@ export default async function AccountHomePage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const ctx = await getPortalContext(session);
+  // Contact details checkout let them skip. Asked for here, where the
+  // sale is banked and a form field costs nothing.
+  const gaps = await missingProfileFields(session.email).catch(() => []);
 
   const business = ctx.listings[0];
   const nextCard = [...ctx.currentCards].sort((a, b) =>
@@ -27,7 +32,7 @@ export default async function AccountHomePage() {
 
   const stats = [
     {
-      label: "Next mailing",
+      label: "Tentative mail date",
       value: nextCard?.mailMonth ?? "None booked",
       note: nextCard ? `${nextCard.zoneName} card` : "Reserve a spot to start",
       due: !!nextCard,
@@ -59,6 +64,8 @@ export default async function AccountHomePage() {
           {business ? `Managing ${business.name}.` : "Here is your account."}
         </p>
       </div>
+
+      <ProfileGaps fields={gaps} />
 
       {ctx.warnings.map((w) => (
         <p
@@ -170,8 +177,8 @@ export default async function AccountHomePage() {
                   </b>
                   <p className="text-[12.5px] text-muted">
                     {c.adSize}
-                    {money(c.amountCents) ? ` · ${money(c.amountCents)}` : ""} ·{" "}
-                    {c.households} homes
+                    {money(c.amountCents) ? ` · ${money(c.amountCents)}` : ""}
+                    {c.households ? ` · ${c.households} homes` : ""}
                   </p>
                 </div>
                 <Link
