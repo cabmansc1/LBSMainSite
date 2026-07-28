@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mcEnabled } from "@/lib/mission-control";
+import { mcEnabled, mcKey } from "@/lib/mission-control";
 import { stripeEnabled } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -12,17 +12,19 @@ export async function GET() {
   const mcStatus = await (async () => {
     if (!process.env.MC_BASE_URL) return "no base url";
     try {
-      const key =
-        process.env.MC_API_KEY ??
-        process.env.MC_API_KEY_READONLY ??
-        process.env.MC_API_KEY_WRITE;
       // Follow the way the adapter does, rather than reporting the first
       // hop. MC answers /api/store with a 308 to the canonical path, so
       // "http 308" was being read as healthy when it says nothing at
       // all: a key that cannot read produces exactly the same 308, then
       // a 307 to /login. Two outages were diagnosed slowly because of
       // that. Report what actually happened at the end of the chain.
-      const clean = key?.trim();
+      // The adapter's own key resolution, not a copy of it. This route
+      // had its own `??` chain, which differs from the adapter's `||`
+      // on exactly one input: a variable saved blank rather than
+      // deleted. `??` keeps the empty string and reports auth failed
+      // while the site is working perfectly on the fallback key, which
+      // is precisely the false alarm a health check must never raise.
+      const clean = mcKey();
       const headers: Record<string, string> = clean
         ? { "x-api-key": clean, Authorization: `Bearer ${clean}` }
         : {};

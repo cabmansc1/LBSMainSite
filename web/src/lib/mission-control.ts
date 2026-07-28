@@ -39,7 +39,7 @@ export const mcEnabled = () => !!process.env.MC_BASE_URL;
  * issues. Read-only is enough for everything the public site does; the
  * write-scoped key is only needed at cutover.
  */
-const mcKey = () => {
+export const mcKey = () => {
   // Trimmed, because a key pasted into a hosting dashboard picks up
   // whitespace and newlines with no visible sign. A stray newline makes
   // an invalid HTTP header, which throws inside fetch and takes down
