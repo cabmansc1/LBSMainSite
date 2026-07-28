@@ -55,6 +55,10 @@ const PLACEMENT: Omit<MapPosition, "r">[] = [
   { slug: "summerville", x: 497, y: 282 },
   { slug: "moncks-corner", x: 795, y: 131 },
   { slug: "goose-creek", x: 762, y: 302, label: "Goose Creek" },
+  // North of North Charleston along the Cooper River, tucked under Goose
+  // Creek. Label above, because below runs straight into the base map's
+  // printed North Charleston.
+  { slug: "hanahan", x: 862, y: 355, label: "Hanahan", labelAbove: true },
   { slug: "north-charleston", x: 795, y: 430 },
   { slug: "daniel-island", x: 938, y: 500, label: "Daniel Island", labelAbove: true },
   { slug: "mount-pleasant", x: 1032, y: 560 },

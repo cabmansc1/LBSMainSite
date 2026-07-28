@@ -336,6 +336,105 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       ],
     },
   },
+  hanahan: {
+    title: "Hanahan Direct Mail | 9x12 Postcards | LBS",
+    description:
+      "Hanahan direct mail covering zip code 29410, 5,000 to 10,000 homes per mailing. Exclusive 9x12 billboard-style postcards with no competitors on the same card. Tanner Plantation, Eagle Landing, Otranto, Yeamans Hall and more.",
+    heroSub:
+      'Reach Hanahan households with oversized 9"x12" postcards, no competitors on the same card',
+    statsTitle: "Why Hanahan Works for Direct Mail",
+    statsIntro:
+      "Hanahan sits between Goose Creek and North Charleston in Berkeley County, compact enough that a single mailing reaches a real share of the city and settled enough that the households receiving it are the ones who will still be there next year.",
+    stats: [
+      { value: "29410", label: "Primary Zip Code" },
+      { value: "5K–10K", label: "Households Per Mailing" },
+      { value: "Berkeley", label: "County" },
+      { value: "Free", label: "Ad Design Included" },
+    ],
+    prose: {
+      title: "Why Direct Mail Works in Hanahan, SC",
+      intro: [
+        "Hanahan is small enough to cover properly. A city of roughly 25,000 people in one zip code means a mailing is not a sample of the market, it is a meaningful share of it, and a business that shows up on two or three cards in a row becomes a name people recognise rather than an ad they scrolled past.",
+        "It also sits in the middle of everything. Hanahan borders Goose Creek to the north and North Charleston to the south, and plenty of its households work, shop and eat across all three. A card that lands in Hanahan reaches people whose spending is not confined to Hanahan.",
+      ],
+      items: [
+        {
+          title: "Neighborhoods and Communities We Reach",
+          body: [
+            "<strong>Tanner Plantation</strong> is the largest planned community in the city and the one most people picture when they think of new Hanahan, with steady turnover as families move in. <strong>Eagle Landing</strong>, <strong>Foster Creek</strong> and <strong>Bowen Village</strong> fill in around it, and the streets near <strong>Yeamans Hall</strong> and <strong>Otranto</strong> hold the older, established side of town where households have been in place for decades.",
+            "That mix is what makes the zone work for a service business. New construction brings people who need a lawn service, an HVAC company and a dentist all at once, while the settled neighborhoods hold the repeat customers who keep a business steady between moves.",
+          ],
+        },
+        {
+          title: "How the Program Works",
+          body: [
+            "You take one exclusive category on the card, so no competitor in your trade appears beside you. We design the ad, print it and mail it, and you approve a proof before anything goes to press. Design, print and postage are included in the price.",
+            "Cards mail on a set schedule, and categories go first come. The mailing calendar shows which Hanahan card is filling now and when artwork is due.",
+          ],
+        },
+      ],
+    },
+    sections: [
+      {
+        title: "Hanahan Zip Code Coverage",
+        intro: ["Full USPS carrier routes, not a scattered list of addresses"],
+        items: [{ title: "29410 - Hanahan", body: [] }],
+      },
+      {
+        title: "Perfect for Hanahan's Business Community",
+        intro: ["The trades and services local households call most"],
+        items: [
+          {
+            title: "Home Services",
+            body: [
+              "HVAC, plumbing, roofing, pest control and lawn care. Newer neighborhoods age into needing all of it at once.",
+            ],
+          },
+          {
+            title: "Restaurants & Food",
+            body: [
+              "Local kitchens competing with the chains along Rivers Avenue, where being remembered on a Friday afternoon is the whole game.",
+            ],
+          },
+          {
+            title: "Health & Wellness",
+            body: [
+              "Dental, chiropractic, family medicine and fitness. Families choose a provider once and stay for years.",
+            ],
+          },
+          {
+            title: "Professional Services",
+            body: [
+              "Insurance, real estate, legal and financial. High trust purchases where a name people already know wins the call.",
+            ],
+          },
+        ],
+      },
+    ],
+    faqTitle: "Hanahan Postcard FAQs",
+    faqs: [
+      {
+        q: "How many households receive the postcard?",
+        a: "Each mailing targets 5,000 to 10,000 Hanahan households across zip code 29410, mailed on full USPS carrier routes.",
+      },
+      {
+        q: "Is my category exclusive?",
+        a: "Yes. Only one business per category appears on each card.",
+      },
+      {
+        q: "Do you design my ad?",
+        a: "Yes, ad design is included at no additional cost. You approve a proof before anything prints.",
+      },
+      {
+        q: "How do we measure results?",
+        a: "We can include a trackable QR code, a unique landing page and a dedicated phone number to measure scans, visits and calls.",
+      },
+      {
+        q: "When is the next print date?",
+        a: "We print on a regular cadence. The mailing calendar shows which cards are filling now and when artwork is due.",
+      },
+    ],
+  },
   "goose-creek": {
     title: "Goose Creek Direct Mail | 9x12 Postcards | LBS",
     description:

@@ -28,6 +28,7 @@ export const ZONES: Zone[] = [
   { slug: "north-charleston", name: "North Charleston", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29405", "29406", "29418", "29420"], population: 115_000 /* published on the zone page */ },
   { slug: "moncks-corner", name: "Moncks Corner", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29461"], population: 12_000 /* published on the zone page */ },
   { slug: "charleston", name: "Charleston", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29401", "29403", "29407", "29412", "29414", "29439", "29455"], population: 150_000 /* published on the zone page */ },
+  { slug: "hanahan", name: "Hanahan", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29410"], population: 25_000 /* 2020 census; no zone page figure to draw on yet */ },
   { slug: "goose-creek", name: "Goose Creek", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29445"], population: 45_000 /* published on the zone page */ },
   { slug: "sullivans-island", name: "Sullivans Island", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29482"], population: 2_000 /* published on the zone page */ },
   { slug: "isle-of-palms", name: "Isle of Palms", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29451"], population: 4_300 /* census; our page quotes only income */ },
