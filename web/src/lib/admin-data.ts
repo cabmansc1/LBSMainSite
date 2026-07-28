@@ -688,3 +688,71 @@ export async function linkListingToUser(businessId: number, userId: number | nul
     sql`UPDATE directory_businesses SET user_id = ${userId} WHERE id = ${businessId}`,
   );
 }
+
+/**
+ * Creates a portal login for an advertiser who has never signed in.
+ *
+ * Most advertisers arrived by phone or in person, so they have a
+ * listing and card history but no login, which means no portal and
+ * nothing to view as. This is how one gets made without setting a
+ * password on their behalf or emailing them.
+ *
+ * Any listing already carrying that email is linked to the new login on
+ * the way through. The portal can find a listing by email alone, but
+ * user_id is the reliable join and email is the fallback; leaving it
+ * unlinked keeps a real relationship resting on a heuristic.
+ */
+export async function createLoginForEmail(input: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<
+  | { ok: true; id: number; created: boolean; linkedListings: number }
+  | { ok: false; error: string }
+> {
+  const email = input.email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, error: "That is not a valid email address." };
+  }
+
+  const { db } = await import("@/lib/db");
+  try {
+    const existing = (await db.execute(
+      sql`SELECT id FROM directory_users WHERE email = ${email} LIMIT 1`,
+    )) as unknown as [{ id: number }[]];
+    let id = existing[0]?.[0]?.id ?? 0;
+    const created = !id;
+
+    if (!id) {
+      // Unusable by design: bcrypt can never match it, so the account
+      // exists and codes work while password sign-in stays closed until
+      // the owner chooses one.
+      const unusable = `$2a$12$${".".repeat(53)}`;
+      await db.execute(
+        sql`INSERT INTO directory_users (email, password_hash, first_name, last_name, is_active)
+            VALUES (${email}, ${unusable}, ${input.firstName?.trim() ?? ""},
+                    ${input.lastName?.trim() ?? ""}, 1)`,
+      );
+      const row = (await db.execute(
+        sql`SELECT id FROM directory_users WHERE email = ${email} ORDER BY id DESC LIMIT 1`,
+      )) as unknown as [{ id: number }[]];
+      id = row[0]?.[0]?.id ?? 0;
+      if (!id) return { ok: false, error: "The account could not be created." };
+    }
+
+    const linked = (await db.execute(
+      sql`UPDATE directory_businesses SET user_id = ${id}
+          WHERE email = ${email} AND (user_id IS NULL OR user_id = 0)`,
+    )) as unknown as [{ affectedRows?: number }];
+
+    return {
+      ok: true,
+      id,
+      created,
+      linkedListings: linked[0]?.affectedRows ?? 0,
+    };
+  } catch (e) {
+    console.error("[admin] could not create login:", e);
+    return { ok: false, error: "The account could not be created." };
+  }
+}

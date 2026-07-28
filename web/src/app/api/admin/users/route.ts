@@ -4,6 +4,7 @@ import {
   setUserPassword,
   setUserActive,
   linkListingToUser,
+  createLoginForEmail,
 } from "@/lib/admin-data";
 
 /**
@@ -19,6 +20,19 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  // Creating a login has no id yet, so it is handled before the check
+  // every other action needs.
+  if (body.action === "create") {
+    const result = await createLoginForEmail({
+      email: String(body.email ?? ""),
+      firstName: String(body.firstName ?? ""),
+      lastName: String(body.lastName ?? ""),
+    });
+    return result.ok
+      ? NextResponse.json(result)
+      : NextResponse.json({ error: result.error }, { status: 422 });
   }
 
   const id = Number(body.id);
