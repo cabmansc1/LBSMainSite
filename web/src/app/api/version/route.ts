@@ -16,15 +16,41 @@ export async function GET() {
         process.env.MC_API_KEY ??
         process.env.MC_API_KEY_READONLY ??
         process.env.MC_API_KEY_WRITE;
-      const res = await fetch(`${process.env.MC_BASE_URL}/api/store`, {
-        headers: key
-          ? { "x-api-key": key, Authorization: `Bearer ${key}` }
-          : {},
+      // Follow the way the adapter does, rather than reporting the first
+      // hop. MC answers /api/store with a 308 to the canonical path, so
+      // "http 308" was being read as healthy when it says nothing at
+      // all: a key that cannot read produces exactly the same 308, then
+      // a 307 to /login. Two outages were diagnosed slowly because of
+      // that. Report what actually happened at the end of the chain.
+      const clean = key?.trim();
+      const headers = clean
+        ? { "x-api-key": clean, Authorization: `Bearer ${clean}` }
+        : {};
+      let res = await fetch(`${process.env.MC_BASE_URL}/api/store`, {
+        headers,
         redirect: "manual",
         cache: "no-store",
       });
-      const loc = res.headers.get("location");
-      return loc ? `http ${res.status} -> ${loc}` : `http ${res.status}`;
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get("location") ?? "";
+        if (/\/login/i.test(loc)) return "auth failed: key rejected (cannot read)";
+        res = await fetch(new URL(loc, process.env.MC_BASE_URL).toString(), {
+          headers,
+          redirect: "manual",
+          cache: "no-store",
+        });
+        if (res.status >= 300 && res.status < 400) {
+          const to = res.headers.get("location") ?? "";
+          return /\/login/i.test(to)
+            ? "auth failed: key rejected (cannot read)"
+            : `redirect loop (${res.status})`;
+        }
+      }
+      if (!res.ok) return `http ${res.status}`;
+      // Proof of a real read, which is the only thing that matters here.
+      const body = (await res.json()) as { pipelineCards?: unknown[] };
+      const n = Array.isArray(body.pipelineCards) ? body.pipelineCards.length : 0;
+      return `ok, reads ${n} cards`;
     } catch (e) {
       // Never the raw error. This endpoint is public and unauthenticated,
       // and a malformed key produces a TypeError from Headers.append that
