@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { zoneBySlug } from "@/lib/zones";
 import { pushToMissionControl } from "@/lib/mission-control";
+import { addWaitlistEntry } from "@/lib/waitlist";
 
 /**
  * Category waitlist: when a category is exclusive on the current
  * mailing, capture the business and notify them first when the next
- * card in that zone opens. Writes to waitlist_entries once the DB
- * connects; validates and accepts in preview mode.
+ * card in that zone opens.
+ *
+ * This used to insert into the Drizzle `waitlist_entries` table after
+ * joining `mailing_zones` to turn a slug into an id. Neither table was
+ * ever created, so every submission threw and returned a 500, and the
+ * category the whole feature exists to record was not stored anywhere.
+ * Both now go through lib/waitlist.ts, keyed by zone slug.
  */
 
 /**
@@ -15,6 +21,7 @@ import { pushToMissionControl } from "@/lib/mission-control";
  * needing a second table for a list we hope stays short.
  */
 const SMALLER_CARD_INTEREST = "Interest: 2,500 household card";
+
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
   try {
@@ -47,10 +54,12 @@ export async function POST(req: Request) {
     );
   }
 
+  const businessName =
+    typeof body.businessName === "string" ? body.businessName : undefined;
+
   void pushToMissionControl({
     type: "waitlist_joined",
-    businessName:
-      typeof body.businessName === "string" ? body.businessName : undefined,
+    businessName,
     email,
     category,
     zoneSlug: zone.slug,
@@ -60,29 +69,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, preview: true });
   }
 
-  const { db } = await import("@/lib/db");
-  const { waitlistEntries, mailingZones } = await import("@/lib/db/schema");
-  const { eq } = await import("drizzle-orm");
-
-  const zoneRow = await db
-    .select()
-    .from(mailingZones)
-    .where(eq(mailingZones.slug, zone.slug))
-    .limit(1);
-  if (!zoneRow[0]) {
-    return NextResponse.json({ error: "Unknown zone" }, { status: 404 });
+  // Mission Control is a dry run whenever MC_READ_ONLY is set, which it
+  // is on staging, so this row is the only durable record of the lead.
+  // If it does not land, say so rather than promising a callback that
+  // nothing is holding.
+  const saved = await addWaitlistEntry({
+    zoneSlug: zone.slug,
+    category,
+    email,
+    businessName,
+  });
+  if (!saved) {
+    return NextResponse.json(
+      { error: "We could not save that. Please call us on (843) 212-2969." },
+      { status: 500 },
+    );
   }
-
-  await db
-    .insert(waitlistEntries)
-    .values({
-      zoneId: zoneRow[0].id,
-      categoryId: 0,
-      email,
-      businessName:
-        typeof body.businessName === "string" ? body.businessName : null,
-    })
-    .onDuplicateKeyUpdate({ set: { email } });
 
   return NextResponse.json({ ok: true });
 }

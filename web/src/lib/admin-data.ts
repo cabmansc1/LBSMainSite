@@ -603,14 +603,23 @@ export type AdminLead = {
   createdAt: string | null;
 };
 
-/** Mirrors admin/leads.php, reading the same leads table. */
+/**
+ * Mirrors admin/leads.php, reading the same leads table.
+ *
+ * The table is `leads`, with no prefix. This read used to say
+ * `directory_leads`, which does not exist: both capture paths,
+ * process_form.php and save-quiz-lead.php, insert into `leads`, and the
+ * legacy dashboard counts `leads`. The missing table threw, the catch
+ * returned an empty array, and the page reported "No leads captured
+ * yet" however many had come in.
+ */
 export async function getAdminLeads(): Promise<AdminLead[]> {
   const { db } = await import("@/lib/db");
   try {
     const rows = (await db.execute(
       sql`SELECT id, company_name, contact_name, email, phone, location,
                  package_description, created_at
-          FROM directory_leads
+          FROM leads
           ORDER BY created_at DESC
           LIMIT 200`,
     )) as unknown as [Record<string, unknown>[]];

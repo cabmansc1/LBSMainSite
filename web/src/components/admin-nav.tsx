@@ -37,6 +37,7 @@ const GROUPS: Group[] = [
       { href: "/admin/signups", label: "Signups", hint: "Awaiting review" },
       { href: "/admin/inquiries", label: "Inquiries", hint: "Messages to listings" },
       { href: "/admin/leads", label: "Leads", hint: "Forms and quizzes" },
+      { href: "/admin/waitlist", label: "Waitlist", hint: "Category is taken" },
     ],
   },
   {
