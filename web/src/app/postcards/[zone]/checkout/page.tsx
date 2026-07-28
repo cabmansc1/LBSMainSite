@@ -48,15 +48,11 @@ const availabilityFrom = (cap: CardCapacity) =>
  * The reach-and-deadline line, built only from facts we hold.
  *
  * This used to be a fixed sentence, so a card with neither figure still
- * read "5,000+ households · artwork deadline Ask us". The household
- * count is dropped when the route breakdown alongside it already states
- * the same number in more useful terms.
+ * read "5,000+ households · artwork deadline Ask us".
  */
 const mailingFacts = (m: UpcomingMailing): string[] =>
   [
-    m.households && cardCoverage(m).zips.length === 0
-      ? `${m.households} households`
-      : null,
+    m.households ? `${m.households} households` : null,
     m.artworkDeadline ? `artwork deadline ${m.artworkDeadline}` : null,
   ].filter((f): f is string => f !== null);
 
@@ -179,9 +175,7 @@ export default async function PostcardCheckoutPage({
                     {cardCoverage(m).zips.length > 0 && (
                       <p className="text-[12.5px] text-muted mt-0.5 num">
                         ZIP {cardCoverage(m).zips.join(", ")} ·{" "}
-                        {cardCoverage(m).routeCount} carrier routes ·{" "}
-                        {cardCoverage(m).households.toLocaleString("en-US")}{" "}
-                        addresses
+                        {cardCoverage(m).routeCount} carrier routes
                       </p>
                     )}
                     {mailingFacts(m).length > 0 && (
@@ -303,10 +297,12 @@ export default async function PostcardCheckoutPage({
           )}
           {cardCoverage(mailing).zips.length > 0 && (
             <p className="text-[#67768A] text-[13px] mt-1.5 num">
+              {/* Route counts, not the address sum. Routes move right up
+                  to the print deadline, so the sum is provisional and
+                  quoting it reads as a promise. Reach comes from the
+                  distribution figure above. */}
               Mails to ZIP {cardCoverage(mailing).zips.join(", ")} ·{" "}
-              {cardCoverage(mailing).routeCount} USPS carrier routes ·{" "}
-              {cardCoverage(mailing).households.toLocaleString("en-US")}{" "}
-              deliverable addresses
+              {cardCoverage(mailing).routeCount} full USPS carrier routes
             </p>
           )}
           <p className="text-[#67768A] text-[13px] mt-1.5 num">

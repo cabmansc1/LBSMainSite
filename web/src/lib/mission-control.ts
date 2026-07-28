@@ -334,18 +334,16 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
 
   // Reach, in order of how much we trust it.
   //
-  // The USPS route table wins. It is a sum of real per-route delivery
-  // counts, and it is the number the site prints beside it as
-  // "deliverable addresses". Mission Control's distribution field is a
-  // planned print quantity, which is a different thing and is often a
-  // round number somebody typed: the Summerville card carried 5,000
-  // against a route table totalling 2,680, and the page printed both,
-  // one line apart.
+  // Mission Control's distribution figure wins. It is the quantity being
+  // bought and printed, set deliberately at 2,500 / 5,000 / 10,000. The
+  // route table is a working document: routes get added and dropped
+  // right up to the print deadline, so its sum is provisional. Quoting
+  // it as reach would mean publishing 2,680 today and 2,910 next week,
+  // each one looking like a promise.
   //
-  // Below both sat a literal "5,000+", a zone-level sales figure that is
+  // Under both sat a literal "5,000+", a zone-level sales figure that is
   // not a fact about any card at all. That is gone: a card with no
   // reach we can stand behind now reports none.
-  const routeTotal = routes.reduce((n, r) => n + r.total, 0);
   const explicit = raw.distribution ?? raw.cardsMailed ?? raw.households;
   const explicitNum =
     typeof explicit === "number"
@@ -353,11 +351,12 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
       : explicit !== undefined && explicit !== null && String(explicit).trim()
         ? Number(String(explicit).replace(/[^0-9]/g, ""))
         : NaN;
+  const routeTotal = routes.reduce((n, r) => n + r.total, 0);
   const reach =
-    routeTotal > 0
-      ? routeTotal
-      : Number.isFinite(explicitNum) && explicitNum > 0
-        ? explicitNum
+    Number.isFinite(explicitNum) && explicitNum > 0
+      ? explicitNum
+      : routeTotal > 0
+        ? routeTotal
         : undefined;
 
   const deadline = str(raw.artworkDeadline ?? raw.deadline).trim();

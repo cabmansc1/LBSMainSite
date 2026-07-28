@@ -64,7 +64,12 @@ export default async function PastCardPage({
   // card it printed, so none of that has to be typed in again.
   const mc = card.mcCardId ? await getMcCardById(card.mcCardId) : undefined;
   const zips = [...new Set((mc?.routes ?? []).map((r) => r.zip))].sort();
-  const reached = (mc?.routes ?? []).reduce((n, r) => n + r.total, 0);
+  const routeCount = (mc?.routes ?? []).length;
+  // The quantity mailed, from Mission Control. Not the sum of the route
+  // table: routes are edited up to the print deadline and the table is
+  // not always trued up afterwards, so its total is an estimate wearing
+  // the clothes of an exact figure.
+  const reached = mc?.households;
 
   // Link an advertiser to their directory listing where we have one.
   const listings = await getBusinesses().catch(() => []);
@@ -173,9 +178,7 @@ export default async function PastCardPage({
             {[
               { value: card.mailMonth, label: "Mailed" },
               ...(zips.length ? [{ value: zips.join(", "), label: "ZIP codes" }] : []),
-              ...(reached
-                ? [{ value: reached.toLocaleString("en-US"), label: "Addresses reached" }]
-                : []),
+              ...(reached ? [{ value: reached, label: "Households reached" }] : []),
               ...(advertisers.length
                 ? [{ value: String(advertisers.length), label: "Businesses on the card" }]
                 : []),
@@ -307,7 +310,7 @@ export default async function PastCardPage({
             </h2>
             <p className="text-sm text-body leading-relaxed">
               {zips.length > 0
-                ? `Full USPS carrier routes across ZIP ${zips.join(", ")}, ${reached.toLocaleString("en-US")} deliverable addresses in ${card.zoneName}.`
+                ? `${routeCount} full USPS carrier routes across ZIP ${zips.join(", ")} in ${card.zoneName}.`
                 : `Full USPS carrier routes across ${card.zoneName}.`}
             </p>
             {zone && (

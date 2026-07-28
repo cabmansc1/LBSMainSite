@@ -123,6 +123,10 @@ export function AdminCards({ cards }: { cards: Row[] }) {
                     </span>
                   )}
                   {c.zips.length > 0 ? (
+                    // The route sum stays here and nowhere public. Routes
+                    // change up to the print deadline, so this is a
+                    // planning figure: useful for deciding what a card
+                    // still needs, misleading as a quoted reach.
                     <span className="block text-[12px] text-muted num font-normal">
                       ZIP {c.zips.join(", ")} · {c.routeCount} routes ·{" "}
                       {c.routeHouseholds.toLocaleString("en-US")} addresses
