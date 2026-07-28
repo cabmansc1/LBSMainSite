@@ -66,7 +66,7 @@ export default async function BusinessPage({
     dealsForBusiness(b.name).catch(() => []),
     getPastCards({ publishedOnly: true }).catch(() => []),
     advertiserAppearances({ name: b.name }).catch(
-      () => [] as { zoneName: string; mailMonth: string }[],
+      () => [] as { zoneName: string; mailMonth: string; mailDateIso: string }[],
     ),
   ]);
 
@@ -256,8 +256,10 @@ export default async function BusinessPage({
                   unreadable the moment a business has ridden three of
                   them. Cards in the archive link to their own page: the
                   listing and the card page each make the other real. */}
+              {/* Seventeen lines is a wall, not a list. Show the recent
+                  ones and count the rest. */}
               <ul className="grid gap-1.5">
-                {appearances.map((a) => {
+                {appearances.slice(0, 6).map((a) => {
                   const inArchive = archive.find(
                     (c) => c.zoneName === a.zoneName && c.mailMonth === a.mailMonth,
                   );
@@ -286,6 +288,12 @@ export default async function BusinessPage({
                   );
                 })}
               </ul>
+              {appearances.length > 6 && (
+                <p className="text-[13px] text-body">
+                  and {appearances.length - 6} more, going back to{" "}
+                  {appearances[appearances.length - 1].mailMonth}.
+                </p>
+              )}
               <Link
                 href="/gallery"
                 className="text-[13px] font-semibold text-brand-deep hover:underline"

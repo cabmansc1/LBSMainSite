@@ -545,11 +545,11 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
 export async function advertiserAppearances(match: {
   name?: string;
   email?: string;
-}): Promise<{ zoneName: string; mailMonth: string }[]> {
+}): Promise<{ zoneName: string; mailMonth: string; mailDateIso: string }[]> {
   const cards = await fetchCards();
   if (!cards) return [];
   const email = match.email?.toLowerCase();
-  const seen: { zoneName: string; mailMonth: string }[] = [];
+  const seen: { zoneName: string; mailMonth: string; mailDateIso: string }[] = [];
   for (const card of cards) {
     for (const a of card.advertisers) {
       // Names differ between the two systems more often than not, so an
@@ -558,12 +558,25 @@ export async function advertiserAppearances(match: {
         (email && a.email?.toLowerCase() === email) ||
         (match.name && a.businessName && sameBusiness(match.name, a.businessName))
       ) {
-        seen.push({ zoneName: card.zoneName, mailMonth: card.mailMonth });
+        seen.push({
+          zoneName: card.zoneName,
+          mailMonth: card.mailMonth,
+          mailDateIso: card.mailDateIso,
+        });
         break;
       }
     }
   }
-  return seen;
+  // A zone can print two cards in the same month, and a business on both
+  // is still one appearance to a reader. Newest first.
+  const unique = new Map<string, (typeof seen)[number]>();
+  for (const a of seen) {
+    const key = `${a.zoneName}|${a.mailMonth}`.toLowerCase();
+    if (!unique.has(key)) unique.set(key, a);
+  }
+  return [...unique.values()].sort((a, b) =>
+    (b.mailDateIso ?? "").localeCompare(a.mailDateIso ?? ""),
+  );
 }
 
 /* ---------- writes ---------- */
