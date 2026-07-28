@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getAdminOrders } from "@/lib/admin-data";
 import { getPostcardOrders } from "@/lib/orders";
+import { checkOrderPlacement, type PlacementCheck } from "@/lib/mission-control";
 import { StatusChip } from "@/components/sections";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,36 @@ export default async function AdminOrdersPage() {
   const needsAction = orders.filter(
     (o) => o.status === "refund_requested" || (o.status === "paid" && !o.hasArtwork),
   ).length;
+
+  // The placement into Mission Control is fire-and-forget and gets
+  // exactly one attempt, so a failure leaves a paid customer off their
+  // card with nothing but a log line to show for it. Ask the question
+  // here instead, where somebody can fix it in seconds.
+  //
+  // Newest fifty: this is one MC read shared across all of them, but the
+  // page should not grow unbounded, and an unplaced order that is months
+  // old has either been handled or has bigger problems.
+  const paidPostcards = postcardOrders
+    .filter((o) => o.status === "paid")
+    .slice(0, 50);
+  const placements = await Promise.all(
+    paidPostcards.map(async (o) => ({
+      order: o,
+      check: await checkOrderPlacement({
+        cardId: o.cardId || undefined,
+        zoneSlug: o.zoneSlug,
+        businessName: o.businessName,
+        email: o.email,
+      }).catch(() => ({ state: "unknown" }) as const),
+    })),
+  );
+  // "unknown" means Mission Control was unreachable, which is not the
+  // same as an order gone missing and must not be reported as one.
+  const unplaced = placements.filter(
+    (p): p is { order: (typeof paidPostcards)[number]; check: PlacementCheck & { state: "missing" | "no-card" } } =>
+      p.check.state === "missing" || p.check.state === "no-card",
+  );
+  const mcUnreachable = placements.some((p) => p.check.state === "unknown");
 
   return (
     <div className="mx-auto max-w-[1120px] px-6 py-8">
@@ -75,6 +106,51 @@ export default async function AdminOrdersPage() {
           </div>
         </div>
       </div>
+
+      {mcUnreachable && (
+        <p className="mb-6 border border-line bg-surface rounded-(--radius-card) px-5 py-3.5 text-[13px] text-body">
+          Mission Control did not answer, so orders could not be checked
+          against their cards. This says nothing either way about whether
+          they landed. Reload once it is back.
+        </p>
+      )}
+
+      {unplaced.length > 0 && (
+        <section className="mb-6 border border-[#f3c9c4] bg-[#fdf3f2] rounded-(--radius-card) p-5">
+          <h2 className="text-[15px] font-bold tracking-tight text-[#8a2318]">
+            {unplaced.length} paid{" "}
+            {unplaced.length === 1 ? "order is" : "orders are"} not on a card
+            in Mission Control
+          </h2>
+          <p className="text-[13px] text-body mt-1.5 max-w-[70ch]">
+            These customers paid, and the write into Mission Control did not
+            land. Nothing is lost: add them to the card by hand and the site
+            picks it up on the next read. Their category is not locked until
+            you do, so a competitor could still buy it.
+          </p>
+          <ul className="mt-3.5 grid gap-2">
+            {unplaced.map(({ order: o, check }) => (
+              <li
+                key={o.reference}
+                className="bg-white border border-line rounded-[10px] px-4 py-3 text-[13px] flex flex-wrap gap-x-4 gap-y-1 items-baseline"
+              >
+                <b className="num">{o.reference}</b>
+                <span className="font-semibold">{o.businessName}</span>
+                <span className="text-muted">{o.category}</span>
+                <span className="text-muted">
+                  {o.spot} · {money(o.amountCents)}
+                </span>
+                <span className="text-muted num">
+                  {check.state === "no-card"
+                    ? `no card found for ${o.zoneSlug || "unknown zone"}`
+                    : `card ${check.cardName ?? check.cardId}`}
+                </span>
+                {o.email && <span className="text-faint">{o.email}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {postcardOrders.length > 0 && (
         <>

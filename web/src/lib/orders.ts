@@ -25,6 +25,12 @@ export type Order = {
   phone: string;
   category: string;
   zoneSlug: string;
+  /**
+   * Mission Control card id. A zone is not a card, so without this
+   * there is no way to ask afterwards whether a paid advertiser landed
+   * where they bought. Empty on orders taken before this was recorded.
+   */
+  cardId: string;
   spot: string;
   reach: string;
   amountCents: number;
@@ -55,6 +61,7 @@ export async function ensureOrdersTable() {
       phone VARCHAR(40) DEFAULT '',
       category VARCHAR(120) DEFAULT '',
       zone_slug VARCHAR(120) DEFAULT '',
+      card_id VARCHAR(64) DEFAULT '',
       spot VARCHAR(60) DEFAULT '',
       reach VARCHAR(16) DEFAULT '',
       amount_cents INT NOT NULL DEFAULT 0,
@@ -67,6 +74,21 @@ export async function ensureOrdersTable() {
       INDEX (zone_slug)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+
+  // CREATE TABLE IF NOT EXISTS does nothing to a table that already
+  // exists, so a column added later needs its own step. Duplicate
+  // column is the expected outcome on every run after the first.
+  try {
+    await db.execute(
+      sql`ALTER TABLE lbs_orders ADD COLUMN card_id VARCHAR(64) DEFAULT '' AFTER zone_slug`,
+    );
+  } catch (e) {
+    const code = (e as { code?: string })?.code;
+    if (code !== "ER_DUP_FIELDNAME") {
+      console.error("[orders] could not add card_id column:", e);
+    }
+  }
+
   tableReady = true;
 }
 
@@ -84,6 +106,7 @@ export async function createPendingOrder(input: {
   phone?: string;
   category: string;
   zoneSlug: string;
+  cardId?: string;
   spot: string;
   reach?: string;
   amountCents: number;
@@ -94,11 +117,11 @@ export async function createPendingOrder(input: {
     await db.execute(
       sql`INSERT INTO lbs_orders
           (reference, kind, status, business_name, email, phone, category,
-           zone_slug, spot, reach, amount_cents)
+           zone_slug, card_id, spot, reach, amount_cents)
           VALUES (${input.reference}, ${input.kind}, 'pending',
                   ${input.businessName}, ${input.email ?? ""}, ${input.phone ?? ""},
-                  ${input.category}, ${input.zoneSlug}, ${input.spot},
-                  ${input.reach ?? ""}, ${input.amountCents})`,
+                  ${input.category}, ${input.zoneSlug}, ${input.cardId ?? ""},
+                  ${input.spot}, ${input.reach ?? ""}, ${input.amountCents})`,
     );
     const rows = (await db.execute(
       sql`SELECT id FROM lbs_orders WHERE reference = ${input.reference} LIMIT 1`,
@@ -179,6 +202,7 @@ const row = (r: Record<string, unknown>): Order => ({
   phone: String(r.phone ?? ""),
   category: String(r.category ?? ""),
   zoneSlug: String(r.zone_slug ?? ""),
+  cardId: String(r.card_id ?? ""),
   spot: String(r.spot ?? ""),
   reach: String(r.reach ?? ""),
   amountCents: Number(r.amount_cents ?? 0),

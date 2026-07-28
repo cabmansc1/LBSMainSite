@@ -1129,3 +1129,72 @@ export async function getAllMcCards(): Promise<
       isPast: c.isPast,
     }));
 }
+
+/**
+ * Did a paid order actually land on its card in Mission Control?
+ *
+ * The webhook fires the placement as fire-and-forget, inside the
+ * markPaid idempotency guard. That guard is right, since without it a
+ * Stripe retry would put the advertiser on the card twice, but it means
+ * the push gets exactly one attempt. If it fails, the customer has paid,
+ * the order says paid, and nobody is on the card. The only trace is a
+ * line in a log nobody reads at two in the morning.
+ *
+ * So ask the question directly, from the order rather than from the log.
+ */
+export type PlacementCheck =
+  | { state: "placed"; cardId: string; cardName?: string }
+  | { state: "missing"; cardId: string; cardName?: string }
+  | { state: "no-card" }
+  | { state: "unknown" };
+
+export async function checkOrderPlacement(order: {
+  cardId?: string;
+  zoneSlug?: string;
+  businessName: string;
+  email?: string;
+}): Promise<PlacementCheck> {
+  const cards = await fetchCards();
+  // Mission Control unreachable is not the same as an order gone
+  // missing, and reporting it as one would cry wolf on every blip.
+  if (!cards) return { state: "unknown" };
+
+  let card = order.cardId
+    ? cards.find((c) => String(c.id) === String(order.cardId))
+    : undefined;
+  if (!card && order.zoneSlug) {
+    // Orders taken before the card id was recorded only know their
+    // zone. Check every card in it: the advertiser being on any of them
+    // means the placement worked, even if we cannot say which one was
+    // bought.
+    const inZone = cards.filter((c) => c.zoneSlug === order.zoneSlug);
+    const found = inZone.find((c) => cardHasAdvertiser(c, order));
+    if (found) return { state: "placed", cardId: String(found.id), cardName: found.cardName || undefined };
+    card = inZone.find((c) => !c.isPast && c.status === "open") ?? inZone[0];
+  }
+  if (!card) return { state: "no-card" };
+
+  return {
+    state: cardHasAdvertiser(card, order) ? "placed" : "missing",
+    cardId: String(card.id),
+    cardName: card.cardName || undefined,
+  };
+}
+
+/**
+ * Email first and exact, then the conservative name matcher, mirroring
+ * how the portal resolves the same identity. A buyer who typed a
+ * different email at checkout than the one on their MC account is
+ * common enough that name matching has to be the fallback.
+ */
+function cardHasAdvertiser(
+  card: McCard,
+  order: { businessName: string; email?: string },
+): boolean {
+  const email = order.email?.trim().toLowerCase();
+  return card.advertisers.some(
+    (a) =>
+      (!!email && a.email?.trim().toLowerCase() === email) ||
+      (!!a.businessName && sameBusiness(order.businessName, a.businessName)),
+  );
+}

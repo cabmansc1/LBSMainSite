@@ -140,6 +140,7 @@ export async function POST(req: Request) {
     phone,
     category,
     zoneSlug: metadata.zone ?? metadata.card ?? "",
+    cardId: metadata.cardId,
     spot: metadata.spotSize ?? metadata.spotType ?? "",
     reach: metadata.reach,
     amountCents,
