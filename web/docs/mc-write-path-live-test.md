@@ -4,7 +4,13 @@ The last unverified link in the checkout chain. Everything before it has
 run on staging many times; this half has never executed, because
 `MC_READ_ONLY=1` stops it.
 
-Budget 30 minutes. Do it when you can watch it start to finish.
+About 15 minutes of attention, mostly waiting on two Railway redeploys.
+You do not have to watch it: `/admin/orders` now leads with any paid
+order that did not reach its card, so a silent failure surfaces on its
+own rather than only in a log.
+
+Before that check existed this meant sitting on the Railway log for the
+one line that says the push failed. That is what it no longer needs.
 
 ## What has and has not been proven
 
@@ -101,8 +107,8 @@ Fill it in with something unmistakable:
 
 - Business: `ZZZ Internal Test`
 - Category: pick one nothing else holds, `Land Surveying` is a safe pick
-- Email: an address you can receive at, and one you can later register
-  with if you want to check the portal
+- Email: see the note below check 6, because which address you use here
+  decides whether you can run that check at all
 - Card number `4242 4242 4242 4242`, any future expiry, any CVC
 
 ### 4. Check the six things
@@ -111,20 +117,32 @@ In order, because each depends on the one before.
 
 | # | Where | Expect |
 |---|---|---|
-| 1 | Railway logs | No `Mission Control push failed`. If you see it, the reason is on the same line. |
+| 1 | `/admin/orders` | No red banner. If the push failed, the order is listed there with the card it should have reached. |
 | 2 | MC, the test card | `ZZZ Internal Test` present, marked paid, ad size small, amount $249 |
 | 3 | MC, that advertiser | A payment recorded against them, method `stripe`, with your order reference |
 | 4 | `/admin/orders` | The order shows **Paid**, with the same reference |
 | 5 | `/postcards/hanahan/checkout?card=<CARD_ID>` | The category you bought now reads **Taken**, and the spot count moved |
 | 6 | `/account`, logged in as that email | The card appears under current campaigns |
 
-Six is the one worth doing properly. It is the only check that proves
-the whole chain end to end, and it needs an account, which buying does
-not create. Register with the same email first, then look.
+Six is the only check that proves the whole chain end to end, and it
+needs an account, which buying does not create.
+
+**You cannot self-register for one.** `/register` is still a placeholder
+that asks people to email us, and `/admin/users` can set a password on
+an existing account but cannot make a new one. So pick your test email
+from an account that already exists:
+
+1. Open `/admin/users` and choose any existing portal account.
+2. Set a password on it.
+3. Use **that account's email** at checkout in step 3.
+4. Sign in as them and look at `/account`.
+
+That is also the honest version of what a real buyer faces today, which
+is worth seeing for yourself.
 
 If one through five pass and six does not, the failure is in the portal
 match, not the write path: the portal finds cards by comparing your
-logged-in email to the advertiser email in MC.
+logged-in email to the advertiser email in Mission Control.
 
 ### 5. Clean up, in this order
 
