@@ -7,6 +7,11 @@ import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
+// Reads Mission Control and the database for the live mailing schedule,
+// so it cannot be prerendered: the build container can reach
+// neither, and waiting on them is what failed the deploy.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Mailing Calendar: Upcoming Postcard Dates",
   description:

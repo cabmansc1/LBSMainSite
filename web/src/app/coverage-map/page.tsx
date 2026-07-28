@@ -7,6 +7,11 @@ import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
+// Reads Mission Control and the database for live spot counts and the per-card descriptions,
+// so it cannot be prerendered: the build container can reach
+// neither, and waiting on them is what failed the deploy.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Coverage Map: 11 Charleston-Area Zones",
   description:

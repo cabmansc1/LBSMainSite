@@ -44,12 +44,22 @@ const mcKey = () =>
   process.env.MC_API_KEY_READONLY ??
   process.env.MC_API_KEY_WRITE;
 
+/**
+ * Mission Control is a different box on a different network, and a page
+ * render must not wait on it indefinitely. Without this a hanging MC
+ * takes every page that reads a card down with it, which is exactly what
+ * broke the build: eleven zone pages each sat for the full 60 second
+ * limit waiting for a reply that never came.
+ */
+const MC_TIMEOUT_MS = 6000;
+
 const mcFetch = async (path: string, init?: RequestInit) => {
   // Card/store reads cache for 60s; mutations and dedup lookups must
   // never be cached (a cached empty search result would create
   // duplicate accounts).
   const cacheable = (!init?.method || init.method === "GET") && init?.cache !== "no-store";
   const res = await fetch(`${process.env.MC_BASE_URL}${path}`, {
+    signal: AbortSignal.timeout(MC_TIMEOUT_MS),
     ...init,
     redirect: "manual", // a 307 to /login means auth failed; never follow
     headers: {
@@ -76,6 +86,7 @@ const mcFetch = async (path: string, init?: RequestInit) => {
     }
     const next = new URL(location, `${process.env.MC_BASE_URL}${path}`).toString();
     const followed = await fetch(next, {
+      signal: AbortSignal.timeout(MC_TIMEOUT_MS),
       ...init,
       redirect: "manual",
       headers: {

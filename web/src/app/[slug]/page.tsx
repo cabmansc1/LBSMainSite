@@ -23,14 +23,20 @@ const SUFFIX = "-direct-mail-marketing";
 const parseZone = (slug: string) =>
   slug.endsWith(SUFFIX) ? zoneBySlug(slug.slice(0, -SUFFIX.length)) : undefined;
 
-export function generateStaticParams() {
-  return ZONES.map((z) => ({ slug: `${z.slug}${SUFFIX}` }));
-}
-
-// dynamicParams stays enabled: unknown top-level paths (favicon probes,
-// bots) fall through to parseZone() -> notFound() as clean 404s instead
-// of throwing internal NoFallbackError noise in server logs.
-export const dynamicParams = true;
+/**
+ * Rendered per request rather than prerendered.
+ *
+ * These pages carry live spot counts, live pricing and the archive of
+ * cards mailed in the zone, so a build-time snapshot was already going
+ * stale within the minute. Worse, it made the build depend on Mission
+ * Control and the database being reachable from inside the Docker build,
+ * which they are not: eleven pages each waited out the 60 second render
+ * limit and the deploy failed.
+ *
+ * Unknown top-level paths (favicon probes, bots) still fall through to
+ * parseZone() -> notFound() as clean 404s.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
