@@ -335,7 +335,7 @@ Each phase is independently shippable and useful on its own.
 2. Transactional email: receipt with magic link
 3. Magic-link auth, so buying produces a way in without inventing a
    password
-4. `SITE_URL` corrected (see the open question below)
+4. Decide what `lbspotlight.com` is for (see the open question below)
 
 **Phase B, the self-service core.** This is what "self-serve ordering
 and tracking" actually means.
@@ -368,11 +368,24 @@ and tracking" actually means.
 
 These change the work, so they are worth answering before Phase A.
 
-1. **Which domain is production?** `SITE_URL` in the code is
-   `www.lowcountrybusinessspotlight.com`, but the live PHP site is
-   `www.lbspotlight.com`. Every canonical, sitemap entry and JSON-LD url
-   currently points at the wrong one, where 27 of those pages 404. This
-   is the single most consequential thing in this document.
+1. **What is `lbspotlight.com`?** `SITE_URL` is
+   `www.lowcountrybusinessspotlight.com`, and that is correct: it serves
+   real `robots.txt` and `sitemap.xml`, its `.php` URLs return 200, and
+   it is the site carrying the SEO weight. But `www.lbspotlight.com`
+   also resolves, returns a 369KB single-page-app shell for *every*
+   path including `/robots.txt` and paths that cannot exist, and is the
+   domain on your email address and Mission Control subdomain.
+
+   Two things to settle. Whether that SPA should keep answering on a
+   domain that looks canonical to anyone who reads your email address,
+   since a catch-all that 200s every URL is exactly what search engines
+   treat as a soft-404 farm. And whether the rebuild should eventually
+   live at the shorter domain, which is a redirect decision worth making
+   before launch rather than after.
+
+   Note the live site's clean URLs 404 today; only `.php` works there.
+   The rebuild serves clean URLs and 308s all 26 legacy `.php` paths to
+   them, which I verified. So the migration direction is right.
 
 2. **Email sending: app, GHL, or both?** See Part 7. Changes roughly a
    third of the build.
