@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { mcEnabled, mcKey } from "@/lib/mission-control";
 import { stripeEnabled } from "@/lib/stripe";
@@ -85,6 +86,17 @@ export async function GET() {
       publicSiteUrl: process.env.PUBLIC_SITE_URL ?? null,
     },
     mcEnabled: mcEnabled(),
+    // Identifies WHICH key is loaded without revealing it. We spent an
+    // afternoon unable to tell whether a hosting dashboard held the
+    // value we thought it did, because every symptom looked the same
+    // from outside. Length plus a truncated SHA-256 answers that in one
+    // request and is not reversible: a 256-bit random key cannot be
+    // recovered from eight hex characters of its digest.
+    mcKeyFingerprint: (() => {
+      const k = mcKey();
+      if (!k) return "none";
+      return `len ${k.length} sha ${createHash("sha256").update(k).digest("hex").slice(0, 8)}`;
+    })(),
     // Whether this deploy would actually write to Mission Control.
     // Flipping MC_READ_ONLY is a Railway variable change, and without
     // this the only way to know it took effect is to make a purchase
