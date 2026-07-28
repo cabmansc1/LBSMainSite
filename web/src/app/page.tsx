@@ -76,12 +76,20 @@ const homeJsonLd = [
  * Fallback only. The real numbers live in site_stats and are edited on
  * /admin/stats; these are what shows if that table is empty or the
  * database is unreachable, so the bar never renders blank.
+ *
+ * Mirrors what /admin/stats holds today. It had drifted badly: the old
+ * fallback claimed 50,000 postcards and 75 businesses against the real
+ * 155,000 and 100, so a database blip would have quietly understated
+ * the business by a third of a decade of work. It also carried a
+ * "Service areas" stat the admin does not have, stuck at 11 zones when
+ * there are now 12. Worth re-checking against the admin when these
+ * numbers next move.
  */
 const STATS = [
-  { value: "50,000+", label: "Postcards mailed" },
-  { value: "75+", label: "Businesses served" },
-  { value: "5,000+", label: "Households per mailing" },
-  { value: "11", label: "Service areas" },
+  { value: "155,000+", label: "Postcards Mailed" },
+  { value: "100+", label: "Local Businesses Served" },
+  { value: "2,500 - 10,000", label: "Households Per Mailing" },
+  { value: "30+", label: "Campaigns Completed" },
 ];
 
 const BENEFITS = [
