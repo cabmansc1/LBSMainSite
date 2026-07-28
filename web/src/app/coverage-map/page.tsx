@@ -4,8 +4,27 @@ import { CoverageMap } from "@/components/coverage-map";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
 import { getCardDescriptions } from "@/lib/card-details";
-import { zoneBySlug } from "@/lib/zones";
+import { ZONES, zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+
+/**
+ * How many zones we mail, counted rather than typed.
+ *
+ * This page said "11 zones" in three places: the title, the meta
+ * description and the intro. Adding Hanahan made all three wrong at
+ * once, and nothing about adding a zone would have reminded anyone to
+ * come back here. The map below already draws from ZONES, so now the
+ * words do too.
+ */
+const ZONE_COUNT = ZONES.length;
+
+/** Small counts read better as words in a sentence. */
+const WORDS = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
+  "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
+];
+const ZONE_COUNT_WORD = WORDS[ZONE_COUNT] ?? String(ZONE_COUNT);
 
 // Reads Mission Control and the database for live spot counts and the per-card descriptions,
 // so it cannot be prerendered: the build container can reach
@@ -13,13 +32,13 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Coverage Map: 11 Charleston-Area Zones",
+  title: `Coverage Map: ${ZONE_COUNT} Charleston-Area Zones`,
   description:
-    "See every neighborhood Lowcountry Business Spotlight mails: households, ZIP codes, next mailing dates, and live spot availability across 11 zones.",
+    `See every neighborhood Lowcountry Business Spotlight mails: households, ZIP codes, next mailing dates, and live spot availability across ${ZONE_COUNT} zones.`,
   alternates: { canonical: `${SITE_URL}/coverage-map` },
   openGraph: {
     title: `Coverage Map | ${SITE_NAME}`,
-    description: "11 Charleston-area zones with live spot availability.",
+    description: `${ZONE_COUNT} Charleston-area zones with live spot availability.`,
     siteName: SITE_NAME,
     type: "website",
   },
@@ -40,9 +59,9 @@ export default async function CoverageMapPage() {
           Pick your neighborhood.
         </h1>
         <p className="mt-3 text-[#93A5B8] max-w-[56ch]">
-          Eleven zones across the Charleston Lowcountry. Select a zone to see
-          households, ZIP codes, the next mailing date, and live spot
-          availability.
+          {ZONE_COUNT_WORD} zones across the Charleston Lowcountry. Select a
+          zone to see households, ZIP codes, the next mailing date, and live
+          spot availability.
         </p>
         <div className="mt-9">
           <CoverageMap mailings={mailings} />
