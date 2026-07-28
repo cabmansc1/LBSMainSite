@@ -173,7 +173,7 @@ export default async function CoverageMapPage() {
                         ) : (
                           <Link
                             href={`/${m.zoneSlug}-direct-mail-marketing`}
-                            className="bg-cta text-navy-950 text-[12.5px] font-bold px-3.5 py-1.5 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
+                            className="bg-cta text-navy-950 text-[12.5px] font-bold px-3 py-1 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
                           >
                             Reserve a spot
                           </Link>
@@ -181,7 +181,7 @@ export default async function CoverageMapPage() {
                       ) : (
                         <a
                           href="tel:+18432122969"
-                          className="bg-cta text-navy-950 text-[12.5px] font-bold px-3.5 py-1.5 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
+                          className="bg-cta text-navy-950 text-[12.5px] font-bold px-3 py-1 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
                         >
                           Call to book
                         </a>
