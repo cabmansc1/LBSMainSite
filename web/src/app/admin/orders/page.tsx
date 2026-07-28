@@ -4,6 +4,7 @@ import { getAdminOrders } from "@/lib/admin-data";
 import { getPostcardOrders } from "@/lib/orders";
 import { checkOrderPlacement, type PlacementCheck } from "@/lib/mission-control";
 import { StatusChip } from "@/components/sections";
+import { AdminPostcardOrders } from "@/components/admin-postcard-orders";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -152,64 +153,12 @@ export default async function AdminOrdersPage() {
         </section>
       )}
 
+      <AdminPostcardOrders orders={postcardOrders} />
+
       {postcardOrders.length > 0 && (
-        <>
-          <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mb-3">
-            Spotlight Postcard orders
-          </h2>
-          <div className="overflow-x-auto border border-line rounded-(--radius-card) bg-white mb-8">
-            <table className="w-full border-collapse text-[13.5px] min-w-[820px]">
-              <thead>
-                <tr>
-                  {["Reference", "Business", "Zone", "Spot", "Amount", "Status"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="text-left text-[11px] uppercase tracking-wider text-muted font-semibold px-4 py-3 border-b border-line bg-surface"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {postcardOrders.map((o) => (
-                  <tr key={o.id} className="hover:bg-surface align-top">
-                    <td className="px-4 py-3.5 border-b border-line">
-                      <b className="num">{o.reference}</b>
-                      <div className="text-[12px] text-muted">
-                        {o.createdAt?.slice(0, 10) ?? ""}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 border-b border-line">
-                      {o.businessName}
-                      <div className="text-[12px] text-muted">{o.email}</div>
-                    </td>
-                    <td className="px-4 py-3.5 border-b border-line text-[12.5px]">
-                      {o.zoneSlug}
-                      {o.category && (
-                        <div className="text-muted">{o.category}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 border-b border-line text-[12.5px]">
-                      {o.spot} {o.reach}
-                    </td>
-                    <td className="px-4 py-3.5 border-b border-line num font-semibold">
-                      {money(o.amountCents)}
-                    </td>
-                    <td className="px-4 py-3.5 border-b border-line">
-                      {statusChip(o.status)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mb-3">
-            Neighborhood card orders
-          </h2>
-        </>
+        <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mb-3">
+          Neighborhood card orders
+        </h2>
       )}
 
       {orders.length === 0 ? (

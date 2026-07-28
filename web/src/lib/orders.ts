@@ -255,3 +255,34 @@ export async function getOrdersForEmail(email: string): Promise<Order[]> {
     return [];
   }
 }
+
+/**
+ * Removes orders outright.
+ *
+ * Deliberately not exposed anywhere a customer can reach, and not part
+ * of any automatic cleanup. An order is the record that someone paid,
+ * so the only good reason to delete one is that it was never a real
+ * sale: test purchases, mostly.
+ *
+ * Refunding happens in Stripe and is reflected here by the webhook.
+ * Deleting a paid order does not refund it, which is why the admin
+ * confirms with the amount in front of it.
+ */
+export async function deleteOrders(ids: number[]): Promise<number> {
+  const clean = ids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (clean.length === 0) return 0;
+  try {
+    await ensureOrdersTable();
+    const { db } = await import("@/lib/db");
+    const result = (await db.execute(
+      sql`DELETE FROM lbs_orders WHERE id IN (${sql.join(
+        clean.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+    )) as unknown as [{ affectedRows?: number }];
+    return result[0]?.affectedRows ?? 0;
+  } catch (e) {
+    console.error("[orders] could not delete:", e);
+    return 0;
+  }
+}
