@@ -55,6 +55,12 @@ export async function POST(req: Request) {
     (forwardedHost
       ? `${forwardedProto}://${forwardedHost}`
       : new URL(req.url).origin);
+  // Declared before the metadata blocks below, which carry the phone
+  // through Stripe. Leaving these further down put `phone` in the
+  // temporal dead zone at the point the postcard branch read it.
+  const email = typeof body.email === "string" ? body.email : undefined;
+  const phone = typeof body.phone === "string" ? body.phone.trim() : undefined;
+
   let name: string;
   let amountCents: number;
   let metadata: Record<string, string>;
@@ -98,6 +104,10 @@ export async function POST(req: Request) {
       reach,
       category,
       businessName,
+      // Carried so the paid push can put it on the MC advertiser
+      // record. Stripe metadata is the only thing that survives the
+      // round trip to the hosted page and back into the webhook.
+      ...(phone ? { phone } : {}),
     };
   } else if (kind === "neighborhood-card") {
     const card = await getCard(String(body.cardSlug ?? ""));
@@ -121,14 +131,13 @@ export async function POST(req: Request) {
       spotType,
       category,
       businessName,
+      ...(phone ? { phone } : {}),
     };
   } else {
     return NextResponse.json({ error: "Unknown checkout kind" }, { status: 422 });
   }
 
   const reference = newReference();
-  const email = typeof body.email === "string" ? body.email : undefined;
-  const phone = typeof body.phone === "string" ? body.phone : undefined;
 
   // Record the intent before handing off to Stripe, so a payment always
   // has something on our side to reconcile against.
@@ -153,6 +162,7 @@ export async function POST(req: Request) {
     businessName,
     category,
     email,
+    phone,
     zoneSlug: metadata.zone ?? metadata.card,
     cardId: metadata.cardId,
     spot: metadata.spotSize ?? metadata.spotType,

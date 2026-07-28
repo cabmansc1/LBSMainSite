@@ -79,6 +79,7 @@ export function PostcardCheckout({
   const [business, setBusiness] = useState("");
   const [category, setCategory] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "error" | "waitlisted">("idle");
 
   const priceCents = POSTCARD_PRICING[reach][size].priceCents;
@@ -113,6 +114,7 @@ export function PostcardCheckout({
           businessName: business.trim(),
           category,
           email,
+          phone: phone.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -230,6 +232,34 @@ export function PostcardCheckout({
                 className="w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg focus:outline-none focus:border-navy-950"
               />
             </div>
+          </div>
+          <div>
+            <label htmlFor="pc-phone" className="text-[12.5px] font-semibold text-body block mb-1.5">
+              Mobile number{" "}
+              <span className="font-normal text-muted">(optional)</span>
+            </label>
+            {/* Optional, and the reason is given rather than assumed.
+                Artwork and proof deadlines are the two moments where a
+                missed email costs a print slot, and they are the only
+                things we text about. Asked for here rather than made
+                required, because this is a paid form and friction on it
+                costs sales. */}
+            <input
+              id="pc-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              maxLength={32}
+              placeholder="(843) 555-0142"
+              aria-describedby="pc-phone-why"
+              className="w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg focus:outline-none focus:border-navy-950"
+            />
+            <p id="pc-phone-why" className="text-[12px] text-muted mt-1.5">
+              Only used to text you about your artwork deadline and your
+              proof. Nothing else.
+            </p>
           </div>
           <div>
             <label htmlFor="pc-cat" className="text-[12.5px] font-semibold text-body block mb-1.5">

@@ -65,6 +65,7 @@ export async function POST(req: Request) {
             businessName: md.businessName,
             category: md.category,
             email: s.customer_email ?? undefined,
+            phone: md.phone || undefined,
             zoneSlug: md.zone ?? md.card,
             // Checkout recorded which of the zone's cards was bought.
             // Dropping it here is what let a paid advertiser land on the
