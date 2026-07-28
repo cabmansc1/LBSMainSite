@@ -90,7 +90,7 @@ export default async function AccountHomePage() {
         <Card className="p-6 flex gap-4 items-start flex-wrap mb-4 border-l-[3px] border-l-cta bg-cta-tint">
           <div className="flex-1 min-w-[240px]">
             <h2 className="text-[15.5px] font-bold">
-              Your {nextCard.zoneName} card mails {nextCard.mailMonth}
+              Your {nextCard.zoneName} card tentatively mails {nextCard.mailMonth}
             </h2>
             <p className="text-sm text-body mt-1">
               {nextCard.artworkDeadline

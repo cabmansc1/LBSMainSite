@@ -54,7 +54,7 @@ const ADVERTISE_FAQS = [
   },
   {
     q: "What is the deadline to get on the next mailing?",
-    a: "Artwork deadlines are typically two weeks before the mail date. Contact us early to secure your spot, because exclusive categories fill up fast.",
+    a: "Artwork deadlines are two weeks before the tentative mail date. Contact us early to secure your spot, because exclusive categories fill up fast.",
   },
   {
     q: "Do you offer discounts for multiple mailings?",

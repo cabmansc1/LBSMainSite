@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
 import { ALL_SIZES, type SpotSize } from "@/lib/pricing";
 import { cardCoverage } from "@/lib/card-coverage";
-import type { UpcomingMailing } from "@/lib/mailings";
+import { tentativelyMails, type UpcomingMailing } from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import {
@@ -160,11 +160,11 @@ export default async function PostcardCheckoutPage({
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
                     <b className="text-[16px] font-bold tracking-tight">
-                      {cardCoverage(m).name ?? `Mails ${m.mailMonth}`}
+                      {cardCoverage(m).name ?? tentativelyMails(m.mailMonth)}
                     </b>
                     {cardCoverage(m).name && (
                       <p className="text-[13px] text-body mt-0.5">
-                        Mails {m.mailMonth}
+                        {tentativelyMails(m.mailMonth)}
                       </p>
                     )}
                     {m.cardId && descriptions[m.cardId] && (

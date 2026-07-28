@@ -70,3 +70,38 @@ export const UPCOMING_MAILINGS: UpcomingMailing[] = [
   { zoneSlug: "isle-of-palms", zoneName: "Isle of Palms", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
   { zoneSlug: "sullivans-island", zoneName: "Sullivans Island", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
 ];
+
+/**
+ * How the site talks about a mail date that has not happened yet.
+ *
+ * Mission Control's mail dates move. Routes get added, print slips, a
+ * card waits for one more advertiser. Presenting a date that shifts as
+ * though it were fixed is how an advertiser ends up feeling misled by a
+ * change that was always normal, and it is also what the artwork
+ * deadline is derived from, so the two need to say the same thing.
+ *
+ * Past cards are not tentative. A card that mailed has an actual date,
+ * and these helpers are only for upcoming ones.
+ */
+export const tentativelyMails = (mailMonth: string) =>
+  `Tentatively mails ${mailMonth}`;
+
+/** Column heading or stat label form. */
+export const TENTATIVE_MAIL_LABEL = "Tentative mail date";
+
+/**
+ * Days before the tentative mail date that artwork is due.
+ *
+ * Matches what the advertise page has always told people ("typically
+ * two weeks before the mail date"). Derived rather than stored, so a
+ * card whose date moves brings its deadline with it.
+ */
+export const ARTWORK_LEAD_DAYS = 14;
+
+/** The artwork deadline implied by a card's current tentative date. */
+export function artworkDeadlineFrom(mailDateIso: string): Date | undefined {
+  const d = new Date(mailDateIso);
+  if (isNaN(d.getTime())) return undefined;
+  d.setDate(d.getDate() - ARTWORK_LEAD_DAYS);
+  return d;
+}

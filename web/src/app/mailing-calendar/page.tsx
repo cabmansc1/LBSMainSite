@@ -76,7 +76,7 @@ export default async function MailingCalendarPage() {
           <table className="w-full border-collapse text-[13.5px] min-w-[720px]">
             <thead>
               <tr>
-                {["Neighborhood", "Mails", "Artwork deadline", "Reach", "Availability", "Status", ""].map(
+                {["Neighborhood", "Tentatively mails", "Artwork deadline", "Reach", "Availability", "Status", ""].map(
                   (h) => (
                     <th
                       key={h}

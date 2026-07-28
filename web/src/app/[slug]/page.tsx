@@ -12,6 +12,7 @@ import { getLivePricing } from "@/lib/pricing-store";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { zoneContent } from "@/lib/zone-content";
 import { getPastCards } from "@/lib/past-cards";
+import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
 
 /**
  * Zone landing pages at their EXACT legacy URLs:
@@ -133,7 +134,7 @@ export default async function ZonePage({
             {[
               { value: zone.households5k, label: "Households / mailing" },
               { value: zone.zipCodes.join(" · "), label: "ZIP codes covered" },
-              { value: mailing?.mailMonth ?? "Coming soon", label: "Next mailing" },
+              { value: mailing?.mailMonth ?? "Coming soon", label: TENTATIVE_MAIL_LABEL },
             ].map((chip) => (
               <div
                 key={chip.label}

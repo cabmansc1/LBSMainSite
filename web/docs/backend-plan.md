@@ -18,18 +18,29 @@ Settled 2026-07-28. The rest of the document assumes these.
 | Login | Emailed numeric code, not a clickable link. |
 | Proof timeout | Never auto-approve. Hold and flag for the owner. |
 | Proof source | Owner designs it and uploads. No generation. |
-| Artwork deadline | Computed from the mail date, because mail dates move. |
+| Artwork deadline | Computed from the **tentative mail date**, 14 days before. |
 | SMS | Artwork and proof deadlines only. |
 
 Two of those carry consequences worth stating up front.
 
-**Mail dates change, so deadlines are derived and never stored.** The
-artwork deadline is computed from the card's *current* mail date in
-Mission Control every time it is read. Freezing it at purchase would
-mean a card that slips two weeks keeps chasing advertisers against a
-date that no longer exists, and a card that moves earlier stops chasing
-in time. Anything scheduled off a deadline recomputes when the mail date
-moves, and an advertiser whose deadline shifts gets told.
+**Mail dates are tentative, and the site now says so.** Upcoming cards
+read "Tentatively mails September 2026" rather than "Mails September
+2026", on the checkout picker, the coverage map, zone pages, the mailing
+calendar and the portal. Past cards still read "Mailed", because a card
+that has landed has an actual date.
+
+Saying it out loud is what makes the derived deadline honest. The
+artwork deadline is computed from the card's *current* tentative date in
+Mission Control every time it is read, 14 days before, never stored.
+Freezing it at purchase would mean a card that slips two weeks keeps
+chasing advertisers against a date that no longer exists, and a card
+that moves earlier stops chasing in time. Anything scheduled off a
+deadline recomputes when the tentative date moves, and an advertiser
+whose deadline shifts gets told.
+
+`ARTWORK_LEAD_DAYS` and `artworkDeadlineFrom()` live in
+`lib/mailings.ts` alongside the wording, so the number and the promise
+cannot drift apart.
 
 **Nothing auto-approves, so the queue has to be trustworthy.** With no
 timer to fall back on, a proof that goes unanswered is only ever caught
@@ -465,9 +476,6 @@ unaffected either way, and so is your email.
 from-address that passes SPF and DKIM on
 `lowcountrybusinessspotlight.com`. Receipts landing in spam would be
 worse than no receipts.
-
-**Phase A.** How many days before the mail date artwork is due. I have
-assumed 14 throughout; say the word if it differs.
 
 **Phase B.** One real proof, of any advertiser, so the approval screen
 is built against the actual file type and shape you produce rather than

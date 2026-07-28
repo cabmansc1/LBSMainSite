@@ -6,6 +6,7 @@ import { ZONES } from "@/lib/zones";
 import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
 import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
+import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
 
 /**
  * Coverage bubbles pinned to the printed town markers on the
@@ -111,7 +112,7 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
           {[
             ["Households / mailing", zone.households5k],
             ["ZIP codes", zone.zipCodes.join(", ")],
-            ["Next mailing", mailing?.mailMonth ?? "Coming soon"],
+            [TENTATIVE_MAIL_LABEL, mailing?.mailMonth ?? "Coming soon"],
             ["Ads from", formatPrice(POSTCARD_PRICING["5k"].small.priceCents)],
           ].map(([label, value]) => (
             <div

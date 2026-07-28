@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CoverageMap } from "@/components/coverage-map";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
+import { tentativelyMails } from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
 import { ZONES, zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
@@ -34,7 +35,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: `Coverage Map: ${ZONE_COUNT} Charleston-Area Zones`,
   description:
-    `See every neighborhood Lowcountry Business Spotlight mails: households, ZIP codes, next mailing dates, and live spot availability across ${ZONE_COUNT} zones.`,
+    `See every neighborhood Lowcountry Business Spotlight mails: households, ZIP codes, tentative mail dates, and live spot availability across ${ZONE_COUNT} zones.`,
   alternates: { canonical: `${SITE_URL}/coverage-map` },
   openGraph: {
     title: `Coverage Map | ${SITE_NAME}`,
@@ -60,7 +61,7 @@ export default async function CoverageMapPage() {
         </h1>
         <p className="mt-3 text-[#93A5B8] max-w-[56ch]">
           {ZONE_COUNT_WORD} zones across the Charleston Lowcountry. Select a
-          zone to see households, ZIP codes, the next mailing date, and live
+          zone to see households, ZIP codes, the tentative mail date, and live
           spot availability.
         </p>
         <div className="mt-9">
@@ -108,7 +109,7 @@ export default async function CoverageMapPage() {
                           )}
                         </h3>
                         <p className="text-[12.5px] text-[#93A5B8] mt-1">
-                          Mails {m.mailMonth}
+                          {tentativelyMails(m.mailMonth)}
                           {m.households ? ` · ${m.households} homes` : ""}
                         </p>
                         {cardCoverage(m).zips.length > 0 && (
