@@ -335,6 +335,25 @@ export async function getBusinesses(
       });
       photosByBiz.set(p.businessId, list);
     }
+
+    // Logos uploaded through the admin live in the database, because
+    // this app cannot write to the PHP host's disk. They go first so a
+    // freshly uploaded logo is the one the public listing shows.
+    try {
+      const { getBusinessImageIds } = await import("@/lib/business-images");
+      const uploaded = await getBusinessImageIds(rows.map((r) => r.id));
+      for (const [businessId, imageId] of uploaded) {
+        const list = photosByBiz.get(businessId) ?? [];
+        list.unshift({
+          url: `/api/business-image/${imageId}`,
+          alt: "",
+          type: "logo",
+        });
+        photosByBiz.set(businessId, list);
+      }
+    } catch (e) {
+      console.error("[directory] uploaded logo lookup failed:", e);
+    }
   }
 
   return rows.map((r) => ({

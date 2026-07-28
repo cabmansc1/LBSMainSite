@@ -103,6 +103,15 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
       // A listing without a thumbnail is a cosmetic loss, not a failure.
       console.error("[admin] listing photos read failed:", e);
     }
+
+    // Anything uploaded here wins over the legacy file. The old photos
+    // live on the PHP server's disk, which this app cannot write to, so
+    // a newly uploaded logo would otherwise be stored and then never
+    // shown.
+    const { getBusinessImageIds } = await import("@/lib/business-images");
+    for (const [id, imageId] of await getBusinessImageIds(ids)) {
+      logos.set(id, `/api/business-image/${imageId}`);
+    }
   }
 
   return (rows[0] ?? []).map((r) => ({

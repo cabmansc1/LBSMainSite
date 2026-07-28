@@ -15,6 +15,46 @@ function EditPanel({
 }) {
   const [form, setForm] = useState(business);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [logo, setLogo] = useState<string | null>(business.logoUrl);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoError, setLogoError] = useState("");
+
+  async function uploadLogo(file: File) {
+    setLogoBusy(true);
+    setLogoError("");
+    try {
+      const body = new FormData();
+      body.append("businessId", String(business.id));
+      body.append("file", file);
+      // No content-type header: the browser has to set the multipart
+      // boundary itself, and setting it by hand breaks the parse.
+      const res = await fetch("/api/admin/business-image", { method: "POST", body });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "That upload failed.");
+      setLogo(j.url);
+    } catch (e) {
+      setLogoError(String(e instanceof Error ? e.message : e));
+    } finally {
+      setLogoBusy(false);
+    }
+  }
+
+  async function removeLogo() {
+    setLogoBusy(true);
+    setLogoError("");
+    try {
+      const res = await fetch(
+        `/api/admin/business-image?businessId=${business.id}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) throw new Error("Could not remove that image.");
+      setLogo(null);
+    } catch (e) {
+      setLogoError(String(e instanceof Error ? e.message : e));
+    } finally {
+      setLogoBusy(false);
+    }
+  }
 
   const field = (k: keyof AdminBusiness) => ({
     value: (form[k] as string) ?? "",
@@ -66,6 +106,51 @@ function EditPanel({
           </button>
         </div>
         <div className="p-6 grid gap-3.5">
+          <div className="grid gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+              Logo
+            </span>
+            <div className="flex items-center gap-3.5 flex-wrap">
+              <span className="w-16 h-16 rounded-[10px] border border-line bg-surface overflow-hidden grid place-items-center shrink-0">
+                {logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logo} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-[11px] text-faint">None</span>
+                )}
+              </span>
+              <div className="grid gap-1.5">
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={logoBusy}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadLogo(f);
+                    e.target.value = "";
+                  }}
+                  className="text-[13px] file:mr-3 file:px-3 file:py-1.5 file:rounded-[8px] file:border file:border-line-strong file:bg-white file:text-[12.5px] file:font-semibold file:cursor-pointer"
+                />
+                <span className="text-[12px] text-muted">
+                  {logoBusy
+                    ? "Uploading..."
+                    : "Resized to 600px and converted to WebP automatically."}
+                </span>
+              </div>
+              {logo && (
+                <button
+                  type="button"
+                  disabled={logoBusy}
+                  onClick={removeLogo}
+                  className="text-[12.5px] font-semibold text-danger hover:underline disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {logoError && <p className="text-[12.5px] text-danger">{logoError}</p>}
+          </div>
+
           <label className="grid gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
               Business name
