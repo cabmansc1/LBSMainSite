@@ -75,10 +75,13 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
   const logos = new Map<number, string>();
   if (ids.length > 0) {
     try {
-      const base = (
-        process.env.UPLOADS_BASE_URL ??
-        "https://www.lowcountrybusinessspotlight.com/uploads"
-      ).replace(/\/$/, "");
+      // Same path the public directory builds. Getting this wrong is
+      // silent: every thumbnail 404s and the column just looks empty.
+      const base =
+        (
+          process.env.UPLOADS_BASE_URL ??
+          "https://www.lowcountrybusinessspotlight.com/uploads"
+        ).replace(/\/$/, "") + "/business_photos";
       const photoRows = (await db.execute(
         sql`SELECT business_id, filename
             FROM directory_business_photos
@@ -91,7 +94,10 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
       for (const p of photoRows[0] ?? []) {
         const id = Number(p.business_id);
         if (!p.filename || logos.has(id)) continue;
-        logos.set(id, `${base}/${String(p.filename).replace(/^\//, "")}`);
+        // The upload script also writes a resized copy under medium/,
+        // which is the right size for a 36px cell: the originals run to
+        // 100KB and this is a list of 85 of them.
+        logos.set(id, `${base}/medium/${String(p.filename).replace(/^\//, "")}`);
       }
     } catch (e) {
       // A listing without a thumbnail is a cosmetic loss, not a failure.
