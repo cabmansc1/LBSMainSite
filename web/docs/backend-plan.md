@@ -368,24 +368,25 @@ and tracking" actually means.
 
 These change the work, so they are worth answering before Phase A.
 
-1. **What is `lbspotlight.com`?** `SITE_URL` is
-   `www.lowcountrybusinessspotlight.com`, and that is correct: it serves
-   real `robots.txt` and `sitemap.xml`, its `.php` URLs return 200, and
-   it is the site carrying the SEO weight. But `www.lbspotlight.com`
-   also resolves, returns a 369KB single-page-app shell for *every*
-   path including `/robots.txt` and paths that cannot exist, and is the
-   domain on your email address and Mission Control subdomain.
+1. ~~Which domain is production?~~ **Settled: `lowcountrybusinessspotlight.com`.**
+   `SITE_URL` already names it, so nothing changes. The live site's
+   clean URLs 404 today and only `.php` works; the rebuild serves clean
+   URLs and 308s all 26 legacy `.php` paths to them, verified.
 
-   Two things to settle. Whether that SPA should keep answering on a
-   domain that looks canonical to anyone who reads your email address,
-   since a catch-all that 200s every URL is exactly what search engines
-   treat as a soft-404 farm. And whether the rebuild should eventually
-   live at the shorter domain, which is a redirect decision worth making
-   before launch rather than after.
+   **One loose end, on a domain outside this repo.**
+   `www.lbspotlight.com` is a single-page-app shell that returns 200 for
+   every path, including `/robots.txt` and paths that cannot exist. It
+   carries the title "Lowcountry Business Spotlight", has no `robots`
+   meta, no `X-Robots-Tag` and no canonical, so it is fully indexable
+   under your brand with effectively no crawlable text.
 
-   Note the live site's clean URLs 404 today; only `.php` works there.
-   The rebuild serves clean URLs and 308s all 26 legacy `.php` paths to
-   them, which I verified. So the migration direction is right.
+   That is a soft-404 farm on a brand domain, competing with the real
+   site for brand queries. Cheapest fix in order of preference: 301 the
+   whole domain to `lowcountrybusinessspotlight.com`, or serve a real
+   `robots.txt` disallowing everything, or add `noindex`. Worth doing
+   before cutover, because a migration is when search engines look
+   hardest at which domain to trust. Not a code change here, and not
+   mine to make.
 
 2. **Email sending: app, GHL, or both?** See Part 7. Changes roughly a
    third of the build.
