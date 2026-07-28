@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AdminBusiness } from "@/lib/admin-data";
 
 const PLANS = ["basic", "featured", "elite"];
@@ -363,6 +363,98 @@ async function act(action: string, ids: number[]) {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Failed");
 }
 
+/**
+ * The actions that are not Edit.
+ *
+ * Six buttons in a table cell wrapped into a vertical stack, which made
+ * every row about four lines tall and pushed the column off the right
+ * edge of the screen. Only one of them is used often, so Edit stays out
+ * and the rest live behind a menu.
+ *
+ * Delete sits at the bottom, separated and in red, because the distance
+ * between "Feature" and "Delete this business forever" should not be
+ * two pixels.
+ */
+function RowMenu({
+  business,
+  busy,
+  onAction,
+}: {
+  business: AdminBusiness;
+  busy: boolean;
+  onAction: (id: number, action: string, confirmText?: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: MouseEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", down);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("mousedown", down);
+      document.removeEventListener("keydown", key);
+    };
+  }, [open]);
+
+  const run = (action: string, confirmText?: string) => {
+    setOpen(false);
+    onAction(business.id, action, confirmText);
+  };
+
+  const item =
+    "w-full text-left px-4 py-2.5 text-[13px] hover:bg-surface disabled:opacity-40 border-b border-line last:border-b-0";
+
+  return (
+    <div ref={wrap} className="relative">
+      <button
+        type="button"
+        aria-label={`More actions for ${business.name}`}
+        aria-expanded={open}
+        disabled={busy}
+        onClick={() => setOpen(!open)}
+        className="text-[13px] font-bold px-2.5 py-1.5 rounded-[8px] border border-line-strong leading-none disabled:opacity-40"
+      >
+        ···
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-30 w-[190px] bg-white border border-line rounded-[10px] shadow-[0_12px_30px_rgba(8,21,39,.2)] overflow-hidden">
+          <button type="button" className={item} onClick={() => run("toggle_active")}>
+            {business.isActive ? "Deactivate" : "Activate"}
+          </button>
+          <button type="button" className={item} onClick={() => run("toggle_hidden")}>
+            {business.isHidden ? "Unhide" : "Hide"}
+          </button>
+          <button type="button" className={item} onClick={() => run("toggle_featured")}>
+            {business.isFeatured ? "Unfeature" : "Feature"}
+          </button>
+          <a
+            href={`/business/${business.slug}`}
+            target="_blank"
+            rel="noopener"
+            className={`${item} block`}
+          >
+            View on the site
+          </a>
+          <button
+            type="button"
+            className={`${item} text-danger font-semibold border-t border-line`}
+            onClick={() =>
+              run("delete", `Delete ${business.name}? This cannot be undone.`)
+            }
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -600,7 +692,7 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
       </div>
 
       <div className="overflow-x-auto border border-line rounded-(--radius-card) bg-white">
-        <table className="w-full border-collapse text-[13.5px] min-w-[1040px]">
+        <table className="w-full border-collapse text-[13.5px] min-w-[880px]">
           <thead>
             <tr>
               <th className="px-4 py-3 border-b border-line bg-surface w-8">
@@ -617,7 +709,9 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                 (h) => (
                   <th
                     key={h}
-                    className="text-left text-[11px] uppercase tracking-wider text-muted font-semibold px-4 py-3 border-b border-line bg-surface"
+                    className={`text-[11px] uppercase tracking-wider text-muted font-semibold px-4 py-3 border-b border-line bg-surface ${
+                      h === "Actions" ? "text-right" : "text-left"
+                    }`}
                   >
                     {h}
                   </th>
@@ -684,8 +778,12 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                     </div>
                   </td>
                   <td className="px-4 py-3.5 border-b border-line">
-                    <span className="block">{b.category ?? "-"}</span>
-                    <span className="text-[12px] text-muted">
+                    {/* nowrap: "home-services" was breaking at the hyphen
+                        and turning one word into two lines. */}
+                    <span className="block whitespace-nowrap capitalize">
+                      {b.category ?? "-"}
+                    </span>
+                    <span className="text-[12px] text-muted whitespace-nowrap capitalize">
                       {b.locationArea ?? b.city ?? "-"}
                     </span>
                   </td>
@@ -718,7 +816,10 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                       : "-"}
                   </td>
                   <td className="px-4 py-3.5 border-b border-line">
-                    <div className="flex gap-1.5 flex-wrap">
+                    <div className="flex gap-1.5 items-center justify-end">
+                      {/* Approve and Deny stay in the open: they are the
+                          only actions with a queue behind them, and
+                          burying them costs a business their listing. */}
                       {st === "pending" && (
                         <>
                           <button
@@ -748,40 +849,11 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
                       >
                         Edit
                       </button>
-                      <button
-                        type="button"
-                        disabled={busyRow === b.id}
-                        onClick={() => runRow(b.id, "toggle_active")}
-                        className="text-[12px] font-semibold px-2.5 py-1.5 rounded-[8px] border border-line-strong disabled:opacity-40"
-                      >
-                        {b.isActive ? "Deactivate" : "Activate"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busyRow === b.id}
-                        onClick={() => runRow(b.id, "toggle_hidden")}
-                        className="text-[12px] font-semibold px-2.5 py-1.5 rounded-[8px] border border-line-strong disabled:opacity-40"
-                      >
-                        {b.isHidden ? "Unhide" : "Hide"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busyRow === b.id}
-                        onClick={() => runRow(b.id, "toggle_featured")}
-                        className="text-[12px] font-semibold px-2.5 py-1.5 rounded-[8px] border border-line-strong disabled:opacity-40"
-                      >
-                        {b.isFeatured ? "Unfeature" : "Feature"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busyRow === b.id}
-                        onClick={() =>
-                          runRow(b.id, "delete", `Delete ${b.name}? This cannot be undone.`)
-                        }
-                        className="text-[12px] font-semibold px-2.5 py-1.5 rounded-[8px] border border-line-strong text-danger disabled:opacity-40"
-                      >
-                        Delete
-                      </button>
+                      <RowMenu
+                        business={b}
+                        busy={busyRow === b.id}
+                        onAction={runRow}
+                      />
                     </div>
                   </td>
                 </tr>
