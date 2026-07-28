@@ -66,6 +66,10 @@ export async function POST(req: Request) {
             category: md.category,
             email: s.customer_email ?? undefined,
             zoneSlug: md.zone ?? md.card,
+            // Checkout recorded which of the zone's cards was bought.
+            // Dropping it here is what let a paid advertiser land on the
+            // wrong Summerville card.
+            cardId: md.cardId || undefined,
             spot: md.spotSize ?? md.spotType,
             amountCents: s.amount_total ?? undefined,
             reference: md.reference ?? s.id,

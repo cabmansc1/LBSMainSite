@@ -53,7 +53,48 @@ const mcKey = () =>
  */
 const MC_TIMEOUT_MS = 6000;
 
+/**
+ * Staging must never mutate live Mission Control: a fake advertiser on
+ * a real card locks a real category and costs a real sale.
+ *
+ * The guard used to sit at the top of pushToMissionControl, which made
+ * it safe but also blind. Nothing downstream ran, so the one thing you
+ * actually want to know from a staging test purchase, whether the
+ * payload we would send is correct, was exactly what you could not see.
+ *
+ * It now sits at the fetch boundary. Every read still happens for real,
+ * so card resolution and account dedup are genuinely exercised, and
+ * every write logs its full method, path and body and returns a
+ * synthetic response so the rest of the sequence keeps going. A staging
+ * checkout prints precisely what production would have sent.
+ */
+const mcWritesBlocked = () => process.env.MC_READ_ONLY === "1";
+
+/** Marks a response that came from the dry run rather than from MC. */
+const DRY_RUN_ID = "dry-run";
+
 const mcFetch = async (path: string, init?: RequestInit) => {
+  const method = init?.method ?? "GET";
+  if (method !== "GET" && mcWritesBlocked()) {
+    let body: unknown;
+    try {
+      body = typeof init?.body === "string" ? JSON.parse(init.body) : init?.body;
+    } catch {
+      body = init?.body;
+    }
+    console.log(
+      "[mission-control read-only] would send:\n" +
+        JSON.stringify({ method, path, body }, null, 2),
+    );
+    // A plausible response, so the caller's next step runs and logs too.
+    // Without an id the payment POST after an advertiser create would
+    // silently never appear in the log.
+    return { id: DRY_RUN_ID, dryRun: true };
+  }
+  return mcFetchLive(path, init);
+};
+
+const mcFetchLive = async (path: string, init?: RequestInit) => {
   // Card/store reads cache for 60s; mutations and dedup lookups must
   // never be cached (a cached empty search result would create
   // duplicate accounts).
@@ -584,7 +625,13 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
   // those categories, so report none taken and let the order through;
   // the paid push to MC surfaces any genuine clash.
   if (!cards) return mcEnabled() ? [] : ["Plumbing", "Dental"];
-  const card = cards.find((c) => c.zoneSlug === zoneSlug && c.status === "open");
+  // isPast as well as status: a mailed card normalizes to "open",
+  // because the status ladder only demotes waitlist and in_production.
+  // Reading exclusivity off a card that already landed in mailboxes
+  // reports categories taken that are free on the card being sold.
+  const card = cards.find(
+    (c) => c.zoneSlug === zoneSlug && !c.isPast && c.status === "open",
+  );
   if (!card) return [];
   const sold = card.advertisers
     .map(advertiserCategory)
@@ -660,6 +707,13 @@ type SignupEvent = {
   phone?: string;
   category?: string;
   zoneSlug?: string;
+  /**
+   * The exact card bought, carried from checkout through Stripe
+   * metadata. A zone is not a card: Summerville has two filling at
+   * once, and picking by zone alone put a paid advertiser on whichever
+   * one came back first, locking their category on the wrong card.
+   */
+  cardId?: string;
   spot?: string;
   amountCents?: number;
   reference?: string;
@@ -718,19 +772,43 @@ export async function pushToMissionControl(event: SignupEvent): Promise<void> {
     console.log("[mission-control preview] would push:", event.type, event.businessName ?? "");
     return;
   }
-  // Staging safety: with MC_READ_ONLY set (or a read-only key), writes
-  // are never attempted, so no staging bug can mutate live MC data.
-  if (process.env.MC_READ_ONLY === "1") {
-    console.log("[mission-control read-only] suppressed write:", event.type, event.businessName ?? "");
-    return;
-  }
+  // Writes are blocked at the fetch boundary rather than here, so a
+  // read-only environment still runs the whole sequence and logs every
+  // request it would have made. See mcWritesBlocked.
   try {
-    if (event.type === "order_paid" && event.zoneSlug) {
+    if (event.type === "order_paid" && (event.cardId || event.zoneSlug)) {
       const cards = await fetchCards();
-      const card = cards?.find(
-        (c) => c.zoneSlug === event.zoneSlug && c.status === "open",
-      );
-      if (!card) throw new Error(`no open MC card for zone ${event.zoneSlug}`);
+      // The card they actually bought, by id. Falling back to the zone
+      // is for older orders that predate the id being carried through;
+      // with two cards filling in one zone that fallback is a coin
+      // flip, so it warns rather than passing silently.
+      let card = event.cardId
+        ? cards?.find((c) => String(c.id) === String(event.cardId))
+        : undefined;
+      if (!card) {
+        if (event.cardId) {
+          console.error(
+            `[mission-control] order ${event.reference ?? "?"} names card ${event.cardId}, which MC does not have. Falling back to zone.`,
+          );
+        }
+        // !isPast matters as much as the status: a mailed card
+        // normalizes to "open", so without it a paid advertiser could be
+        // written onto a card that was already printed and delivered.
+        const open = cards?.filter(
+          (c) => c.zoneSlug === event.zoneSlug && !c.isPast && c.status === "open",
+        );
+        if (open && open.length > 1) {
+          console.error(
+            `[mission-control] order ${event.reference ?? "?"} has no card id and ${event.zoneSlug} has ${open.length} cards open. Placing on ${open[0].id}; verify by hand.`,
+          );
+        }
+        card = open?.[0];
+      }
+      if (!card) {
+        throw new Error(
+          `no MC card for order ${event.reference ?? "?"} (card ${event.cardId ?? "none"}, zone ${event.zoneSlug ?? "none"})`,
+        );
+      }
 
       const dollars = event.amountCents ? event.amountCents / 100 : undefined;
       const advertiser = (await mcFetch(

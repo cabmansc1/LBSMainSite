@@ -153,6 +153,7 @@ export async function POST(req: Request) {
     category,
     email,
     zoneSlug: metadata.zone ?? metadata.card,
+    cardId: metadata.cardId,
     spot: metadata.spotSize ?? metadata.spotType,
     amountCents,
     reference,

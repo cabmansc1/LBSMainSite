@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/sections";
 import { OrderStatus } from "@/components/order-status";
+import { getSession } from "@/lib/auth";
+import { getOrderBySession } from "@/lib/orders";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,31 @@ export default async function CheckoutSuccessPage({
 }) {
   const sp = await searchParams;
   const isPreview = sp.preview === "1";
+
+  // Buying does not create a login, so this page used to offer everyone
+  // a "Go to your dashboard" button that bounced a brand new customer
+  // to a login screen they had no password for, seconds after they
+  // paid. Ask who they are before offering it.
+  const session = await getSession().catch(() => null);
+  const order = sp.session_id
+    ? await getOrderBySession(sp.session_id).catch(() => null)
+    : null;
+
+  // Prefilled so the team can find the order without a back and forth,
+  // and so the customer does not have to explain themselves twice.
+  const setupHref =
+    "mailto:hello@lbspotlight.com" +
+    `?subject=${encodeURIComponent("Dashboard access" + (order?.reference ? ` for order ${order.reference}` : ""))}` +
+    `&body=${encodeURIComponent(
+      [
+        "Please set up my advertiser dashboard.",
+        order?.businessName ? `Business: ${order.businessName}` : "",
+        order?.email ? `Email: ${order.email}` : "",
+        order?.reference ? `Order: ${order.reference}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    )}`;
 
   return (
     <div className="mx-auto max-w-[640px] px-6 py-20">
@@ -44,13 +71,31 @@ export default async function CheckoutSuccessPage({
             your ad artwork.
           </p>
         )}
+        {!isPreview && !session && (
+          <p className="text-[13.5px] text-body max-w-[46ch] bg-surface border border-line rounded-[10px] px-4 py-3">
+            <b>What happens next.</b> We will email you about your ad artwork,
+            and design it for you if you would rather. You do not need an
+            account for any of that. If you want a dashboard to track this
+            campaign and your future ones, ask us and we will set it up.
+          </p>
+        )}
+
         <div className="flex gap-3 flex-wrap justify-center mt-2">
-          <Link
-            href="/account"
-            className="bg-navy-950 text-white font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:bg-navy-800 transition-colors"
-          >
-            Go to your dashboard
-          </Link>
+          {session ? (
+            <Link
+              href="/account"
+              className="bg-navy-950 text-white font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:bg-navy-800 transition-colors"
+            >
+              Go to your dashboard
+            </Link>
+          ) : (
+            <a
+              href={setupHref}
+              className="bg-navy-950 text-white font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:bg-navy-800 transition-colors"
+            >
+              Set up my dashboard
+            </a>
+          )}
           <Link
             href="/"
             className="bg-white text-ink border border-line-strong font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:border-faint transition-colors"
