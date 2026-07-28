@@ -5,6 +5,7 @@ import {
   setUserActive,
   linkListingToUser,
   createLoginForEmail,
+  deleteUser,
 } from "@/lib/admin-data";
 
 /**
@@ -56,6 +57,15 @@ export async function POST(req: Request) {
     if (body.action === "set-active") {
       await setUserActive(id, body.active !== false);
       return NextResponse.json({ ok: true });
+    }
+
+    if (body.action === "delete") {
+      const result = await deleteUser(id);
+      // 409, not 500: a refusal because the account carries paid history
+      // is the endpoint working, and the UI shows the reason.
+      return result.ok
+        ? NextResponse.json({ ok: true, unlinkedListings: result.unlinkedListings })
+        : NextResponse.json({ error: result.reason }, { status: 409 });
     }
 
     if (body.action === "link-listing") {

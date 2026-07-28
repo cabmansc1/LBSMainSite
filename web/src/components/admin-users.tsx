@@ -20,6 +20,7 @@ function UserRow({ u }: { u: AdminUser }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [active, setActive] = useState(u.isActive);
+  const [deleted, setDeleted] = useState(false);
 
   async function post(body: Record<string, unknown>) {
     const res = await fetch("/api/admin/users", {
@@ -65,16 +66,65 @@ function UserRow({ u }: { u: AdminUser }) {
   async function toggleActive() {
     const next = !active;
     setActive(next);
+    setState("idle");
+    setMessage("");
     try {
       await post({ action: "set-active", active: next });
     } catch {
       setActive(!next);
+      setState("error");
+      setMessage("Could not change that. Try signing in again.");
     }
+  }
+
+  /**
+   * Deleting is refused server-side when the account has card orders,
+   * because an inner join means those paid orders would disappear from
+   * the Orders page. The refusal comes back as a sentence, so it is
+   * shown rather than swallowed.
+   */
+  async function remove() {
+    const listings = u.listings.length;
+    const note = listings
+      ? `\n\n${listings} listing${listings === 1 ? "" : "s"} will stay in the directory, unlinked from any owner.`
+      : "";
+    if (!confirm(`Delete the account ${u.email}? This cannot be undone.${note}`)) {
+      return;
+    }
+    setState("busy");
+    setMessage("");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: u.id, action: "delete" }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j.ok !== true) {
+        throw new Error(j.error ?? "Could not delete that account.");
+      }
+      setDeleted(true);
+    } catch (e) {
+      setState("error");
+      setMessage(String(e instanceof Error ? e.message : e));
+    }
+  }
+
+  if (deleted) {
+    return (
+      <tr className="bg-surface">
+        <td colSpan={5} className="px-4 py-3 border-b border-line text-[13px] text-muted">
+          {u.email} deleted.
+          {u.listings.length > 0 &&
+            ` ${u.listings.length} listing${u.listings.length === 1 ? "" : "s"} kept in the directory, now unlinked.`}
+        </td>
+      </tr>
+    );
   }
 
   return (
     <>
-      <tr className="hover:bg-surface align-top">
+      <tr className={`hover:bg-surface align-top ${active ? "" : "text-muted"}`}>
         <td className="px-4 py-3 border-b border-line">
           <b className="font-semibold">{u.email}</b>
           <div className="text-[12px] text-muted mt-0.5">
@@ -88,16 +138,23 @@ function UserRow({ u }: { u: AdminUser }) {
           {u.createdAt ? u.createdAt.slice(0, 10) : "-"}
         </td>
         <td className="px-4 py-3 border-b border-line">
-          <button
-            type="button"
-            onClick={toggleActive}
-            className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 border ${
+          {/* The state and the control that changes it, rather than a
+              chip that happens to be clickable. Nobody found that. */}
+          <span
+            className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 border inline-block ${
               active
                 ? "bg-[#e5f5ec] border-[#bfe8d2] text-ok"
                 : "bg-surface border-line text-muted"
             }`}
           >
-            {active ? "Active" : "Inactive"}
+            {active ? "Active" : "Disabled"}
+          </span>
+          <button
+            type="button"
+            onClick={toggleActive}
+            className="block mt-1 text-[12px] font-semibold text-muted hover:text-navy-950"
+          >
+            {active ? "Disable" : "Enable"}
           </button>
         </td>
         <td className="px-4 py-3 border-b border-line whitespace-nowrap">
@@ -121,9 +178,24 @@ function UserRow({ u }: { u: AdminUser }) {
             >
               {open ? "Cancel" : "Set password"}
             </button>
+            <button
+              type="button"
+              onClick={remove}
+              disabled={state === "busy"}
+              className="text-[13px] font-semibold text-muted hover:text-danger disabled:opacity-40"
+            >
+              Delete
+            </button>
           </div>
         </td>
       </tr>
+      {state === "error" && message && !open && (
+        <tr>
+          <td colSpan={5} className="px-4 pb-3 border-b border-line">
+            <p className="text-[12.5px] text-danger max-w-[80ch]">{message}</p>
+          </td>
+        </tr>
+      )}
       {open && (
         <tr className="bg-surface">
           <td colSpan={5} className="px-4 py-4 border-b border-line">

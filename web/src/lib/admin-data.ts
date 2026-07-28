@@ -640,6 +640,32 @@ export async function getAdminLeads(): Promise<AdminLead[]> {
   }
 }
 
+/**
+ * Removes leads outright, matching admin/leads.php, which has always
+ * done a hard DELETE behind a confirm.
+ *
+ * Safe to be blunt about because the lead was pushed to GoHighLevel at
+ * capture time by process_form.php and save-quiz-lead.php. This table
+ * is the local copy, so deleting a row here does not lose the contact.
+ */
+export async function deleteLeads(ids: number[]): Promise<number> {
+  const clean = ids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (clean.length === 0) return 0;
+  try {
+    const { db } = await import("@/lib/db");
+    const result = (await db.execute(
+      sql`DELETE FROM leads WHERE id IN (${sql.join(
+        clean.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+    )) as unknown as [{ affectedRows?: number }];
+    return result[0]?.affectedRows ?? 0;
+  } catch (e) {
+    console.error("[admin] could not delete leads:", e);
+    return 0;
+  }
+}
+
 /* ---------- advertiser accounts ---------- */
 
 export type AdminUser = {
@@ -697,6 +723,77 @@ export async function setUserActive(id: number, active: boolean) {
   await db.execute(
     sql`UPDATE directory_users SET is_active = ${active ? 1 : 0} WHERE id = ${id}`,
   );
+}
+
+export type DeleteUserResult =
+  | { ok: true; unlinkedListings: number }
+  | { ok: false; reason: string };
+
+/**
+ * Removes an advertiser account.
+ *
+ * Refused outright when the account has neighborhood card orders.
+ * directory_card_orders.user_id is NOT NULL and getAdminOrders joins
+ * directory_users with an inner JOIN, so deleting the account does not
+ * just orphan the orders, it removes them from the Orders page and from
+ * the revenue the admin reports. Somebody's paid history would silently
+ * stop existing. Disabling is the right answer there and the error says
+ * so.
+ *
+ * Listings are unlinked rather than deleted. A directory listing is
+ * public content that stands on its own: most of them were created
+ * without an owner in the first place, and the account going away is no
+ * reason for the business to disappear from the directory.
+ *
+ * Login codes go with the account, since leaving a live code behind
+ * would let somebody sign in to a login that no longer exists.
+ */
+export async function deleteUser(id: number): Promise<DeleteUserResult> {
+  if (!Number.isInteger(id) || id <= 0) {
+    return { ok: false, reason: "That is not a valid account." };
+  }
+  try {
+    const { db } = await import("@/lib/db");
+
+    const userRows = (await db.execute(
+      sql`SELECT email FROM directory_users WHERE id = ${id} LIMIT 1`,
+    )) as unknown as [{ email: string }[]];
+    const user = userRows[0]?.[0];
+    if (!user) return { ok: false, reason: "That account no longer exists." };
+
+    const orderRows = (await db.execute(
+      sql`SELECT COUNT(*) AS n FROM directory_card_orders WHERE user_id = ${id}`,
+    )) as unknown as [{ n: number }[]];
+    const orders = Number(orderRows[0]?.[0]?.n ?? 0);
+    if (orders > 0) {
+      return {
+        ok: false,
+        reason:
+          `This account has ${orders} card order${orders === 1 ? "" : "s"}. ` +
+          "Deleting it would remove them from the Orders page and from " +
+          "revenue totals. Set the account inactive instead.",
+      };
+    }
+
+    const unlink = (await db.execute(
+      sql`UPDATE directory_businesses SET user_id = NULL WHERE user_id = ${id}`,
+    )) as unknown as [{ affectedRows?: number }];
+
+    // Best effort: the table is created on first use, so it may not exist.
+    try {
+      await db.execute(
+        sql`DELETE FROM lbs_login_codes WHERE email = ${user.email}`,
+      );
+    } catch {
+      /* no codes table yet */
+    }
+
+    await db.execute(sql`DELETE FROM directory_users WHERE id = ${id}`);
+    return { ok: true, unlinkedListings: unlink[0]?.affectedRows ?? 0 };
+  } catch (e) {
+    console.error("[admin] could not delete user:", e);
+    return { ok: false, reason: "That account could not be deleted." };
+  }
 }
 
 /** Links a listing to a login so the portal can show "your listing". */
