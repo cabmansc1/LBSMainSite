@@ -272,15 +272,24 @@ export default async function BusinessPage({
                       c.mcCardId === a.cardId ||
                       (c.zoneName === a.zoneName && c.mailMonth === a.mailMonth),
                   );
-                  // Two cards can share a zone and a month, so name the
-                  // card when that happens rather than printing the same
-                  // line twice.
+                  // Two cards can share a zone and a month. Tell them
+                  // apart by mail date rather than card name: Mission
+                  // Control names cards for the campaign, so one mailing
+                  // on April 30 is called "May 2026" and printing that
+                  // beside "April 2026" reads like a mistake.
                   const sameMonth = appearances.filter(
                     (x) => x.zoneName === a.zoneName && x.mailMonth === a.mailMonth,
                   );
+                  const exactDate =
+                    a.mailDateIso &&
+                    new Date(a.mailDateIso).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    });
                   const label =
-                    sameMonth.length > 1 && a.cardName
-                      ? `${a.zoneName}, ${a.mailMonth} (${a.cardName})`
+                    sameMonth.length > 1 && exactDate
+                      ? `${a.zoneName}, ${exactDate}`
                       : `${a.zoneName}, ${a.mailMonth}`;
                   return (
                     <li
