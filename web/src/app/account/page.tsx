@@ -93,8 +93,10 @@ export default async function AccountHomePage() {
               Your {nextCard.zoneName} card mails {nextCard.mailMonth}
             </h2>
             <p className="text-sm text-body mt-1">
-              Artwork deadline {nextCard.artworkDeadline}. Send us your art or
-              let us design it.
+              {nextCard.artworkDeadline
+                ? `Artwork deadline ${nextCard.artworkDeadline}. `
+                : ""}
+              Send us your art or let us design it.
             </p>
           </div>
           <Link

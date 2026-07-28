@@ -177,8 +177,8 @@ type McCard = {
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
-  artworkDeadline: string;
-  households: string;
+  artworkDeadline?: string;
+  households?: string;
   spotsTotal: number;
   spotsTaken: number;
   status: UpcomingMailing["status"];
@@ -330,20 +330,47 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
     : "open";
 
   const mailDate = str(raw.mailDate ?? raw.mailMonth ?? raw.month);
-  const households = raw.distribution ?? raw.cardsMailed ?? raw.households;
+  const routes = parseRoutes(raw.notes);
+
+  // Reach, in order of how much we trust it.
+  //
+  // The USPS route table wins. It is a sum of real per-route delivery
+  // counts, and it is the number the site prints beside it as
+  // "deliverable addresses". Mission Control's distribution field is a
+  // planned print quantity, which is a different thing and is often a
+  // round number somebody typed: the Summerville card carried 5,000
+  // against a route table totalling 2,680, and the page printed both,
+  // one line apart.
+  //
+  // Below both sat a literal "5,000+", a zone-level sales figure that is
+  // not a fact about any card at all. That is gone: a card with no
+  // reach we can stand behind now reports none.
+  const routeTotal = routes.reduce((n, r) => n + r.total, 0);
+  const explicit = raw.distribution ?? raw.cardsMailed ?? raw.households;
+  const explicitNum =
+    typeof explicit === "number"
+      ? explicit
+      : explicit !== undefined && explicit !== null && String(explicit).trim()
+        ? Number(String(explicit).replace(/[^0-9]/g, ""))
+        : NaN;
+  const reach =
+    routeTotal > 0
+      ? routeTotal
+      : Number.isFinite(explicitNum) && explicitNum > 0
+        ? explicitNum
+        : undefined;
+
+  const deadline = str(raw.artworkDeadline ?? raw.deadline).trim();
 
   return {
     id: raw.id,
     cardName: str(raw.cardName),
-    routes: parseRoutes(raw.notes),
+    routes,
     zoneSlug: zone.slug,
     zoneName,
     mailMonth: formatMailMonth(mailDate),
-    artworkDeadline: str(raw.artworkDeadline ?? raw.deadline, "Ask us"),
-    households:
-      typeof households === "number"
-        ? households.toLocaleString("en-US")
-        : str(households, "5,000+"),
+    artworkDeadline: deadline || undefined,
+    households: reach !== undefined ? reach.toLocaleString("en-US") : undefined,
     spotsTotal,
     spotsTaken,
     status,
@@ -745,8 +772,8 @@ export type AdvertiserCard = {
   zoneName: string;
   mailMonth: string;
   mailDateIso: string;
-  artworkDeadline: string;
-  households: string;
+  artworkDeadline?: string;
+  households?: string;
   spotsTotal: number;
   spotsTaken: number;
   isPast: boolean;
@@ -952,7 +979,7 @@ export async function getMcCardById(cardId: string): Promise<
       zoneName: string;
       mailMonth: string;
       mailDateIso: string;
-      households: string;
+      households?: string;
       routes: CardRoute[];
       advertisers: { businessName: string; category?: string }[];
     }

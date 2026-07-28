@@ -115,8 +115,16 @@ export default async function MailingCalendarPage() {
                       )}
                     </td>
                     <td className="px-4 py-3.5 border-b border-line">{m.mailMonth}</td>
-                    <td className="px-4 py-3.5 border-b border-line">{m.artworkDeadline}</td>
-                    <td className="px-4 py-3.5 border-b border-line num">{m.households}</td>
+                    {/* Blank in Mission Control means blank here. These
+                        cells used to print "Ask us" and an invented
+                        "5,000+" rather than admit the schedule is not
+                        set yet. */}
+                    <td className="px-4 py-3.5 border-b border-line">
+                      {m.artworkDeadline ?? <span className="text-faint">TBD</span>}
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-line num">
+                      {m.households ?? <span className="text-faint">TBD</span>}
+                    </td>
                     <td className="px-4 py-3.5 border-b border-line">
                       <FillMeter taken={m.spotsTaken} total={m.spotsTotal} />
                     </td>

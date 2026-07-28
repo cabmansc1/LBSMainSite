@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
 import { ALL_SIZES, type SpotSize } from "@/lib/pricing";
 import { cardCoverage } from "@/lib/card-coverage";
+import type { UpcomingMailing } from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import {
@@ -42,6 +43,22 @@ const CATEGORIES = [
  */
 const availabilityFrom = (cap: CardCapacity) =>
   ALL_SIZES.map((size) => ({ size, open: cap.fits[size] }));
+
+/**
+ * The reach-and-deadline line, built only from facts we hold.
+ *
+ * This used to be a fixed sentence, so a card with neither figure still
+ * read "5,000+ households · artwork deadline Ask us". The household
+ * count is dropped when the route breakdown alongside it already states
+ * the same number in more useful terms.
+ */
+const mailingFacts = (m: UpcomingMailing): string[] =>
+  [
+    m.households && cardCoverage(m).zips.length === 0
+      ? `${m.households} households`
+      : null,
+    m.artworkDeadline ? `artwork deadline ${m.artworkDeadline}` : null,
+  ].filter((f): f is string => f !== null);
 
 export async function generateMetadata({
   params,
@@ -167,10 +184,11 @@ export default async function PostcardCheckoutPage({
                         addresses
                       </p>
                     )}
-                    <p className="text-[13px] text-muted mt-0.5 num">
-                      {m.households} households · artwork deadline{" "}
-                      {m.artworkDeadline}
-                    </p>
+                    {mailingFacts(m).length > 0 && (
+                      <p className="text-[13px] text-muted mt-0.5 num">
+                        {mailingFacts(m).join(" · ")}
+                      </p>
+                    )}
                   </div>
                   <span
                     className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 border ${
@@ -254,6 +272,8 @@ export default async function PostcardCheckoutPage({
   const spotsLeft =
     mailing.status === "full" ? 0 : mailing.spotsTotal - mailing.spotsTaken;
 
+  const headerFacts = mailingFacts(mailing);
+
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -271,10 +291,11 @@ export default async function PostcardCheckoutPage({
             Reserve your spot: {cardCoverage(mailing).name ?? z.name},{" "}
             {mailing.mailMonth}
           </h1>
-          <p className="text-[#93A5B8] text-[14.5px] mt-2 num">
-            {mailing.households} households · artwork deadline{" "}
-            {mailing.artworkDeadline}
-          </p>
+          {headerFacts.length > 0 && (
+            <p className="text-[#93A5B8] text-[14.5px] mt-2 num">
+              {headerFacts.join(" · ")}
+            </p>
+          )}
           {mailing.cardId && descriptions[mailing.cardId] && (
             <p className="text-[#93A5B8] text-[14px] mt-2.5 max-w-[60ch]">
               {descriptions[mailing.cardId]}

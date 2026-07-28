@@ -37,8 +37,21 @@ export type UpcomingMailing = {
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
-  artworkDeadline: string;
-  households: string;
+  /**
+   * Undefined when Mission Control has not set one. It used to default
+   * to the string "Ask us", which then printed on customer-facing pages
+   * as "artwork deadline Ask us".
+   */
+  artworkDeadline?: string;
+  /**
+   * Deliverable addresses for this card, from Mission Control or summed
+   * from the USPS route table. Undefined when neither is known.
+   *
+   * This used to default to "5,000+", which put an invented reach figure
+   * next to the real route count: the Summerville card page said "2,680
+   * addresses" and "5,000+ households" one line apart.
+   */
+  households?: string;
   spotsTotal: number;
   spotsTaken: number;
   status: "open" | "almost-full" | "full" | "waitlist";

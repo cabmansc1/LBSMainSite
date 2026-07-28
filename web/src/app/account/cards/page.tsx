@@ -80,19 +80,21 @@ export default async function AccountCardsPage() {
                     </div>
                     <p className="text-[13px] text-muted mt-1">
                       {c.adSize}
-                      {money(c.amountCents) ? ` · ${money(c.amountCents)}` : ""} ·{" "}
-                      {c.households} homes
+                      {money(c.amountCents) ? ` · ${money(c.amountCents)}` : ""}
+                      {c.households ? ` · ${c.households} homes` : ""}
                       {c.category ? ` · ${c.category}` : ""}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[10.5px] font-bold uppercase tracking-widest text-muted">
-                      Artwork deadline
+                  {c.artworkDeadline && (
+                    <div className="text-right">
+                      <div className="text-[10.5px] font-bold uppercase tracking-widest text-muted">
+                        Artwork deadline
+                      </div>
+                      <div className="text-[15px] font-bold text-[#9a5c00]">
+                        {c.artworkDeadline}
+                      </div>
                     </div>
-                    <div className="text-[15px] font-bold text-[#9a5c00]">
-                      {c.artworkDeadline}
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div>
@@ -143,7 +145,8 @@ export default async function AccountCardsPage() {
                 Mailed {c.mailMonth}
               </span>
               <span className="text-[12.5px] text-muted num">
-                {c.households} homes · {c.adSize}
+                {c.households ? `${c.households} homes · ` : ""}
+                {c.adSize}
               </span>
             </Card>
           ))}

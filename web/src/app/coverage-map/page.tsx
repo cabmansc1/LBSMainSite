@@ -89,7 +89,8 @@ export default async function CoverageMapPage() {
                           )}
                         </h3>
                         <p className="text-[12.5px] text-[#93A5B8] mt-1">
-                          Mails {m.mailMonth} · {m.households} homes
+                          Mails {m.mailMonth}
+                          {m.households ? ` · ${m.households} homes` : ""}
                         </p>
                         {cardCoverage(m).zips.length > 0 && (
                           <p className="text-[12px] text-[#67768A] mt-0.5 num">
