@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CtaBand } from "@/components/sections";
-import { getLowCoDeals } from "@/lib/lowco-deals";
+import { LOWCODEALS_BRAND, getLowCoDeals } from "@/lib/lowco-deals";
 import { getBusinesses } from "@/lib/directory";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -27,11 +27,22 @@ const money = (n?: number) =>
     ? undefined
     : `$${n.toLocaleString("en-US")}`;
 
+/**
+ * How many deals this page shows.
+ *
+ * The feed returns everything LowCoDeals has, and rendering all of it
+ * would turn this into a thousand-card page the day the sister site
+ * takes off. Showing the newest and pointing at LowCoDeals for the rest
+ * keeps the page fast and sends the traffic where the deals live.
+ */
+const MAX_DEALS = 36;
+
 export default async function DealsPage() {
-  const [deals, businesses] = await Promise.all([
+  const [allDeals, businesses] = await Promise.all([
     getLowCoDeals(),
     getBusinesses(),
   ]);
+  const deals = allDeals.slice(0, MAX_DEALS);
   const listingOffers = businesses.filter((b) => b.offer);
 
   const offerJsonLd = {
@@ -130,6 +141,20 @@ export default async function DealsPage() {
                 </a>
               ))}
             </div>
+            {allDeals.length > deals.length && (
+              <p className="text-[13.5px] text-muted mt-5">
+                Showing {deals.length} of {allDeals.length} live deals.{" "}
+                <a
+                  href={LOWCODEALS_BRAND.site + "/deals"}
+                  target="_blank"
+                  rel="noopener"
+                  className="font-semibold text-[#5C8420] hover:underline"
+                >
+                  See the rest on LowCoDeals
+                </a>
+                .
+              </p>
+            )}
           </section>
         )}
 
