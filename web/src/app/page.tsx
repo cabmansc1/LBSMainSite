@@ -163,6 +163,16 @@ export default async function HomePage() {
   const spotsLeft = nextCard
     ? Math.max(0, nextCard.spotsTotal - nextCard.spotsTaken)
     : 0;
+  // The hero badge said "September Summerville card: 2 spots left" in
+  // hardcoded copy. It was the first line on the page and it was going
+  // to keep saying September forever. Same source as the closing CTA;
+  // month only, because the year makes the pill wrap on a phone.
+  const heroBadge =
+    nextCard && spotsLeft > 0
+      ? `${nextCard.mailMonth.split(" ")[0]} ${nextCard.zoneName} card: ${spotsLeft} ${
+          spotsLeft === 1 ? "spot" : "spots"
+        } left`
+      : "Now booking upcoming neighborhood cards";
   const ctaTitle = nextCard
     ? spotsLeft > 0
       ? `The ${nextCard.zoneName} card mailing ${nextCard.mailMonth} has ${spotsLeft} ${
@@ -180,12 +190,12 @@ export default async function HomePage() {
           <div>
             <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/6 border border-white/14 text-[#C6D3E0]">
               <span className="w-1.5 h-1.5 rounded-full bg-cta" />
-              September Summerville card: 2 spots left
+              {heroBadge}
             </span>
             <h1 className="mt-5 text-4xl md:text-[54px] font-bold tracking-[-0.035em] leading-[1.06] text-balance">
               Your business in{" "}
-              <em className="not-italic text-brand">5,000 mailboxes.</em> One
-              competitor: none.
+              <em className="not-italic text-brand">5,000 mailboxes.</em> Your
+              competitors in none.
             </h1>
             <p className="mt-5 text-[17px] leading-relaxed text-[#AEBDCC] max-w-[50ch]">
               Shared 9×12 postcards mailed to Charleston-area neighborhoods. One
@@ -246,8 +256,8 @@ export default async function HomePage() {
       <section className="mx-auto max-w-[1120px] px-6 py-22">
         <SectionHeading
           eyebrow="Why it works"
-          title="Billboard impact, split eleven ways"
-          sub="You share the card, and the cost, with non-competing local businesses. Everyone gets seen. Nobody pays billboard prices."
+          title="Billboard impact, shared cost"
+          sub="You share the card, and the cost, with local businesses you do not compete with. Everyone gets seen. Nobody pays billboard prices."
         />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {BENEFITS.map((b) => (
