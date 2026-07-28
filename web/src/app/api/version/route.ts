@@ -44,6 +44,12 @@ export async function GET() {
       publicSiteUrl: process.env.PUBLIC_SITE_URL ?? null,
     },
     mcEnabled: mcEnabled(),
+    // Whether this deploy would actually write to Mission Control.
+    // Flipping MC_READ_ONLY is a Railway variable change, and without
+    // this the only way to know it took effect is to make a purchase
+    // and see whether anything happened, which is a poor way to find
+    // out you flipped the wrong thing.
+    mcWrites: process.env.MC_READ_ONLY === "1" ? "blocked (dry run)" : "LIVE",
     mcStatus,
   });
 }
