@@ -83,8 +83,14 @@ export async function ensureOrdersTable() {
       sql`ALTER TABLE lbs_orders ADD COLUMN card_id VARCHAR(64) DEFAULT '' AFTER zone_slug`,
     );
   } catch (e) {
-    const code = (e as { code?: string })?.code;
-    if (code !== "ER_DUP_FIELDNAME") {
+    // Drizzle wraps the driver error, so the MySQL code is on `cause`
+    // rather than on the error itself. Reading only the top level meant
+    // the expected outcome, the column already existing, logged a full
+    // stack trace on every boot and buried the failures that matter.
+    const codeOf = (err: unknown): string | undefined =>
+      (err as { code?: string })?.code ??
+      (err as { cause?: { code?: string } })?.cause?.code;
+    if (codeOf(e) !== "ER_DUP_FIELDNAME") {
       console.error("[orders] could not add card_id column:", e);
     }
   }

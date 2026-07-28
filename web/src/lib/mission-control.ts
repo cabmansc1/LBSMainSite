@@ -140,8 +140,16 @@ const mcFetchLive = async (path: string, init?: RequestInit) => {
       ...(cacheable ? { next: { revalidate: 60 } } : {}),
     });
     if (followed.status >= 300 && followed.status < 400) {
+      // The same /login test as above. MC answers a write from a
+      // read-only key with 308 to the canonical path first and 307 to
+      // /login second, so the rejection only shows up on this hop.
+      // Calling that a "redirect loop" sent a real diagnosis looking in
+      // entirely the wrong place: the key was the problem, not routing.
+      const to = followed.headers.get("location") ?? "";
       throw new Error(
-        `Mission Control ${path}: redirect loop (${followed.status} -> ${followed.headers.get("location") ?? "?"})`,
+        /\/login/i.test(to)
+          ? `Mission Control ${path}: auth failed (${followed.status} -> ${to}). The key cannot write; check MC_API_KEY is the write-scoped one.`
+          : `Mission Control ${path}: redirect loop (${followed.status} -> ${to || "?"})`,
       );
     }
     if (!followed.ok) {
