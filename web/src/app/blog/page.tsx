@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/sections";
 import { getPosts } from "@/lib/blog";
@@ -60,10 +61,18 @@ export default async function BlogPage() {
               <Link key={p.slug} href={`/blog/${p.slug}`}>
                 <Card className="overflow-hidden hover:border-faint transition-colors h-full grid content-start">
                   {p.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={p.imageUrl}
                       alt=""
+                      // Intrinsic size only: the 16/9 box below still
+                      // decides the rendered size. It is here so the
+                      // card reserves its space before the image lands.
+                      width={640}
+                      height={360}
+                      // The grid is three cards inside 1120px, so the
+                      // slot is about 350px. Without this the browser
+                      // asks for a viewport-wide image to fill it.
+                      sizes="(min-width: 1024px) 350px, (min-width: 640px) 50vw, 100vw"
                       loading="lazy"
                       className="w-full aspect-[16/9] object-cover"
                     />

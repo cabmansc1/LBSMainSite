@@ -201,95 +201,34 @@ export async function getBusinesses(
 
   try {
   const { db } = await import("@/lib/db");
-  const { businesses, categories, locations } = await import(
-    "@/lib/db/schema-legacy"
-  );
-  const { and, eq, desc, sql } = await import("drizzle-orm");
+  const {
+    businesses,
+    businessPhotos,
+    businessTags,
+    categories,
+    locations,
+    tags,
+  } = await import("@/lib/db/schema-legacy");
+  const { and, asc, eq, desc, inArray, sql } = await import("drizzle-orm");
 
-  // Matches legacy Business.php exactly: businesses.category and
-  // businesses.location_area STORE SLUGS, and filters compare slugs
-  // directly. Display labels come from the taxonomy tables afterward.
-  const conds = [
-    eq(businesses.isActive, true),
-    eq(businesses.isVerified, true),
-    eq(businesses.isHidden, false),
-  ];
-  if (filters.category) conds.push(eq(businesses.category, filters.category));
-  if (filters.location)
-    conds.push(eq(businesses.locationArea, filters.location));
-  if (filters.tag) {
-    const { tags, businessTags } = await import("@/lib/db/schema-legacy");
-    const { inArray: inArr } = await import("drizzle-orm");
-    const tagRow = await db
-      .select()
-      .from(tags)
-      .where(eq(tags.slug, filters.tag))
-      .limit(1);
-    if (tagRow[0]) {
-      const links = await db
-        .select()
-        .from(businessTags)
-        .where(eq(businessTags.tagId, tagRow[0].id));
-      const ids = links.map((l) => l.businessId);
-      if (ids.length === 0) return [];
-      conds.push(inArr(businesses.id, ids));
-    } else {
-      return [];
-    }
-  }
-
+  // MySQL is not necessarily in the same datacenter as this app, so a
+  // query kept in sequence behind another is a whole extra round trip
+  // added to every page view. These two need nothing from the listing
+  // query and the listing query needs nothing from them, so they go out
+  // now and get collected at the bottom.
+  //
   // Slug -> pretty label maps (legacy fallback: ucwords on the slug).
-  const [catRows, locRows] = await Promise.all([
+  const taxonomyQuery = Promise.all([
     db.select().from(categories),
     db.select().from(locations),
   ]);
-  const prettify = (slug: string) =>
-    slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const catLabel = new Map(catRows.map((c) => [c.slug, c.displayName]));
-  const locLabel = new Map(locRows.map((l) => [l.slug, l.displayName]));
 
-  const rows = await db
-    .select()
-    .from(businesses)
-    .where(and(...conds))
-    .orderBy(
-      sql`CASE WHEN ${businesses.planType} = 'elite' THEN 0 WHEN ${businesses.planType} = 'featured' THEN 1 ELSE 2 END`,
-      desc(businesses.createdAt),
-    )
-    .limit(200);
-
-  // Photos for all listed businesses in one query, ordered like the
-  // legacy site: primary first, then sort order, then upload date.
-  const { inArray, asc } = await import("drizzle-orm");
-  const { businessPhotos, businessTags, tags } = await import(
-    "@/lib/db/schema-legacy"
-  );
-
-  // Tags per business (junction join, batched).
-  const tagsByBiz = new Map<number, { name: string; slug: string }[]>();
-  if (rows.length > 0) {
-    const links = await db
-      .select({
-        businessId: businessTags.businessId,
-        name: tags.displayName,
-        slug: tags.slug,
-      })
-      .from(businessTags)
-      .innerJoin(tags, eq(businessTags.tagId, tags.id))
-      .where(inArray(businessTags.businessId, rows.map((r) => r.id)));
-    for (const l of links) {
-      const list = tagsByBiz.get(l.businessId) ?? [];
-      list.push({ name: l.name, slug: l.slug });
-      tagsByBiz.set(l.businessId, list);
-    }
-  }
   // Coordinates for the map view. The legacy geocoder populated columns
   // literally named lat/lng (directory.php reads $b['lat'] off SELECT
   // b.*), while newer write paths use latitude/longitude. Probe both so
   // pins show regardless of which pair this install carries.
-  const coordsByBiz = new Map<number, { lat: number; lng: number }>();
-  {
-    const { sql } = await import("drizzle-orm");
+  const coordsQuery = (async () => {
+    const coords = new Map<number, { lat: number; lng: number }>();
     const candidates = [
       "SELECT id, COALESCE(lat, latitude) AS la, COALESCE(lng, longitude) AS ln FROM directory_businesses",
       "SELECT id, lat AS la, lng AS ln FROM directory_businesses",
@@ -304,7 +243,7 @@ export async function getBusinesses(
           if (c.la != null && c.ln != null) {
             const lat = Number(c.la);
             const lng = Number(c.ln);
-            if (!isNaN(lat) && !isNaN(lng)) coordsByBiz.set(c.id, { lat, lng });
+            if (!isNaN(lat) && !isNaN(lng)) coords.set(c.id, { lat, lng });
           }
         }
         break;
@@ -312,19 +251,107 @@ export async function getBusinesses(
         // column pair not present on this install; try the next shape
       }
     }
+    return coords;
+  })();
+
+  // Claim the rejections up front. An in-flight query whose failure has
+  // no handler yet becomes an unhandled rejection if one of the awaits
+  // below throws first, which would bury the error that actually
+  // matters. The awaits still see the real failure.
+  taxonomyQuery.catch(() => {});
+  coordsQuery.catch(() => {});
+
+  // Matches legacy Business.php exactly: businesses.category and
+  // businesses.location_area STORE SLUGS, and filters compare slugs
+  // directly. Display labels come from the taxonomy tables afterward.
+  const conds = [
+    eq(businesses.isActive, true),
+    eq(businesses.isVerified, true),
+    eq(businesses.isHidden, false),
+  ];
+  if (filters.category) conds.push(eq(businesses.category, filters.category));
+  if (filters.location)
+    conds.push(eq(businesses.locationArea, filters.location));
+  if (filters.tag) {
+    // Genuinely sequential: the junction table is keyed by tag id, so
+    // the slug has to resolve to one before it can be searched.
+    const tagRow = await db
+      .select()
+      .from(tags)
+      .where(eq(tags.slug, filters.tag))
+      .limit(1);
+    if (tagRow[0]) {
+      const links = await db
+        .select()
+        .from(businessTags)
+        .where(eq(businessTags.tagId, tagRow[0].id));
+      const ids = links.map((l) => l.businessId);
+      if (ids.length === 0) return [];
+      conds.push(inArray(businesses.id, ids));
+    } else {
+      return [];
+    }
   }
 
+  const rows = await db
+    .select()
+    .from(businesses)
+    .where(and(...conds))
+    .orderBy(
+      sql`CASE WHEN ${businesses.planType} = 'elite' THEN 0 WHEN ${businesses.planType} = 'featured' THEN 1 ELSE 2 END`,
+      desc(businesses.createdAt),
+    )
+    .limit(200);
+
+  const tagsByBiz = new Map<number, { name: string; slug: string }[]>();
   const photosByBiz = new Map<number, { url: string; alt: string; type: string }[]>();
   if (rows.length > 0) {
-    const photoRows = await db
-      .select()
-      .from(businessPhotos)
-      .where(inArray(businessPhotos.businessId, rows.map((r) => r.id)))
-      .orderBy(
-        desc(businessPhotos.isPrimary),
-        asc(businessPhotos.sortOrder),
-        asc(businessPhotos.uploadedAt),
-      );
+    const bizIds = rows.map((r) => r.id);
+
+    // All three are keyed off the listing ids and none reads another's
+    // result, so they are one round trip together rather than three in
+    // a row.
+    const [tagLinks, photoRows, uploadedLogos] = await Promise.all([
+      // Tags per business (junction join, batched).
+      db
+        .select({
+          businessId: businessTags.businessId,
+          name: tags.displayName,
+          slug: tags.slug,
+        })
+        .from(businessTags)
+        .innerJoin(tags, eq(businessTags.tagId, tags.id))
+        .where(inArray(businessTags.businessId, bizIds)),
+      // Photos for all listed businesses in one query, ordered like the
+      // legacy site: primary first, then sort order, then upload date.
+      db
+        .select()
+        .from(businessPhotos)
+        .where(inArray(businessPhotos.businessId, bizIds))
+        .orderBy(
+          desc(businessPhotos.isPrimary),
+          asc(businessPhotos.sortOrder),
+          asc(businessPhotos.uploadedAt),
+        ),
+      // Logos uploaded through the admin live in the database, because
+      // this app cannot write to the PHP host's disk.
+      (async (): Promise<Map<number, number>> => {
+        try {
+          const { getBusinessImageIds } = await import("@/lib/business-images");
+          return await getBusinessImageIds(bizIds);
+        } catch (e) {
+          console.error("[directory] uploaded logo lookup failed:", e);
+          return new Map<number, number>();
+        }
+      })(),
+    ]);
+
+    for (const l of tagLinks) {
+      const list = tagsByBiz.get(l.businessId) ?? [];
+      list.push({ name: l.name, slug: l.slug });
+      tagsByBiz.set(l.businessId, list);
+    }
+
     for (const p of photoRows) {
       if (!p.filename) continue;
       const list = photosByBiz.get(p.businessId) ?? [];
@@ -336,25 +363,27 @@ export async function getBusinesses(
       photosByBiz.set(p.businessId, list);
     }
 
-    // Logos uploaded through the admin live in the database, because
-    // this app cannot write to the PHP host's disk. They go first so a
-    // freshly uploaded logo is the one the public listing shows.
-    try {
-      const { getBusinessImageIds } = await import("@/lib/business-images");
-      const uploaded = await getBusinessImageIds(rows.map((r) => r.id));
-      for (const [businessId, imageId] of uploaded) {
-        const list = photosByBiz.get(businessId) ?? [];
-        list.unshift({
-          url: `/api/business-image/${imageId}`,
-          alt: "",
-          type: "logo",
-        });
-        photosByBiz.set(businessId, list);
-      }
-    } catch (e) {
-      console.error("[directory] uploaded logo lookup failed:", e);
+    // Uploaded logos go first so a freshly uploaded logo is the one the
+    // public listing shows.
+    for (const [businessId, imageId] of uploadedLogos) {
+      const list = photosByBiz.get(businessId) ?? [];
+      list.unshift({
+        url: `/api/business-image/${imageId}`,
+        alt: "",
+        type: "logo",
+      });
+      photosByBiz.set(businessId, list);
     }
   }
+
+  const [[catRows, locRows], coordsByBiz] = await Promise.all([
+    taxonomyQuery,
+    coordsQuery,
+  ]);
+  const prettify = (slug: string) =>
+    slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const catLabel = new Map(catRows.map((c) => [c.slug, c.displayName]));
+  const locLabel = new Map(locRows.map((l) => [l.slug, l.displayName]));
 
   return rows.map((r) => ({
     id: r.id,

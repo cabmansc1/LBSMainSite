@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPost, getPosts, type BlogPost } from "@/lib/blog";
@@ -120,11 +121,23 @@ export default async function BlogPostPage({
 
       <article className="mx-auto max-w-[760px] px-6 py-10">
         {post.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={post.imageUrl}
             alt=""
-            className="w-full rounded-(--radius-card) border border-line mb-8"
+            // The real ratio is whatever the author uploaded, so these
+            // only reserve a sensible block of space up front; the
+            // browser swaps in the file's own ratio once it loads.
+            width={1200}
+            height={675}
+            // The article column is 760px wide with 24px of padding
+            // either side, so 712px is the widest this ever renders.
+            sizes="(min-width: 760px) 712px, 100vw"
+            // The hero is this page's likely LCP element, and the raw
+            // img it replaces had no lazy attribute, so it keeps
+            // loading immediately rather than waiting on the viewport.
+            loading="eager"
+            fetchPriority="high"
+            className="w-full h-auto rounded-(--radius-card) border border-line mb-8"
           />
         )}
         <div

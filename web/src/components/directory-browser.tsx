@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DirectoryMap } from "@/components/directory-map";
@@ -83,9 +84,17 @@ function BusinessCard({
       <Link href={`/business/${b.slug}`} className="grid gap-3">
         <div className="flex items-start justify-between gap-3">
           {b.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            // Both shapes of logo URL go through here: an absolute one
+            // on the legacy uploads host, and /api/business-image/<id>
+            // for logos uploaded through this app. The optimizer treats
+            // the second as same-origin and needs no extra config.
+            <Image
               src={b.logoUrl}
+              // A thumbnail this small was never worth the full-size
+              // original. Matching the rendered box lets the optimizer
+              // serve it at 1x and 2x instead.
+              width={featured ? 72 : 56}
+              height={featured ? 72 : 56}
               alt={`${b.name} logo`}
               className={`rounded-[10px] border bg-white object-contain p-0.5 ${
                 featured ? "w-[72px] h-[72px] border-cta/40" : "w-14 h-14 border-line"
