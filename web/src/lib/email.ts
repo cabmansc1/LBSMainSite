@@ -36,6 +36,15 @@ export async function sendEmail(opts: {
   text: string;
   /** Optional HTML. Keep it simple: transactional mail is read, not admired. */
   html?: string;
+  /**
+   * Overrides EMAIL_REPLY_TO for this message.
+   *
+   * A lead notification is the case that needs it: the PHP set Reply-To
+   * to the lead's own address, so hitting reply in the inbox answers the
+   * customer rather than writing back to ourselves. Losing that would
+   * turn every enquiry into a copy and paste.
+   */
+  replyTo?: string;
 }): Promise<SendResult> {
   if (!emailEnabled()) {
     // The full body, because the point of preview mode is checking what
@@ -65,7 +74,9 @@ export async function sendEmail(opts: {
         subject: opts.subject,
         text: opts.text,
         ...(opts.html ? { html: opts.html } : {}),
-        ...(REPLY_TO() ? { reply_to: REPLY_TO() } : {}),
+        ...(opts.replyTo?.trim() || REPLY_TO()
+          ? { reply_to: opts.replyTo?.trim() || REPLY_TO() }
+          : {}),
       }),
     });
 

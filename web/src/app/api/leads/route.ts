@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { ghlConfigured, ghlSend } from "@/lib/ghl";
 import { recordLead, type LeadInput } from "@/lib/leads";
+import { SITE_URL } from "@/lib/seo";
 
 /**
  * Lead capture, replacing process_form.php and save-quiz-lead.php.
@@ -137,6 +138,53 @@ export async function POST(req: Request) {
 
   const submittedAt = new Date().toISOString();
   after(() => ghlSend({ ...built.ghl, submitted_at: submittedAt }, source));
+
+  // The alerts the PHP sent and this app was not. A lead nobody is told
+  // about is a lead nobody works, whatever the database says. Scheduled
+  // after the response for the same reason the GHL push is: the PHP put
+  // both behind finishRequestAndContinue() so nobody waits on SMTP.
+  //
+  // Deliberately outside the DB_HOST check below. These do not depend on
+  // the insert, and in preview mode the bodies still print to the log,
+  // which is how the copy gets reviewed before a key exists.
+  after(async () => {
+    const { sendAdvertiseLeadAlert, sendQuizLeadEmails } = await import(
+      "@/lib/lead-emails"
+    );
+    if (source === "quiz") {
+      await sendQuizLeadEmails(
+        {
+          email,
+          businessLabel: str(body.businessTypeLabel, 120) || undefined,
+          goalLabel: str(body.goalLabel, 120) || undefined,
+          mailingSize: num(body.mailingSize) || undefined,
+          budget: num(body.budget) || undefined,
+          recommendedAd: str(body.recommendedAdSize, 80) || undefined,
+          recommendedPrice: num(body.recommendedPrice) || undefined,
+          ipAddress,
+          submittedAt,
+        },
+        SITE_URL,
+      );
+      return;
+    }
+    // The ROI calculator has no legacy equivalent, so it borrows the
+    // contact alert rather than going unannounced. Its own fields land
+    // in the message body.
+    await sendAdvertiseLeadAlert({
+      companyName: str(body.companyName, 190) || "Not given",
+      contactName: str(body.contactName, 190) || "Not given",
+      email,
+      phone: str(body.phone, 40) || undefined,
+      category: str(body.category, 120) || undefined,
+      location:
+        str(body.location, 120) ||
+        (source === "roi" ? "ROI Calculator" : undefined),
+      message: str(body.message, 4000) || undefined,
+      ipAddress,
+      submittedAt,
+    });
+  });
 
   // No database configured (local preview): the GHL push above is still
   // the real one, so say the submission landed rather than erroring.
