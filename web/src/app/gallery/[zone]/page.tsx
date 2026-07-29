@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CtaBand } from "@/components/sections";
 import { getPastCards } from "@/lib/past-cards";
+import { groupIntoEditions } from "@/lib/card-editions";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -42,6 +43,7 @@ export default async function ZoneGalleryPage({
 
   const zone = zoneBySlug(slug);
   const name = cards[0].zoneName;
+  const editions = groupIntoEditions(cards);
 
   return (
     <>
@@ -66,40 +68,62 @@ export default async function ZoneGalleryPage({
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6 py-12">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cards.map((c) => {
-            const img = c.images.find((i) => i.side === "front") ?? c.images[0];
-            return (
-              <Link
-                key={c.slug}
-                href={`/cards/${c.slug}`}
-                className="block border border-line rounded-(--radius-card) overflow-hidden bg-white hover:border-faint transition-colors"
-              >
-                {img && (
-                  <Image
-                    src={`/api/card-image/${img.id}`}
-                    alt={img.alt}
-                    width={img.width || 800}
-                    height={img.height || 534}
-                    className="w-full h-auto"
-                  />
-                )}
-                <span className="block px-5 py-4">
-                  <b className="block text-[15px] font-semibold tracking-tight">
-                    {c.cardName ?? c.zoneName}
-                  </b>
-                  <span className="text-[13px] text-muted">
-                    Mailed {c.mailMonth}
-                  </span>
-                  {c.description && (
-                    <span className="block text-[12.5px] text-muted mt-1.5 line-clamp-2">
-                      {c.description}
-                    </span>
-                  )}
+        {/* Grouped by edition rather than listed flat. A zone mails the
+            same few coverage areas over and over, so a flat list makes a
+            reader compare dates to work out which cards are the same
+            series. Grouping answers it up front, and an edition that has
+            mailed six times says something a grid of six thumbnails does
+            not. */}
+        <div className="grid gap-12">
+          {editions.map((e) => (
+            <section key={e.key}>
+              <div className="flex items-baseline justify-between gap-3 flex-wrap mb-4">
+                <h2 className="text-[19px] font-bold tracking-tight">{e.name}</h2>
+                <span className="text-[12.5px] text-muted num">
+                  {e.issues.length}{" "}
+                  {e.issues.length === 1 ? "mailing" : "mailings"}
+                  {e.issues.length > 1 &&
+                    ` · ${e.issues[e.issues.length - 1].mailMonth} to ${e.issues[0].mailMonth}`}
                 </span>
-              </Link>
-            );
-          })}
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {e.issues.map((c) => {
+                  const img =
+                    c.images.find((i) => i.side === "front") ?? c.images[0];
+                  return (
+                    <Link
+                      key={c.slug}
+                      href={`/cards/${c.slug}`}
+                      className="block border border-line rounded-(--radius-card) overflow-hidden bg-white hover:border-faint transition-colors"
+                    >
+                      {img && (
+                        <Image
+                          src={`/api/card-image/${img.id}`}
+                          alt={img.alt}
+                          width={img.width || 800}
+                          height={img.height || 534}
+                          className="w-full h-auto"
+                        />
+                      )}
+                      <span className="block px-5 py-4">
+                        {/* The edition name is the heading above, so the
+                            card says the one thing that separates it from
+                            its siblings. */}
+                        <b className="block text-[15px] font-semibold tracking-tight">
+                          {c.mailMonth}
+                        </b>
+                        {c.description && (
+                          <span className="block text-[12.5px] text-muted mt-1.5 line-clamp-2">
+                            {c.description}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
 
         <div className="mt-8 flex gap-3 flex-wrap">

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CtaBand } from "@/components/sections";
 import { getPastCards } from "@/lib/past-cards";
+import { galleryStats, groupIntoEditions } from "@/lib/card-editions";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -42,6 +43,8 @@ const SAMPLES = [
 export default async function GalleryPage() {
   const cards = await getPastCards({ publishedOnly: true });
 
+  const stats = galleryStats(cards, new Date().getFullYear());
+
   const zones = [...new Map(cards.map((c) => [c.zoneSlug, c])).keys()]
     .map((slug) => {
       const inZone = cards.filter((c) => c.zoneSlug === slug);
@@ -52,6 +55,10 @@ export default async function GalleryPage() {
         slug,
         name: latest.zoneName,
         count: inZone.length,
+        // How many recurring coverage areas this zone runs, which is a
+        // different and more useful number than the card count once a
+        // zone has mailed a dozen times.
+        editions: groupIntoEditions(inZone).length,
         latestMonth: latest.mailMonth,
         cover,
       };
@@ -87,11 +94,37 @@ export default async function GalleryPage() {
             card itself, the routes it reached, and the local businesses that
             advertised on it.
           </p>
+          {/* Counted, never typed. A figure somebody has to remember to
+              update is a figure that goes stale and then gets quoted at
+              a customer. This year is the one worth leading with: it is
+              proof the operation is running, not a lifetime total that
+              flatters an old year. */}
           {cards.length > 0 && (
-            <p className="mt-4 text-[13px] text-[#67768A] num">
-              {cards.length} {cards.length === 1 ? "card" : "cards"} across{" "}
-              {zones.length} {zones.length === 1 ? "neighborhood" : "neighborhoods"}
-            </p>
+            <dl className="mt-6 flex flex-wrap gap-x-9 gap-y-3">
+              {[
+                stats.thisYear > 0 && {
+                  n: stats.thisYear,
+                  label: `mailed in ${new Date().getFullYear()}`,
+                },
+                { n: stats.total, label: "cards in the archive" },
+                { n: stats.zones, label: stats.zones === 1 ? "neighborhood" : "neighborhoods" },
+                { n: stats.editions, label: stats.editions === 1 ? "edition" : "editions" },
+              ]
+                .filter((s): s is { n: number; label: string } => !!s)
+                .map((s) => (
+                  <div key={s.label}>
+                    <dt className="sr-only">{s.label}</dt>
+                    <dd>
+                      <b className="block text-[24px] font-bold tracking-[-0.03em] num leading-none">
+                        {s.n}
+                      </b>
+                      <span className="block text-[12.5px] text-[#67768A] mt-1">
+                        {s.label}
+                      </span>
+                    </dd>
+                  </div>
+                ))}
+            </dl>
           )}
         </div>
       </header>
@@ -122,6 +155,11 @@ export default async function GalleryPage() {
                     <span className="text-[12.5px] text-muted">
                       Latest mailed {z.latestMonth}
                     </span>
+                    {z.editions > 1 && (
+                      <span className="block text-[12px] text-faint num">
+                        {z.editions} editions
+                      </span>
+                    )}
                   </span>
                   <span className="text-[11.5px] font-bold uppercase tracking-wider text-brand-deep bg-brand-tint border border-[#cbe7fa] rounded-full px-2.5 py-1 whitespace-nowrap num">
                     {z.count} {z.count === 1 ? "card" : "cards"}

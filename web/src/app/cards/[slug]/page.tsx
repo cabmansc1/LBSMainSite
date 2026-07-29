@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/sections";
 import { getPastCard, getPastCards } from "@/lib/past-cards";
+import { editionNeighbours } from "@/lib/card-editions";
 import { getMcCardById } from "@/lib/mission-control";
 import { getBusinesses } from "@/lib/directory";
 import { findBusiness } from "@/lib/name-match";
@@ -98,9 +99,15 @@ export default async function PastCardPage({
     };
   });
 
-  const inZone = (
-    await getPastCards({ publishedOnly: true, zoneSlug: card.zoneSlug })
-  ).filter((c) => c.slug !== card.slug);
+  const zoneCards = await getPastCards({
+    publishedOnly: true,
+    zoneSlug: card.zoneSlug,
+  });
+  // The other issues of this same coverage area. Someone looking at one
+  // card most often wants the one before it, and until now the only way
+  // there was back out to the zone and reading dates.
+  const { edition, newer, older } = editionNeighbours(zoneCards, card);
+  const inZone = zoneCards.filter((c) => c.slug !== card.slug);
   const others = (
     inZone.length > 0
       ? inZone
@@ -333,6 +340,50 @@ export default async function PastCardPage({
             <Button href="/pricing">Reserve a spot</Button>
           </Card>
         </section>
+
+        {/* Walking the series. An edition that has mailed repeatedly is
+            the strongest thing this page can say, and stepping through it
+            is how somebody sees that rather than being told. */}
+        {edition && edition.issues.length > 1 && (
+          <section className="border border-line rounded-(--radius-card) bg-white px-5 py-4">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              <h2 className="text-[15px] font-semibold tracking-tight">
+                {edition.name}
+              </h2>
+              <span className="text-[12.5px] text-muted num">
+                Mailed {edition.issues.length} times
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-4 mt-3 text-[13px]">
+              {older ? (
+                <Link
+                  href={`/cards/${older.slug}`}
+                  className="text-brand-deep font-semibold hover:underline"
+                >
+                  Previous: {older.mailMonth}
+                </Link>
+              ) : (
+                <span className="text-faint">First issue</span>
+              )}
+              <Link
+                href={`/gallery/${card.zoneSlug}`}
+                className="text-muted hover:text-ink"
+              >
+                All {card.zoneName} cards
+              </Link>
+              {newer ? (
+                <Link
+                  href={`/cards/${newer.slug}`}
+                  className="text-brand-deep font-semibold hover:underline"
+                >
+                  Next: {newer.mailMonth}
+                </Link>
+              ) : (
+                <span className="text-faint">Latest issue</span>
+              )}
+            </div>
+          </section>
+        )}
 
         {others.length > 0 && (
           <section className="grid gap-3.5">
