@@ -427,7 +427,14 @@ export type AdminPost = {
   excerpt: string | null;
   content: string | null;
   metaDescription: string | null;
+  /** Exactly what the column holds: a legacy filename or a serving path. */
   featuredImage: string | null;
+  /**
+   * The same value resolved to something an img tag can load, so the
+   * editor can preview a post's image without knowing which of the two
+   * kinds it is.
+   */
+  featuredImageUrl: string | null;
   categoryId: number | null;
   status: string;
   publishedAt: string | null;
@@ -437,6 +444,7 @@ export async function getAdminPosts(): Promise<AdminPost[]> {
   const { db } = await import("@/lib/db");
   const { blogPosts } = await import("@/lib/db/schema-legacy");
   const { desc } = await import("drizzle-orm");
+  const { resolveBlogImageUrl } = await import("@/lib/blog-images");
   const rows = await db
     .select()
     .from(blogPosts)
@@ -450,6 +458,7 @@ export async function getAdminPosts(): Promise<AdminPost[]> {
     content: r.content ?? null,
     metaDescription: r.metaDescription ?? null,
     featuredImage: r.featuredImage ?? null,
+    featuredImageUrl: resolveBlogImageUrl(r.featuredImage) ?? null,
     categoryId: r.categoryId ?? null,
     status: r.status ?? "draft",
     publishedAt: r.publishedAt ? String(r.publishedAt) : null,
@@ -480,6 +489,9 @@ const POST_COLUMNS: Record<keyof PostPatch, string> = {
   excerpt: "excerpt",
   content: "content",
   metaDescription: "meta_description",
+  // Either a legacy filename or the serving path of an uploaded image.
+  // Stored verbatim, since resolveBlogImageUrl is what reads it back and
+  // rewriting it here would strand every post written before uploads.
   featuredImage: "featured_image",
   status: "status",
 };

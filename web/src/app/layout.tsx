@@ -5,7 +5,7 @@ import { NavBar } from "@/components/nav-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { Analytics } from "@/components/analytics";
 import { ChatWidget } from "@/components/chat-widget";
-import { SITE_NAME } from "@/lib/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +18,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  /**
+   * Relative image paths in metadata need an origin to become the
+   * absolute URLs Facebook and X require. Without this, Next resolves
+   * them against a localhost fallback, so a blog post whose featured
+   * image is now served from this app rather than the old PHP host
+   * would share with a preview image nobody outside the container can
+   * fetch.
+   *
+   * SITE_ORIGIN rather than SITE_URL, because staging has to point at
+   * itself: the live domain does not serve /api/blog-image until
+   * cutover. Canonicals are unaffected, they are already absolute.
+   */
+  metadataBase: new URL(process.env.SITE_ORIGIN?.trim() || SITE_URL),
   title: {
     default: SITE_NAME,
     // "LBS" not the full name: the legacy titles used the short form and
