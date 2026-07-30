@@ -329,6 +329,18 @@ export function ListingEditor({
           </label>
         </div>
 
+        {/* The toggle above is one checkbox at the end of a heading, and
+            it decides whether any of this appears at all. Somebody who
+            has filled in a week and cannot see it on their page needs
+            telling why, in the place they are looking. */}
+        {!form.showHours && week.some((d) => !d.closed) && (
+          <p className="text-[12.5px] text-[#8a5a00] bg-[#fff8e6] border border-[#f2dfae] rounded-md px-3 py-2">
+            These hours are saved but <b className="font-semibold">not shown</b>{" "}
+            on your public page. Tick &ldquo;Show these on my page&rdquo; above
+            and save to publish them.
+          </p>
+        )}
+
         <div className="grid gap-1.5">
           {week.map((d) => (
             <div
