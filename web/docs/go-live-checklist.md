@@ -154,8 +154,21 @@ This is a compliance rule, not cosmetics. A single SMS opt-in source.
 
 ### Content and SEO parity
 
-- [ ] Crawl every URL from the live sitemap and `.htaccess` inventory.
-      Assert status, canonical, title, description, JSON-LD against live.
+- [x] ~~Crawl every URL from the live sitemap.~~ Ran against all 180,
+      comparing status, title, description, canonical and JSON-LD.
+      **No description, canonical or JSON-LD block was lost on any page.**
+      41 titles differed: most are the intended rewrite to shorter,
+      keyword-led text, and 26 were a real bug in the directory taxonomy
+      titles, now fixed. Two caveats below.
+- [ ] **Re-run the crawl on a deploy with a database.** 128 of the 180
+      URLs are database-backed, 103 business listings and 25 blog posts,
+      and they 404 in a sandbox with no credentials. They are unverified,
+      not known-good. Only 52 pages were actually checked.
+- [ ] **Confirm category and tag names come from `display_name`** once a
+      database is attached. The fallback is correct now, but the lookup
+      itself has never run against a real taxonomy table.
+- [ ] Crawl the `.htaccess` redirect inventory, which the sitemap crawl
+      did not cover.
 - [ ] Every legacy `.php` URL 301s to its clean equivalent.
 - [ ] The 11 zone pages at `/{zone}-direct-mail-marketing` all resolve.
 - [ ] `sitemap.xml` and `robots.txt` are correct for the new domain.
