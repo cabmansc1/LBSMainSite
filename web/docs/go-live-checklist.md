@@ -62,10 +62,17 @@ further testing:
       the Mission Control roster so phone-sold advertisers are counted.
       The dashboard figure now measures that instead of legacy online
       orders. Unverified against a real upload on staging.
-- [ ] **Registration.** `/register` is a placeholder that tells people to
-      email us. `/directory-signup` points both plans at it, so no
-      business can sign itself up. Needs a decision on how the $10/mo
-      Premium subscription works before it can be finished.
+- [x] ~~**Registration.**~~ Done and exercised on staging. `/register`
+      creates the account and the listing; free listings are created
+      unverified and wait for approval, paid ones are verified by the
+      Stripe webhook once the money lands. Registration never signs
+      anybody in, because an account minted for an address you do not
+      own would later inherit that person's orders.
+- [x] ~~**The $10/mo Premium subscription.**~~ Done. $10 monthly or $60
+      yearly, both editable at `/admin/pricing` rather than living in
+      code. A price change applies to new subscribers only: checkout
+      passes the amount explicitly and Stripe holds what an existing
+      subscriber signed up at.
 
 ### Yours
 
@@ -260,38 +267,52 @@ passes.
 
 ### Directory listing: claiming and editing
 
-All of this writes to real listings while staging shares the production
-database. Run it against a listing you created for the purpose, and see
-the note at the top of this file.
+Exercised end to end on staging against the production database, with
+`RESEND_API_KEY` removed so every message was written to the deploy log
+rather than sent. A listing created for the purpose, `ZZ Test Plumbing`,
+not a customer's.
 
-- [ ] Run `node scripts/audit-taxonomy.mjs` **first**. It is read only,
-      and it tells you how many listings sit on a category that is not
-      in the taxonomy before anything else touches them. Untested
-      against real data.
-- [ ] A listing matching the login's email shows as Unclaimed with a
-      claim button. The to-do links to that listing, not the top of the
-      page.
-- [ ] Claim it. `user_id` is set, the editor appears.
+- [x] ~~Register a free listing.~~ Created unverified: absent from
+      `/directory`, present in `/admin/directory`, alert email logged.
+- [x] ~~Approve it.~~ Appears in the directory.
+- [x] ~~Sign in as it.~~ Code read from the deploy log, since email is in
+      preview mode. Listing already linked to the account by
+      registration, so nothing to claim.
+- [x] ~~Edit phone, website, description and a social link.~~ All live on
+      `/business/{slug}` without a review step. `google.com` typed into
+      the website box stored as `https://www.google.com/`, so the URL
+      tidying works on real input.
+- [x] ~~Set hours, including a closed day.~~ They render, and the
+      listing's own `openingHoursSpecification` is populated. That
+      markup had never appeared for a real listing.
+- [x] ~~Change the business name.~~ Did not publish. The public page kept
+      the old name, the field showed "waiting on us", and the card
+      showed the "Changes with us" chip.
+- [x] ~~**The slug does not change.**~~ Still `/business/zz-test-plumbing`
+      after the rename was approved. Printed cards and QR codes survive
+      a rename, which was the point.
+- [x] ~~The queued change emails us, with before and after.~~
+- [x] ~~Approve it.~~ Public page updated, advertiser emailed, row
+      cleared, dashboard tile back to zero.
+- [x] ~~Reject with a reason, and without one.~~
+- [x] ~~Buy a Premium listing.~~ Stripe test card, hosted checkout, the
+      webhook verified it and put it on the featured plan. Both emails
+      logged.
+- [x] ~~Cancel the subscription.~~ Dropped to Basic and stayed listed.
+
+Still unchecked, and worth doing before go-live:
+
+- [ ] Run `node scripts/audit-taxonomy.mjs`. Read only, and it says how
+      many listings sit on a category that is not in the taxonomy.
+      Never run against real data.
+- [ ] A listing matching the login's email by address rather than
+      `user_id` shows as Unclaimed with a claim button, and the to-do
+      links to that listing rather than the top of the page. The test
+      listing was owned from creation, so the claim path itself is still
+      unexercised.
 - [ ] A second account cannot claim the same listing.
-- [ ] Edit phone, website, description and a social link. All four are
-      live on `/business/{slug}` without a review step.
-- [ ] Set hours, including one closed day. They render on the public
-      page and appear in its `openingHoursSpecification`. **Confirm the
-      week that was already stored is what you expect afterwards:
-      saving replaces every day.**
 - [ ] Untick "show these on my page". Hours disappear from the public
       page and the stored rows survive.
-- [ ] Change the business name. It does **not** publish. The public page
-      keeps the old name and the field shows "waiting on us".
-- [ ] **The slug does not change.** Any printed card or QR code for that
-      listing still resolves.
-- [ ] The queued change emails you, with the before and after, and
-      Reply-To is the advertiser.
-- [ ] Approve it in `/admin/listing-edits`. The public page updates, and
-      the advertiser is emailed that it is live.
-- [ ] Reject one with a reason. The advertiser's email carries your
-      words; the listing is untouched.
-- [ ] Reject one without a reason. The email invents no cause.
 - [ ] Category and area are dropdowns in both admin forms, and a listing
       already holding an off-taxonomy value shows it as
       "(not in the list)" rather than silently changing it.
@@ -299,7 +320,7 @@ the note at the top of this file.
       it does not edit.
 - [ ] Signed in as advertiser A, POST `/api/account/listing` with
       advertiser B's listing id. It 404s.
-- [ ] `/admin/listing-edits` count matches the dashboard tile.
+- [ ] Delete the test listings and their accounts once finished.
 
 ### Directory browsing
 
