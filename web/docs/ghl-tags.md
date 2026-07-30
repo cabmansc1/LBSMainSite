@@ -22,6 +22,7 @@ Every tag is lowercase, hyphenated, and prefixed `lbs-`.
 | `lbs-newsletter` | Footer newsletter signup |
 | `lbs-waitlist-category` | Wanted a spot, their category was taken |
 | `lbs-waitlist-smaller-card` | Asked about the 2,500 household card |
+| `lbs-customer` | **Paid for a spot.** Sent from the Stripe webhook. |
 
 ## Group, so one filter catches a whole class
 
@@ -42,6 +43,7 @@ nurture sequence ends up pitching somebody who only wanted the blog.
 | `lbs-category-{slug}` | `lbs-category-automotive-repair` | The form knew an industry |
 | `lbs-size-{slug}` | `lbs-size-medium-3x4` | The quiz or calculator suggested an ad size |
 | `lbs-page-{slug}` | `lbs-page-summerville-direct-mail-marketing` | Newsletter, the page it was submitted from |
+| `lbs-card-{zone}-{month}` | `lbs-card-summerville-september-2026` | A purchase, so everyone on one card is a segment |
 
 Slugging lowercases, turns `&` into `and`, and replaces everything else
 with hyphens, so `Automotive - Repair` becomes `automotive-repair` and
@@ -62,6 +64,42 @@ Newsletter: summerville-direct-mail-marketing     lbs-newsletter, lbs-page-summe
 
 Tags are sorted and deduped, so the same submission always produces the
 same set in the same order.
+
+## When somebody pays
+
+The Stripe webhook pushes on payment, which is the moment every fact
+about the sale is known. Until this existed a purchase never reached the
+CRM: a contact filled in a form, was tagged a lead, paid, and stayed a
+lead, so nurture carried on pitching the customer who had already
+bought.
+
+`lbs-customer` is the tag to exit a nurture sequence on. The push also
+**drops `lbs-lead` and `lbs-lead-advertise`**, because those describe how
+somebody arrived and they have moved past it, while keeping the zone,
+category and size tags so one filter covers a contact at either stage.
+
+`lbs-card-{zone}-{month}` is the segment that chasing artwork and
+approving proofs actually needs: everyone on the September Summerville
+card, in one filter.
+
+Fields, captured from a real payload:
+
+| Field | Example |
+|---|---|
+| `email`, `name`, `firstName`, `lastName`, `companyName`, `phone` | as supplied at checkout |
+| `source` | `Paid: Summerville card` |
+| `signup_type` | `order_paid` |
+| `order_reference` | `LBS-7QK2M` |
+| `amount_paid` | `349`, **dollars not cents**, and what was really charged after any promotion code |
+| `ad_size` | `medium` |
+| `category` | `Plumbing`, the category now locked to them |
+| `location` / `zone` | `Summerville` / `summerville` |
+| `card_id`, `card_name`, `mail_month` | `card_abc`, `Nexton/Cane Bay`, `September 2026` |
+
+`card_name` and `mail_month` are read from Mission Control at push time
+using the card id, because checkout does not know them. If Mission
+Control is unconfigured they are omitted rather than guessed, and the
+`lbs-card-` tag is not sent.
 
 ## Every field, and which form fills it
 

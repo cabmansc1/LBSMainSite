@@ -4,6 +4,7 @@ import { pushToMissionControl } from "@/lib/mission-control";
 import { markPaid, markRefunded } from "@/lib/orders";
 import { findOrCreatePortalUser } from "@/lib/auth";
 import { sendOrderReceipt } from "@/lib/order-receipt";
+import { pushOrderToGhl } from "@/lib/order-ghl";
 
 /**
  * Stripe webhook: the single source of truth for payment state.
@@ -107,6 +108,23 @@ export async function POST(req: Request) {
             amountCents: s.amount_total ?? undefined,
             metadata: md,
           }).catch((e) => console.error("[stripe] receipt failed:", e));
+
+          // Same guard again. A purchase reached Mission Control, the
+          // inbox and the database and never the CRM, so a contact who
+          // paid stayed tagged a lead and kept receiving the pitch.
+          void pushOrderToGhl({
+            reference: md.reference ?? s.id,
+            email: s.customer_email ?? md.email,
+            businessName: md.businessName,
+            phone: md.phone || undefined,
+            category: md.category,
+            zoneSlug: md.zone ?? md.card,
+            cardId: md.cardId || undefined,
+            cardName: md.cardName || undefined,
+            mailMonth: md.mailMonth || undefined,
+            spot: md.spotSize ?? md.spotType,
+            amountCents: s.amount_total ?? undefined,
+          }).catch((e) => console.error("[stripe] ghl push failed:", e));
         }
         break;
       }
