@@ -8,7 +8,7 @@ import {
   saveListingEdits,
   type EditableField,
 } from "@/lib/listing-edits";
-import { saveHours, type DayHours } from "@/lib/business-hours";
+import { getHours, saveHours, type DayHours } from "@/lib/business-hours";
 import {
   WRITES_BLOCKED_MESSAGE,
   directoryWritesBlocked,
@@ -137,12 +137,26 @@ export async function POST(req: Request) {
   // published, and the advertiser is told which part did not land.
   let hoursSaved = false;
   if (hours) {
+    // Whether this listing had any hours before it saved these ones.
+    const had = (await getHours(listing.id)).length > 0;
+
     const saved = await saveHours(listing.id, hours);
     if (!saved.ok) {
       if (result.published.length > 0) publish(result.slug);
       return NextResponse.json({ error: saved.error }, { status: 422 });
     }
     hoursSaved = true;
+
+    // Filling in a week of opening times for the first time is somebody
+    // saying they want them shown. show_hours is a legacy column whose
+    // default a listing inherits without ever being asked, so leaving it
+    // to a checkbox meant the work could be saved and silently hidden.
+    // The toggle still turns them off afterwards; it just stops being
+    // the thing that has to be discovered first.
+    if (!had && hours.some((d) => !d.closed)) {
+      const { updateBusiness } = await import("@/lib/admin-data");
+      await updateBusiness(listing.id, { showHours: true });
+    }
   }
 
   if (result.published.length > 0 || hoursSaved) publish(result.slug);
