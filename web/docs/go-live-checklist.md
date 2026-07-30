@@ -219,7 +219,12 @@ This is a compliance rule, not cosmetics. A single SMS opt-in source.
 - [ ] 53 of 162 pages had parity issues, including 6 thin marketing pages
       and 18 over-length titles.
 - [ ] Testimonials are still samples. Real quotes needed.
-- [ ] Missing 10k prices for Triple, Quad and Full page.
+- [x] ~~Missing 10k prices for Triple, Quad and Full page.~~ Set in
+      `/admin/pricing`. The code constants for those three are still
+      `0`, which is what hides them, so a settings row that went missing
+      would quietly take them off sale rather than showing a wrong
+      price. Worth copying the numbers into `pricing.ts` as the fallback
+      once they have settled.
 
 ---
 
