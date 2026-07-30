@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { PastCard } from "@/lib/past-cards";
+import { groupIntoEditions } from "@/lib/card-editions";
 
 type McCard = {
   cardId: string;
@@ -34,6 +35,10 @@ export function AdminGallery({
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [query, setQuery] = useState("");
+  // Nothing is open until somebody chooses to edit it. Opening every
+  // panel by default is what made this page a wall in the first place.
+  const [open, setOpen] = useState<Set<string>>(new Set());
 
   const slugFor = (zoneSlug: string, mailMonth: string) =>
     `${zoneSlug}-${mailMonth}`
@@ -187,6 +192,33 @@ export function AdminGallery({
     (m) => !rows.some((r) => r.slug === slugFor(m.zoneSlug, m.mailMonth)),
   );
 
+  const drafts = rows.filter((r) => !r.published).length;
+  const q = query.trim().toLowerCase();
+  // "draft" is a search term rather than a separate filter control,
+  // because the unpublished ones are what you come here to finish and
+  // typing it is the same gesture as looking for a neighborhood.
+  const visible =
+    q === ""
+      ? rows
+      : q === "draft"
+        ? rows.filter((r) => !r.published)
+        : rows.filter((r) =>
+            [r.zoneName, r.cardName ?? "", r.mailMonth, r.slug]
+              .join(" ")
+              .toLowerCase()
+              .includes(q),
+          );
+
+  const editions = groupIntoEditions(visible);
+  const zones = [
+    ...new Map(
+      editions.map((e) => [e.zoneSlug, { slug: e.zoneSlug, name: e.zoneName }]),
+    ).values(),
+  ].map((z) => ({
+    ...z,
+    editions: editions.filter((e) => e.zoneSlug === z.slug),
+  }));
+
   return (
     <div className="grid gap-5">
       <div className="border border-line rounded-(--radius-card) bg-white p-5 grid gap-3">
@@ -222,51 +254,143 @@ export function AdminGallery({
         </p>
       </div>
 
+      {/* Search, then zone, then edition, then issue.
+          Nineteen cards as a stack of full-height panels is a lot of
+          scrolling, and forty is unusable. Rows collapse to one line and
+          open only when you are editing one, which is the actual task:
+          this page is for uploading a card, not for browsing them. */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by neighborhood, card name, or month"
+          className="flex-1 min-w-[280px] text-sm px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
+        />
+        <span className="text-[12.5px] text-muted num">
+          {visible.length} of {rows.length}
+        </span>
+        {drafts > 0 && (
+          <button
+            type="button"
+            onClick={() => setQuery(query === "draft" ? "" : "draft")}
+            className={`text-[12.5px] font-semibold px-3 py-1.5 rounded-[8px] border ${
+              query === "draft"
+                ? "border-navy-950 bg-navy-950 text-white"
+                : "border-line-strong hover:border-faint"
+            }`}
+          >
+            {drafts} unpublished
+          </button>
+        )}
+      </div>
+
       {rows.length === 0 ? (
         <p className="text-sm text-muted border border-line rounded-(--radius-card) bg-white px-4 py-8 text-center">
           No cards in the archive yet. Add one above.
         </p>
+      ) : visible.length === 0 ? (
+        <p className="text-sm text-muted border border-line rounded-(--radius-card) bg-white px-4 py-8 text-center">
+          Nothing matches that search.
+        </p>
       ) : (
-        rows.map((c) => (
-          <div
-            key={c.slug}
-            className="border border-line rounded-(--radius-card) bg-white p-5 grid gap-4"
-          >
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <b className="text-[16px] font-bold tracking-tight">
-                  {c.cardName ?? c.zoneName}
-                </b>
-                <p className="text-[13px] text-muted num">
-                  Mailed {c.mailMonth} · /cards/{c.slug}
-                </p>
-              </div>
-              <div className="flex gap-2 items-center">
-                <span
-                  className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                    c.published
-                      ? "text-ok border-[#bfe8d2] bg-[#e5f5ec]"
-                      : "text-muted border-line bg-surface"
-                  }`}
-                >
-                  {c.published ? "Live" : "Draft"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => save(c, { published: !c.published })}
-                  disabled={busy === c.slug || (!c.published && c.images.length === 0)}
-                  title={
-                    !c.published && c.images.length === 0
-                      ? "Upload at least one image first"
-                      : undefined
-                  }
-                  className="text-[13px] font-semibold px-3.5 py-2 rounded-[10px] border border-line-strong hover:border-faint disabled:opacity-40"
-                >
-                  {c.published ? "Unpublish" : "Publish"}
-                </button>
-              </div>
-            </div>
+        <div className="grid gap-9">
+          {zones.map((z) => (
+            <section key={z.slug}>
+              <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mb-3">
+                {z.name}
+              </h2>
+              <div className="grid gap-5">
+                {z.editions.map((e) => (
+                  <div key={e.key}>
+                    <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+                      <b className="text-[14px] font-semibold tracking-tight">
+                        {e.name}
+                      </b>
+                      <span className="text-[12px] text-muted num">
+                        {e.issues.length}{" "}
+                        {e.issues.length === 1 ? "mailing" : "mailings"}
+                      </span>
+                    </div>
+                    <div className="grid gap-2">
+                      {e.issues.map((c) => {
+                        const isOpen = open.has(c.slug);
+                        const cover =
+                          c.images.find((i) => i.side === "front") ?? c.images[0];
+                        return (
+                          <div
+                            key={c.slug}
+                            className="border border-line rounded-(--radius-card) bg-white overflow-hidden"
+                          >
+                            <div className="flex items-center gap-3 px-4 py-3 flex-wrap">
+                              {cover ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={`/api/card-image/${cover.id}`}
+                                  alt=""
+                                  className="w-12 h-8 object-cover rounded-[4px] border border-line shrink-0"
+                                />
+                              ) : (
+                                <span className="w-12 h-8 rounded-[4px] border border-dashed border-line-strong shrink-0" />
+                              )}
+                              <span className="min-w-[120px]">
+                                <b className="block text-[14px] font-semibold">
+                                  {c.mailMonth}
+                                </b>
+                                <span className="text-[11.5px] text-muted num">
+                                  {c.images.length}{" "}
+                                  {c.images.length === 1 ? "image" : "images"}
+                                </span>
+                              </span>
+                              <span
+                                className={`text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                  c.published
+                                    ? "text-ok border-[#bfe8d2] bg-[#e5f5ec]"
+                                    : "text-muted border-line bg-surface"
+                                }`}
+                              >
+                                {c.published ? "Live" : "Draft"}
+                              </span>
+                              <span className="ml-auto flex gap-2 items-center">
+                                <button
+                                  type="button"
+                                  onClick={() => save(c, { published: !c.published })}
+                                  disabled={
+                                    busy === c.slug ||
+                                    (!c.published && c.images.length === 0)
+                                  }
+                                  title={
+                                    !c.published && c.images.length === 0
+                                      ? "Upload at least one image first"
+                                      : undefined
+                                  }
+                                  className="text-[12.5px] font-semibold px-3 py-1.5 rounded-[8px] border border-line-strong hover:border-faint disabled:opacity-40"
+                                >
+                                  {c.published ? "Unpublish" : "Publish"}
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-expanded={isOpen}
+                                  onClick={() =>
+                                    setOpen((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(c.slug)) next.delete(c.slug);
+                                      else next.add(c.slug);
+                                      return next;
+                                    })
+                                  }
+                                  className="text-[12.5px] font-semibold text-brand-deep hover:underline"
+                                >
+                                  {isOpen ? "Close" : "Edit"}
+                                </button>
+                              </span>
+                            </div>
 
+                            {isOpen && (
+                              <div className="border-t border-line p-5 grid gap-4">
+                                <p className="text-[12px] text-muted num">
+                                  /cards/{c.slug}
+                                </p>
             <div className="grid sm:grid-cols-[1fr_1fr] gap-3">
               <div>
                 <label
@@ -298,8 +422,8 @@ export function AdminGallery({
                 </span>
                 <p className="text-[12.5px] text-muted">
                   ZIPs and address counts come from the route table in this
-                  card's Mission Control notes. Paste the USPS route rows there
-                  and they appear on the page.
+                  card&rsquo;s Mission Control notes. Paste the USPS route rows
+                  there and they appear on the page.
                 </p>
               </div>
             </div>
@@ -395,8 +519,18 @@ export function AdminGallery({
                 </div>
               )}
             </div>
-          </div>
-        ))
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       )}
 
       {message && (
