@@ -506,9 +506,13 @@ export async function getBusinesses(
       coordsByBiz.get(r.id)?.lng ??
       (r.longitude != null ? Number(r.longitude) : undefined),
     logoUrl: photosByBiz.get(r.id)?.[0]?.url,
+    // The logo is in this list so logoUrl can read the first entry, but
+    // it is not a gallery photo: leaving it in put a business's own
+    // logo in its photo grid, and meant a listing with one real photo
+    // needed two entries before the grid would render at all.
     photos: photosByBiz
       .get(r.id)
-      ?.filter((p) => p.type !== "banner")
+      ?.filter((p) => p.type !== "banner" && p.type !== "logo")
       .map(({ url, alt }) => ({ url, alt: alt || r.businessName })),
   }));
   } catch (e) {

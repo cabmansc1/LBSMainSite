@@ -393,7 +393,7 @@ export default async function BusinessPage({
             </Card>
           )}
 
-          {b.photos && b.photos.length > 1 && (
+          {b.photos && b.photos.length > 0 && (
             <Card className="p-6.5 grid gap-3">
               <h2 className="text-[17px] font-semibold tracking-tight">Photos</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">

@@ -152,8 +152,12 @@ export function ListingExtras({
       <section className="grid gap-3">
         <div>
           <h4 className="text-[13.5px] font-bold tracking-tight">Logo</h4>
-          <p className="text-[12.5px] text-muted mt-0.5">
-            Shown on your listing and on directory cards. Any size, we resize it.
+          <p className="text-[12.5px] text-muted mt-0.5 max-w-[62ch]">
+            {/* Numbers taken from what the pages actually do with it, so
+                they stay true: stored at 600px, drawn at 56 to 72. */}
+            Square works best, around 600 × 600. It is never cropped, so a
+            wide logo will just sit smaller. PNG with a transparent
+            background if you have one. We resize it for you.
           </p>
         </div>
         <div className="flex items-center gap-3.5 flex-wrap">
@@ -198,9 +202,21 @@ export function ListingExtras({
       <section className="grid gap-3">
         <div>
           <h4 className="text-[13.5px] font-bold tracking-tight">Photos</h4>
-          <p className="text-[12.5px] text-muted mt-0.5">
-            Up to 8, shown on your listing page. Your work, your premises, your
-            team.
+          <p className="text-[12.5px] text-muted mt-0.5 max-w-[62ch]">
+            Up to 8, shown on your listing page. Your work, your premises,
+            your team.
+          </p>
+          <p className="text-[12.5px] text-muted mt-1.5 max-w-[62ch]">
+            {/* The grid is aspect-square object-cover, so this is a
+                warning rather than a preference: the edges genuinely
+                disappear. */}
+            <b className="font-semibold text-body">
+              These are shown as squares.
+            </b>{" "}
+            Whatever you upload gets cropped to a square from the middle, so
+            keep the important part centred and expect the left and right
+            edges of a wide photo to be trimmed. Aim for at least 1200 ×
+            1200. Anything up to 12MB is fine; we resize it.
           </p>
         </div>
 
