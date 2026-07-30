@@ -658,7 +658,7 @@ include __DIR__ . '/seo_head.php';
 
                 <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">How Our Charleston Direct Mail Program Works</h3>
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
-                    Getting started is straightforward. You pick your target zip codes and mailing size (5,000 or 10,000 households), and we take care of everything — ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Charleston homeowners.
+                    Getting started is straightforward. You pick your target zip codes and mailing size (5,000 or 10,000 households), and we take care of everything — ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Charleston homeowners.
                 </p>
             </div>
         </div>
@@ -767,7 +767,7 @@ include __DIR__ . '/seo_head.php';
                 <div class="feature-card">
                     <span class="feature-icon">💰</span>
                     <h3>Affordable & Trackable</h3>
-                    <p>Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.</p>
+                    <p>Starting at just 5 cents per household with built-in tracking. QR codes and unique URLs let you measure your ROI from day one.</p>
                 </div>
             </div>
         </div>
@@ -865,7 +865,7 @@ include __DIR__ . '/seo_head.php';
                         <span style="font-size: 1.2rem;">+</span>
                     </div>
                     <div class="faq-answer">
-                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                        Every card carries QR codes and unique URLs, so you can measure scans and visits.
                     </div>
                 </div>
 

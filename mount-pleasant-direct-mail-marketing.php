@@ -653,7 +653,7 @@ include __DIR__ . '/seo_head.php';
 
                 <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">How Our Mount Pleasant Direct Mail Program Works</h3>
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
-                    Getting started is simple. You choose your target area within Mount Pleasant — whether that's specific carrier routes in 29464, 29466, or both — and we handle everything else. Ad design, printing, and delivery of 5,000 to 10,000 postcards per mailing via USPS Every Door Direct Mail (EDDM). Each postcard features local businesses with exclusive category placement, so there's zero competition for attention in your industry. Want to cover the entire Mount Pleasant zone? We can build a campaign that reaches all 38,000+ households across multiple mailings. We also offer trackable QR codes and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates.
+                    Getting started is simple. You choose your target area within Mount Pleasant — whether that's specific carrier routes in 29464, 29466, or both — and we handle everything else. Ad design, printing, and delivery of 5,000 to 10,000 postcards per mailing via USPS Every Door Direct Mail (EDDM). Each postcard features local businesses with exclusive category placement, so there's zero competition for attention in your industry. Want to cover the entire Mount Pleasant zone? We can build a campaign that reaches all 38,000+ households across multiple mailings. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates.
                 </p>
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
                     With rates starting at just 5¢ per household, our Mount Pleasant direct mail postcards are one of the most affordable ways to put your brand in front of high-income homeowners. Most of our advertisers see a return within the first mailing — and our repeat advertiser rate speaks for itself.
@@ -808,7 +808,7 @@ include __DIR__ . '/seo_head.php';
                         <span style="font-size: 1.2rem;">+</span>
                     </div>
                     <div class="faq-answer">
-                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                        Every card carries QR codes and unique URLs, so you can measure scans and visits.
                     </div>
                 </div>
                 

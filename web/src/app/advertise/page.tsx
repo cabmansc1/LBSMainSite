@@ -30,7 +30,7 @@ const VALUE = [
   },
   {
     title: "Proven results",
-    body: "Add a QR code and a tracked URL and every scan and visit is counted, so the results are never a guess.",
+    body: "Every card goes out with QR codes and tracked URLs, so scans and visits are counted and the results are never a guess.",
   },
 ];
 

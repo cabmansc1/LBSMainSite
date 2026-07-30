@@ -43,7 +43,7 @@ const HOME_FAQS = [
   },
   {
     q: "How do I track my results?",
-    a: "We can add a trackable QR code and a unique landing page to your ad, so scans and visits are measurable. If you send finished artwork without them, we print what you give us.",
+    a: "Every card goes out with QR codes and unique landing pages, so scans and visits are measurable. If you send us finished artwork of your own, we print it as supplied, so include your code in the design or ask us to add one.",
   },
   {
     q: "Is the online directory listing free?",
@@ -119,11 +119,12 @@ const BENEFITS = [
     ),
   },
   {
-    title: "Tracking you can add",
-    // "on every ad" read as a promise that every ad ships with them.
-    // They are offered on every ad, which is a different claim and the
-    // true one.
-    body: "QR codes and unique URLs available for every ad, so you see exactly what a mailing brings in.",
+    title: "Tracking built in",
+    // The mailer is the unit this claim is true of. Every card goes out
+    // with QR codes on it, which the archive shows plainly. What cannot
+    // be promised is a QR on an advertiser's own finished artwork, and
+    // that caveat belongs in the FAQ rather than on a headline tile.
+    body: "Every mailer goes out with QR codes and unique URLs, so you see exactly what a mailing brings in.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
@@ -148,11 +149,11 @@ const STEPS = [
   },
   {
     title: "We design your ad",
-    body: "Our team writes and lays out your ad free, with your offer and a trackable QR code if you want one. You approve before print.",
+    body: "Our team writes and lays out your ad free, with your offer and a trackable QR code. You approve before print.",
   },
   {
     title: "We mail. You answer the phone.",
-    body: "Your card lands in 5,000+ mailboxes. If your ad carries a QR code, scans show up in your advertiser dashboard.",
+    body: "Your card lands in 5,000+ mailboxes. Scans show up in your advertiser dashboard as they come in.",
   },
 ];
 
@@ -267,7 +268,7 @@ export default async function HomePage() {
               </Button>
             </div>
             <ul className="mt-7 flex flex-wrap gap-5 text-[13.5px] text-[#67768A]">
-              {["No competitors on your card", "Free ad design", "QR tracking available"].map(
+              {["No competitors on your card", "Free ad design", "QR tracking included"].map(
                 (item) => (
                   <li key={item} className="flex items-center gap-2">
                     <svg className="text-brand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

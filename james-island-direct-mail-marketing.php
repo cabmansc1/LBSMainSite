@@ -653,7 +653,7 @@ include __DIR__ . '/seo_head.php';
 
                 <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">How Our James Island Direct Mail Program Works</h3>
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
-                    Getting started is straightforward. Each James Island mailing targets 5,000 to 10,000 households within the 29412 zip code — this is not blanket coverage, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach James Island families.
+                    Getting started is straightforward. Each James Island mailing targets 5,000 to 10,000 households within the 29412 zip code — this is not blanket coverage, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach James Island families.
                 </p>
             </div>
         </div>
@@ -710,7 +710,7 @@ include __DIR__ . '/seo_head.php';
                 <div class="feature-card">
                     <span class="feature-icon">💰</span>
                     <h3>Affordable & Trackable</h3>
-                    <p>Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.</p>
+                    <p>Starting at just 5 cents per household with built-in tracking. QR codes and unique URLs let you measure your ROI from day one.</p>
                 </div>
             </div>
         </div>

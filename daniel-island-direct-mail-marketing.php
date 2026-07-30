@@ -651,7 +651,7 @@ include __DIR__ . '/seo_head.php';
 
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">We use Every Door Direct Mail (EDDM) through the United States Postal Service to deliver our postcards to targeted carrier routes in the 29492 zip code, reaching 5,000–10,000 households per mailing. The full zone covers over 15,000 homes that you can reach across multiple mailings. EDDM eliminates the need for a mailing list or individual postage, which keeps the per-household cost remarkably low, starting at roughly five cents per home. You select your business category, and once reserved, no other business in that category can appear on the same card. That exclusivity is the cornerstone of the program: your roofing company, dental practice, or fitness studio stands alone.</p>
 
-                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Professional ad design is included at no extra charge. Our design team builds your panel from scratch, incorporating your logo, offer, and call to action in a layout optimized for print readability at arm's length. If you want to measure performance, we can embed a unique QR code, a dedicated landing-page URL, or a tracked phone number so you can see exactly how many scans, site visits, and calls the mailing generates. Many of our Daniel Island advertisers run on a recurring schedule, mailing every four to six weeks to maintain consistent visibility in the community. Over time, that repetition builds the kind of brand familiarity that digital impressions rarely achieve.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Professional ad design is included at no extra charge. Our design team builds your panel from scratch, incorporating your logo, offer, and call to action in a layout optimized for print readability at arm's length. If you want to measure performance, we can embed a unique QR code or a dedicated landing-page URL so you can see how many scans and site visits the mailing generates. Many of our Daniel Island advertisers run on a recurring schedule, mailing every four to six weeks to maintain consistent visibility in the community. Over time, that repetition builds the kind of brand familiarity that digital impressions rarely achieve.</p>
 
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">Whether you are an established Daniel Island business looking to deepen market share or a Lowcountry company expanding into the 29492 zip code for the first time, our direct mail program puts your brand in front of 5,000–10,000 affluent, engaged households per mailing — with 15,000+ total homes reachable across multiple sends — at a fraction of the cost of traditional advertising. Category spots are limited and fill quickly, so the best time to reserve yours is now.</p>
 
@@ -805,7 +805,7 @@ include __DIR__ . '/seo_head.php';
                         <span style="font-size: 1.2rem;">+</span>
                     </div>
                     <div class="faq-answer">
-                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                        Every card carries QR codes and unique URLs, so you can measure scans and visits.
                     </div>
                 </div>
                 

@@ -756,7 +756,7 @@ include __DIR__ . '/seo_head.php';
                         <span style="font-size: 1.2rem;">+</span>
                     </div>
                     <div class="faq-answer">
-                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                        Every card carries QR codes and unique URLs, so you can measure scans and visits.
                     </div>
                 </div>
 

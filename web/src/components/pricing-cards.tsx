@@ -145,7 +145,7 @@ const CARD_META: Record<
     label: "Small",
     dims: "3″ × 2″",
     sub: "Business-card size",
-    features: ["Category exclusivity", "Free ad design", "QR and URL tracking available"],
+    features: ["Category exclusivity", "Free ad design", "QR and URL tracking"],
   },
   medium: {
     label: "Medium",
