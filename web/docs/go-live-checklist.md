@@ -8,11 +8,18 @@ DNS repoint, because both apps share one database and cannot diverge.
 
 ## Where things stand
 
-Built and pushed, never exercised against a real database or a real
-third party:
+Verified against the real thing on staging:
 
-- Lead capture on contact, quiz and ROI calculator, plus the GoHighLevel push
-- Lead notification emails, admin alert and the quiz recommendation
+- Email sending, end to end through Resend
+- Lead capture writing to the `leads` table
+- The GoHighLevel webhook accepting a payload, confirmed by its own
+  sample-capture reply
+
+Built and pushed, still never exercised against a real database or a
+real third party:
+
+- The quiz and ROI calculator lead paths
+- The quiz recommendation email to the visitor
 - Newsletter signup
 - Order receipt email
 - Waitlist notices
@@ -94,8 +101,11 @@ Run against staging with a real database attached.
 
 ### Lead capture, the thing that was completely missing
 
-- [ ] Contact form submits. Row appears in `leads`. Contact appears in
-      GoHighLevel with source `Ad Lead`.
+- [x] ~~Contact form submits. Row appears in `leads`.~~ Verified on
+      staging: the row landed and `/admin/leads` shows it.
+- [ ] Contact appears in GoHighLevel with source `Ad Lead`. The webhook
+      is reachable and captures samples; the workflow still needs its
+      field mapping, a create-contact action, and publishing.
 - [ ] Find Your Ad quiz captures an email at the result step. Row in
       `leads` with `location = "Find Your Ad Quiz"`. Contact in GHL.
 - [ ] ROI calculator captures. Row in `leads`. Contact in GHL.
@@ -107,8 +117,10 @@ Run against staging with a real database attached.
       stores nothing, pushes nothing.
 - [ ] Waitlist join from a card whose category is taken. Row in
       `lbs_waitlist` with the correct category and zone.
-- [ ] Every lead above produces an admin alert email, and hitting reply
-      in that email addresses the lead rather than us.
+- [x] ~~Every lead produces an admin alert email.~~ Verified on staging,
+      the first real send out of this stack. Resend, the verified domain
+      and the composition all work.
+- [ ] Hitting reply in that email addresses the lead rather than us.
 - [ ] The quiz also emails the visitor their recommendation.
 
 ### Tracking
