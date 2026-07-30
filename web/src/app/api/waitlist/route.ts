@@ -18,11 +18,25 @@ import { addWaitlistEntry } from "@/lib/waitlist";
  */
 
 /**
- * Stored in the category column for smaller-card interest, so these
- * rows are one query away in the admin and in Mission Control without
- * needing a second table for a list we hope stays short.
+ * Stored in the category column for interest in a card size we are not
+ * currently mailing, so these rows are one query away in the admin and
+ * in Mission Control without needing a second table for a list we hope
+ * stays short.
+ *
+ * The larger card is a real product with real prices; it just has no
+ * card scheduled at the moment. Somebody asking for one is demand data
+ * that decides whether to schedule it, so it is worth the same capture
+ * as the smaller card that does not exist yet.
  */
-const SMALLER_CARD_INTEREST = "Interest: 2,500 household card";
+const INTEREST_CATEGORY: Record<string, string> = {
+  "smaller-card": "Interest: 2,500 household card",
+  "larger-card": "Interest: 10,000 household card",
+};
+
+const INTEREST_TAG = {
+  "smaller-card": "waitlist-smaller-card",
+  "larger-card": "waitlist-larger-card",
+} as const;
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -35,20 +49,19 @@ export async function POST(req: Request) {
   const zone = zoneBySlug(String(body.zoneSlug ?? ""));
   const email = String(body.email ?? "").trim();
 
-  // Two different waits share this endpoint. The original is "your
+  // Two kinds of wait share this endpoint. The original is "your
   // category is taken on this card, tell me when it frees up", which
-  // needs a category. The other is "I want the smaller card when you
-  // price it", which has no category to reserve: there is no card yet.
-  // Both are the same promise to email someone when something opens.
-  const smallerCard = body.interest === "smaller-card";
-  const category = smallerCard
-    ? SMALLER_CARD_INTEREST
-    : String(body.category ?? "").trim();
+  // needs a category. The others are "I want a card at that size", which
+  // have no category to reserve because there is no card yet. All of
+  // them are the same promise to email someone when something opens.
+  const interest = String(body.interest ?? "");
+  const interestCategory = INTEREST_CATEGORY[interest];
+  const category = interestCategory ?? String(body.category ?? "").trim();
 
   if (!zone || !category || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json(
       {
-        error: smallerCard
+        error: interestCategory
           ? "Pick a neighborhood and give us a valid email."
           : "Zone, category, and a valid email are required.",
       },
@@ -78,18 +91,20 @@ export async function POST(req: Request) {
         email,
         name: businessName,
         companyName: businessName,
-        source: smallerCard
-          ? `Waitlist: smaller card, ${zone.name}`
+        source: interestCategory
+          ? `Waitlist: ${interestCategory}, ${zone.name}`
           : `Waitlist: ${category} in ${zone.name}`,
         signup_type: "waitlist",
-        category: smallerCard ? "" : category,
+        category: interestCategory ? "" : category,
         location: zone.name,
         zone: zone.slug,
         ...tagFields(
           buildTags({
-            kind: smallerCard ? "waitlist-smaller-card" : "waitlist-category",
+            kind: interestCategory
+              ? INTEREST_TAG[interest as keyof typeof INTEREST_TAG]
+              : "waitlist-category",
             zoneSlug: zone.slug,
-            category: smallerCard ? undefined : category,
+            category: interestCategory ? undefined : category,
           }),
         ),
         submitted_at: new Date().toISOString(),

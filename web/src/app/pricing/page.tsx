@@ -75,6 +75,11 @@ export default async function PricingPage({
         cardName: coverage.name,
         zips: coverage.zips,
         description: m.cardId ? descriptions[m.cardId] : undefined,
+        // Numeric, because the reach toggle has to know whether a card
+        // of that size is actually being mailed. Without it the page
+        // happily took a 10,000 household order for a 5,000 card.
+        households:
+          Number(String(m.households ?? "").replace(/[^0-9]/g, "")) || undefined,
       };
     });
   return (

@@ -22,7 +22,8 @@ export type LeadKind =
   | "roi"
   | "newsletter"
   | "waitlist-category"
-  | "waitlist-smaller-card";
+  | "waitlist-smaller-card"
+  | "waitlist-larger-card";
 
 /** Tag-safe: lowercase, hyphenated, no punctuation to trip a filter. */
 export const tagSlug = (v: string): string =>
@@ -41,6 +42,7 @@ const KIND_TAG: Record<LeadKind, string> = {
   newsletter: "lbs-newsletter",
   "waitlist-category": "lbs-waitlist-category",
   "waitlist-smaller-card": "lbs-waitlist-smaller-card",
+  "waitlist-larger-card": "lbs-waitlist-larger-card",
 };
 
 /**
