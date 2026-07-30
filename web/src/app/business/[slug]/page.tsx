@@ -492,19 +492,27 @@ export default async function BusinessPage({
             </Card>
           )}
 
-          <Card className="p-6.5 grid gap-2.5 bg-surface">
-            <h3 className="text-[15px] font-semibold">Is this your business?</h3>
-            <p className="text-[13px] text-body leading-relaxed">
-              Claim this listing to update your details, add photos and offers,
-              and see how many people view your page.
-            </p>
-            <Link
-              href="/register"
-              className="text-sm font-semibold text-brand-deep hover:underline"
-            >
-              Claim this listing
-            </Link>
-          </Card>
+          {/* Only when nobody owns it. This used to show on every
+              listing, including one the reader had just edited, and it
+              sent them to a registration form that would refuse them:
+              signing up refuses an address that already has an account.
+              An owner who is signed out gets pointed at sign-in instead,
+              which is the thing that actually helps them. */}
+          {!b.claimed && (
+            <Card className="p-6.5 grid gap-2.5 bg-surface">
+              <h3 className="text-[15px] font-semibold">Is this your business?</h3>
+              <p className="text-[13px] text-body leading-relaxed">
+                Claim this listing to update your details, add photos and
+                offers, and see how many people view your page.
+              </p>
+              <Link
+                href="/register"
+                className="text-sm font-semibold text-brand-deep hover:underline"
+              >
+                Claim this listing
+              </Link>
+            </Card>
+          )}
         </div>
 
         <aside className="grid gap-3.5 order-first lg:order-none">

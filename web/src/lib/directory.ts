@@ -25,6 +25,8 @@ export type DirectoryBusiness = {
   planType: "basic" | "featured" | "elite";
   isVerified: boolean;
   isFeatured: boolean;
+  /** Linked to a login. Decides whether to offer "claim this listing". */
+  claimed: boolean;
   offer?: { title: string; description?: string };
   hours?: { day: string; text: string }[];
   address?: string;
@@ -79,6 +81,7 @@ const SAMPLE: DirectoryBusiness[] = [
     planType: "elite",
     isVerified: true,
     isFeatured: true,
+    claimed: false,
     offer: { title: "$50 off water heater install" },
     hours: [
       { day: "Mon to Fri", text: "8am to 6pm" },
@@ -104,6 +107,7 @@ const SAMPLE: DirectoryBusiness[] = [
     planType: "featured",
     isVerified: true,
     isFeatured: true,
+    claimed: false,
     offer: { title: "Free whitening for new patients" },
     address: "88 Coleman Blvd, Mount Pleasant, SC 29464",
   },
@@ -124,6 +128,7 @@ const SAMPLE: DirectoryBusiness[] = [
     planType: "basic",
     isVerified: true,
     isFeatured: false,
+    claimed: false,
   },
   {
     id: 4,
@@ -141,6 +146,7 @@ const SAMPLE: DirectoryBusiness[] = [
     planType: "basic",
     isVerified: true,
     isFeatured: false,
+    claimed: false,
   },
   {
     id: 5,
@@ -159,6 +165,7 @@ const SAMPLE: DirectoryBusiness[] = [
     planType: "featured",
     isVerified: true,
     isFeatured: true,
+    claimed: false,
     offer: { title: "$79 seasonal tune-up" },
   },
   {
@@ -177,6 +184,7 @@ const SAMPLE: DirectoryBusiness[] = [
     planType: "basic",
     isVerified: true,
     isFeatured: false,
+    claimed: false,
   },
 ];
 
@@ -425,6 +433,7 @@ export async function getBusinesses(
     description: r.description ?? "",
     planType: (r.planType as DirectoryBusiness["planType"]) ?? "basic",
     isVerified: !!r.isVerified,
+    claimed: r.userId !== null && r.userId !== undefined,
     // Legacy directory.php features on is_featured OR paid placement;
     // plan_type mirrors the paid tiers the admin assigns.
     isFeatured:
