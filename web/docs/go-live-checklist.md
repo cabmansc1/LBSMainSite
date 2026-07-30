@@ -83,27 +83,26 @@ further testing:
 
 ### Building the staging copy
 
+Full procedure, with the commands, in **[staging-database.md](./staging-database.md)**.
+The short version, in order:
+
 - [ ] `DIRECTORY_READ_ONLY=1` on staging now, before anything else.
-- [ ] Dump production and import it into a separate database. Not a
-      separate table prefix, a separate database: one connection string
-      is the whole safety boundary and it should be impossible to be
-      half-pointed at the wrong one.
-- [ ] **Scrub it before anything can send:**
-      `DB_NAME=<copy> SCRUB_ALLOW=<copy> node scripts/scrub-staging.mjs --write --keep you@example.com`
-      Dry run first, which is the default.
-      This is not optional. The app now sends mail by itself: an
-      advertiser edit alerts us, an approval emails the advertiser, a
-      signup emails both. A copy carries every real address, so without
-      this a click on staging mails a customer. Run it before setting
-      `RESEND_API_KEY` there, not after.
-- [ ] Point staging's `DB_*` at the copy. Confirm by checking a row you
-      changed in the copy and not in production.
-- [ ] Remove `DIRECTORY_READ_ONLY` from staging once the copy is live,
-      and confirm production never had it.
-- [ ] Stripe stays on test keys. Stripe holds its own customer records
-      with real emails and the scrub cannot reach them.
-- [ ] Decide how often the copy refreshes, and note that each refresh
-      re-imports real addresses and needs the scrub run again.
+- [ ] Dump production, import into a separate database. Not a table
+      prefix: the connection string should be the whole safety boundary.
+- [ ] **Scrub it before `RESEND_API_KEY` is set there**, with
+      `scripts/scrub-staging.mjs`. Not optional. The app sends mail by
+      itself now, and a copy carries every real address, so without this
+      a click on staging mails a customer.
+- [ ] Point staging's `DB_*` at the copy, and confirm the move by
+      opening `/admin/users`: `@staging.invalid` addresses mean the copy,
+      real ones mean you are still on production.
+- [ ] Only then remove `DIRECTORY_READ_ONLY` from staging. Confirm
+      production never had it.
+- [ ] `MC_READ_ONLY=1` stays. Mission Control has no copy.
+- [ ] Stripe stays on test keys. It holds its own customer records with
+      real emails and the scrub cannot reach them.
+- [ ] Decide how often the copy refreshes. **Every refresh re-imports
+      real addresses and needs the scrub run again.**
 - [ ] **Rotate the two exposed Mission Control keys** (`5640e943`,
       `d8168a8e`) and delete the leftover `Internal Test Card`
       (`card_305924b17f9d`) and stray account `acct_12b42ba87600`.
