@@ -30,7 +30,7 @@ const VALUE = [
   },
   {
     title: "Proven results",
-    body: "QR codes and tracked URLs show scans and calls per mailing, so the results are never a guess.",
+    body: "Add a QR code and a tracked URL and every scan and visit is counted, so the results are never a guess.",
   },
 ];
 

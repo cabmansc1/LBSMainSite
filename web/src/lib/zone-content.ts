@@ -84,7 +84,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           {
             title: "Affordable & Trackable",
             body: [
-              "Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.",
+              "Starting at just 5 cents per household. Add a QR code and a unique URL to your ad and you can measure the response from day one.",
             ],
           },
         ],
@@ -146,7 +146,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       },
       {
         q: "How do we measure results?",
-        a: "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.",
+        a: "We can add a trackable QR code and a unique URL to your ad so you can measure scans and visits.",
       },
       {
         q: "When is the next print date?",
@@ -182,7 +182,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Charleston Direct Mail Program Works",
           body: [
-            "Getting started is straightforward. You pick your target zip codes and mailing size (5,000 or 10,000 households), and we take care of everything, ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Charleston homeowners.",
+            "Getting started is straightforward. You pick your target zip codes and mailing size (5,000 or 10,000 households), and we take care of everything, ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We can also add trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Charleston homeowners.",
           ],
         },
       ],
@@ -298,7 +298,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       },
       {
         q: "How do we measure results?",
-        a: "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.",
+        a: "We can add a trackable QR code and a unique URL to your ad so you can measure scans and visits.",
       },
       {
         q: "When is the next print date?",
@@ -329,7 +329,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           title: "How the Program Works",
           body: [
             "We use Every Door Direct Mail (EDDM) through the United States Postal Service to deliver our postcards to targeted carrier routes in the 29492 zip code, reaching 5,000–10,000 households per mailing. The full zone covers over 15,000 homes that you can reach across multiple mailings. EDDM eliminates the need for a mailing list or individual postage, which keeps the per-household cost remarkably low, starting at roughly five cents per home. You select your business category, and once reserved, no other business in that category can appear on the same card. That exclusivity is the cornerstone of the program: your roofing company, dental practice, or fitness studio stands alone.",
-            "Professional ad design is included at no extra charge. Our design team builds your panel from scratch, incorporating your logo, offer, and call to action in a layout optimized for print readability at arm's length. If you want to measure performance, we can embed a unique QR code, a dedicated landing-page URL, or a tracked phone number so you can see exactly how many scans, site visits, and calls the mailing generates. Many of our Daniel Island advertisers run on a recurring schedule, mailing every four to six weeks to maintain consistent visibility in the community. Over time, that repetition builds the kind of brand familiarity that digital impressions rarely achieve.",
+            "Professional ad design is included at no extra charge. Our design team builds your panel from scratch, incorporating your logo, offer, and call to action in a layout optimized for print readability at arm's length. If you want to measure performance, we can embed a unique QR code or a dedicated landing-page URL so you can see how many scans and site visits the mailing generates. Many of our Daniel Island advertisers run on a recurring schedule, mailing every four to six weeks to maintain consistent visibility in the community. Over time, that repetition builds the kind of brand familiarity that digital impressions rarely achieve.",
             "Whether you are an established Daniel Island business looking to deepen market share or a Lowcountry company expanding into the 29492 zip code for the first time, our direct mail program puts your brand in front of 5,000–10,000 affluent, engaged households per mailing, with 15,000+ total homes reachable across multiple sends, at a fraction of the cost of traditional advertising. Category spots are limited and fill quickly, so the best time to reserve yours is now.",
           ],
         },
@@ -427,7 +427,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       },
       {
         q: "How do we measure results?",
-        a: "We can include a trackable QR code, a unique landing page and a dedicated phone number to measure scans, visits and calls.",
+        a: "We can add a trackable QR code and a unique landing page to your ad so you can measure scans and visits.",
       },
       {
         q: "When is the next print date?",
@@ -481,7 +481,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           {
             title: "Affordable & Trackable",
             body: [
-              "Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.",
+              "Starting at just 5 cents per household. Add a QR code and a unique URL to your ad and you can measure the response from day one.",
             ],
           },
         ],
@@ -575,7 +575,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Goose Creek Direct Mail Program Works",
           body: [
-            "Getting started is straightforward. Each Goose Creek mailing targets 5,000 to 10,000 households within the 29445 zip code, this is not blanket coverage of the entire city, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Goose Creek families.",
+            "Getting started is straightforward. Each Goose Creek mailing targets 5,000 to 10,000 households within the 29445 zip code, this is not blanket coverage of the entire city, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We can also add trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Goose Creek families.",
           ],
         },
       ],
@@ -629,7 +629,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           {
             title: "Affordable & Trackable",
             body: [
-              "Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.",
+              "Starting at just 5 cents per household. Add a QR code and a unique URL to your ad and you can measure the response from day one.",
             ],
           },
         ],
@@ -734,7 +734,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Isle of Palms Direct Mail Program Works",
           body: [
-            'Getting started is straightforward. Each mailing targets 5,000 to 10,000 households, and because Isle of Palms is a smaller community, you can combine it with <strong>Mount Pleasant</strong> or <strong>Sullivans Island</strong> zones to hit your desired volume across the East Cooper corridor. We handle everything: ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there is zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to reach Isle of Palms homeowners and property owners.',
+            'Getting started is straightforward. Each mailing targets 5,000 to 10,000 households, and because Isle of Palms is a smaller community, you can combine it with <strong>Mount Pleasant</strong> or <strong>Sullivans Island</strong> zones to hit your desired volume across the East Cooper corridor. We handle everything: ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there is zero competition from your industry on the same card. We can also add trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to reach Isle of Palms homeowners and property owners.',
           ],
         },
       ],
@@ -786,7 +786,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           {
             title: "Affordable & Trackable",
             body: [
-              "Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.",
+              "Starting at just 5 cents per household. Add a QR code and a unique URL to your ad and you can measure the response from day one.",
             ],
           },
         ],
@@ -886,7 +886,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our James Island Direct Mail Program Works",
           body: [
-            "Getting started is straightforward. Each James Island mailing targets 5,000 to 10,000 households within the 29412 zip code, this is not blanket coverage, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach James Island families.",
+            "Getting started is straightforward. Each James Island mailing targets 5,000 to 10,000 households within the 29412 zip code, this is not blanket coverage, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We can also add trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach James Island families.",
           ],
         },
       ],
@@ -938,7 +938,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           {
             title: "Affordable & Trackable",
             body: [
-              "Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.",
+              "Starting at just 5 cents per household. Add a QR code and a unique URL to your ad and you can measure the response from day one.",
             ],
           },
         ],
@@ -1032,7 +1032,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Johns Island Direct Mail Program Works",
           body: [
-            "Getting started is straightforward. Each Johns Island mailing targets 5,000 to 10,000 households within the 29455 zip code, this is not blanket coverage of the entire island, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Johns Island's booming population of new homeowners.",
+            "Getting started is straightforward. Each Johns Island mailing targets 5,000 to 10,000 households within the 29455 zip code, this is not blanket coverage of the entire island, but a focused, route-based approach using USPS Every Door Direct Mail (EDDM). You select the volume that fits your budget, and we handle everything from there: ad design, printing, and postal delivery. Each oversized 9\"x12\" postcard features local businesses with exclusive category placement, so there's zero competition from your industry on the same card. We can also add trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it's one of the most cost-effective ways to reach Johns Island's booming population of new homeowners.",
           ],
         },
       ],
@@ -1138,7 +1138,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       },
       {
         q: "How do we measure results?",
-        a: "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.",
+        a: "We can add a trackable QR code and a unique URL to your ad so you can measure scans and visits.",
       },
       {
         q: "When is the next print date?",
@@ -1281,7 +1281,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       },
       {
         q: "How do we measure results?",
-        a: "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.",
+        a: "We can add a trackable QR code and a unique URL to your ad so you can measure scans and visits.",
       },
       {
         q: "When is the next print date?",
@@ -1312,7 +1312,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Mount Pleasant Direct Mail Program Works",
           body: [
-            "Getting started is simple. You choose your target area within Mount Pleasant, whether that's specific carrier routes in 29464, 29466, or both, and we handle everything else. Ad design, printing, and delivery of 5,000 to 10,000 postcards per mailing via USPS Every Door Direct Mail (EDDM). Each postcard features local businesses with exclusive category placement, so there's zero competition for attention in your industry. Want to cover the entire Mount Pleasant zone? We can build a campaign that reaches all 38,000+ households across multiple mailings. We also offer trackable QR codes and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates.",
+            "Getting started is simple. You choose your target area within Mount Pleasant, whether that's specific carrier routes in 29464, 29466, or both, and we handle everything else. Ad design, printing, and delivery of 5,000 to 10,000 postcards per mailing via USPS Every Door Direct Mail (EDDM). Each postcard features local businesses with exclusive category placement, so there's zero competition for attention in your industry. Want to cover the entire Mount Pleasant zone? We can build a campaign that reaches all 38,000+ households across multiple mailings. We also offer trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates.",
             "With rates starting at just 5¢ per household, our Mount Pleasant direct mail postcards are one of the most affordable ways to put your brand in front of high-income homeowners. Most of our advertisers see a return within the first mailing, and our repeat advertiser rate speaks for itself.",
           ],
         },
@@ -1422,7 +1422,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       },
       {
         q: "How do we measure results?",
-        a: "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.",
+        a: "We can add a trackable QR code and a unique URL to your ad so you can measure scans and visits.",
       },
       {
         q: "When is the next print date?",
@@ -1455,7 +1455,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           title: "How the Program Works",
           body: [
             "Getting started is straightforward. You select the North Charleston zip codes you want to target, or cover all four for maximum reach. We handle everything from ad design to printing to USPS delivery. Each postcard features multiple local businesses, but your category is exclusively yours. That means if you are a roofer, no other roofing company will appear on the same mailing. This exclusivity eliminates side-by-side comparison and positions you as the go-to provider for your service in the eyes of 5,000–10,000 households per mailing, with 45,000+ total homes available across North Charleston's four zip codes.",
-            "We also include built-in tracking tools, QR codes, unique landing page URLs, and call tracking numbers, so you can measure exactly how many people respond to your ad. At a cost starting at just 5 cents per household, there is simply no more efficient way to put your business in front of thousands of North Charleston residents each mailing, and build coverage across the entire zone over time.",
+            "We can also add tracking to your ad, a QR code and a unique landing page URL, so you can measure how many people respond. At a cost starting at just 5 cents per household, there is simply no more efficient way to put your business in front of thousands of North Charleston residents each mailing, and build coverage across the entire zone over time.",
           ],
         },
       ],
@@ -1613,7 +1613,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Sullivans Island Direct Mail Program Works",
           body: [
-            'Because Sullivans Island has roughly 2,000 households, most advertisers combine the island with nearby routes in <strong>Mount Pleasant</strong> or <strong>Isle of Palms</strong> to reach the 5,000–10,000 household mailing threshold. This is actually an advantage: you get blanket coverage of Sullivans Island plus exposure to the adjacent affluent communities that share the same lifestyle and spending habits. We handle everything, ad design, printing, and USPS EDDM delivery. Each oversized 9"x12" postcard features exclusive category placement, so there is zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to put your brand in front of the Lowcountry\'s highest-income homeowners.',
+            'Because Sullivans Island has roughly 2,000 households, most advertisers combine the island with nearby routes in <strong>Mount Pleasant</strong> or <strong>Isle of Palms</strong> to reach the 5,000–10,000 household mailing threshold. This is actually an advantage: you get blanket coverage of Sullivans Island plus exposure to the adjacent affluent communities that share the same lifestyle and spending habits. We handle everything, ad design, printing, and USPS EDDM delivery. Each oversized 9"x12" postcard features exclusive category placement, so there is zero competition from your industry on the same card. We can also add trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to put your brand in front of the Lowcountry\'s highest-income homeowners.',
           ],
         },
       ],
@@ -1720,7 +1720,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
       },
       {
         q: "How do we measure results?",
-        a: "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.",
+        a: "We can add a trackable QR code and a unique URL to your ad so you can measure scans and visits.",
       },
       {
         q: "When is the next print date?",
