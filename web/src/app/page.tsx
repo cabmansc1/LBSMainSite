@@ -104,7 +104,11 @@ const BENEFITS = [
   },
   {
     title: "9×12: too big to ignore",
-    body: "The largest piece in the mailbox that day. It gets flipped, read, and stuck to the fridge.",
+    // Print specs belong on the card about the physical piece. Size is
+    // why it gets noticed, and the stock is why it does not feel like a
+    // flyer once it is in someone's hand, which is the objection this
+    // whole section exists to answer.
+    body: "The largest piece in the mailbox that day. 14pt stock, high-gloss UV coating, full color on both sides. It gets flipped, read, and stuck to the fridge.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -285,7 +289,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="The product"
             title="Real cards, real mailboxes"
-            sub="Every card is a 9×12 full-color postcard printed on heavy stock. These are actual cards we mailed."
+            sub="Every card is 9×12, printed on 14pt stock with a high-gloss UV coating, full color on both sides. These are actual cards we mailed."
           />
           <div className="grid sm:grid-cols-2 gap-3.5">
             <Image
