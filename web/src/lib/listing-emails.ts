@@ -92,15 +92,19 @@ export type DecisionFacts = {
   advertiserEmail: string;
   newValue: string;
   approved: boolean;
+  /** What the admin typed when rejecting. Empty is normal. */
+  reason?: string;
   siteOrigin?: string;
 };
 
 /**
  * The answer to "we will email you when it is live".
  *
- * A rejection carries no reason, because nothing captures one yet.
- * That makes inviting a reply the whole job of the message rather than
- * a pleasantry at the end of it.
+ * A rejection says why when we said why. Without a note it says
+ * nothing about the cause rather than guessing at one: an email that
+ * explains a decision incorrectly is worse than one that asks the
+ * advertiser to get in touch, because they act on the wrong
+ * explanation instead of calling.
  */
 export function composeDecision(f: DecisionFacts) {
   const label = FIELD_LABELS[f.field];
@@ -129,15 +133,21 @@ export function composeDecision(f: DecisionFacts) {
     };
   }
 
+  const reason = f.reason?.trim();
   return {
     subject: `About the ${label.toLowerCase()} change you asked for`,
     text: [
       `We have not made this change to ${business}'s listing:`,
       `${label}: ${shown(f.newValue)}`,
-      "Your listing is unchanged and still live. Usually this is because the value did not fit how the directory is organised, and there is a better one for you, so it is worth a conversation rather than a resubmission.",
-      "Reply to this email or call us on (843) 212-2969 and we will sort it out.",
+      reason,
+      "Your listing is unchanged and still live.",
+      reason
+        ? "If that does not sound right, reply to this email or call us on (843) 212-2969."
+        : "Reply to this email or call us on (843) 212-2969 and we will explain and sort it out.",
       "Lowcountry Business Spotlight",
-    ].join("\n\n"),
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
   };
 }
 

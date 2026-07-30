@@ -14,7 +14,7 @@ import { reviewEdit } from "@/lib/listing-edits";
 export async function POST(req: Request) {
   const admin = await requireAdmin();
 
-  let body: { id?: number; decision?: string };
+  let body: { id?: number; decision?: string; reason?: string };
   try {
     body = await req.json();
   } catch {
@@ -23,12 +23,13 @@ export async function POST(req: Request) {
 
   const id = Number(body.id);
   const decision = body.decision === "approve" ? "approve" : "reject";
+  const reason = String(body.reason ?? "");
   if (!id) {
     return NextResponse.json({ error: "A request id is required" }, { status: 422 });
   }
 
   try {
-    const result = await reviewEdit(id, decision, admin.email);
+    const result = await reviewEdit(id, decision, admin.email, reason);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 409 });
     }
@@ -49,6 +50,9 @@ export async function POST(req: Request) {
         advertiserEmail: result.requestedBy,
         newValue: result.newValue,
         approved: decision === "approve",
+        // Read back from the decision rather than the request body, so
+        // what the advertiser is told is what we actually filed.
+        reason: result.note,
         siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
       });
     });

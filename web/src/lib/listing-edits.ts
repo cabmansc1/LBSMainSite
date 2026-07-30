@@ -317,12 +317,34 @@ async function ensureTable() {
       requested_by_user_id INT NULL,
       reviewed_by VARCHAR(255) NOT NULL DEFAULT '',
       reviewed_at DATETIME NULL,
+      review_note VARCHAR(500) NOT NULL DEFAULT '',
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX (business_id),
       INDEX (status),
       INDEX (business_id, status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+
+  // CREATE TABLE IF NOT EXISTS does nothing to a table that already
+  // exists, so review_note needs its own step for any install that ran
+  // the first version. Duplicate column is the expected outcome on
+  // every run after the first.
+  try {
+    await db.execute(
+      sql`ALTER TABLE lbs_listing_edits
+          ADD COLUMN review_note VARCHAR(500) NOT NULL DEFAULT '' AFTER reviewed_at`,
+    );
+  } catch (e) {
+    // Drizzle wraps the driver error, so the MySQL code is on `cause`
+    // rather than on the error itself.
+    const codeOf = (err: unknown): string | undefined =>
+      (err as { code?: string })?.code ??
+      (err as { cause?: { code?: string } })?.cause?.code;
+    if (codeOf(e) !== "ER_DUP_FIELDNAME") {
+      console.error("[listing-edits] could not add review_note column:", e);
+    }
+  }
+
   ready = true;
 }
 
@@ -530,13 +552,23 @@ export type ReviewResult =
       businessName: string;
       newValue: string;
       requestedBy: string;
+      /** What the admin typed when rejecting, for the advertiser's email. */
+      note: string;
     }
   | { ok: false; error: string };
 
+/**
+ * A note is only meaningful on a rejection.
+ *
+ * Kept on the row rather than only in the email, because "what did we
+ * tell them?" is the first question when they call back about it, and
+ * an outbound message we cannot see is not an answer.
+ */
 export async function reviewEdit(
   id: number,
   decision: "approve" | "reject",
   adminEmail: string,
+  note = "",
 ): Promise<ReviewResult> {
   await ensureTable();
   const { db } = await import("@/lib/db");
@@ -570,11 +602,17 @@ export async function reviewEdit(
     }
   }
 
+  // Only on a rejection: a note filed against an approval would never
+  // be read, and would make "why was this rejected" a question you have
+  // to check the status to answer.
+  const stored = decision === "reject" ? note.trim().slice(0, 500) : "";
+
   await db.execute(
     sql`UPDATE lbs_listing_edits
         SET status = ${decision === "approve" ? "approved" : "rejected"},
             reviewed_by = ${adminEmail},
-            reviewed_at = NOW()
+            reviewed_at = NOW(),
+            review_note = ${stored}
         WHERE id = ${id}`,
   );
 
@@ -585,5 +623,6 @@ export async function reviewEdit(
     businessName: str(row.business_name),
     newValue: str(row.new_value),
     requestedBy: str(row.requested_by),
+    note: stored,
   };
 }
