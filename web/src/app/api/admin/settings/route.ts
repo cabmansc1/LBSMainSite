@@ -3,6 +3,10 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { saveSetting, saveSiteStat, deleteSiteStat } from "@/lib/admin-data";
 import { PRICING_KEY } from "@/lib/pricing-store";
+import {
+  DIRECTORY_PRICING_KEY,
+  MAX_DIRECTORY_PRICE_CENTS,
+} from "@/lib/directory-pricing";
 import { setCardOrientation, type Orientation } from "@/lib/card-capacity";
 import { CARD_DESCRIPTION_MAX, setCardDescription } from "@/lib/card-details";
 
@@ -41,6 +45,31 @@ export async function POST(req: Request) {
       }
       await saveSetting(PRICING_KEY, overrides);
       for (const path of ["/pricing", "/advertise", "/roi-calculator", "/compare"]) {
+        revalidatePath(path);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "directory-pricing") {
+      const monthlyCents = Number(body.monthlyCents);
+      const annualCents = Number(body.annualCents);
+      for (const cents of [monthlyCents, annualCents]) {
+        // Zero is allowed and means that term is not sold, the same as
+        // taking an ad size off sale.
+        if (
+          !Number.isInteger(cents) ||
+          cents < 0 ||
+          cents > MAX_DIRECTORY_PRICE_CENTS
+        ) {
+          return NextResponse.json(
+            { error: "Prices must be between $0 and $1,000" },
+            { status: 422 },
+          );
+        }
+      }
+      await saveSetting(DIRECTORY_PRICING_KEY, { monthlyCents, annualCents });
+      // Everywhere the Premium price is quoted.
+      for (const path of ["/directory-signup", "/register"]) {
         revalidatePath(path);
       }
       return NextResponse.json({ ok: true });

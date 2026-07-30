@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getLivePricing } from "@/lib/pricing-store";
+import { getLiveDirectoryPricing } from "@/lib/directory-pricing";
 import { AdminPricing } from "@/components/admin-pricing";
+import { AdminDirectoryPricing } from "@/components/admin-directory-pricing";
 import { ALL_SIZES, type Reach } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +19,10 @@ export const metadata: Metadata = {
  */
 export default async function AdminPricingPage() {
   await requireAdmin();
-  const pricing = await getLivePricing();
+  const [pricing, directory] = await Promise.all([
+    getLivePricing(),
+    getLiveDirectoryPricing(),
+  ]);
 
   const rows = (["5k", "10k"] as Reach[]).flatMap((reach) =>
     ALL_SIZES.map((size) => ({
@@ -40,6 +45,12 @@ export default async function AdminPricingPage() {
         </p>
       </div>
       <AdminPricing initial={rows} />
+      <div className="mt-8">
+        <AdminDirectoryPricing
+          monthlyCents={directory.monthlyCents}
+          annualCents={directory.annualCents}
+        />
+      </div>
     </div>
   );
 }
