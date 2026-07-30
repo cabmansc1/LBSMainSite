@@ -1,14 +1,36 @@
 "use client";
 import { richTextToPlain } from "@/lib/rich-text";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DirectoryMap } from "@/components/directory-map";
 import type { DirectoryBusiness } from "@/lib/directory";
 
 type Option = { name: string; slug: string };
+
+/** Eight rows of three on a wide screen, twelve rows of two on a tablet. */
+const PAGE_SIZE = 24;
+
+/**
+ * Page numbers to actually draw, with gaps where there are too many.
+ *
+ * Always the first and last, always the current and its neighbours.
+ * A directory that grows to forty pages should not grow a forty-button
+ * control to go with it.
+ */
+function pageWindow(current: number, total: number): (number | "gap")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out: (number | "gap")[] = [1];
+  const from = Math.max(2, current - 1);
+  const to = Math.min(total - 1, current + 1);
+  if (from > 2) out.push("gap");
+  for (let n = from; n <= to; n++) out.push(n);
+  if (to < total - 1) out.push("gap");
+  out.push(total);
+  return out;
+}
 
 function SelectField({
   label,
@@ -228,10 +250,28 @@ export function DirectoryBrowser({
   lowcoDealCounts?: Record<string, number>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dealCount = (name: string) =>
     lowcoDealCounts[name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")] ?? 0;
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"list" | "map">("list");
+  const listTop = useRef<HTMLDivElement>(null);
+
+  // The page lives in the URL rather than in state, so it survives a
+  // refresh, can be linked to, and the Back button steps through pages
+  // instead of leaving the directory. pushState keeps that from costing
+  // a server round trip; Next syncs useSearchParams with it.
+  const requestedPage = Math.max(1, Number(searchParams.get("page")) || 1);
+
+  const setUrlPage = (n: number, mode: "push" | "replace") => {
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    if (n <= 1) params.delete("page");
+    else params.set("page", String(n));
+    const qs = params.toString();
+    const url = qs ? `?${qs}` : window.location.pathname;
+    if (mode === "push") window.history.pushState(null, "", url);
+    else window.history.replaceState(null, "", url);
+  };
 
   const activeFilters = [
     activeCategory && {
@@ -262,6 +302,29 @@ export function DirectoryBrowser({
   const featured = visible.filter((b) => b.isFeatured);
   const rest = visible.filter((b) => !b.isFeatured);
 
+  // Clamped rather than stored, so a search that shrinks the results
+  // from nine pages to one cannot leave somebody looking at an empty
+  // page seven.
+  const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+  const pageStart = (page - 1) * PAGE_SIZE;
+  const pageRows = rest.slice(pageStart, pageStart + PAGE_SIZE);
+
+  const goToPage = (n: number) => {
+    const next = Math.min(Math.max(1, n), totalPages);
+    setUrlPage(next, "push");
+    // The cards above the fold have already changed by the time this
+    // runs, so without it you land mid-list on somebody else's page.
+    listTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const search = (value: string) => {
+    setQuery(value);
+    // Typing narrows the list under the reader. Staying on page four of
+    // a result set that now has one page would show nothing at all.
+    if (requestedPage > 1) setUrlPage(1, "replace");
+  };
+
   return (
     <div className="grid gap-8">
       <div className="relative z-10 -mt-20 bg-white border border-line rounded-2xl p-5 md:p-6 shadow-[0_12px_32px_rgba(8,21,39,0.10)]">
@@ -279,7 +342,7 @@ export function DirectoryBrowser({
             <input
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => search(e.target.value)}
               placeholder="Business name, service, keyword"
               aria-label="Search the directory"
               className="w-full text-sm px-3.5 py-3 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
@@ -376,12 +439,23 @@ export function DirectoryBrowser({
 
       {view === "list" && (
       <section>
-        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3.5">
+        <div
+          ref={listTop}
+          className="flex items-baseline justify-between gap-3 flex-wrap mb-3.5 scroll-mt-6"
+        >
           <h2 className="text-xs font-semibold uppercase tracking-widest text-muted">
             All businesses
           </h2>
           <span className="text-[13px] text-muted num">
-            {visible.length} listed
+            {/* Which ones you are looking at, not just how many exist:
+                "112 listed" on page four says nothing about where you
+                are in it. The range counts this section only. Featured
+                listings are their own block and repeat on every page,
+                so folding them into the total would make the numbers
+                stop adding up. */}
+            {rest.length > PAGE_SIZE
+              ? `${pageStart + 1}–${pageStart + pageRows.length} of ${rest.length}`
+              : `${visible.length} listed`}
           </span>
         </div>
         {rest.length === 0 && featured.length === 0 ? (
@@ -394,10 +468,57 @@ export function DirectoryBrowser({
           </p>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {rest.map((b) => (
+            {pageRows.map((b) => (
               <BusinessCard key={b.id} b={b} lowcoDeals={dealCount(b.name)} />
             ))}
           </div>
+        )}
+
+        {totalPages > 1 && (
+          <nav
+            aria-label="Directory pages"
+            className="flex items-center justify-center gap-1.5 flex-wrap mt-8"
+          >
+            <button
+              type="button"
+              onClick={() => goToPage(page - 1)}
+              disabled={page === 1}
+              className="text-[13px] font-semibold px-3 py-2 rounded-lg border border-line-strong bg-white text-body hover:border-navy-950 disabled:opacity-40 disabled:hover:border-line-strong"
+            >
+              Previous
+            </button>
+
+            {pageWindow(page, totalPages).map((n, i) =>
+              n === "gap" ? (
+                <span key={`gap-${i}`} className="px-1.5 text-muted text-[13px]">
+                  …
+                </span>
+              ) : (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => goToPage(n)}
+                  aria-current={n === page ? "page" : undefined}
+                  className={`text-[13px] font-semibold num min-w-[36px] px-2.5 py-2 rounded-lg border ${
+                    n === page
+                      ? "bg-navy-950 text-white border-navy-950"
+                      : "bg-white text-body border-line-strong hover:border-navy-950"
+                  }`}
+                >
+                  {n}
+                </button>
+              ),
+            )}
+
+            <button
+              type="button"
+              onClick={() => goToPage(page + 1)}
+              disabled={page === totalPages}
+              className="text-[13px] font-semibold px-3 py-2 rounded-lg border border-line-strong bg-white text-body hover:border-navy-950 disabled:opacity-40 disabled:hover:border-line-strong"
+            >
+              Next
+            </button>
+          </nav>
         )}
       </section>
       )}

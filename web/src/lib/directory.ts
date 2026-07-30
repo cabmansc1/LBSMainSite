@@ -301,7 +301,15 @@ export async function getBusinesses(
       sql`CASE WHEN ${businesses.planType} = 'elite' THEN 0 WHEN ${businesses.planType} = 'featured' THEN 1 ELSE 2 END`,
       desc(businesses.createdAt),
     )
-    .limit(200);
+    // This was 200, which the directory was on course to reach. The cap
+    // is not just a page-length limit: getBusiness() finds a listing by
+    // scanning this result, so a business past the cap would have had
+    // its own page start returning 404, and the sitemap would have
+    // stopped listing it. Browsing is paginated in the client, so the
+    // number here is about how many listings exist, not how many are
+    // drawn. Past a few hundred this whole approach wants replacing
+    // with LIMIT/OFFSET and a slug lookup of its own.
+    .limit(1000);
 
   const tagsByBiz = new Map<number, { name: string; slug: string }[]>();
   const photosByBiz = new Map<number, { url: string; alt: string; type: string }[]>();
