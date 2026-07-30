@@ -1,5 +1,7 @@
 "use client";
 
+import { DescriptionEditor } from "@/components/description-editor";
+
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { AdminBusiness } from "@/lib/admin-data";
@@ -207,7 +209,12 @@ function EditPanel({
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
               Description
             </span>
-            <textarea rows={5} {...field("description")} />
+            <DescriptionEditor
+              value={(form.description as string) ?? ""}
+              onChange={(description) => setForm({ ...form, description })}
+              rows={6}
+              className={field("description").className}
+            />
           </label>
         </div>
         <div className="flex items-center gap-3 px-6 py-4 border-t border-line">
@@ -395,10 +402,10 @@ function AddListing({ onDone }: { onDone: () => void }) {
         <span className="text-[11px] uppercase tracking-wider text-muted font-semibold">
           Description
         </span>
-        <textarea
-          rows={3}
+        <DescriptionEditor
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
+          rows={4}
           className={field}
           placeholder="What they do, in a sentence or two. This is the listing's About text."
         />

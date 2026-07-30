@@ -1,4 +1,5 @@
 "use client";
+import { richTextToPlain } from "@/lib/rich-text";
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
@@ -145,7 +146,7 @@ function BusinessCard({
           </p>
         </div>
         <p className="text-[13.5px] text-body leading-relaxed line-clamp-2">
-          {b.description}
+          {richTextToPlain(b.description)}
         </p>
         {(b.tags?.length || b.offer || lowcoDeals > 0) && (
           <div className="flex flex-wrap gap-1.5">

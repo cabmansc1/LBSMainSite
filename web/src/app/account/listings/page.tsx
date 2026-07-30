@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RichText } from "@/components/rich-text";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
@@ -74,9 +75,10 @@ export default async function AccountListingsPage() {
               </div>
 
               {l.description && (
-                <p className="text-sm text-body leading-relaxed border-t border-line pt-3">
-                  {l.description}
-                </p>
+                <RichText
+                  text={l.description}
+                  className="text-sm text-body leading-relaxed border-t border-line pt-3"
+                />
               )}
 
               <dl className="grid sm:grid-cols-3 gap-3 text-[13px] border-t border-line pt-3">

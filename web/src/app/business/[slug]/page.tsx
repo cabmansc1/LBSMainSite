@@ -8,6 +8,8 @@ import { getBusinesses, getBusiness } from "@/lib/directory";
 import { dealsForBusiness } from "@/lib/lowco-deals";
 import { advertiserAppearances } from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
+import { RichText } from "@/components/rich-text";
+import { richTextToPlain } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +42,7 @@ export async function generateMetadata({
       ? b.name
       : `${b.name} | ${b.locationArea}, SC`,
     description:
-      b.description.trim().slice(0, 155) ||
+      richTextToPlain(b.description).slice(0, 155) ||
       `${b.name} is a ${b.category.toLowerCase()} business in ${b.locationArea}, SC. See contact details, hours and offers in the Lowcountry Business Spotlight directory.`,
     alternates: { canonical: `${SITE_URL}/business/${slug}` },
   };
@@ -93,7 +95,7 @@ export default async function BusinessPage({
     "@context": "https://schema.org",
     "@type": SCHEMA_TYPE_BY_CATEGORY[b.categorySlug] ?? "LocalBusiness",
     name: b.name,
-    description: b.description,
+    description: richTextToPlain(b.description),
     url: `${SITE_URL}/business/${b.slug}`,
     telephone: b.phone,
     image: b.logoUrl,
@@ -231,7 +233,10 @@ export default async function BusinessPage({
         <div className="grid gap-3.5">
           <Card className="p-6.5 grid gap-3">
             <h2 className="text-[17px] font-semibold tracking-tight">About</h2>
-            <p className="text-sm text-body leading-relaxed">{b.description}</p>
+            <RichText
+              text={b.description}
+              className="text-sm text-body leading-relaxed"
+            />
             {b.tags && b.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {b.tags.map((t) => (
