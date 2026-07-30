@@ -305,13 +305,14 @@ export async function getBusinesses(
 
   const tagsByBiz = new Map<number, { name: string; slug: string }[]>();
   const photosByBiz = new Map<number, { url: string; alt: string; type: string }[]>();
+  let hoursByBiz = new Map<number, { day: string; text: string }[]>();
   if (rows.length > 0) {
     const bizIds = rows.map((r) => r.id);
 
-    // All three are keyed off the listing ids and none reads another's
-    // result, so they are one round trip together rather than three in
+    // All four are keyed off the listing ids and none reads another's
+    // result, so they are one round trip together rather than four in
     // a row.
-    const [tagLinks, photoRows, uploadedLogos] = await Promise.all([
+    const [tagLinks, photoRows, uploadedLogos, hourRows] = await Promise.all([
       // Tags per business (junction join, batched).
       db
         .select({
@@ -344,6 +345,14 @@ export async function getBusinesses(
           return new Map<number, number>();
         }
       })(),
+      // Opening hours. The column has been written by the legacy admin
+      // for years; nothing here ever read it, so every real listing
+      // rendered without hours and without the schema.org markup that
+      // goes with them.
+      (async () => {
+        const { getHoursFor } = await import("@/lib/business-hours");
+        return getHoursFor(bizIds);
+      })(),
     ]);
 
     for (const l of tagLinks) {
@@ -362,6 +371,11 @@ export async function getBusinesses(
       });
       photosByBiz.set(p.businessId, list);
     }
+
+    const { formatHours } = await import("@/lib/business-hours");
+    hoursByBiz = new Map(
+      [...hourRows].map(([businessId, days]) => [businessId, formatHours(days)]),
+    );
 
     // Uploaded logos go first so a freshly uploaded logo is the one the
     // public listing shows.
@@ -407,6 +421,14 @@ export async function getBusinesses(
     // plan_type mirrors the paid tiers the admin assigns.
     isFeatured:
       !!r.isFeatured || r.planType === "featured" || r.planType === "elite",
+    // show_hours is the legacy admin's per-listing toggle. Null means it
+    // was never touched, and hours that exist should show, so only an
+    // explicit false hides them. An empty week stays undefined rather
+    // than rendering an "Hours" heading with nothing under it.
+    hours:
+      r.showHours === false || !hoursByBiz.get(r.id)?.length
+        ? undefined
+        : hoursByBiz.get(r.id),
     socials:
       r.facebookUrl || r.instagramUrl || r.tiktokUrl || r.youtubeUrl
         ? {

@@ -27,12 +27,18 @@ export function SectionHeading({
 export function Card({
   children,
   className = "",
+  id,
 }: {
   children: ReactNode;
   className?: string;
+  /** For pages that link to one card in a list, such as the to-dos. */
+  id?: string;
 }) {
   return (
-    <div className={`bg-white border border-line rounded-(--radius-card) ${className}`}>
+    <div
+      id={id}
+      className={`bg-white border border-line rounded-(--radius-card) ${className}`}
+    >
       {children}
     </div>
   );

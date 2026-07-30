@@ -4,6 +4,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
+import { getFilterOptions } from "@/lib/directory";
+import { getListingForAccount, pendingEditsFor } from "@/lib/listing-edits";
+import { getHoursFor, weekFrom } from "@/lib/business-hours";
+import { ListingEditor } from "@/components/listing-editor";
 import { Card, StatusChip } from "@/components/sections";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +26,25 @@ export default async function AccountListingsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const { listings, deals } = await getPortalContext(session);
+  const ids = listings.map((l) => l.id);
+
+  // The editable copy is re-read through getListingForAccount rather than
+  // reshaped from the portal context, so the rule about which listings
+  // this login may touch lives in exactly one place. An advertiser has
+  // one or two listings, and this page is already dynamic.
+  const [editable, hoursByBiz, pendingByBiz, options] = await Promise.all([
+    Promise.all(ids.map((id) => getListingForAccount(session, id))),
+    getHoursFor(ids),
+    pendingEditsFor(ids),
+    getFilterOptions(),
+  ]);
+
+  const catLabel = new Map(options.categories.map((c) => [c.slug, c.name]));
+  const locLabel = new Map(options.locations.map((l) => [l.slug, l.name]));
+  // Featured and verified are ours to set, not theirs to edit, so they
+  // stay on the portal's read model rather than the editable one.
+  const badges = new Map(listings.map((l) => [l.id, l]));
+  const rows = editable.filter((l) => l !== undefined);
 
   return (
     <>
@@ -36,7 +59,7 @@ export default async function AccountListingsPage() {
         Directory listing
       </h2>
 
-      {listings.length === 0 ? (
+      {rows.length === 0 ? (
         <Card className="p-6 grid gap-2">
           <p className="text-sm text-body">
             No directory listing is linked to {session.email} yet.
@@ -50,20 +73,32 @@ export default async function AccountListingsPage() {
         </Card>
       ) : (
         <div className="grid gap-3.5">
-          {listings.map((l) => (
-            <Card key={l.id} className="p-6 grid gap-3">
+          {rows.map((l) => (
+            <Card key={l.id} id={`listing-${l.id}`} className="p-6 grid gap-3">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <h3 className="text-[16.5px] font-bold tracking-tight">
                       {l.name}
                     </h3>
-                    {l.isFeatured && <StatusChip tone="warn">Featured</StatusChip>}
-                    {l.isVerified && <StatusChip tone="ok">Verified</StatusChip>}
+                    {badges.get(l.id)?.isFeatured && (
+                      <StatusChip tone="warn">Featured</StatusChip>
+                    )}
+                    {badges.get(l.id)?.isVerified && (
+                      <StatusChip tone="ok">Verified</StatusChip>
+                    )}
                     {l.claimable && <StatusChip tone="info">Unclaimed</StatusChip>}
+                    {(pendingByBiz.get(l.id)?.length ?? 0) > 0 && (
+                      <StatusChip tone="warn">Changes with us</StatusChip>
+                    )}
                   </div>
                   <p className="text-[13px] text-muted mt-1">
-                    {[l.category, l.locationArea ?? l.city].filter(Boolean).join(" · ")}
+                    {[
+                      catLabel.get(l.category) ?? l.category,
+                      locLabel.get(l.locationArea) ?? l.locationArea ?? l.city,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </div>
                 <Link
@@ -74,37 +109,38 @@ export default async function AccountListingsPage() {
                 </Link>
               </div>
 
-              {l.description && (
+              {/* An unclaimed listing has no form to read its details off,
+                  so it still shows them the way it always did. */}
+              {!l.owned && l.description && (
                 <RichText
                   text={l.description}
                   className="text-sm text-body leading-relaxed border-t border-line pt-3"
                 />
               )}
+              {!l.owned && (
+                <dl className="grid sm:grid-cols-3 gap-3 text-[13px] border-t border-line pt-3">
+                  <div>
+                    <dt className="text-muted text-[12px]">Phone</dt>
+                    <dd className="font-medium num">{l.phone || "Not set"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted text-[12px]">Email</dt>
+                    <dd className="font-medium truncate">{l.email || "Not set"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted text-[12px]">Website</dt>
+                    <dd className="font-medium truncate">{l.website || "Not set"}</dd>
+                  </div>
+                </dl>
+              )}
 
-              <dl className="grid sm:grid-cols-3 gap-3 text-[13px] border-t border-line pt-3">
-                <div>
-                  <dt className="text-muted text-[12px]">Phone</dt>
-                  <dd className="font-medium num">{l.phone || "Not set"}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted text-[12px]">Email</dt>
-                  <dd className="font-medium truncate">{l.email || "Not set"}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted text-[12px]">Website</dt>
-                  <dd className="font-medium truncate">{l.website || "Not set"}</dd>
-                </div>
-              </dl>
-
-              <p className="text-[12.5px] text-muted border-t border-line pt-3">
-                Editing from here is coming next. Changes will go to us for
-                review before your public page updates. To change something
-                today,{" "}
-                <Link href="/contact" className="text-brand-deep font-semibold hover:underline">
-                  send us the details
-                </Link>
-                .
-              </p>
+              <ListingEditor
+                listing={l}
+                categories={options.categories}
+                locations={options.locations}
+                hours={weekFrom(hoursByBiz.get(l.id) ?? [])}
+                pending={pendingByBiz.get(l.id) ?? []}
+              />
             </Card>
           ))}
         </div>

@@ -189,6 +189,14 @@ export type BusinessPatch = {
   isVerified?: boolean;
   isHidden?: boolean;
   isActive?: boolean;
+  // Columns the legacy admin has always written and the public page
+  // already renders, but which nothing in this app could set until the
+  // advertiser portal needed them.
+  facebookUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  showHours?: boolean;
 };
 
 /** Column whitelist: patch keys can never reach SQL directly. */
@@ -206,6 +214,11 @@ const COLUMNS: Record<keyof BusinessPatch, string> = {
   isVerified: "is_verified",
   isHidden: "is_hidden",
   isActive: "is_active",
+  facebookUrl: "facebook_url",
+  instagramUrl: "instagram_url",
+  tiktokUrl: "tiktok_url",
+  youtubeUrl: "youtube_url",
+  showHours: "show_hours",
 };
 
 /**

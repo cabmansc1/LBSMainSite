@@ -101,7 +101,10 @@ export async function getPortalTodos(
         title: `Claim your listing for ${l.name}`,
         detail:
           "We matched this listing to your email but it is not linked to this login yet. Claiming it lets you edit it.",
-        href: "/account/listings",
+        // Anchored at the listing itself. An account with two listings
+        // landing at the top of the page has to work out which one this
+        // item meant.
+        href: `/account/listings#listing-${l.id}`,
         action: "Claim it",
         weight: 30,
       });
@@ -111,7 +114,7 @@ export async function getPortalTodos(
         title: `Add a description to ${l.name}`,
         detail:
           "Your directory listing has no description, which is the part people read before they call.",
-        href: "/account/listings",
+        href: `/account/listings#listing-${l.id}`,
         action: "Edit listing",
         weight: 40,
       });
