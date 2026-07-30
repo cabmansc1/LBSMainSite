@@ -6,6 +6,8 @@ import { getPortalContext } from "@/lib/portal";
 import { Card } from "@/components/sections";
 import { ProfileGaps } from "@/components/profile-gaps";
 import { missingProfileFields } from "@/lib/profile";
+import { getPortalTodos } from "@/lib/portal-todos";
+import { TodoList } from "@/components/todo-list";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -29,6 +31,17 @@ export default async function AccountHomePage() {
   const nextCard = [...ctx.currentCards].sort((a, b) =>
     a.mailDateIso.localeCompare(b.mailDateIso),
   )[0];
+
+  // The same list the To do tab renders, capped. The dashboard used to
+  // hand-roll its own "send us your art" banner, which said nothing
+  // about whether artwork had already arrived and so kept nagging
+  // people who had already sent it. The phone item is dropped here
+  // because ProfileGaps below asks for it inline, which beats a link.
+  const allTodos = await getPortalTodos(
+    ctx,
+    gaps.some((g) => g.key === "phone"),
+  ).catch(() => []);
+  const todos = allTodos.filter((t) => t.id !== "phone").slice(0, 3);
 
   const stats = [
     {
@@ -93,26 +106,23 @@ export default async function AccountHomePage() {
         </Card>
       )}
 
-      {nextCard && (
-        <Card className="p-6 flex gap-4 items-start flex-wrap mb-4 border-l-[3px] border-l-cta bg-cta-tint">
-          <div className="flex-1 min-w-[240px]">
-            <h2 className="text-[15.5px] font-bold">
-              Your {nextCard.zoneName} card tentatively mails {nextCard.mailMonth}
+      {todos.length > 0 && (
+        <div className="mb-4 grid gap-2.5">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted">
+              Needs you
             </h2>
-            <p className="text-sm text-body mt-1">
-              {nextCard.artworkDeadline
-                ? `Artwork deadline ${nextCard.artworkDeadline}. `
-                : ""}
-              Send us your art or let us design it.
-            </p>
+            {allTodos.length > todos.length && (
+              <Link
+                href="/account/todos"
+                className="text-[12.5px] font-semibold text-brand-deep hover:underline ml-auto"
+              >
+                See all {allTodos.length}
+              </Link>
+            )}
           </div>
-          <Link
-            href="/account/cards"
-            className="bg-cta text-navy-950 text-[13.5px] font-bold px-4 py-2.5 rounded-(--radius-btn) hover:bg-[#FFA033]"
-          >
-            Open cards
-          </Link>
-        </Card>
+          <TodoList todos={todos} />
+        </div>
       )}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">

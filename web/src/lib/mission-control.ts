@@ -974,7 +974,10 @@ export type AdvertiserCard = {
   adSize: string;
   category: string;
   amountCents?: number;
+  amountPaidCents?: number;
   paymentStatus?: string;
+  /** Mission Control's artwork state for this advertiser on this card. */
+  artStatus: string;
 };
 
 export async function getAdvertiserCards(match: {
@@ -1016,7 +1019,12 @@ export async function getAdvertiserCards(match: {
         typeof mine.totalAmount === "number"
           ? Math.round(mine.totalAmount * 100)
           : undefined,
+      amountPaidCents:
+        typeof mine.amountPaid === "number"
+          ? Math.round(mine.amountPaid * 100)
+          : undefined,
       paymentStatus: mine.paymentStatus,
+      artStatus: str(mine.artStatus).trim().toLowerCase(),
     });
   }
   return out.sort((a, b) => b.mailDateIso.localeCompare(a.mailDateIso));

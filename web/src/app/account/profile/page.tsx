@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
@@ -53,12 +54,12 @@ export default async function ProfilePage() {
               </li>
             ))}
           </ul>
-          <a
+          <Link
             href="/account/listings"
             className="text-[13px] font-semibold text-brand-deep hover:underline justify-self-start"
           >
             Manage listings
-          </a>
+          </Link>
         </section>
       )}
     </>

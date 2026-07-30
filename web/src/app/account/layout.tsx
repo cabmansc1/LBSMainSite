@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
+import { getPortalTodos } from "@/lib/portal-todos";
+import { missingProfileFields } from "@/lib/profile";
 import { PortalNav } from "@/components/portal-nav";
 import { LogoutButton } from "@/components/logout-button";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
@@ -20,9 +22,19 @@ export default async function AccountLayout({
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const { listings, currentCards, inquiries } = await getPortalContext(session);
+  const ctx = await getPortalContext(session);
+  const { listings, currentCards, inquiries } = ctx;
   const business = listings[0];
-  const needsAction = currentCards.filter((c) => c.status !== "waitlist").length;
+
+  // The badges are the counts themselves, not a guess at what is
+  // interesting. The Cards one used to be "current cards that are not
+  // waitlisted", which is just how many cards they are on, and Listings
+  // had none at all even when there was one to count.
+  const gaps = await missingProfileFields(session.email).catch(() => []);
+  const todos = await getPortalTodos(
+    ctx,
+    gaps.some((g) => g.key === "phone"),
+  ).catch(() => []);
 
   return (
     <>
@@ -42,7 +54,10 @@ export default async function AccountLayout({
         <PortalNav
           variant="sidebar"
           unreadMessages={inquiries.length}
-          cardsNeedingAction={needsAction}
+          cardCount={currentCards.length}
+          listingCount={listings.length}
+          todoCount={todos.length}
+          todoOverdue={todos.some((t) => t.overdue)}
         />
 
         <div className="mt-auto border-t border-white/10 pt-4 grid gap-2">
@@ -70,7 +85,10 @@ export default async function AccountLayout({
       <PortalNav
         variant="bottom"
         unreadMessages={inquiries.length}
-        cardsNeedingAction={needsAction}
+        cardCount={currentCards.length}
+        listingCount={listings.length}
+        todoCount={todos.length}
+        todoOverdue={todos.some((t) => t.overdue)}
       />
     </div>
     </>

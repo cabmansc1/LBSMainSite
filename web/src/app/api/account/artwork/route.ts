@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getSession, isImpersonating } from "@/lib/auth";
 import { getPortalContext, MC_UNAVAILABLE } from "@/lib/portal";
 import { MAX_ARTWORK_BYTES, saveArtwork } from "@/lib/artwork";
@@ -59,22 +59,48 @@ export async function POST(req: Request) {
     );
   }
 
+  const filename = file.name || "artwork";
+  const note = String(form.get("note") ?? "");
+  const bytes = Buffer.from(await file.arrayBuffer());
+
   const saved = await saveArtwork({
     email: session.email,
     cardId,
-    filename: file.name || "artwork",
+    filename,
     mime: file.type || "",
-    note: String(form.get("note") ?? ""),
+    note,
     // Support uploading a file a customer emailed in is genuinely useful,
     // so impersonation is allowed here, unlike on the profile form. It is
     // recorded, because "you sent us this" should not be said to somebody
     // who did not.
     uploadedBy: isImpersonating(session) ? "admin" : "",
-    bytes: Buffer.from(await file.arrayBuffer()),
+    bytes,
   });
   if ("error" in saved) {
     return NextResponse.json({ error: saved.error }, { status: 422 });
   }
+
+  // After the response. The advertiser gets their confirmation the
+  // moment the file is safe, rather than watching a spinner while a
+  // mail server negotiates, and a slow send cannot fail an upload that
+  // already succeeded.
+  after(async () => {
+    const { sendArtworkEmails } = await import("@/lib/artwork-emails");
+    await sendArtworkEmails({
+      email: session.email,
+      businessName: ctx.listings[0]?.name,
+      filename,
+      bytes: bytes.length,
+      note,
+      cardName: card.zoneName,
+      mailMonth: card.mailMonth,
+      artworkDeadline: card.artworkDeadline,
+      uploadedBy: isImpersonating(session)
+        ? session.impersonatedBy?.email
+        : undefined,
+      siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+    });
+  });
 
   return NextResponse.json({ ok: true, id: saved.id });
 }
