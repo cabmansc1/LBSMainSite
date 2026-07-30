@@ -62,10 +62,26 @@ export function HeroCards({ cards }: { cards: HeroCard[] }) {
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      {/* The tilt sits on the image stack alone. Rotating the whole
-          block would tip the dots and the caption with it, and text set
-          at an angle reads as a mistake rather than a flourish. */}
-      <div className="relative rotate-[1.5deg]">
+      {/*
+        A fixed landscape frame that every card is fitted inside.
+
+        Two things were wrong. The frames after the first were positioned
+        with `absolute inset-0`, which stretches whatever it holds to the
+        shape of the box, so a portrait card arrived distorted. And the
+        box took its height from the first card, so a portrait card in
+        that slot made the hero tall enough to push everything beside it
+        around.
+
+        Now the frame owns the height and each card is scaled to fit
+        inside it with its own proportions kept. A portrait card comes
+        out narrow and centred, which is what a tall card genuinely looks
+        like next to a wide one, and nothing moves when the frame
+        changes.
+
+        The tilt is gone. It read as a flourish on a single landscape
+        mockup and as a mistake on a real portrait card.
+      */}
+      <div className="relative w-full aspect-[3/2]">
         {cards.map((c, i) => (
           <Image
             key={c.src}
@@ -75,9 +91,13 @@ export function HeroCards({ cards }: { cards: HeroCard[] }) {
             height={c.height}
             priority={i === 0}
             sizes="(max-width: 768px) 92vw, 460px"
-            className={`rounded-[14px] shadow-[0_28px_60px_rgba(0,0,0,.4)] w-full h-auto transition-opacity duration-700 ${
+            // inset-0 with auto margins centres it both ways, and the
+            // max/auto pair scales it down to fit without ever enlarging
+            // a small card. The shadow then hugs the card itself rather
+            // than the empty frame around it.
+            className={`absolute inset-0 m-auto max-w-full max-h-full w-auto h-auto rounded-[14px] shadow-[0_28px_60px_rgba(0,0,0,.4)] transition-opacity duration-700 ${
               i === index ? "opacity-100" : "opacity-0"
-            } ${i === 0 ? "" : "absolute inset-0"}`}
+            }`}
             aria-hidden={i === index ? undefined : true}
           />
         ))}
