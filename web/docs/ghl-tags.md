@@ -63,6 +63,75 @@ Newsletter: summerville-direct-mail-marketing     lbs-newsletter, lbs-page-summe
 Tags are sorted and deduped, so the same submission always produces the
 same set in the same order.
 
+## Every field, and which form fills it
+
+Only `email` arrives on all five. Everything else depends on the form,
+so make every other field optional in your mapping or the quiz and the
+calculator will be rejected for missing a phone number they never ask
+for.
+
+### Person
+
+| Field | Contact | Quiz | ROI | Waitlist | Newsletter |
+|---|:-:|:-:|:-:|:-:|:-:|
+| `email` | yes | yes | yes | yes | yes |
+| `firstName` | yes | | | | |
+| `lastName` | yes | | | | |
+| `name` | yes | | | yes | |
+| `phone` | yes | | | | |
+| `companyName` | yes | | | yes | |
+
+### Always sent
+
+| Field | What it holds |
+|---|---|
+| `source` | Human-readable sentence, e.g. `Ad Lead: Summerville` |
+| `tags` / `tags_csv` | The fixed vocabulary above |
+| `submitted_at` | ISO 8601 |
+
+### What they told us
+
+| Field | Sent by | Example |
+|---|---|---|
+| `message` | contact | What they typed in the message box |
+| `category` | contact, waitlist | `Plumbing` |
+| `location` | contact, waitlist | `Summerville` |
+| `zone` | waitlist | `mount-pleasant` |
+| `signup_type` | waitlist, newsletter | `waitlist` or `newsletter` |
+| `origin` | newsletter | Page slug they subscribed from |
+
+### Quiz answers
+
+| Field | Example |
+|---|---|
+| `business_type` | `Home Services` |
+| `goal` | `Generate Leads` |
+| `mailing_size` | `5000` |
+| `budget` | `500` |
+| `recommended_ad` | `Medium (3x4)` |
+| `recommended_price` | `349` |
+
+### ROI calculator
+
+| Field | Example |
+|---|---|
+| `ad_size` | `Large (4x6)` |
+| `distribution_reach` | `5000` |
+| `ad_price` | `599` |
+| `response_rate` | `0.01`, a fraction and not a percentage |
+| `average_sale` | `450` |
+| `projected_customers` | `50` |
+| `projected_revenue` | `22500` |
+| `projected_roi` | `3656`, a percentage |
+
+### Sent but always empty from the contact form
+
+`package`, `ad_size`, `distribution_reach` and `ad_price` ride on the
+contact form payload only because the legacy PHP had a package picker
+there and existing workflows expect the keys. Nobody picks a package on
+the contact page now, so they arrive blank or zero. Map them if you want
+the keys present; do not build a condition on them.
+
 ## Webhook routing
 
 Each surface posts to its own webhook if one is set, falling back to
