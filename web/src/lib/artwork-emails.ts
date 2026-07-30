@@ -1,5 +1,5 @@
 import "server-only";
-import { sendEmail } from "@/lib/email";
+import { alertsTo, sendEmail } from "@/lib/email";
 
 /**
  * Notifications when artwork arrives.
@@ -15,9 +15,6 @@ import { sendEmail } from "@/lib/email";
  * alert so a file cannot sit in the database unnoticed until the card
  * prints without it.
  */
-
-const alertsTo = () =>
-  process.env.LEAD_ALERT_EMAIL?.trim() || "exumandrew@gmail.com";
 
 const size = (bytes: number) =>
   bytes >= 1024 * 1024

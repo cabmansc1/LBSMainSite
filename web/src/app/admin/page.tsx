@@ -46,6 +46,11 @@ export default async function AdminDashboardPage() {
       href: "/admin/signups",
     },
     {
+      label: "Listing changes to approve",
+      value: num(s.listingEditsPending),
+      href: "/admin/listing-edits",
+    },
+    {
       label: "Waiting on a category",
       value: num(s.waiting),
       href: "/admin/waitlist",

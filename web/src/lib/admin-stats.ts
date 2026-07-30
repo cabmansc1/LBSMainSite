@@ -25,6 +25,7 @@ export type DashboardStats = {
   newLeads7d: number | null;
   signupsPending: number | null;
   waiting: number | null;
+  listingEditsPending: number | null;
 };
 
 /** One stat, isolated: a missing legacy table must not blank the rest. */
@@ -54,6 +55,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     newLeads7d,
     signupsPending,
     waiting,
+    listingEditsPending,
   ] = await Promise.all([
     // Paid only. A pending row is an abandoned Stripe session more often
     // than it is a sale in progress, and refunded money is not revenue.
@@ -97,6 +99,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       ),
     ),
     stat("waitlist", () => countWaitingEntries()),
+    // Advertisers can edit most of their own listing now. What lands
+    // here is only the part that waits on a person, so a number above
+    // zero always means somebody is waiting on us.
+    stat("listing edits pending", async () => {
+      const { countPendingEdits } = await import("@/lib/listing-edits");
+      return countPendingEdits();
+    }),
   ]);
 
   return {
@@ -106,5 +115,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     newLeads7d,
     signupsPending,
     waiting,
+    listingEditsPending,
   };
 }

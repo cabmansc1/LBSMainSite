@@ -1,5 +1,5 @@
 import "server-only";
-import { sendEmail } from "@/lib/email";
+import { alertsTo, sendEmail } from "@/lib/email";
 
 /**
  * Notifications for a captured lead.
@@ -18,16 +18,6 @@ import { sendEmail } from "@/lib/email";
  * behind finishRequestAndContinue() for the same reason: nobody should
  * watch a spinner while SMTP negotiates.
  */
-
-/**
- * Where alerts go.
- *
- * The PHP hardcoded a personal Gmail address in two files. Env var here
- * so it can change without a deploy, with the same address as the
- * fallback so behaviour matches today until somebody sets it.
- */
-const alertsTo = () =>
-  process.env.LEAD_ALERT_EMAIL?.trim() || "exumandrew@gmail.com";
 
 const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
 const count = (n: number) => Math.round(n).toLocaleString("en-US");

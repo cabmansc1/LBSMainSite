@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { reviewEdit } from "@/lib/listing-edits";
@@ -36,6 +36,23 @@ export async function POST(req: Request) {
       revalidatePath("/directory");
       if (result.slug) revalidatePath(`/business/${result.slug}`);
     }
+
+    // Both outcomes are told to the advertiser. The portal promised an
+    // email when a change goes live, and a rejection that says nothing
+    // leaves them waiting on that promise indefinitely.
+    after(async () => {
+      const { sendDecision } = await import("@/lib/listing-emails");
+      await sendDecision({
+        field: result.field,
+        businessName: result.businessName,
+        slug: result.slug,
+        advertiserEmail: result.requestedBy,
+        newValue: result.newValue,
+        approved: decision === "approve",
+        siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+      });
+    });
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[admin] listing edit review failed:", e);

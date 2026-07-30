@@ -374,8 +374,10 @@ export async function pendingEditsFor(
 export type SaveResult = {
   /** Fields that are live on the public page now. */
   published: EditableField[];
-  /** Fields sent for review. */
-  queued: EditableField[];
+  /** Fields sent for review, with what they would become. Carries the
+   *  before and after because the notification to the admin is only
+   *  useful if it says what is actually being asked for. */
+  queued: { field: ReviewField; from: string; to: string }[];
   /** Per-field problems. Any of these and nothing is written at all. */
   errors: Partial<Record<EditableField, string>>;
   /** The listing's slug, so the caller can revalidate its public page. */
@@ -407,7 +409,6 @@ export async function saveListingEdits(
   };
 
   const instant: BusinessPatch = {};
-  const queue: { field: ReviewField; oldValue: string; newValue: string }[] = [];
 
   for (const [key, raw] of Object.entries(patch)) {
     if (!INSTANT.has(key) && !REVIEW.has(key)) continue;
@@ -426,12 +427,11 @@ export async function saveListingEdits(
       (instant as Record<string, unknown>)[field] = cleaned.value;
       result.published.push(field);
     } else {
-      queue.push({
+      result.queued.push({
         field: field as ReviewField,
-        oldValue: String(current ?? ""),
-        newValue: String(cleaned.value),
+        from: String(current ?? ""),
+        to: String(cleaned.value),
       });
-      result.queued.push(field);
     }
   }
 
@@ -443,10 +443,10 @@ export async function saveListingEdits(
     await updateBusiness(listing.id, instant);
   }
 
-  if (queue.length > 0) {
+  if (result.queued.length > 0) {
     await ensureTable();
     const { db } = await import("@/lib/db");
-    for (const q of queue) {
+    for (const q of result.queued) {
       // A newer request replaces the one already waiting. Otherwise
       // changing your mind twice leaves an admin three versions of the
       // same field to reason about, and approving the wrong one is a
@@ -458,7 +458,7 @@ export async function saveListingEdits(
       await db.execute(
         sql`INSERT INTO lbs_listing_edits
               (business_id, field, old_value, new_value, requested_by, requested_by_user_id)
-            VALUES (${listing.id}, ${q.field}, ${q.oldValue}, ${q.newValue},
+            VALUES (${listing.id}, ${q.field}, ${q.from}, ${q.to},
                     ${user.email}, ${user.id})`,
       );
     }
@@ -520,16 +520,30 @@ export async function countPendingEdits(): Promise<number> {
  * The row is only marked decided after the write succeeds. A failed
  * UPDATE that still cleared the queue would lose the request entirely.
  */
+export type ReviewResult =
+  | {
+      ok: true;
+      slug: string;
+      /** Everything the advertiser's notification needs, so the caller
+       *  does not have to go back to the database to send it. */
+      field: ReviewField;
+      businessName: string;
+      newValue: string;
+      requestedBy: string;
+    }
+  | { ok: false; error: string };
+
 export async function reviewEdit(
   id: number,
   decision: "approve" | "reject",
   adminEmail: string,
-): Promise<{ ok: true; slug: string } | { ok: false; error: string }> {
+): Promise<ReviewResult> {
   await ensureTable();
   const { db } = await import("@/lib/db");
 
   const rows = (await db.execute(
-    sql`SELECT e.id, e.business_id, e.field, e.new_value, e.status, b.slug
+    sql`SELECT e.id, e.business_id, e.field, e.new_value, e.status,
+               e.requested_by, b.slug, b.business_name
         FROM lbs_listing_edits e
         LEFT JOIN directory_businesses b ON b.id = e.business_id
         WHERE e.id = ${id} LIMIT 1`,
@@ -564,5 +578,12 @@ export async function reviewEdit(
         WHERE id = ${id}`,
   );
 
-  return { ok: true, slug: str(row.slug) };
+  return {
+    ok: true,
+    slug: str(row.slug),
+    field: field as ReviewField,
+    businessName: str(row.business_name),
+    newValue: str(row.new_value),
+    requestedBy: str(row.requested_by),
+  };
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSession, isImpersonating } from "@/lib/auth";
 import {
@@ -134,10 +134,27 @@ export async function POST(req: Request) {
 
   if (result.published.length > 0 || hoursSaved) publish(result.slug);
 
+  // After the response, and as one message rather than one per field.
+  // Somebody correcting their name and their category in the same save
+  // is doing one thing, and two emails about it would read as two
+  // requests to go and look at.
+  if (result.queued.length > 0) {
+    after(async () => {
+      const { sendQueuedAlert } = await import("@/lib/listing-emails");
+      await sendQueuedAlert({
+        businessName: listing.name,
+        slug: listing.slug,
+        advertiserEmail: session.email,
+        changes: result.queued,
+        siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+      });
+    });
+  }
+
   return NextResponse.json({
     ok: true,
     published: result.published.map((f) => FIELD_LABELS[f]),
-    queued: result.queued.map((f) => FIELD_LABELS[f]),
+    queued: result.queued.map((q) => FIELD_LABELS[q.field]),
     hoursSaved,
   });
 }

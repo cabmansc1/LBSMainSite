@@ -27,6 +27,16 @@ const REPLY_TO = () => process.env.EMAIL_REPLY_TO?.trim();
  */
 export const emailEnabled = () => !!KEY();
 
+/**
+ * Where "somebody needs to do something" mail goes.
+ *
+ * Here rather than in each notification module because there are now
+ * three of them, and an inbox address copied into three files is one
+ * that gets changed in two.
+ */
+export const alertsTo = () =>
+  process.env.LEAD_ALERT_EMAIL?.trim() || "exumandrew@gmail.com";
+
 export type SendResult = { sent: boolean; id?: string; error?: string };
 
 export async function sendEmail(opts: {
