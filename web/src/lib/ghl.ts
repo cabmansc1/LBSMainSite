@@ -87,7 +87,17 @@ export async function ghlSend(
       signal: AbortSignal.timeout(GHL_TIMEOUT_MS),
       cache: "no-store",
     });
-    if (res.ok) return true;
+    if (res.ok) {
+      // Success was silent, which made the two failures that look
+      // identical from the outside impossible to tell apart: a push that
+      // never happened, and a push GoHighLevel accepted and then did
+      // nothing with because the workflow had no contact-create step.
+      // One line each way turns that into a five second diagnosis.
+      console.log(
+        `[ghl] sent '${key}' to ${safePath(url)} (HTTP ${res.status})`,
+      );
+      return true;
+    }
     const text = await res.text().catch(() => "");
     console.error(
       `[ghl] webhook failed: HTTP ${res.status} path=${safePath(url)} body=${text.slice(0, 200)}`,
