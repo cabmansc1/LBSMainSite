@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { mcEnabled, mcKey, mcKeySource } from "@/lib/mission-control";
 import { stripeEnabled } from "@/lib/stripe";
+import { emailEnabled } from "@/lib/email";
+import { ghlConfigured } from "@/lib/ghl";
 
 export const dynamic = "force-dynamic";
 
@@ -85,7 +87,31 @@ export async function GET() {
       stripeWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
       db: !!process.env.DB_HOST,
       publicSiteUrl: process.env.PUBLIC_SITE_URL ?? null,
+      siteOrigin: process.env.SITE_ORIGIN ?? null,
     },
+    /**
+     * Whether the running app can see the mail and CRM settings.
+     *
+     * Set in the hosting dashboard and visible to the process are two
+     * different things, and this project has already lost an afternoon
+     * to that gap once with a Mission Control key. Without this the only
+     * way to tell whether email is live is to send one and go looking
+     * for it.
+     *
+     * Names and domains only. The from address is on the outside of
+     * every message we send, so it is not a secret; the key and the
+     * webhook URLs never appear here. That rule is not theoretical: this
+     * endpoint published a live API key once already.
+     */
+    email: emailEnabled() ? "sending" : "preview only, no RESEND_API_KEY",
+    emailFromDomain: (process.env.EMAIL_FROM?.match(/@([^>\s]+)/)?.[1] ?? null),
+    leadAlertsTo: process.env.LEAD_ALERT_EMAIL ? "set" : "default",
+    ghlWebhooks: (() => {
+      const keys = ["advertise", "quiz", "roi", "newsletter"] as const;
+      const live = keys.filter((k) => ghlConfigured(k));
+      if (live.length === 0) return "none configured";
+      return live.length === keys.length ? "all four" : live.join(", ");
+    })(),
     mcEnabled: mcEnabled(),
     // Identifies WHICH key is loaded without revealing it. We spent an
     // afternoon unable to tell whether a hosting dashboard held the
