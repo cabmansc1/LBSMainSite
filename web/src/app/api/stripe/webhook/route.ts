@@ -147,8 +147,21 @@ export async function POST(req: Request) {
           break;
         }
 
-        // Only a session Stripe considers settled counts as paid.
-        if (s.payment_status !== "paid") break;
+        // Only a session Stripe considers settled counts as paid, and
+        // there are two ways for that to be true.
+        //
+        // A zero-total session reports `no_payment_required` rather than
+        // `paid`, because there was nothing to collect. That is what a
+        // 100% promotion code produces. Treating it as unpaid meant a
+        // comped order sailed through checkout, showed the success page,
+        // and was never flipped to paid, never pushed to Mission
+        // Control and never sent a receipt: the customer would be
+        // holding a confirmation for a spot they were not on.
+        //
+        // `unpaid` still means outstanding and must not fulfil.
+        if (s.payment_status !== "paid" && s.payment_status !== "no_payment_required") {
+          break;
+        }
 
         const paymentIntent =
           typeof s.payment_intent === "string"
