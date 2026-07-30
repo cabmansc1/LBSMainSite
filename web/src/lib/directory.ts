@@ -322,13 +322,15 @@ export async function getBusinesses(
   const tagsByBiz = new Map<number, { name: string; slug: string }[]>();
   const photosByBiz = new Map<number, { url: string; alt: string; type: string }[]>();
   let hoursByBiz = new Map<number, { day: string; text: string }[]>();
+  let offersByBiz = new Map<number, { title: string; description: string }>();
   if (rows.length > 0) {
     const bizIds = rows.map((r) => r.id);
 
-    // All four are keyed off the listing ids and none reads another's
-    // result, so they are one round trip together rather than four in
+    // All six are keyed off the listing ids and none reads another's
+    // result, so they are one round trip together rather than six in
     // a row.
-    const [tagLinks, photoRows, uploadedLogos, hourRows] = await Promise.all([
+    const [tagLinks, photoRows, uploadedLogos, hourRows, offerRows, galleryRows] =
+      await Promise.all([
       // Tags per business (junction join, batched).
       db
         .select({
@@ -369,6 +371,21 @@ export async function getBusinesses(
         const { getHoursFor } = await import("@/lib/business-hours");
         return getHoursFor(bizIds);
       })(),
+      // Offers, which have the same history as hours: a legacy table the
+      // PHP admin writes, a field on the model, and nothing that ever
+      // loaded one.
+      (async () => {
+        const { getOffersFor } = await import("@/lib/business-offers");
+        return getOffersFor(bizIds);
+      })(),
+      // Gallery photos uploaded through this app. The legacy gallery
+      // lives on the PHP host's disk, which this app cannot write to,
+      // so anything added from the portal is stored in the database and
+      // served from it.
+      (async () => {
+        const { getGalleryImages } = await import("@/lib/business-images");
+        return getGalleryImages(bizIds);
+      })(),
     ]);
 
     for (const l of tagLinks) {
@@ -388,10 +405,27 @@ export async function getBusinesses(
       photosByBiz.set(p.businessId, list);
     }
 
+    offersByBiz = new Map(
+      [...offerRows].map(([id, o]) => [
+        id,
+        { title: o.title, description: o.description },
+      ]),
+    );
+
     const { formatHours } = await import("@/lib/business-hours");
     hoursByBiz = new Map(
       [...hourRows].map(([businessId, days]) => [businessId, formatHours(days)]),
     );
+
+    // Uploaded gallery photos join the legacy ones, after them, so a
+    // business that had photos on the old site keeps the order it had.
+    for (const [businessId, images] of galleryRows) {
+      const list = photosByBiz.get(businessId) ?? [];
+      for (const img of images) {
+        list.push({ url: `/api/business-image/${img.id}`, alt: "", type: "gallery" });
+      }
+      photosByBiz.set(businessId, list);
+    }
 
     // Uploaded logos go first so a freshly uploaded logo is the one the
     // public listing shows.
@@ -446,6 +480,12 @@ export async function getBusinesses(
       r.showHours === false || !hoursByBiz.get(r.id)?.length
         ? undefined
         : hoursByBiz.get(r.id),
+    offer: offersByBiz.get(r.id)
+      ? {
+          title: offersByBiz.get(r.id)!.title,
+          description: offersByBiz.get(r.id)!.description || undefined,
+        }
+      : undefined,
     socials:
       r.facebookUrl || r.instagramUrl || r.tiktokUrl || r.youtubeUrl
         ? {

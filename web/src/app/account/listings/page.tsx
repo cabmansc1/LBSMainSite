@@ -7,6 +7,10 @@ import { getPortalContext } from "@/lib/portal";
 import { getFilterOptions } from "@/lib/directory";
 import { getListingForAccount, pendingEditsFor } from "@/lib/listing-edits";
 import { getHoursFor, weekFrom } from "@/lib/business-hours";
+import { getImagesFor } from "@/lib/business-images";
+import { getOffer } from "@/lib/business-offers";
+import { isPremiumPlan } from "@/lib/directory-subscriptions";
+import { ListingExtras } from "@/components/listing-extras";
 import { directoryWritesBlocked } from "@/lib/write-guard";
 import { ListingEditor } from "@/components/listing-editor";
 import { Card, StatusChip } from "@/components/sections";
@@ -33,12 +37,18 @@ export default async function AccountListingsPage() {
   // reshaped from the portal context, so the rule about which listings
   // this login may touch lives in exactly one place. An advertiser has
   // one or two listings, and this page is already dynamic.
-  const [editable, hoursByBiz, pendingByBiz, options] = await Promise.all([
-    Promise.all(ids.map((id) => getListingForAccount(session, id))),
-    getHoursFor(ids),
-    pendingEditsFor(ids),
-    getFilterOptions(),
-  ]);
+  const [editable, hoursByBiz, pendingByBiz, options, images, offers] =
+    await Promise.all([
+      Promise.all(ids.map((id) => getListingForAccount(session, id))),
+      getHoursFor(ids),
+      pendingEditsFor(ids),
+      getFilterOptions(),
+      Promise.all(ids.map((id) => getImagesFor(id))),
+      Promise.all(ids.map((id) => getOffer(id))),
+    ]);
+
+  const imagesById = new Map(ids.map((id, i) => [id, images[i]]));
+  const offerById = new Map(ids.map((id, i) => [id, offers[i]]));
 
   const catLabel = new Map(options.categories.map((c) => [c.slug, c.name]));
   const locLabel = new Map(options.locations.map((l) => [l.slug, l.name]));
@@ -143,6 +153,16 @@ export default async function AccountListingsPage() {
                 pending={pendingByBiz.get(l.id) ?? []}
                 readOnly={directoryWritesBlocked()}
               />
+
+              {l.owned && !directoryWritesBlocked() && (
+                <ListingExtras
+                  businessId={l.id}
+                  premium={isPremiumPlan(l.planType)}
+                  logoId={imagesById.get(l.id)?.logo}
+                  galleryIds={imagesById.get(l.id)?.gallery ?? []}
+                  offer={offerById.get(l.id)}
+                />
+              )}
             </Card>
           ))}
         </div>

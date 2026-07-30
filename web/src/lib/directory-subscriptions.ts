@@ -25,6 +25,21 @@ export const FREE_PLAN_TYPE = "basic";
 
 export type SubscriptionTerm = "monthly" | "annual";
 
+/**
+ * Whether a listing is entitled to the paid features.
+ *
+ * Read off plan_type rather than the subscription table, because that
+ * column is what the public site already ranks and badges on, and
+ * because a listing an admin has put on a paid plan by hand has no
+ * subscription row at all. The table records why a plan is what it is;
+ * this answers what it is.
+ *
+ * 'elite' counts: it sits above featured, so anything featured gets it
+ * would be absurd to withhold from the tier above.
+ */
+export const isPremiumPlan = (planType: string | null | undefined): boolean =>
+  planType === PREMIUM_PLAN_TYPE || planType === "elite";
+
 /** Stripe statuses that mean we should be giving them Premium. */
 const LIVE_STATUSES = new Set(["active", "trialing", "past_due"]);
 

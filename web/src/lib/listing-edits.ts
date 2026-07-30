@@ -89,6 +89,8 @@ export type AccountListing = {
   tiktokUrl: string;
   youtubeUrl: string;
   showHours: boolean;
+  /** What they are entitled to. Photos and offers are paid features. */
+  planType: string;
   /** Linked to this login by user_id. Editing requires it. */
   owned: boolean;
   /** Matched by email with no owner yet, so this login may claim it. */
@@ -114,7 +116,7 @@ export async function getListingForAccount(
   const rows = (await db.execute(
     sql`SELECT id, slug, business_name, category, location_area, city, phone,
                email, website, description, facebook_url, instagram_url,
-               tiktok_url, youtube_url, show_hours, user_id
+               tiktok_url, youtube_url, show_hours, plan_type, user_id
         FROM directory_businesses
         WHERE id = ${id}
           AND (user_id = ${user.id} OR (user_id IS NULL AND email = ${user.email}))
@@ -143,6 +145,7 @@ export async function getListingForAccount(
     // Null means the legacy admin never touched the toggle. Hours that
     // exist should show, so an untouched listing counts as on.
     showHours: r.show_hours === null || r.show_hours === undefined ? true : bool(r.show_hours),
+    planType: str(r.plan_type) || "basic",
     owned: ownerId !== null && ownerId === user.id,
     claimable: ownerId === null,
   };
