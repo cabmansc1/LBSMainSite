@@ -12,6 +12,7 @@ Built and pushed, never exercised against a real database or a real
 third party:
 
 - Lead capture on contact, quiz and ROI calculator, plus the GoHighLevel push
+- Lead notification emails, admin alert and the quiz recommendation
 - Newsletter signup
 - Order receipt email
 - Waitlist notices
@@ -26,16 +27,27 @@ check where one was possible. None of it has written a row to the
 production database or sent a real email or webhook. That is what the
 testing section exists to fix.
 
+Copy and layout work since, verified in a browser and needing no
+further testing:
+
+- Card archive reorganised by zone, edition and issue, on the public
+  gallery and in the admin
+- Hero rotates real mailed cards, levelled, portrait cards fitted
+- Print specs on the homepage and the advertise page
+- Ad size descriptions corrected, the 4x6 no longer claims to be largest
+- Phone tracking claims removed everywhere, **including a copy-only patch
+  to the live PHP site**, the first live change of the build
+
 ---
 
 ## 1. Blockers still to build
 
 ### Mine
 
-- [ ] **Lead notification emails.** `process_form.php` mails the admin on
-      every lead. `save-quiz-lead.php` mails the lead and the admin.
-      Neither is ported, so leads currently arrive silently. This is a
-      regression against the live site, not a missing nice-to-have.
+- [x] ~~**Lead notification emails.**~~ Done. Admin alert on contact,
+      quiz and ROI leads, plus the quiz recommendation back to the
+      visitor. Reply-to is the lead's own address. Unverified against a
+      real Resend key.
 - [ ] **Artwork upload for postcard advertisers.** They pay and have no
       way to send their ad. `/account/cards` offers a `mailto:` only.
       Blocks the "Awaiting artwork" figure from covering postcards too.
@@ -95,6 +107,9 @@ Run against staging with a real database attached.
       stores nothing, pushes nothing.
 - [ ] Waitlist join from a card whose category is taken. Row in
       `lbs_waitlist` with the correct category and zone.
+- [ ] Every lead above produces an admin alert email, and hitting reply
+      in that email addresses the lead rather than us.
+- [ ] The quiz also emails the visitor their recommendation.
 
 ### Tracking
 
@@ -242,7 +257,10 @@ can be. From the audit:
 ## 6. Cutover day
 
 - [ ] Pick a date away from any print deadline.
-- [ ] Freeze legacy deploys.
+- [ ] Freeze legacy deploys. Note the PHP site has already had one
+      copy-only change, removing the phone tracking claims. Search
+      results still carry the old meta descriptions until Google
+      recrawls; requesting reindexing for the zone URLs speeds that up.
 - [ ] Point the app at the production database and live Stripe keys.
 - [ ] Register the live Stripe webhook. Keep the old endpoint active.
 - [ ] Set `MC_READ_ONLY` to `0` so Mission Control writes land.
