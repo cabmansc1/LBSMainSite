@@ -1176,6 +1176,56 @@ export async function getAllMcCards(): Promise<
 }
 
 /**
+ * Who is riding a card that has not printed yet, with the address we
+ * would have to chase for artwork.
+ *
+ * Deliberately includes advertisers with no email on file. They are the
+ * ones most at risk of a card going to print with a hole in it, and
+ * leaving them out of the list is how they stay missed.
+ */
+export type RosterCard = {
+  cardId: string;
+  cardName: string;
+  zoneName: string;
+  mailMonth: string;
+  mailDateIso: string;
+  artworkDeadline?: string;
+  advertisers: {
+    businessName: string;
+    email: string;
+    phone: string;
+    adSize: string;
+  }[];
+};
+
+/** Null, not an empty array, when Mission Control could not be read. The
+ *  difference is "nobody owes artwork" versus "we cannot tell", and a
+ *  print deadline is the wrong place to confuse the two. */
+export async function getUpcomingCardRoster(): Promise<RosterCard[] | null> {
+  const cards = await fetchCards();
+  if (!cards) return null;
+  return cards
+    .filter((c) => !c.isPast && c.zoneName)
+    .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso))
+    .map((c) => ({
+      cardId: String(c.id),
+      cardName: c.cardName || `${c.zoneName}, ${c.mailMonth}`,
+      zoneName: c.zoneName,
+      mailMonth: c.mailMonth,
+      mailDateIso: c.mailDateIso,
+      artworkDeadline: c.artworkDeadline,
+      advertisers: c.advertisers
+        .filter((a) => (a.businessName ?? "").trim())
+        .map((a) => ({
+          businessName: str(a.businessName).trim(),
+          email: str(a.email).trim(),
+          phone: str(a.phone).trim(),
+          adSize: str(a.adSize, "Spot"),
+        })),
+    }));
+}
+
+/**
  * Did a paid order actually land on its card in Mission Control?
  *
  * The webhook fires the placement as fire-and-forget, inside the

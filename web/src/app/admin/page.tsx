@@ -35,9 +35,9 @@ export default async function AdminDashboardPage() {
       href: "/admin/orders",
     },
     {
-      label: "Card orders awaiting artwork",
+      label: "Advertisers awaiting artwork",
       value: num(s.awaitingArtwork),
-      href: "/admin/orders",
+      href: "/admin/artwork",
     },
     { label: "New leads (7d)", value: num(s.newLeads7d), href: "/admin/leads" },
     {

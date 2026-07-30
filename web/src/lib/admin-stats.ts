@@ -69,19 +69,18 @@ export async function getDashboardStats(): Promise<DashboardStats> {
             WHERE status = 'paid' AND created_at >= NOW() - INTERVAL 30 DAY`,
       ),
     ),
-    // Neighborhood card orders only. Spotlight Postcard orders have no
-    // artwork column because postcard advertisers have no way to upload
-    // artwork yet, so this figure cannot cover them and the label on the
-    // dashboard says which orders it means.
-    stat("awaiting artwork", () =>
-      scalar(
-        sql`SELECT COUNT(*) AS n
-            FROM directory_card_orders o
-            LEFT JOIN directory_card_ad_content ac ON ac.order_id = o.id
-            WHERE o.status = 'paid'
-              AND (ac.id IS NULL OR ac.logo_filename IS NULL OR ac.logo_filename = '')`,
-      ),
-    ),
+    // Everyone on a card that has not printed, from the Mission Control
+    // roster rather than from an order table. This used to count rows in
+    // directory_card_orders, which only saw neighborhood cards bought
+    // online; most advertisers are sold over the phone and never appear
+    // there, so the figure understated the thing it was named after.
+    // Null when Mission Control cannot be read, so it renders as a dash.
+    stat("awaiting artwork", async () => {
+      const { getArtworkGaps } = await import("@/lib/artwork");
+      const gaps = await getArtworkGaps();
+      if (gaps === null) throw new Error("Mission Control unavailable");
+      return gaps.length;
+    }),
     // `leads`, not `directory_leads`: process_form.php and
     // save-quiz-lead.php both insert into the unprefixed table.
     stat("new leads 7d", () =>

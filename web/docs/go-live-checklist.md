@@ -55,9 +55,13 @@ further testing:
       quiz and ROI leads, plus the quiz recommendation back to the
       visitor. Reply-to is the lead's own address. Unverified against a
       real Resend key.
-- [ ] **Artwork upload for postcard advertisers.** They pay and have no
-      way to send their ad. `/account/cards` offers a `mailto:` only.
-      Blocks the "Awaiting artwork" figure from covering postcards too.
+- [x] ~~**Artwork upload for postcard advertisers.**~~ Done. Upload on
+      `/account/cards`, one file list per card, uploads add a version
+      rather than replacing one. Admin review at `/admin/artwork`, which
+      also lists who on an unprinted card still owes a file, read from
+      the Mission Control roster so phone-sold advertisers are counted.
+      The dashboard figure now measures that instead of legacy online
+      orders. Unverified against a real upload on staging.
 - [ ] **Registration.** `/register` is a placeholder that tells people to
       email us. `/directory-signup` points both plans at it, so no
       business can sign itself up. Needs a decision on how the $10/mo
@@ -202,7 +206,14 @@ passes.
 - [ ] Dashboard shows the card they just bought.
 - [ ] Profile prompts for missing phone if checkout did not capture it.
 - [ ] Phone saves and persists.
-- [ ] Artwork submission works, once built. Today it is a `mailto:`.
+- [ ] Artwork uploads, appears in the card's file list, and downloads
+      back byte for byte. Try a real print PDF, not a screenshot.
+- [ ] A second upload for the same card keeps the first one.
+- [ ] Signed in as advertiser A, `/api/account/artwork/{id}` for a file
+      belonging to advertiser B returns 404.
+- [ ] An oversized file is refused with the size we can actually store,
+      not a generic failure. Check the number matches
+      `SELECT @@max_allowed_packet` on the deployed database.
 
 ---
 
@@ -226,6 +237,12 @@ throughout. Check that edits in one show up in the other.
 - [ ] **Try to delete an account that has card orders. It must refuse**
       and tell you to disable instead. Deleting it would drop those paid
       orders out of the Orders page and out of revenue.
+- [ ] **Artwork page.** A file uploaded from an account appears under
+      "Sent in" and downloads. The "Still missing" list names real
+      advertisers on a card that has not printed, including ones sold
+      over the phone with no online order.
+- [ ] Missing-artwork list matches the dashboard tile. If Mission Control
+      is unreachable both must say so rather than showing zero.
 - [ ] Waitlist: send a notice. Email actually arrives. Only the addresses
       that sent get marked notified. A failure leaves the row waiting.
 - [ ] Blog: upload a featured image, publish, confirm it renders on

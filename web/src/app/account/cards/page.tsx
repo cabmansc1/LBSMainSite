@@ -3,7 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
+import { artworkByteLimit, getArtworkFor } from "@/lib/artwork";
 import { Card, StatusChip } from "@/components/sections";
+import { ArtworkUpload } from "@/components/artwork-upload";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -18,6 +20,18 @@ export default async function AccountCardsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const { currentCards, pastCards, warnings } = await getPortalContext(session);
+
+  // One query for every card rather than one per card, then grouped here.
+  const artwork = await getArtworkFor(session.email);
+  // Read after that call, which is what asks MySQL how big a file it
+  // will take. Reading it earlier would quote the optimistic default.
+  const maxBytes = artworkByteLimit();
+  const artworkByCard = new Map<string, typeof artwork>();
+  for (const a of artwork) {
+    const list = artworkByCard.get(a.cardId);
+    if (list) list.push(a);
+    else artworkByCard.set(a.cardId, [a]);
+  }
 
   return (
     <>
@@ -112,17 +126,11 @@ export default async function AccountCardsPage() {
                   </div>
                 </div>
 
-                <div className="border-t border-line pt-3.5 flex items-center gap-3 flex-wrap">
-                  <span className="text-[13px] text-muted">
-                    Artwork: send us your own, or we design it free.
-                  </span>
-                  <a
-                    href="mailto:hello@lbspotlight.com?subject=Artwork%20for%20my%20card"
-                    className="text-[13px] font-semibold text-brand-deep hover:underline ml-auto"
-                  >
-                    Send artwork
-                  </a>
-                </div>
+                <ArtworkUpload
+                  cardId={c.cardId}
+                  existing={artworkByCard.get(c.cardId) ?? []}
+                  maxBytes={maxBytes}
+                />
               </Card>
             );
           })}

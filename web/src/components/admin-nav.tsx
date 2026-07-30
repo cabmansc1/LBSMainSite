@@ -25,6 +25,7 @@ const GROUPS: Group[] = [
     items: [
       { href: "/admin/cards", label: "Cards", hint: "What is filling now" },
       { href: "/admin/orders", label: "Orders", hint: "Paid, pending, refunds" },
+      { href: "/admin/artwork", label: "Artwork", hint: "Sent in, still missing" },
       { href: "/admin/pricing", label: "Pricing", hint: "Sizes and rates" },
       { href: "/admin/categories", label: "Categories", hint: "Exclusivity list" },
     ],
