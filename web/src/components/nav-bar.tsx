@@ -20,7 +20,11 @@ export function NavBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-navy-950 text-white">
+    /* Sticky on desktop only. On a phone the menu drops out of this bar
+       and a pinned header eats a real share of a short screen, so it
+       keeps scrolling away there. Anything the page anchors to needs a
+       scroll-margin clear of this, or the jump lands underneath it. */
+    <nav className="bg-navy-950 text-white md:sticky md:top-0 md:z-50">
       <div className="mx-auto max-w-[1120px] px-6 py-4 flex items-center gap-6">
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}

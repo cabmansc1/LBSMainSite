@@ -75,7 +75,7 @@ export default async function AccountListingsPage() {
       ) : (
         <div className="grid gap-3.5">
           {rows.map((l) => (
-            <Card key={l.id} id={`listing-${l.id}`} className="p-6 grid gap-3">
+            <Card key={l.id} id={`listing-${l.id}`} className="p-6 grid gap-3 scroll-mt-24">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2.5 flex-wrap">

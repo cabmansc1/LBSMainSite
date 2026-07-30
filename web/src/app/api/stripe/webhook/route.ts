@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
+import type Stripe from "stripe";
 import { getStripe, stripeEnabled } from "@/lib/stripe";
 import { pushToMissionControl } from "@/lib/mission-control";
 import { markPaid, markRefunded } from "@/lib/orders";
@@ -14,6 +16,101 @@ import { pushOrderToGhl } from "@/lib/order-ghl";
  * Every handler is idempotent, because Stripe retries and can deliver
  * the same event more than once.
  */
+/**
+ * When the current period ends, wherever this API version keeps it.
+ *
+ * Stripe moved `current_period_end` from the subscription onto its
+ * items. Reading only one of the two places would silently record a
+ * null renewal date, which is the kind of thing nobody notices until
+ * somebody asks when they are next billed.
+ */
+function periodEndOf(sub: Stripe.Subscription): Date | null {
+  const onSub = (sub as unknown as { current_period_end?: number })
+    .current_period_end;
+  const onItem = (
+    sub.items?.data?.[0] as unknown as { current_period_end?: number } | undefined
+  )?.current_period_end;
+  const seconds = onSub ?? onItem;
+  return typeof seconds === "number" ? new Date(seconds * 1000) : null;
+}
+
+/**
+ * A Premium listing's first payment.
+ *
+ * The subscription is fetched rather than trusted from the session,
+ * because the session carries an id and nothing about the status, the
+ * period or the amount. Recording it is what verifies the listing and
+ * puts it on the paid plan.
+ */
+async function activateDirectoryPremium(
+  session: Stripe.Checkout.Session,
+  md: Record<string, string>,
+) {
+  const businessId = Number(md.businessId);
+  const subscriptionId =
+    typeof session.subscription === "string"
+      ? session.subscription
+      : (session.subscription?.id ?? "");
+
+  if (!businessId || !subscriptionId) {
+    console.error("[stripe] premium session missing ids:", session.id);
+    return;
+  }
+
+  const sub = await getStripe().subscriptions.retrieve(subscriptionId);
+  const { recordSubscription, isLive } = await import(
+    "@/lib/directory-subscriptions"
+  );
+
+  const email = session.customer_email ?? session.customer_details?.email ?? "";
+
+  await recordSubscription({
+    businessId,
+    email,
+    stripeCustomerId:
+      typeof sub.customer === "string" ? sub.customer : (sub.customer?.id ?? ""),
+    stripeSubscriptionId: sub.id,
+    term: md.term === "annual" ? "annual" : "monthly",
+    status: sub.status,
+    amountCents: sub.items?.data?.[0]?.price?.unit_amount ?? 0,
+    currentPeriodEnd: periodEndOf(sub),
+    cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+  });
+
+  // The listing is public from this moment, so the pages that list it
+  // have to be told.
+  for (const path of ["/directory", "/admin/directory"]) {
+    revalidatePath(path);
+  }
+
+  // Only once it is actually live. A welcome for a subscription that
+  // failed its first payment would be pointing at a page nobody can see.
+  if (isLive(sub.status)) {
+    const { db } = await import("@/lib/db");
+    const { sql } = await import("drizzle-orm");
+    const rows = (await db.execute(
+      sql`SELECT business_name, slug FROM directory_businesses WHERE id = ${businessId} LIMIT 1`,
+    )) as unknown as [{ business_name: string; slug: string }[]];
+    const biz = rows[0]?.[0];
+
+    const facts = {
+      businessName: String(biz?.business_name ?? ""),
+      email,
+      plan: (md.term === "annual" ? "annual" : "monthly") as "annual" | "monthly",
+      businessId,
+      slug: String(biz?.slug ?? ""),
+      siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+    };
+
+    const { sendPremiumWelcome, sendSignupAlert } = await import(
+      "@/lib/registration-emails"
+    );
+    // Both swallow their own failures: a webhook that returns non-2xx
+    // because Resend was down would make Stripe retry the whole event.
+    await Promise.all([sendPremiumWelcome(facts), sendSignupAlert(facts)]);
+  }
+}
+
 export async function POST(req: Request) {
   if (!stripeEnabled() || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Not configured" }, { status: 503 });
@@ -41,6 +138,14 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const s = event.data.object;
         const md = (s.metadata ?? {}) as Record<string, string>;
+
+        // A directory subscription, not a postcard order. Nothing below
+        // applies to it: there is no lbs_orders row, no card in Mission
+        // Control and no spot to place.
+        if (md.kind === "directory_premium") {
+          await activateDirectoryPremium(s, md);
+          break;
+        }
 
         // Only a session Stripe considers settled counts as paid.
         if (s.payment_status !== "paid") break;
@@ -136,6 +241,47 @@ export async function POST(req: Request) {
             ? charge.payment_intent
             : (charge.payment_intent?.id ?? undefined);
         if (paymentIntent) await markRefunded(paymentIntent);
+        break;
+      }
+
+      // Everything after the first payment: renewals, a card that
+      // stopped working, a cancellation, a reactivation. All of them
+      // are the same operation here, because the listing's plan is
+      // derived from the status rather than from which event arrived.
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object;
+        const md = (sub.metadata ?? {}) as Record<string, string>;
+        if (md.kind !== "directory_premium") break;
+
+        const businessId = Number(md.businessId);
+        if (!businessId) {
+          console.error("[stripe] subscription event with no businessId:", sub.id);
+          break;
+        }
+
+        const { recordSubscription } = await import(
+          "@/lib/directory-subscriptions"
+        );
+        await recordSubscription({
+          businessId,
+          email: typeof sub.customer === "string" ? "" : "",
+          stripeCustomerId:
+            typeof sub.customer === "string" ? sub.customer : (sub.customer?.id ?? ""),
+          stripeSubscriptionId: sub.id,
+          term: md.term === "annual" ? "annual" : "monthly",
+          // deleted arrives with whatever status it ended on; treating
+          // it as canceled outright keeps the two events from
+          // disagreeing about a subscription that is over.
+          status: event.type === "customer.subscription.deleted" ? "canceled" : sub.status,
+          amountCents: sub.items?.data?.[0]?.price?.unit_amount ?? 0,
+          currentPeriodEnd: periodEndOf(sub),
+          cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+        });
+
+        for (const path of ["/directory", "/admin/directory"]) {
+          revalidatePath(path);
+        }
         break;
       }
     }

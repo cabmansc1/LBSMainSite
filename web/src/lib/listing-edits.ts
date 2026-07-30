@@ -204,7 +204,7 @@ const MAX_DESCRIPTION = 4000;
  * is not http(s) is rejected outright: these strings end up in an href
  * on a public page.
  */
-function normalizeUrl(raw: string): string | null {
+export function normalizeUrl(raw: string): string | null {
   const value = raw.trim();
   if (!value) return "";
   const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`;
@@ -219,7 +219,7 @@ function normalizeUrl(raw: string): string | null {
   return url.toString().slice(0, 500);
 }
 
-const looksLikeEmail = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+export const looksLikeEmail = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 
 /**
  * Checks one field and returns what should be stored.

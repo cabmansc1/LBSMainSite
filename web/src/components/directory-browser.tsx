@@ -441,7 +441,7 @@ export function DirectoryBrowser({
       <section>
         <div
           ref={listTop}
-          className="flex items-baseline justify-between gap-3 flex-wrap mb-3.5 scroll-mt-6"
+          className="flex items-baseline justify-between gap-3 flex-wrap mb-3.5 scroll-mt-24"
         >
           <h2 className="text-xs font-semibold uppercase tracking-widest text-muted">
             All businesses
