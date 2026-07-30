@@ -286,6 +286,10 @@ function buildAdvertise(body: Record<string, unknown>, email: string): Built {
       ),
       category,
       location,
+      // What they actually typed. It was going to the database and the
+      // admin alert and stopping there, so the CRM held a lead with a
+      // category and a neighborhood and no idea what they asked for.
+      message,
       package: "",
       ad_size: "",
       distribution_reach: "",
