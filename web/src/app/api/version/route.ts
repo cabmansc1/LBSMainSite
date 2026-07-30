@@ -106,12 +106,28 @@ export async function GET() {
     email: emailEnabled() ? "sending" : "preview only, no RESEND_API_KEY",
     emailFromDomain: (process.env.EMAIL_FROM?.match(/@([^>\s]+)/)?.[1] ?? null),
     leadAlertsTo: process.env.LEAD_ALERT_EMAIL ? "set" : "default",
+    /**
+     * Which surfaces can reach the CRM.
+     *
+     * Reported alongside whether the catch-all is set, because those are
+     * different problems with the same symptom: a per-form key covering
+     * one surface looks the same from outside as a catch-all covering
+     * all six, and so does a variable saved to the wrong service.
+     */
     ghlWebhooks: (() => {
-      const keys = ["advertise", "quiz", "roi", "newsletter"] as const;
+      const keys = [
+        "advertise",
+        "quiz",
+        "roi",
+        "newsletter",
+        "waitlist",
+        "order",
+      ] as const;
       const live = keys.filter((k) => ghlConfigured(k));
       if (live.length === 0) return "none configured";
-      return live.length === keys.length ? "all four" : live.join(", ");
+      return live.length === keys.length ? "all six" : live.join(", ");
     })(),
+    ghlCatchAllUrl: process.env.GHL_WEBHOOK_URL?.trim() ? "set" : "not set",
     mcEnabled: mcEnabled(),
     // Identifies WHICH key is loaded without revealing it. We spent an
     // afternoon unable to tell whether a hosting dashboard held the
