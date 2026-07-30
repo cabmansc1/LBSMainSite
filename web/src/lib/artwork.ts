@@ -312,24 +312,35 @@ const SETTLED = new Set(["approved", "received"]);
  * Control, so the number that mattered before a print deadline was the
  * one nobody could see.
  *
- * Null means Mission Control could not be reached. An empty array means
+ * Null means Mission Control could not be reached. An empty list means
  * everyone has sent something, and the two must not render the same.
+ *
+ * The prospect count comes back with it so the page can say the rule is
+ * running. A filter nobody can see is a filter nobody trusts.
  */
-export async function getArtworkGaps(): Promise<ArtworkGap[] | null> {
+export type ArtworkGapReport = { gaps: ArtworkGap[]; prospects: number };
+
+export async function getArtworkGaps(): Promise<ArtworkGapReport | null> {
   const { getUpcomingCardRoster } = await import("@/lib/mission-control");
   const roster = await getUpcomingCardRoster();
   if (roster === null) return null;
-  if (roster.length === 0) return [];
+  if (roster.length === 0) return { gaps: [], prospects: 0 };
   const have = await artworkKeys(roster.map((c) => c.cardId));
 
   const { artworkDeadlineFrom } = await import("@/lib/mailings");
   const now = Date.now();
 
   const gaps: ArtworkGap[] = [];
+  let prospects = 0;
   for (const card of roster) {
     const due = artworkDeadlineFrom(card.mailDateIso);
     const overdue = due !== undefined && due.getTime() < now;
     for (const a of card.advertisers) {
+      // Nobody owes us artwork for a spot they have not bought.
+      if (a.isProspect) {
+        prospects++;
+        continue;
+      }
       // Mission Control is the record of what we have on hand, whether
       // it arrived by upload, by email years ago, or on a thumb drive.
       if (SETTLED.has(a.artStatus)) continue;
@@ -351,7 +362,7 @@ export async function getArtworkGaps(): Promise<ArtworkGap[] | null> {
       });
     }
   }
-  return gaps;
+  return { gaps, prospects };
 }
 
 /** Everything waiting to be looked at, newest first, for the admin. */

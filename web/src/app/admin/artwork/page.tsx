@@ -35,7 +35,7 @@ const when = (iso: string | null) => {
 
 export default async function AdminArtworkPage() {
   await requireAdmin();
-  const [gaps, recent] = await Promise.all([
+  const [report, recent] = await Promise.all([
     getArtworkGaps(),
     getRecentArtwork(),
   ]);
@@ -43,7 +43,7 @@ export default async function AdminArtworkPage() {
   // Grouped by card, because the question is always asked about one card
   // at a time: what is still missing before this one goes to print.
   const byCard = new Map<string, ArtworkGap[]>();
-  for (const g of gaps ?? []) {
+  for (const g of report?.gaps ?? []) {
     const list = byCard.get(g.cardId);
     if (list) list.push(g);
     else byCard.set(g.cardId, [g]);
@@ -64,7 +64,19 @@ export default async function AdminArtworkPage() {
         </p>
       </div>
 
-      {gaps === null && (
+      {report !== null && report.prospects > 0 && (
+        <p className="mb-5 border border-line bg-surface rounded-(--radius-card) px-5 py-3.5 text-[13px] text-body max-w-[86ch]">
+          {report.prospects}{" "}
+          {report.prospects === 1 ? "row is" : "rows are"} parked on an
+          upcoming card for prospecting: no price set and nothing paid. They
+          hold their spot and their category, but they are hidden from the
+          business&rsquo;s own account and are not counted below, because
+          nobody owes artwork for a spot they have not bought. Setting a price
+          or marking it paid in Mission Control makes it real everywhere.
+        </p>
+      )}
+
+      {report === null && (
         <p className="mb-5 border border-[#f3c9c4] bg-[#fdf3f2] rounded-(--radius-card) px-5 py-3.5 text-[13px] text-body">
           Mission Control could not be read, so the missing list below is empty
           because nothing could be counted, not because everyone has sent
@@ -77,7 +89,7 @@ export default async function AdminArtworkPage() {
       </h2>
       {byCard.size === 0 ? (
         <p className="text-sm text-muted border border-line rounded-(--radius-card) bg-white px-5 py-6">
-          {gaps === null
+          {report === null
             ? "Nothing to show."
             : "Nobody on an upcoming card is missing artwork."}
         </p>

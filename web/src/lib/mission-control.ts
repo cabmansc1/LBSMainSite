@@ -269,6 +269,34 @@ type McCard = {
   mailDateIso: string;
 };
 
+/**
+ * A row parked on a card for prospecting, not a customer.
+ *
+ * Sales staff add a business to a card to see how it would sit there and
+ * to hold the category while the conversation happens. Until this, that
+ * row was indistinguishable from a sale: it showed up in the business's
+ * own portal as though they had bought the spot, which is how it was
+ * found.
+ *
+ * The test is no money attached and nothing paid. Checked against the
+ * live store: of 13 unpaid rows, ten carry a real agreed price and are
+ * genuine deals waiting on payment, so unpaid alone would have hidden
+ * paying customers from their own account. And $0 alone is no good
+ * either, because 25 rows are $0 and marked paid, which are the comps
+ * and trades. Only the two together mean nobody has bought anything.
+ *
+ * Prospects still consume their spot and still lock their category on
+ * the public site. Parking a category mid-conversation is the point of
+ * the row, and releasing it could let somebody buy it out from under the
+ * deal being worked.
+ */
+function isProspectRow(a: McAdvertiser): boolean {
+  const owed = Number(a.totalAmount) || 0;
+  const paid = Number(a.amountPaid) || 0;
+  return owed === 0 && paid === 0 && a.paymentStatus !== "paid" &&
+    a.paymentStatus !== "partial";
+}
+
 /** "Aug 28", matching the format the sample schedule already quotes. UTC
  *  because the mail date is date-only and local time would shift it. */
 function formatDeadline(d: Date | undefined): string | undefined {
@@ -961,8 +989,13 @@ export async function getAdvertiserCards(match: {
   for (const card of cards) {
     const mine = card.advertisers.find(
       (a) =>
-        (email && a.email?.toLowerCase() === email) ||
-        (match.name && a.businessName && sameBusiness(match.name, a.businessName)),
+        // A prospect is a row we parked to hold a category, not something
+        // the business bought. Showing it here tells them they are on a
+        // card they have never agreed to, which is worse than showing
+        // nothing at all.
+        !isProspectRow(a) &&
+        ((email && a.email?.toLowerCase() === email) ||
+          (match.name && a.businessName && sameBusiness(match.name, a.businessName))),
     );
     if (!mine) continue;
     out.push({
@@ -1232,6 +1265,9 @@ export type RosterCard = {
      *  and it is the answer for the great majority of advertisers, who
      *  sent their file long before this app could take one. */
     artStatus: string;
+    /** Parked for prospecting. Holds its spot and category, but has
+     *  bought nothing, so nobody should be chased for artwork. */
+    isProspect: boolean;
   }[];
 };
 
@@ -1259,6 +1295,7 @@ export async function getUpcomingCardRoster(): Promise<RosterCard[] | null> {
           phone: str(a.phone).trim(),
           adSize: str(a.adSize, "Spot"),
           artStatus: str(a.artStatus).trim().toLowerCase(),
+          isProspect: isProspectRow(a),
         })),
     }));
 }

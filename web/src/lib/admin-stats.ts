@@ -77,9 +77,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     // Null when Mission Control cannot be read, so it renders as a dash.
     stat("awaiting artwork", async () => {
       const { getArtworkGaps } = await import("@/lib/artwork");
-      const gaps = await getArtworkGaps();
-      if (gaps === null) throw new Error("Mission Control unavailable");
-      return gaps.length;
+      const report = await getArtworkGaps();
+      if (report === null) throw new Error("Mission Control unavailable");
+      return report.gaps.length;
     }),
     // `leads`, not `directory_leads`: process_form.php and
     // save-quiz-lead.php both insert into the unprefixed table.
