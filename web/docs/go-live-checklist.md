@@ -73,21 +73,37 @@ further testing:
       **It does.** Test orders land in the real `lbs_orders`, the
       directory admin edits real listings, and the Mission Control test
       hit live MC.
-- [ ] **Decide whether to build the refreshable staging copy the
-      original plan called for, or accept the risk deliberately.** This
-      is now the single most consequential open item, because the
-      advertiser portal added write paths that a customer can trigger,
-      not only you: claiming a listing, editing it, and saving hours,
-      which replaces a listing's whole week in
-      `directory_business_hours`. Clicking through the portal on staging
-      edits somebody's real page.
-      `DIRECTORY_READ_ONLY=1` exists as a stopgap and blocks those
-      writes, but it has to be set, and with it set none of the portal's
-      write paths can be tested at all.
-- [ ] **Until there is a staging copy, test writes against one listing
-      you own.** Create a hidden listing for a business that is not a
-      customer and exercise the portal on that. Do not use a real
-      advertiser's row to find out whether Save works.
+- [x] ~~**Decide how to make staging safe to write to.**~~ **Building the
+      refreshable copy**, as the original plan called for. The
+      alternative, testing against one throwaway listing in production,
+      was considered and rejected.
+      `DIRECTORY_READ_ONLY=1` is the stopgap until the copy exists. With
+      it set, none of the portal's write paths can be tested at all, so
+      it is a holding position and not a destination.
+
+### Building the staging copy
+
+- [ ] `DIRECTORY_READ_ONLY=1` on staging now, before anything else.
+- [ ] Dump production and import it into a separate database. Not a
+      separate table prefix, a separate database: one connection string
+      is the whole safety boundary and it should be impossible to be
+      half-pointed at the wrong one.
+- [ ] **Scrub it before anything can send:**
+      `DB_NAME=<copy> SCRUB_ALLOW=<copy> node scripts/scrub-staging.mjs --write --keep you@example.com`
+      Dry run first, which is the default.
+      This is not optional. The app now sends mail by itself: an
+      advertiser edit alerts us, an approval emails the advertiser, a
+      signup emails both. A copy carries every real address, so without
+      this a click on staging mails a customer. Run it before setting
+      `RESEND_API_KEY` there, not after.
+- [ ] Point staging's `DB_*` at the copy. Confirm by checking a row you
+      changed in the copy and not in production.
+- [ ] Remove `DIRECTORY_READ_ONLY` from staging once the copy is live,
+      and confirm production never had it.
+- [ ] Stripe stays on test keys. Stripe holds its own customer records
+      with real emails and the scrub cannot reach them.
+- [ ] Decide how often the copy refreshes, and note that each refresh
+      re-imports real addresses and needs the scrub run again.
 - [ ] **Rotate the two exposed Mission Control keys** (`5640e943`,
       `d8168a8e`) and delete the leftover `Internal Test Card`
       (`card_305924b17f9d`) and stray account `acct_12b42ba87600`.
