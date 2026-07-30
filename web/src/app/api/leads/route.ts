@@ -2,6 +2,7 @@ import { after, NextResponse } from "next/server";
 import { ghlConfigured, ghlSend } from "@/lib/ghl";
 import { recordLead, type LeadInput } from "@/lib/leads";
 import { SITE_URL } from "@/lib/seo";
+import { buildTags, tagFields } from "@/lib/ghl-tags";
 
 /**
  * Lead capture, replacing process_form.php and save-quiz-lead.php.
@@ -280,6 +281,9 @@ function buildAdvertise(body: Record<string, unknown>, email: string): Built {
       phone,
       companyName,
       source: location ? `Ad Lead: ${location}` : "Ad Lead",
+      ...tagFields(
+        buildTags({ kind: "advertise", zoneSlug: location, category }),
+      ),
       category,
       location,
       package: "",
@@ -339,6 +343,9 @@ function buildQuiz(body: Record<string, unknown>, email: string): Built {
     ghl: {
       email,
       source: `Quiz Lead: ${businessLabel}`,
+      ...tagFields(
+        buildTags({ kind: "quiz", category: businessLabel, adSize }),
+      ),
       business_type: businessLabel,
       goal: goalLabel,
       mailing_size: mailingSize,
@@ -396,6 +403,7 @@ function buildRoi(body: Record<string, unknown>, email: string): Built {
     ghl: {
       email,
       source: "ROI Calculator Lead",
+      ...tagFields(buildTags({ kind: "roi", adSize })),
       ad_size: adSize,
       distribution_reach: households,
       ad_price: price,

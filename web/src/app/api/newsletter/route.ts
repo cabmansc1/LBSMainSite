@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { ghlConfigured, ghlSend } from "@/lib/ghl";
+import { buildTags, tagFields } from "@/lib/ghl-tags";
 import { subscribeToNewsletter } from "@/lib/newsletter";
 
 /**
@@ -126,6 +127,11 @@ export async function POST(req: Request) {
     source: `Newsletter: ${source}`,
     signup_type: "newsletter",
     origin: source,
+    // Which page they subscribed from is the only thing we know about a
+    // newsletter signup, so it is the only thing worth tagging beyond
+    // the kind. Somebody who subscribed from a zone page is a warmer
+    // prospect than somebody who subscribed from the blog.
+    ...tagFields(buildTags({ kind: "newsletter", page: source })),
     submitted_at: new Date().toISOString(),
   };
 

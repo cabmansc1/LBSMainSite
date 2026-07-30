@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { zoneBySlug } from "@/lib/zones";
 import { pushToMissionControl } from "@/lib/mission-control";
+import { ghlSend } from "@/lib/ghl";
+import { buildTags, tagFields } from "@/lib/ghl-tags";
 import { addWaitlistEntry } from "@/lib/waitlist";
 
 /**
@@ -64,6 +66,37 @@ export async function POST(req: Request) {
     category,
     zoneSlug: zone.slug,
   });
+
+  // Somebody whose category was taken is the warmest lead the site
+  // produces short of a sale: they tried to buy and were turned away by
+  // inventory rather than by price. This was reaching Mission Control
+  // and the database and never the CRM, which is where a lead actually
+  // gets worked.
+  after(() =>
+    ghlSend(
+      {
+        email,
+        name: businessName,
+        companyName: businessName,
+        source: smallerCard
+          ? `Waitlist: smaller card, ${zone.name}`
+          : `Waitlist: ${category} in ${zone.name}`,
+        signup_type: "waitlist",
+        category: smallerCard ? "" : category,
+        location: zone.name,
+        zone: zone.slug,
+        ...tagFields(
+          buildTags({
+            kind: smallerCard ? "waitlist-smaller-card" : "waitlist-category",
+            zoneSlug: zone.slug,
+            category: smallerCard ? undefined : category,
+          }),
+        ),
+        submitted_at: new Date().toISOString(),
+      },
+      "waitlist",
+    ),
+  );
 
   if (!process.env.DB_HOST) {
     return NextResponse.json({ ok: true, preview: true });
