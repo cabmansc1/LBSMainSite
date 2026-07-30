@@ -157,8 +157,15 @@ const CARD_META: Record<
   large: {
     label: "Large",
     dims: "4″ × 6″",
-    sub: "Dominant position",
-    features: ["Everything in Medium", "Largest ad on the card", "Priority placement"],
+    // "Largest ad on the card" was written when Large was the top of the
+    // range. Triple, Quad and Full page are all bigger, and the claim
+    // was sitting directly above three tiers that contradicted it.
+    sub: "Four small spots in one",
+    features: [
+      "Everything in Medium",
+      "Room for photos, offer, and hours",
+      "Priority placement",
+    ],
   },
   triple: {
     label: "Triple",

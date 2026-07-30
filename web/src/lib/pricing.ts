@@ -29,16 +29,16 @@ export const ALL_SIZES: SpotSize[] = [...CORE_SIZES, ...BIG_SIZES];
 export const POSTCARD_PRICING: Record<Reach, Record<SpotSize, SpotTier>> = {
   "5k": {
     small: { size: "3×2", priceCents: 24900, description: "Business card size" },
-    medium: { size: "3×4", priceCents: 34900, description: "~3 inches x 4 inches" },
-    large: { size: "4×6", priceCents: 59900, description: "~4 inches x 6 inches" },
+    medium: { size: "3×4", priceCents: 34900, description: "Twice a small: logo, offer, and a photo" },
+    large: { size: "4×6", priceCents: 59900, description: "Four smalls: photos, offer, and hours" },
     triple: { size: "3 mediums", priceCents: 89900, description: "Three medium spots together" },
     quad: { size: "2 larges", priceCents: 119900, description: "Two larges or four mediums" },
     full: { size: "one whole side", priceCents: 220000, description: "Every spot on one side of the card" },
   },
   "10k": {
     small: { size: "3×2", priceCents: 29900, description: "Business card size" },
-    medium: { size: "3×4", priceCents: 54900, description: "~3 inches x 4 inches" },
-    large: { size: "4×6", priceCents: 94900, description: "~4 inches x 6 inches" },
+    medium: { size: "3×4", priceCents: 54900, description: "Twice a small: logo, offer, and a photo" },
+    large: { size: "4×6", priceCents: 94900, description: "Four smalls: photos, offer, and hours" },
     // Not priced at 10k yet: set these in the admin to offer them.
     triple: { size: "3 mediums", priceCents: 0, description: "Three medium spots together" },
     quad: { size: "2 larges", priceCents: 0, description: "Two larges or four mediums" },

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { getPastCards } from "@/lib/past-cards";
+import { HeroCards, type HeroCard } from "@/components/hero-cards";
 import { Button } from "@/components/ui/button";
 import {
   SectionHeading,
@@ -192,6 +194,46 @@ export default async function HomePage() {
         } left.`
       : `The ${nextCard.zoneName} card mailing ${nextCard.mailMonth} is full.`
     : "Claim your category on the next card.";
+  /**
+   * The hero rotates through real mailed cards, newest first.
+   *
+   * A photograph of a card that actually went out argues better than a
+   * mockup, and the archive has enough of them now that showing one was
+   * wasting the rest. Capped at five: this is the hero, not the gallery,
+   * and every extra frame is another image the browser eventually pulls.
+   *
+   * Falls back to the studio sample when nothing is published yet, so a
+   * fresh install still has a hero.
+   */
+  const heroCards: HeroCard[] = (
+    await getPastCards({ publishedOnly: true }).catch(() => [])
+  )
+    .flatMap((c) => {
+      const front = c.images.find((i) => i.side === "front");
+      if (!front) return [];
+      return [
+        {
+          src: `/api/card-image/${front.id}`,
+          alt: front.alt,
+          width: front.width || 920,
+          height: front.height || 614,
+          caption: `${c.cardName ?? c.zoneName}, mailed ${c.mailMonth}`,
+          href: `/cards/${c.slug}`,
+        },
+      ];
+    })
+    .slice(0, 5);
+
+  if (heroCards.length === 0) {
+    heroCards.push({
+      src: "/cards/card-sample-1.webp",
+      alt: "A real 9x12 Lowcountry Business Spotlight postcard with local business ads",
+      width: 920,
+      height: 614,
+      caption: "A real Spotlight Postcard, mailed to 5,000+ households",
+    });
+  }
+
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
 
@@ -234,18 +276,8 @@ export default async function HomePage() {
               )}
             </ul>
           </div>
-          <div className="justify-self-center w-full max-w-[460px] rotate-[1.5deg]">
-            <Image
-              src="/cards/card-sample-1.webp"
-              alt="A real 9x12 Lowcountry Business Spotlight postcard with local business ads"
-              width={920}
-              height={614}
-              priority
-              className="rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,.4)]"
-            />
-            <p className="text-center text-[11px] text-[#67768A] pt-3 -rotate-[1.5deg]">
-              A real Spotlight Postcard, mailed to 5,000+ households
-            </p>
+          <div className="justify-self-center w-full max-w-[460px]">
+            <HeroCards cards={heroCards} />
           </div>
         </div>
         <div className="border-t border-white/10">
