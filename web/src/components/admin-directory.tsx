@@ -8,11 +8,67 @@ import type { AdminBusiness } from "@/lib/admin-data";
 
 const PLANS = ["basic", "featured", "elite"];
 
+export type TaxonomyOption = { name: string; slug: string };
+
+/**
+ * Options for a value the directory filters on.
+ *
+ * Both forms here used to take a typed string. The column stores a slug
+ * and the filters compare slugs, so "HVAC" became a listing that looked
+ * perfectly fine on its card and appeared under no category, in no
+ * category page, with a breadcrumb pointing somewhere it was not. A
+ * dropdown is the only way that stops happening.
+ *
+ * A value already on the row that is not in the taxonomy is kept as an
+ * option rather than silently swapped for the first one in the list.
+ * Editing somebody's phone number must not quietly recategorise them,
+ * and seeing the odd value in the box is how it gets noticed.
+ */
+function TaxonomySelect({
+  value,
+  options,
+  onChange,
+  placeholder,
+  className,
+}: {
+  value: string;
+  options: TaxonomyOption[];
+  onChange: (v: string) => void;
+  placeholder: string;
+  className?: string;
+}) {
+  const known = options.some((o) => o.slug === value);
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={
+        className ??
+        "w-full text-sm px-3 py-2 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
+      }
+    >
+      <option value="">{placeholder}</option>
+      {value !== "" && !known && (
+        <option value={value}>{value} (not in the list)</option>
+      )}
+      {options.map((o) => (
+        <option key={o.slug} value={o.slug}>
+          {o.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function EditPanel({
   business,
+  categories,
+  locations,
   onClose,
 }: {
   business: AdminBusiness;
+  categories: TaxonomyOption[];
+  locations: TaxonomyOption[];
   onClose: () => void;
 }) {
   const [form, setForm] = useState(business);
@@ -162,15 +218,25 @@ function EditPanel({
           <div className="grid sm:grid-cols-2 gap-3.5">
             <label className="grid gap-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
-                Category slug
+                Category
               </span>
-              <input {...field("category")} />
+              <TaxonomySelect
+                value={form.category ?? ""}
+                options={categories}
+                placeholder="No category"
+                onChange={(v) => setForm({ ...form, category: v })}
+              />
             </label>
             <label className="grid gap-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
-                Location slug
+                Location area
               </span>
-              <input {...field("locationArea")} />
+              <TaxonomySelect
+                value={form.locationArea ?? ""}
+                options={locations}
+                placeholder="No area"
+                onChange={(v) => setForm({ ...form, locationArea: v })}
+              />
             </label>
           </div>
           <div className="grid sm:grid-cols-2 gap-3.5">
@@ -248,7 +314,15 @@ function EditPanel({
 }
 
 /** Add a listing for a business that never used the signup form. */
-function AddListing({ onDone }: { onDone: () => void }) {
+function AddListing({
+  categories,
+  locations,
+  onDone,
+}: {
+  categories: TaxonomyOption[];
+  locations: TaxonomyOption[];
+  onDone: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -346,22 +420,24 @@ function AddListing({ onDone }: { onDone: () => void }) {
           <span className="text-[11px] uppercase tracking-wider text-muted font-semibold">
             Category
           </span>
-          <input
+          <TaxonomySelect
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            options={categories}
+            placeholder="Choose a category"
+            onChange={setCategory}
             className={field}
-            placeholder="HVAC"
           />
         </label>
         <label className="grid gap-1.5">
           <span className="text-[11px] uppercase tracking-wider text-muted font-semibold">
             Area
           </span>
-          <input
+          <TaxonomySelect
             value={locationArea}
-            onChange={(e) => setLocationArea(e.target.value)}
+            options={locations}
+            placeholder="Choose an area"
+            onChange={setLocationArea}
             className={field}
-            placeholder="Mount Pleasant"
           />
         </label>
         <label className="grid gap-1.5">
@@ -579,7 +655,15 @@ function RowMenu({
   );
 }
 
-export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) {
+export function AdminDirectory({
+  businesses,
+  categories: taxonomyCategories,
+  locations: taxonomyLocations,
+}: {
+  businesses: AdminBusiness[];
+  categories: TaxonomyOption[];
+  locations: TaxonomyOption[];
+}) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
@@ -653,7 +737,11 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
 
   return (
     <>
-      <AddListing onDone={() => window.location.reload()} />
+      <AddListing
+        categories={taxonomyCategories}
+        locations={taxonomyLocations}
+        onDone={() => window.location.reload()}
+      />
 
       <div className="border border-line rounded-(--radius-card) bg-white px-5 py-4 mb-4 flex gap-8 flex-wrap">
         {[
@@ -998,7 +1086,12 @@ export function AdminDirectory({ businesses }: { businesses: AdminBusiness[] }) 
       </div>
 
       {editing && (
-        <EditPanel business={editing} onClose={() => setEditing(null)} />
+        <EditPanel
+          business={editing}
+          categories={taxonomyCategories}
+          locations={taxonomyLocations}
+          onClose={() => setEditing(null)}
+        />
       )}
     </>
   );
