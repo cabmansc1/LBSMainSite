@@ -54,6 +54,7 @@ const GROUPS: Group[] = [
     items: [
       { href: "/admin/qr", label: "QR codes", hint: "Generate and track" },
       { href: "/admin/import", label: "Import", hint: "Bulk CSV" },
+      { href: "/admin/integrations", label: "Integrations", hint: "Email, GHL, MC" },
     ],
   },
 ];
