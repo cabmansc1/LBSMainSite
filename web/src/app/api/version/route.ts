@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { mcEnabled, mcKey, mcKeySource } from "@/lib/mission-control";
 import { stripeEnabled } from "@/lib/stripe";
 import { emailEnabled } from "@/lib/email";
+import { directoryWritesBlocked } from "@/lib/write-guard";
 import { ghlConfigured } from "@/lib/ghl";
 
 export const dynamic = "force-dynamic";
@@ -106,6 +107,18 @@ export async function GET() {
     email: emailEnabled() ? "sending" : "preview only, no RESEND_API_KEY",
     emailFromDomain: (process.env.EMAIL_FROM?.match(/@([^>\s]+)/)?.[1] ?? null),
     leadAlertsTo: process.env.LEAD_ALERT_EMAIL ? "set" : "default",
+    /**
+     * Whether this environment can edit real listings.
+     *
+     * Reported for the same reason mcWrites is: set in the dashboard and
+     * visible to the process are two different things, and the only
+     * other way to find out was to press Save on somebody's listing and
+     * see what happened. That is a poor way to learn the answer while
+     * staging shares the production database.
+     */
+    directoryWrites: directoryWritesBlocked()
+      ? "blocked (DIRECTORY_READ_ONLY)"
+      : "live, edits reach the database",
     /**
      * Which surfaces can reach the CRM.
      *
