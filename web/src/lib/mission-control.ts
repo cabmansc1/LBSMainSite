@@ -1,6 +1,7 @@
 import "server-only";
 import {
   UPCOMING_MAILINGS,
+  artworkDeadlineFrom,
   type CardRoute,
   type UpcomingMailing,
 } from "@/lib/mailings";
@@ -210,6 +211,8 @@ type McAdvertiser = {
   exclusivity?: string | boolean;
   category?: string;
   primaryCategory?: string;
+  /** approved | received | requested | in_revision | not_requested */
+  artStatus?: string;
 };
 
 /**
@@ -231,6 +234,8 @@ type McAccount = {
   category?: string;
   primaryCategory?: string;
   subcategory?: string;
+  email?: string;
+  phone?: string;
 };
 
 type McCardRaw = Record<string, unknown> & {
@@ -263,6 +268,18 @@ type McCard = {
   isPast: boolean;
   mailDateIso: string;
 };
+
+/** "Aug 28", matching the format the sample schedule already quotes. UTC
+ *  because the mail date is date-only and local time would shift it. */
+function formatDeadline(d: Date | undefined): string | undefined {
+  return d
+    ? d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      })
+    : undefined;
+}
 
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -436,7 +453,16 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
         ? routeTotal
         : undefined;
 
-  const deadline = str(raw.artworkDeadline ?? raw.deadline).trim();
+  // Mission Control has no artwork deadline field, verified against the
+  // live store: a card carries mailDate and startDate and nothing else
+  // date-like. So every screen that offered to show a deadline has been
+  // rendering nothing at all. Derive it from the mail date the same way
+  // the order receipt already does, which is also the two weeks the
+  // advertise page has always promised. An explicit value still wins, in
+  // case Mission Control grows the field later.
+  const deadline =
+    str(raw.artworkDeadline ?? raw.deadline).trim() ||
+    formatDeadline(artworkDeadlineFrom(mailDate));
 
   return {
     id: raw.id,
@@ -536,6 +562,12 @@ async function fetchCards(): Promise<McCard[] | null> {
           return {
             ...a,
             businessName: acct.businessName?.trim() || a.businessName,
+            // Contact details are on the account far more often than on
+            // the card row, and the card row is the stale snapshot. This
+            // is what decides whether an advertiser can be emailed about
+            // artwork at all, so it is worth reaching for.
+            email: a.email?.trim() || acct.email?.trim() || a.email,
+            phone: a.phone?.trim() || acct.phone?.trim() || a.phone,
             // The card-specific category wins when it says something, since
             // that is the exclusivity that was actually sold; otherwise the
             // account's classification fills the gap.
@@ -1195,6 +1227,11 @@ export type RosterCard = {
     email: string;
     phone: string;
     adSize: string;
+    /** Mission Control's own artwork state: approved, received,
+     *  requested, in_revision, not_requested. It is maintained by hand
+     *  and it is the answer for the great majority of advertisers, who
+     *  sent their file long before this app could take one. */
+    artStatus: string;
   }[];
 };
 
@@ -1221,6 +1258,7 @@ export async function getUpcomingCardRoster(): Promise<RosterCard[] | null> {
           email: str(a.email).trim(),
           phone: str(a.phone).trim(),
           adSize: str(a.adSize, "Spot"),
+          artStatus: str(a.artStatus).trim().toLowerCase(),
         })),
     }));
 }

@@ -8,6 +8,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Mission Control's own wording, in plain language. Anything settled is
+ *  filtered out upstream, so only the unfinished states appear here. */
+const ART_STATUS: Record<string, string> = {
+  not_requested: "Never asked for",
+  requested: "Asked for, not sent",
+  in_revision: "Being revised",
+};
+
 const size = (n: number) =>
   n >= 1024 * 1024
     ? `${(n / 1024 / 1024).toFixed(1)} MB`
@@ -49,7 +57,10 @@ export default async function AdminArtworkPage() {
           Files advertisers have sent through their account, and who on a card
           that has not printed yet still owes one. Advertisers sold over the
           phone are included: this reads the card roster in Mission Control,
-          not the online order table.
+          not the online order table. Anyone Mission Control already marks
+          approved or received is treated as done, so this list is what is
+          genuinely outstanding rather than what has not come through this
+          site.
         </p>
       </div>
 
@@ -85,8 +96,14 @@ export default async function AdminArtworkPage() {
                     {card.zoneName}, {card.mailMonth}
                   </span>
                   {card.artworkDeadline && (
-                    <span className="text-[12.5px] font-semibold text-[#9a5c00] ml-auto">
-                      Artwork due {card.artworkDeadline}
+                    <span
+                      className={`text-[12.5px] font-semibold ml-auto ${
+                        card.overdue ? "text-[#b42318]" : "text-[#9a5c00]"
+                      }`}
+                    >
+                      Artwork {card.overdue ? "was due" : "due"}{" "}
+                      {card.artworkDeadline}
+                      {card.overdue ? ", already past" : ""}
                     </span>
                   )}
                 </div>
@@ -97,6 +114,9 @@ export default async function AdminArtworkPage() {
                   >
                     <b className="font-semibold">{r.businessName}</b>
                     <span className="text-[12.5px] text-muted">{r.adSize}</span>
+                    <span className="text-[12px] text-muted">
+                      {ART_STATUS[r.artStatus] ?? "No artwork status set"}
+                    </span>
                     <span className="text-[12.5px] text-muted ml-auto">
                       {r.email ? (
                         <a

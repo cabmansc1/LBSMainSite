@@ -280,11 +280,27 @@ export type ArtworkGap = {
   zoneName: string;
   mailMonth: string;
   artworkDeadline?: string;
+  /** The deadline has already gone by. The whole reason for the page is
+   *  to catch this before the card prints with a hole in it. */
+  overdue: boolean;
   businessName: string;
   email: string;
   phone: string;
   adSize: string;
+  /** What Mission Control says, so the page can show why it is listed. */
+  artStatus: string;
 };
+
+/**
+ * Mission Control artwork states that mean we already have the file.
+ *
+ * Checked against the live store: of 227 advertiser rows, 209 are
+ * approved and 2 received. Almost every advertiser sent their artwork
+ * long before this app could accept one, so a "missing" list that only
+ * looked at our own uploads table would have declared nearly everybody
+ * delinquent on its first day and been ignored from then on.
+ */
+const SETTLED = new Set(["approved", "received"]);
 
 /**
  * Everyone on an upcoming card who has not sent artwork.
@@ -306,9 +322,17 @@ export async function getArtworkGaps(): Promise<ArtworkGap[] | null> {
   if (roster.length === 0) return [];
   const have = await artworkKeys(roster.map((c) => c.cardId));
 
+  const { artworkDeadlineFrom } = await import("@/lib/mailings");
+  const now = Date.now();
+
   const gaps: ArtworkGap[] = [];
   for (const card of roster) {
+    const due = artworkDeadlineFrom(card.mailDateIso);
+    const overdue = due !== undefined && due.getTime() < now;
     for (const a of card.advertisers) {
+      // Mission Control is the record of what we have on hand, whether
+      // it arrived by upload, by email years ago, or on a thumb drive.
+      if (SETTLED.has(a.artStatus)) continue;
       // No email means no upload could have been matched to them, so
       // they count as missing by definition rather than by lookup.
       if (a.email && have.has(`${a.email.toLowerCase()}|${card.cardId}`)) continue;
@@ -318,10 +342,12 @@ export async function getArtworkGaps(): Promise<ArtworkGap[] | null> {
         zoneName: card.zoneName,
         mailMonth: card.mailMonth,
         artworkDeadline: card.artworkDeadline,
+        overdue,
         businessName: a.businessName,
         email: a.email,
         phone: a.phone,
         adSize: a.adSize,
+        artStatus: a.artStatus,
       });
     }
   }
