@@ -1,5 +1,5 @@
 import "server-only";
-import { ghlSend, ghlWebhookUrl } from "@/lib/ghl";
+import { ghlSendDetailed, ghlWebhookUrl, describeWebhook } from "@/lib/ghl";
 import { buildTags, tagFields } from "@/lib/ghl-tags";
 import { composeOrderPush } from "@/lib/order-ghl";
 
@@ -162,12 +162,34 @@ export type SampleResult = {
   surface: GhlSurface;
   configured: boolean;
   accepted: boolean;
+  status?: number;
+  /** What GoHighLevel answered. A 200 with the wrong body is the tell. */
+  reply?: string;
+  /** Host and path shape, with the secret segments replaced by lengths. */
+  endpoint: string;
   payload: Record<string, unknown>;
 };
 
 export async function sendSample(surface: GhlSurface): Promise<SampleResult> {
   const payload = sampleFor(surface);
-  const configured = !!ghlWebhookUrl(surface);
-  const accepted = configured ? await ghlSend(payload, surface) : false;
-  return { surface, configured, accepted, payload };
+  const url = ghlWebhookUrl(surface);
+  if (!url) {
+    return {
+      surface,
+      configured: false,
+      accepted: false,
+      endpoint: "not set",
+      payload,
+    };
+  }
+  const res = await ghlSendDetailed(payload, surface);
+  return {
+    surface,
+    configured: true,
+    accepted: res.ok,
+    status: res.status,
+    reply: res.body,
+    endpoint: res.endpoint || describeWebhook(url),
+    payload,
+  };
 }

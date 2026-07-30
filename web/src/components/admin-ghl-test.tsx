@@ -15,6 +15,9 @@ type Result = {
   surface: string;
   configured: boolean;
   accepted: boolean;
+  status?: number;
+  reply?: string;
+  endpoint: string;
   payload: Record<string, unknown>;
 };
 
@@ -77,15 +80,15 @@ export function AdminGhlTest() {
           ) : result.accepted ? (
             <div className="grid gap-1.5">
               <p className="text-[13.5px] text-ok font-semibold">
-                GoHighLevel accepted the request.
+                Accepted with HTTP {result.status}.
               </p>
               {/* The distinction that costs people an afternoon. */}
               <p className="text-[12.5px] text-muted max-w-[74ch]">
-                That means it answered, not that it did anything. An inbound
-                webhook returns success the moment it receives a request. If no
-                contact appears, check that the workflow is published, that it
-                has a Create or Update Contact action, and that the trigger has
-                captured this sample so its fields can be mapped.
+                That means something answered, not that a workflow ran. If no
+                execution appears in GoHighLevel, compare the endpoint and the
+                reply below against what a webhook trigger should look like.
+                A real inbound webhook lives on a leadconnectorhq.com host
+                under a path beginning /hooks.
               </p>
             </div>
           ) : (
@@ -94,6 +97,23 @@ export function AdminGhlTest() {
               starting <code>[ghl]</code>.
             </p>
           )}
+
+          <dl className="grid sm:grid-cols-2 gap-3 text-[12.5px]">
+            <div>
+              <dt className="font-semibold uppercase tracking-widest text-[11px] text-muted mb-1">
+                Endpoint it went to
+              </dt>
+              <dd className="font-mono break-all">{result.endpoint}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold uppercase tracking-widest text-[11px] text-muted mb-1">
+                What it replied
+              </dt>
+              <dd className="font-mono break-all">
+                {result.reply?.trim() ? result.reply : "(empty response)"}
+              </dd>
+            </div>
+          </dl>
 
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-widest text-muted mb-1.5">
