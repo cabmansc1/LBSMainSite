@@ -91,8 +91,9 @@ export default async function AdvertisePage() {
               The mailbox is still the best billboard in town.
             </h1>
             <p className="mt-4 text-[#93A5B8] max-w-[52ch]">
-              A 9×12 full-color postcard shared by up to eleven exclusive local
-              businesses, mailed to 5,000+ households. From{" "}
+              A 9×12 postcard on 14pt stock with a high-gloss UV coating, full
+              color on both sides, shared by up to eleven exclusive local
+              businesses and mailed to 5,000+ households. From{" "}
               <b className="text-white num">{fromPrice}</b> per mailing.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">

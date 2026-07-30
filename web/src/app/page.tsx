@@ -120,7 +120,10 @@ const BENEFITS = [
   },
   {
     title: "Tracking built in",
-    body: "QR codes and unique URLs on every ad, so you see exactly what a mailing brings in.",
+    // "on every ad" read as a promise that every ad ships with them.
+    // They are offered on every ad, which is a different claim and the
+    // true one.
+    body: "QR codes and unique URLs available for every ad, so you see exactly what a mailing brings in.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
