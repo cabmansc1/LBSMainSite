@@ -69,11 +69,25 @@ further testing:
 
 ### Yours
 
-- [ ] **Confirm whether staging points at the production database.** Test
-      orders landed in the real `lbs_orders`, the directory admin edits
-      real listings, and the Mission Control test hit live MC. The
-      original plan called for a refreshable staging copy. Everything
-      below changes depending on the answer.
+- [x] ~~**Confirm whether staging points at the production database.**~~
+      **It does.** Test orders land in the real `lbs_orders`, the
+      directory admin edits real listings, and the Mission Control test
+      hit live MC.
+- [ ] **Decide whether to build the refreshable staging copy the
+      original plan called for, or accept the risk deliberately.** This
+      is now the single most consequential open item, because the
+      advertiser portal added write paths that a customer can trigger,
+      not only you: claiming a listing, editing it, and saving hours,
+      which replaces a listing's whole week in
+      `directory_business_hours`. Clicking through the portal on staging
+      edits somebody's real page.
+      `DIRECTORY_READ_ONLY=1` exists as a stopgap and blocks those
+      writes, but it has to be set, and with it set none of the portal's
+      write paths can be tested at all.
+- [ ] **Until there is a staging copy, test writes against one listing
+      you own.** Create a hidden listing for a business that is not a
+      customer and exercise the portal on that. Do not use a real
+      advertiser's row to find out whether Save works.
 - [ ] **Rotate the two exposed Mission Control keys** (`5640e943`,
       `d8168a8e`) and delete the leftover `Internal Test Card`
       (`card_305924b17f9d`) and stray account `acct_12b42ba87600`.
@@ -95,6 +109,7 @@ further testing:
 | `SITE_ORIGIN` | Staging must point at itself or social previews for newly uploaded blog images break. |
 | `RESEND_API_KEY` | Without it every send is a preview log and nothing reaches an inbox. |
 | `MC_READ_ONLY` | Must be `1` on staging so it cannot mutate live Mission Control. |
+| `DIRECTORY_READ_ONLY` | Must be `1` on staging while it shares the production database, or advertiser and admin listing edits write to real listings. Must be unset or `0` in production. Unlike `MC_READ_ONLY` this refuses the write rather than faking it, because a person is pressing Save. |
 | `RECAPTCHA_SECRET` + `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | Optional, but both or neither. Secret alone rejects every real submission. |
 
 ---
@@ -227,6 +242,59 @@ passes.
 - [ ] An oversized file is refused with the size we can actually store,
       not a generic failure. Check the number matches
       `SELECT @@max_allowed_packet` on the deployed database.
+
+### Directory listing: claiming and editing
+
+All of this writes to real listings while staging shares the production
+database. Run it against a listing you created for the purpose, and see
+the note at the top of this file.
+
+- [ ] Run `node scripts/audit-taxonomy.mjs` **first**. It is read only,
+      and it tells you how many listings sit on a category that is not
+      in the taxonomy before anything else touches them. Untested
+      against real data.
+- [ ] A listing matching the login's email shows as Unclaimed with a
+      claim button. The to-do links to that listing, not the top of the
+      page.
+- [ ] Claim it. `user_id` is set, the editor appears.
+- [ ] A second account cannot claim the same listing.
+- [ ] Edit phone, website, description and a social link. All four are
+      live on `/business/{slug}` without a review step.
+- [ ] Set hours, including one closed day. They render on the public
+      page and appear in its `openingHoursSpecification`. **Confirm the
+      week that was already stored is what you expect afterwards:
+      saving replaces every day.**
+- [ ] Untick "show these on my page". Hours disappear from the public
+      page and the stored rows survive.
+- [ ] Change the business name. It does **not** publish. The public page
+      keeps the old name and the field shows "waiting on us".
+- [ ] **The slug does not change.** Any printed card or QR code for that
+      listing still resolves.
+- [ ] The queued change emails you, with the before and after, and
+      Reply-To is the advertiser.
+- [ ] Approve it in `/admin/listing-edits`. The public page updates, and
+      the advertiser is emailed that it is live.
+- [ ] Reject one with a reason. The advertiser's email carries your
+      words; the listing is untouched.
+- [ ] Reject one without a reason. The email invents no cause.
+- [ ] Category and area are dropdowns in both admin forms, and a listing
+      already holding an off-taxonomy value shows it as
+      "(not in the list)" rather than silently changing it.
+- [ ] View as an advertiser, then try to save. It refuses: support looks,
+      it does not edit.
+- [ ] Signed in as advertiser A, POST `/api/account/listing` with
+      advertiser B's listing id. It 404s.
+- [ ] `/admin/listing-edits` count matches the dashboard tile.
+
+### Directory browsing
+
+- [ ] The directory pages at 24 a page, and `?page=3` survives a refresh.
+- [ ] Instant search still searches every listing, not just the page.
+- [ ] Back from page four returns to page three.
+- [ ] With more than 200 live listings, confirm the ones past 200 have
+      working `/business/{slug}` pages and appear in the sitemap. The
+      query cap is now 1000; past a few hundred more this needs real
+      pagination in the query.
 
 ---
 

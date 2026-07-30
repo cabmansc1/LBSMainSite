@@ -32,7 +32,7 @@ const PLANS = [
   {
     name: "Premium",
     price: "$10",
-    note: "per month, or $100 per year",
+    note: "per month, or $60 per year",
     features: [
       "Everything in Basic",
       "Photo gallery and business hours",

@@ -2,6 +2,11 @@ import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { reviewEdit } from "@/lib/listing-edits";
+import {
+  WRITES_BLOCKED_MESSAGE,
+  directoryWritesBlocked,
+  logBlockedWrite,
+} from "@/lib/write-guard";
 
 /**
  * Decisions on the changes advertisers asked for.
@@ -26,6 +31,13 @@ export async function POST(req: Request) {
   const reason = String(body.reason ?? "");
   if (!id) {
     return NextResponse.json({ error: "A request id is required" }, { status: 422 });
+  }
+
+  // Approving writes the live listing and emails the advertiser, so it
+  // is as consequential as the advertiser's own save.
+  if (directoryWritesBlocked()) {
+    logBlockedWrite("listing edit review", { by: admin.email, id, decision });
+    return NextResponse.json({ error: WRITES_BLOCKED_MESSAGE }, { status: 503 });
   }
 
   try {

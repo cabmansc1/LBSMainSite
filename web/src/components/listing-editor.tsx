@@ -93,12 +93,15 @@ export function ListingEditor({
   locations,
   hours,
   pending,
+  readOnly = false,
 }: {
   listing: AccountListing;
   categories: Option[];
   locations: Option[];
   hours: DayHours[];
   pending: PendingEdit[];
+  /** This environment shares the live database and must not write to it. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -183,6 +186,21 @@ export function ListingEditor({
       setBusy(false);
     }
   };
+
+  // Said before the form rather than after a failed save. A staging
+  // environment that looks fully editable and refuses on submit teaches
+  // people the portal is broken.
+  if (readOnly) {
+    return (
+      <div className="border-t border-line pt-4 mt-1">
+        <p className="text-[13px] text-body max-w-[62ch]">
+          Editing is switched off in this environment, because it shares the
+          live database and a change here would go straight to the real
+          directory. Everything else on this page is real data.
+        </p>
+      </div>
+    );
+  }
 
   if (!listing.owned) {
     return (

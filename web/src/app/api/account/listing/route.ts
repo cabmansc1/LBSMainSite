@@ -9,6 +9,11 @@ import {
   type EditableField,
 } from "@/lib/listing-edits";
 import { saveHours, type DayHours } from "@/lib/business-hours";
+import {
+  WRITES_BLOCKED_MESSAGE,
+  directoryWritesBlocked,
+  logBlockedWrite,
+} from "@/lib/write-guard";
 
 /**
  * An advertiser's own directory listing.
@@ -51,6 +56,14 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  // Before anything is looked up, so a staging click cannot edit a real
+  // business's page. Logged rather than dropped, so what would have
+  // been written is still reviewable.
+  if (directoryWritesBlocked()) {
+    logBlockedWrite("advertiser listing write", { by: session.email, body });
+    return NextResponse.json({ error: WRITES_BLOCKED_MESSAGE }, { status: 503 });
   }
 
   const id = Number(body.id);

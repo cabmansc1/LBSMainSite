@@ -7,6 +7,7 @@ import { getPortalContext } from "@/lib/portal";
 import { getFilterOptions } from "@/lib/directory";
 import { getListingForAccount, pendingEditsFor } from "@/lib/listing-edits";
 import { getHoursFor, weekFrom } from "@/lib/business-hours";
+import { directoryWritesBlocked } from "@/lib/write-guard";
 import { ListingEditor } from "@/components/listing-editor";
 import { Card, StatusChip } from "@/components/sections";
 
@@ -140,6 +141,7 @@ export default async function AccountListingsPage() {
                 locations={options.locations}
                 hours={weekFrom(hoursByBiz.get(l.id) ?? [])}
                 pending={pendingByBiz.get(l.id) ?? []}
+                readOnly={directoryWritesBlocked()}
               />
             </Card>
           ))}
