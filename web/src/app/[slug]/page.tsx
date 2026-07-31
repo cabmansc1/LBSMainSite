@@ -125,8 +125,9 @@ export default async function ZonePage({
             <em className="not-italic text-brand">{zone.name}, SC</em>
           </h1>
           <p className="mt-4 text-[#93A5B8] max-w-[56ch]">
-            Reach {zone.name} households with a shared 9×12 Spotlight Postcard.
-            One exclusive spot per industry, from {fromPrice} per mailing.
+            Reach {zone.reachArea ?? zone.name} households with a shared 9×12
+            Spotlight Postcard. One exclusive spot per industry, from{" "}
+            {fromPrice} per mailing.
           </p>
           <div className="mt-6">
             <Button href={`/postcards/${zone.slug}/checkout`}>

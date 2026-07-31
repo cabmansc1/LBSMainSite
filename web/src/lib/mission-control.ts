@@ -6,7 +6,7 @@ import {
   type UpcomingMailing,
 } from "@/lib/mailings";
 import { sameBusiness } from "@/lib/name-match";
-import { ZONES } from "@/lib/zones";
+import { ZONES, mailingAreaFor } from "@/lib/zones";
 
 /**
  * Mission Control adapter, locked to MC's real contract (from its type
@@ -671,7 +671,12 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
 /** Every card currently open in a zone, soonest first. */
 export async function getZoneMailings(zoneSlug: string): Promise<UpcomingMailing[]> {
   const all = await getUpcomingMailings();
-  return all.filter((m) => m.zoneSlug === zoneSlug);
+  // Through the card, not the zone. Isle of Palms and Sullivan's Island
+  // share one, and whichever of the two Mission Control filed it under,
+  // both pages have to find it: matching the slug alone left one island
+  // showing "coming soon" for a card that was already selling.
+  const slugs = mailingAreaFor(zoneSlug)?.zoneSlugs ?? [zoneSlug];
+  return all.filter((m) => slugs.includes(m.zoneSlug));
 }
 
 /** The soonest card in a zone. Prefer getZoneMailings where a zone can

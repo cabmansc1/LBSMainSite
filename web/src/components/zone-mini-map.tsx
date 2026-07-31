@@ -1,10 +1,15 @@
 import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
+import { mailingAreaFor } from "@/lib/zones";
 
 /**
  * Static (server-rendered) mini map for zone pages: the Tri-County
  * base map with the current zone's bubble highlighted in orange.
  */
 export function ZoneMiniMap({ highlight }: { highlight: string }) {
+  // Bubbles are drawn per card, so a zone that shares one highlights
+  // its partner's bubble. Matching on the zone slug alone left the
+  // Sullivan's Island page with nothing lit up at all.
+  const lit = mailingAreaFor(highlight)?.slug ?? highlight;
   return (
     <svg
       viewBox={`0 0 ${MAP_IMG.w} ${MAP_IMG.h}`}
@@ -13,19 +18,21 @@ export function ZoneMiniMap({ highlight }: { highlight: string }) {
       className="w-full h-auto rounded-[10px] border border-line"
     >
       <image href={MAP_IMG.src} width={MAP_IMG.w} height={MAP_IMG.h} />
-      {MAP_POSITIONS.map((b) => {
-        const sel = b.slug === highlight;
-        return (
+      {MAP_POSITIONS.flatMap((b) => {
+        const sel = b.slug === lit;
+        // Both islands light up on either island's page, because the
+        // card the page is selling covers both.
+        return [{ x: b.x, y: b.y, r: b.r }, ...(b.also ?? [])].map((c) => (
           <circle
-            key={b.slug}
-            cx={b.x}
-            cy={b.y}
-            r={sel ? b.r + 6 : b.r * 0.6}
+            key={`${b.slug}-${c.x}`}
+            cx={c.x}
+            cy={c.y}
+            r={sel ? c.r + 6 : c.r * 0.6}
             fill={sel ? "rgba(255,140,0,.45)" : "rgba(56,182,255,.25)"}
             stroke={sel ? "#E67C00" : "rgba(18,135,216,.55)"}
             strokeWidth={sel ? 4 : 1.5}
           />
-        );
+        ));
       })}
     </svg>
   );

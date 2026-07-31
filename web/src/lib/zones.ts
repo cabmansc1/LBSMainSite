@@ -41,6 +41,15 @@ export type Zone = {
    * have them.
    */
   reachArea?: string;
+  /**
+   * The zone this one always shares a card with.
+   *
+   * A zone too small to fill a run does not mail alone, so the map, the
+   * calendar and the upcoming-cards list have to show the pair as one
+   * thing. Set it on both sides; MAILING_AREAS below reads it and
+   * collapses them.
+   */
+  mailsWith?: string;
 };
 
 export const ZONES: Zone[] = [
@@ -64,6 +73,7 @@ export const ZONES: Zone[] = [
     households5k: "4,900+",
     households10k: "10,000+",
     mailboxes: 1_325,
+    mailsWith: "isle-of-palms",
     reachArea: "Sullivan's Island and Isle of Palms",
     reachNote:
       "Sullivan's Island and Isle of Palms mail together as one card, 4,915 mailboxes across the two. A larger run adds Mount Pleasant.",
@@ -76,6 +86,7 @@ export const ZONES: Zone[] = [
     households5k: "4,900+",
     households10k: "10,000+",
     mailboxes: 3_590,
+    mailsWith: "sullivans-island",
     reachArea: "Isle of Palms and Sullivan's Island",
     reachNote:
       "Isle of Palms and Sullivan's Island mail together as one card, 4,915 mailboxes across the two. A larger run adds Mount Pleasant.",
@@ -87,3 +98,88 @@ export const ZONES: Zone[] = [
 ];
 
 export const zoneBySlug = (slug: string) => ZONES.find((z) => z.slug === slug);
+
+/**
+ * A card, rather than a place.
+ *
+ * Every zone has its own page, its own ZIP codes and its own history,
+ * and that stays true. But a card is what gets printed and mailed, and
+ * two zones small enough to share one are a single thing to anybody
+ * choosing where to advertise. Drawing them as two bubbles on the map,
+ * or listing them as two rows on the calendar, quietly doubled a reach
+ * that only exists once.
+ */
+export type MailingArea = {
+  /** The zone a click lands on: the larger half of a pair. */
+  slug: string;
+  name: string;
+  /** Every zone on this card, the lead one first. */
+  zoneSlugs: string[];
+  households5k: string;
+  households10k: string;
+  zipCodes: string[];
+  population: number;
+  /** Deliverable mailboxes across the card, where all of them are counted. */
+  mailboxes?: number;
+  /** Said wherever the reach is quoted, for a card that covers two zones. */
+  note?: string;
+};
+
+function buildMailingAreas(): MailingArea[] {
+  const placed = new Set<string>();
+  const areas: MailingArea[] = [];
+
+  for (const zone of ZONES) {
+    if (placed.has(zone.slug)) continue;
+    const partner = zone.mailsWith ? zoneBySlug(zone.mailsWith) : undefined;
+    placed.add(zone.slug);
+
+    // A zone of one. Named and sized exactly as it always was.
+    if (!partner) {
+      areas.push({
+        slug: zone.slug,
+        name: zone.name,
+        zoneSlugs: [zone.slug],
+        households5k: zone.households5k,
+        households10k: zone.households10k,
+        zipCodes: zone.zipCodes,
+        population: zone.population,
+        mailboxes: zone.mailboxes,
+        note: zone.reachNote,
+      });
+      continue;
+    }
+
+    placed.add(partner.slug);
+    // The bigger half leads, so the name and the link land on the zone
+    // that carries most of the mailboxes.
+    const [lead, other] =
+      (partner.mailboxes ?? 0) > (zone.mailboxes ?? 0)
+        ? [partner, zone]
+        : [zone, partner];
+
+    areas.push({
+      slug: lead.slug,
+      name: `${lead.name} & ${other.name}`,
+      zoneSlugs: [lead.slug, other.slug],
+      households5k: lead.households5k,
+      households10k: lead.households10k,
+      zipCodes: [...lead.zipCodes, ...other.zipCodes],
+      population: lead.population + other.population,
+      mailboxes:
+        lead.mailboxes != null && other.mailboxes != null
+          ? lead.mailboxes + other.mailboxes
+          : undefined,
+      note: lead.reachNote,
+    });
+  }
+
+  return areas;
+}
+
+/** What the map draws and the calendar lists: one entry per card. */
+export const MAILING_AREAS: MailingArea[] = buildMailingAreas();
+
+/** The card a zone mails on, which for most zones is itself. */
+export const mailingAreaFor = (slug: string) =>
+  MAILING_AREAS.find((a) => a.zoneSlugs.includes(slug));

@@ -67,11 +67,11 @@ export const UPCOMING_MAILINGS: UpcomingMailing[] = [
   { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 23", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open" },
   { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", artworkDeadline: "Nov 20", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open" },
   { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", artworkDeadline: "Nov 20", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open" },
-  // The two islands are one mailing: 3,590 mailboxes on Isle of Palms and
-  // 1,325 on Sullivans, 4,915 across the two. Listing them separately at
-  // 5,000+ each promised roughly twice the reach that exists.
+  // One row, because it is one card: 3,590 mailboxes on Isle of Palms and
+  // 1,325 on Sullivan's, 4,915 across the two. Two rows at 5,000+ each
+  // offered a choice that does not exist and about twice the reach that
+  // does. getZoneMailings resolves either island to this row.
   { zoneSlug: "isle-of-palms", zoneName: "Isle of Palms & Sullivans Island", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "4,900+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
-  { zoneSlug: "sullivans-island", zoneName: "Sullivans Island & Isle of Palms", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "4,900+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
 ];
 
 /**

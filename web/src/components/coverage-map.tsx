@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ZONES } from "@/lib/zones";
+import { MAILING_AREAS } from "@/lib/zones";
 import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
 import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
@@ -12,6 +12,10 @@ import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
  * Coverage bubbles pinned to the printed town markers on the
  * Tri-County base map. The base map carries its own town labels; the
  * site labels only the two zones the map does not name.
+ *
+ * One bubble per card, not per zone. Isle of Palms and Sullivan's
+ * Island never mail apart, so two bubbles offered a choice that does
+ * not exist and implied twice the reach that does.
  */
 
 const availability = (m: UpcomingMailing | undefined) => {
@@ -24,8 +28,9 @@ const availability = (m: UpcomingMailing | undefined) => {
 
 export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
   const [selected, setSelected] = useState("summerville");
-  const zone = ZONES.find((z) => z.slug === selected)!;
-  const mailing = mailings.find((m) => m.zoneSlug === selected);
+  const zone = MAILING_AREAS.find((a) => a.slug === selected)!;
+  // Either half of a shared card is this card's mailing.
+  const mailing = mailings.find((m) => zone.zoneSlugs.includes(m.zoneSlug));
   const avail = availability(mailing);
   const dotColor = { ok: "bg-ok", warn: "bg-cta", info: "bg-brand" }[avail.tone];
 
@@ -40,7 +45,7 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
         >
           <image href={MAP_IMG.src} width={MAP_IMG.w} height={MAP_IMG.h} />
           {MAP_POSITIONS.map((b) => {
-            const z = ZONES.find((x) => x.slug === b.slug);
+            const z = MAILING_AREAS.find((x) => x.slug === b.slug);
             if (!z) return null;
             const sel = selected === b.slug;
             return (
@@ -58,16 +63,22 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
                   }
                 }}
               >
-                <circle
-                  cx={b.x}
-                  cy={b.y}
-                  r={b.r}
-                  fill={sel ? "rgba(255,140,0,.4)" : "rgba(56,182,255,.3)"}
-                  stroke={sel ? "#E67C00" : "#1287D8"}
-                  strokeWidth={sel ? 4 : 2.5}
-                  className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
-                  style={sel ? { fill: "rgba(255,140,0,.4)" } : undefined}
-                />
+                {/* The card's own circle first, then any island it
+                    shares the card with. They light up together because
+                    they sell together. */}
+                {[{ x: b.x, y: b.y, r: b.r }, ...(b.also ?? [])].map((c) => (
+                  <circle
+                    key={`${c.x}-${c.y}`}
+                    cx={c.x}
+                    cy={c.y}
+                    r={c.r}
+                    fill={sel ? "rgba(255,140,0,.4)" : "rgba(56,182,255,.3)"}
+                    stroke={sel ? "#E67C00" : "#1287D8"}
+                    strokeWidth={sel ? 4 : 2.5}
+                    className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
+                    style={sel ? { fill: "rgba(255,140,0,.4)" } : undefined}
+                  />
+                ))}
                 {b.label && (
                   <text
                     x={b.x}
@@ -133,11 +144,21 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
             </div>
           ))}
         </dl>
+        {/* Only a card that covers two zones has anything to explain,
+            and it explains it here rather than leaving somebody to
+            wonder why one bubble carries two names. */}
+        {zone.note && (
+          <p className="text-[12.5px] text-[#93A5B8] leading-relaxed -mt-1">
+            {zone.note}
+          </p>
+        )}
         <Link
           href={`/postcards/${zone.slug}/checkout`}
           className="inline-flex items-center justify-center bg-cta text-navy-950 font-semibold text-[15px] px-6 py-3 rounded-(--radius-btn) hover:bg-cta-hover hover:text-white transition-colors"
         >
-          Reserve in {zone.name}
+          {zone.zoneSlugs.length > 1
+            ? "Reserve on this card"
+            : `Reserve in ${zone.name}`}
         </Link>
         <p className="text-xs text-[#67768A] text-center">
           Availability updates live · one business per category
