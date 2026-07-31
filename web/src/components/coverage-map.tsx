@@ -34,8 +34,11 @@ export function CoverageMap({
   mailings,
   areas = MAILING_AREAS,
   positions = MAP_POSITIONS,
+  fromCents = POSTCARD_PRICING["5k"].small.priceCents,
 }: {
   mailings: UpcomingMailing[];
+  /** Cheapest live price. The constant was quoting the shipped one. */
+  fromCents?: number;
   /** Live from the admin; the code defaults keep this usable anywhere. */
   areas?: MailingArea[];
   positions?: MapPosition[];
@@ -153,7 +156,7 @@ export function CoverageMap({
                 ? (mailing?.mailMonth as string)
                 : "Coming soon",
             ],
-            ["Ads from", formatPrice(POSTCARD_PRICING["5k"].small.priceCents)],
+            ["Ads from", formatPrice(fromCents)],
           ].map(([label, value]) => (
             <div
               key={label}

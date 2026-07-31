@@ -60,6 +60,7 @@ export function PostcardCheckout({
   availability,
   takenCategories,
   categories,
+  pricing = POSTCARD_PRICING,
 }: {
   /** Spot preselected from the pricing page link. */
   initialSize?: SpotSize;
@@ -74,6 +75,17 @@ export function PostcardCheckout({
   availability: SpotAvail[];
   takenCategories: string[];
   categories: string[];
+  /**
+   * Live prices from the admin.
+   *
+   * This component used to read the POSTCARD_PRICING constant directly
+   * while /api/checkout charged getLivePricing(), so a price edited in
+   * the admin changed what was billed and not what was shown. A
+   * customer could be quoted one number and charged another, which is
+   * the shape of a chargeback rather than a display bug. The constant
+   * stays as the default so the component still works on its own.
+   */
+  pricing?: typeof POSTCARD_PRICING;
 }) {
   const [size, setSize] = useState<SpotSize>(initialSize ?? "medium");
   const [business, setBusiness] = useState("");
@@ -82,7 +94,7 @@ export function PostcardCheckout({
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "error" | "waitlisted">("idle");
 
-  const priceCents = POSTCARD_PRICING[reach][size].priceCents;
+  const priceCents = pricing[reach][size].priceCents;
   const openFor = (s: SpotSize) => availability.find((a) => a.size === s)?.open ?? 0;
   const norm = (v: string) => v.trim().toLowerCase();
   const takenSet = new Set(takenCategories.map(norm));
@@ -151,12 +163,12 @@ export function PostcardCheckout({
       <div className="grid gap-4">
         <div className="grid gap-2.5" role="radiogroup" aria-label="Ad size">
           {ALL_SIZES
-            .filter((s) => isOffered(POSTCARD_PRICING[reach]?.[s]))
+            .filter((s) => isOffered(pricing[reach]?.[s]))
             .map((s) => {
             const open = openFor(s);
             const sold = open <= 0;
             const meta = SPOT_META[s];
-            const p = POSTCARD_PRICING[reach][s];
+            const p = pricing[reach][s];
             return (
               <button
                 key={s}

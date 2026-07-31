@@ -10,6 +10,7 @@ import {
   type UpcomingMailing,
 } from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
+import { getLivePricing } from "@/lib/pricing-store";
 import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
@@ -350,6 +351,7 @@ export default async function PostcardCheckoutPage({
           availability={availabilityFrom(capacity)}
           takenCategories={takenCategories}
           categories={categoryOptions}
+          pricing={await getLivePricing()}
         />
       </div>
     </>
