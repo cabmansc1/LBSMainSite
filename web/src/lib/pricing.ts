@@ -39,10 +39,14 @@ export const POSTCARD_PRICING: Record<Reach, Record<SpotSize, SpotTier>> = {
     small: { size: "3×2", priceCents: 29900, description: "Business card size" },
     medium: { size: "3×4", priceCents: 54900, description: "Twice a small: logo, offer, and a photo" },
     large: { size: "4×6", priceCents: 94900, description: "Four smalls: photos, offer, and hours" },
-    // Not priced at 10k yet: set these in the admin to offer them.
-    triple: { size: "3 mediums", priceCents: 0, description: "Three medium spots together" },
-    quad: { size: "2 larges", priceCents: 0, description: "Two larges or four mediums" },
-    full: { size: "one whole side", priceCents: 0, description: "Every spot on one side of the card" },
+    // These were zero, which is how a size is taken off sale, and the
+    // admin is where they were priced. Carried into the code as well so
+    // the fallback matches what is being sold: a settings row that went
+    // missing would otherwise take the three largest spots off the
+    // pricing page rather than showing a stale number.
+    triple: { size: "3 mediums", priceCents: 169900, description: "Three medium spots together" },
+    quad: { size: "2 larges", priceCents: 229900, description: "Two larges or four mediums" },
+    full: { size: "one whole side", priceCents: 399900, description: "Every spot on one side of the card" },
   },
 };
 
