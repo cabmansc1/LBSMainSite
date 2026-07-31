@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { registerBusiness, type Plan } from "@/lib/registration";
 import { getLiveDirectoryPricing, money } from "@/lib/directory-pricing";
 import { createSubscriptionSession, stripeEnabled } from "@/lib/stripe";
+import { publicOrigin } from "@/lib/origin";
 import {
   WRITES_BLOCKED_MESSAGE,
   directoryWritesBlocked,
@@ -111,8 +112,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, listed: true });
   }
 
-  const origin =
-    process.env.SITE_ORIGIN?.trim() || new URL(req.url).origin;
+  // Was SITE_ORIGIN or new URL(req.url).origin, and behind Railway's
+  // proxy that fallback is http://localhost:8080: a subscriber paid and
+  // was redirected somewhere their browser could not reach.
+  const origin = publicOrigin(req);
   try {
     const session = await createSubscriptionSession({
       name: `Directory Premium (${plan === "annual" ? "yearly" : "monthly"}) — ${money(amountCents)}`,

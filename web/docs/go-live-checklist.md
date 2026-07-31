@@ -413,6 +413,8 @@ can be. From the audit:
       results still carry the old meta descriptions until Google
       recrawls; requesting reindexing for the zone URLs speeds that up.
 - [ ] Point the app at the production database and live Stripe keys.
+      **The full Stripe sequence is in section 6a below; work through
+      that rather than these two lines.**
 - [ ] Register the live Stripe webhook. Keep the old endpoint active.
 - [ ] Set `MC_READ_ONLY` to `0` so Mission Control writes land.
 - [ ] Set `SITE_ORIGIN` to the live domain.
@@ -421,6 +423,64 @@ can be. From the audit:
 - [ ] Watch: a real order end to end, GA4 realtime, GHL receiving,
       Meta Events Manager, the server log for `[ghl]`, `[order-receipt]`
       and `[mission-control]` lines.
+
+### 6a. Stripe cutover
+
+Everything in this section fails the same way: the payment works, the
+customer is charged, and the part after the charge quietly does not
+happen. None of it shows on the checkout page. **`/admin/stripe` runs
+every check below against the live Stripe API and says which are
+blocking**, so the order of work is: change a variable, redeploy, reload
+that page.
+
+1. **In Stripe, switch off test mode.** Everything below happens in the
+   live dashboard. The two modes hold entirely separate keys, endpoints,
+   coupons and customers; nothing carries across.
+2. **Add the webhook endpoint** at
+   `https://<live domain>/api/stripe/webhook`, subscribed to exactly
+   these four events:
+   - `checkout.session.completed`
+   - `charge.refunded`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+3. **Set `STRIPE_SECRET_KEY`** to the live key (`sk_live_...`).
+4. **Set `STRIPE_WEBHOOK_SECRET`** to the signing secret of the endpoint
+   you just created. **It must be the live one.** A test-mode secret
+   against a live key rejects every event as an invalid signature: the
+   checkout page works perfectly, the money arrives, and no order is
+   ever marked paid, placed on a card, receipted or pushed to the CRM.
+   This is the single most likely way to break go-live, and it is
+   invisible from the customer's side.
+5. **Set `PUBLIC_SITE_URL`** to the live origin, e.g.
+   `https://www.lowcountrybusinessspotlight.com`. Return URLs are built
+   from it. Behind Railway's proxy the request URL is
+   `http://localhost:8080`, so without this a customer can pay and land
+   on a page their browser cannot reach.
+6. **Clear `MC_READ_ONLY`.** While it is `1` a paid order is logged
+   rather than written: the customer pays and never appears on a card.
+7. **Confirm `RESEND_API_KEY` is set**, or receipts are only logged.
+8. **Reload `/admin/stripe`.** Every row should read Ready. It checks
+   the key mode against Stripe's own answer, that the account can accept
+   charges, that an endpoint exists at this exact URL, that it is
+   enabled and subscribed to all four events, and that Mission Control
+   writes are live.
+9. **Keep the test-mode endpoint.** It costs nothing and leaves staging
+   working.
+
+Then buy one real spot on a real card, with a real card, and watch it
+land: order paid in `/admin/orders`, advertiser on the card in Mission
+Control, receipt in the inbox, contact updated in GHL. Refund it from
+Stripe afterwards and confirm the order flips to refunded.
+
+**Prices are set in `/admin/pricing`, not in Stripe.** Checkout sends
+the amount with each session (`price_data`), so there are no Stripe
+Products or Prices to create or keep in step. A price of zero means the
+size is not sold and checkout refuses it.
+
+**Discounts are Stripe's job.** Create a coupon and a promotion code in
+the live dashboard and the "Add promotion code" field appears on the
+hosted page. A 100% code produces a session with nothing to collect;
+that is handled and still fulfils the order.
 
 ### Rollback
 

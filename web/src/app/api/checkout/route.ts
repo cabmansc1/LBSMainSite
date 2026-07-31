@@ -15,6 +15,7 @@ import { type Reach, type SpotSize } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
 import { zoneBySlug } from "@/lib/zones";
 import { getCard } from "@/lib/cards";
+import { publicOrigin } from "@/lib/origin";
 
 /**
  * Creates a pending order and a Stripe Checkout session.
@@ -55,17 +56,9 @@ export async function POST(req: Request) {
     );
   }
 
-  // Behind Railway's proxy req.url is the internal address (localhost:8080),
-  // so Stripe's return URLs must come from the public origin: an explicit
-  // env first, then the forwarded headers, and req.url only as a last resort.
-  const forwardedHost =
-    req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  const forwardedProto = req.headers.get("x-forwarded-proto") ?? "https";
-  const origin =
-    process.env.PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    (forwardedHost
-      ? `${forwardedProto}://${forwardedHost}`
-      : new URL(req.url).origin);
+  // Shared with registration, which had its own weaker version: see
+  // lib/origin.ts for why req.url is never enough behind a proxy.
+  const origin = publicOrigin(req);
   // Declared before the metadata blocks below, which carry the phone
   // through Stripe. Leaving these further down put `phone` in the
   // temporal dead zone at the point the postcard branch read it.
@@ -146,6 +139,19 @@ export async function POST(req: Request) {
     };
   } else {
     return NextResponse.json({ error: "Unknown checkout kind" }, { status: 422 });
+  }
+
+  // A price of zero means "not sold at this reach", which is exactly
+  // what the pricing admin says it means. Handing it to Stripe anyway
+  // creates a session with nothing to collect, and Stripe reports that
+  // as no_payment_required, which the webhook treats as settled: the
+  // spot would be placed, the receipt sent and the category locked, for
+  // nothing. Refuse before the money path, not after it.
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    return NextResponse.json(
+      { error: "That option is not on sale right now. Please get in touch." },
+      { status: 422 },
+    );
   }
 
   const reference = newReference();

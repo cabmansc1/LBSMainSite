@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { mcEnabled, mcKey, mcKeySource } from "@/lib/mission-control";
 import { stripeEnabled } from "@/lib/stripe";
+import { stripeKeyMode } from "@/lib/stripe-preflight";
 import { emailEnabled } from "@/lib/email";
 import { directoryWritesBlocked } from "@/lib/write-guard";
 import { ghlConfigured } from "@/lib/ghl";
@@ -141,6 +142,13 @@ export async function GET() {
       return live.length === keys.length ? "all six" : live.join(", ");
     })(),
     ghlCatchAllUrl: process.env.GHL_WEBHOOK_URL?.trim() ? "set" : "not set",
+    /**
+     * Test or live, read off the key prefix rather than a variable
+     * describing it. No API call and no part of the key: which mode a
+     * deploy is in is the first question of any payment problem, and
+     * the answer was previously only available by looking in Railway.
+     */
+    stripeMode: stripeKeyMode(),
     mcEnabled: mcEnabled(),
     // Identifies WHICH key is loaded without revealing it. We spent an
     // afternoon unable to tell whether a hosting dashboard held the
