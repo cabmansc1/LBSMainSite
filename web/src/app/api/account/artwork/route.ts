@@ -1,4 +1,5 @@
 import { after, NextResponse } from "next/server";
+import { siteOrigin } from "@/lib/origin";
 import { getSession, isImpersonating } from "@/lib/auth";
 import { getPortalContext, MC_UNAVAILABLE } from "@/lib/portal";
 import { MAX_ARTWORK_BYTES, saveArtwork } from "@/lib/artwork";
@@ -98,7 +99,7 @@ export async function POST(req: Request) {
       uploadedBy: isImpersonating(session)
         ? session.impersonatedBy?.email
         : undefined,
-      siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+      siteOrigin: siteOrigin(),
     });
   });
 

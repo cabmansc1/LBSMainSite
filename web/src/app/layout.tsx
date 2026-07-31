@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteOrigin } from "@/lib/origin";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/nav-bar";
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
    * itself: the live domain does not serve /api/blog-image until
    * cutover. Canonicals are unaffected, they are already absolute.
    */
-  metadataBase: new URL(process.env.SITE_ORIGIN?.trim() || SITE_URL),
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: SITE_NAME,
     // "LBS" not the full name: the legacy titles used the short form and

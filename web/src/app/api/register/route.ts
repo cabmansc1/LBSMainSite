@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { registerBusiness, type Plan } from "@/lib/registration";
 import { getLiveDirectoryPricing, money } from "@/lib/directory-pricing";
 import { createSubscriptionSession, stripeEnabled } from "@/lib/stripe";
-import { publicOrigin } from "@/lib/origin";
+import { publicOrigin, siteOrigin } from "@/lib/origin";
 import {
   WRITES_BLOCKED_MESSAGE,
   directoryWritesBlocked,
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
         plan: "basic",
         businessId: result.businessId,
         slug: result.slug,
-        siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+        siteOrigin: siteOrigin(),
       });
     });
     return NextResponse.json({ ok: true, listed: true });

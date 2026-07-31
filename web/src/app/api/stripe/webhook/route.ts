@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { siteOrigin } from "@/lib/origin";
 import { revalidatePath } from "next/cache";
 import type Stripe from "stripe";
 import { getStripe, stripeEnabled, webhookSecrets } from "@/lib/stripe";
@@ -99,7 +100,7 @@ async function activateDirectoryPremium(
       plan: (md.term === "annual" ? "annual" : "monthly") as "annual" | "monthly",
       businessId,
       slug: String(biz?.slug ?? ""),
-      siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+      siteOrigin: siteOrigin(),
     };
 
     const { sendPremiumWelcome, sendSignupAlert } = await import(

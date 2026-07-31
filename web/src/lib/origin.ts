@@ -1,4 +1,5 @@
 import "server-only";
+import { SITE_URL } from "@/lib/seo";
 
 /**
  * The public address of this site, as a customer's browser sees it.
@@ -19,6 +20,29 @@ import "server-only";
  * so a deploy that set one and not the other had a working checkout and
  * a subscription that redirected to localhost.
  */
+/**
+ * The same answer, for code with no request to read.
+ *
+ * Background jobs, `after()` callbacks and metadata all need the public
+ * address and none of them hold a Request. Before this they each read
+ * SITE_ORIGIN directly, which is how a variable left pointing at the
+ * staging host after the cutover ended up in registration links, order
+ * receipts and artwork confirmations at once: five separate reads, one
+ * stale value, no single place to correct it.
+ *
+ * PUBLIC_SITE_URL first for the same reason publicOrigin prefers it.
+ * SITE_URL last, because a hardcoded production constant is a better
+ * wrong answer than a hostname nobody meant to publish.
+ */
+export function siteOrigin(): string {
+  const configured = (
+    process.env.PUBLIC_SITE_URL ??
+    process.env.SITE_ORIGIN ??
+    ""
+  ).trim();
+  return (configured || SITE_URL).replace(/\/+$/, "");
+}
+
 export function publicOrigin(req: Request): string {
   const configured = (
     process.env.PUBLIC_SITE_URL ??
