@@ -70,22 +70,19 @@ export function DirectoryInvite({
       <button
         onClick={dismiss}
         aria-label="Hide this for now"
-        className="absolute top-3.5 right-4 text-[#67768A] hover:text-white text-[18px] leading-none"
+        className="absolute top-3 right-3.5 text-muted hover:text-ink text-[17px] leading-none"
       >
         &times;
       </button>
 
-      <div className="grid gap-1.5 pr-6">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-brand">
-          Not in the directory yet
-        </span>
-        <h2 className="text-[19px] font-bold tracking-[-0.02em]">
-          Add your business to the directory, free.
-        </h2>
-        <p className="text-[13.5px] text-[#93A5B8] max-w-[62ch] leading-relaxed">
-          A free listing puts your name, phone, website and category in
-          front of people already searching the Lowcountry for what you
-          do. It takes a couple of minutes and there is nothing to cancel.
+      <div className="grid gap-1 pr-6">
+        <b className="text-[14.5px] font-semibold tracking-tight">
+          You are not in the directory yet, and a listing is free.
+        </b>
+        <p className="text-[13px] text-muted max-w-[68ch] leading-relaxed">
+          It puts your name, phone and category in front of people already
+          searching for what you do. We have your details from your order,
+          so it is a couple of clicks.
         </p>
       </div>
 
