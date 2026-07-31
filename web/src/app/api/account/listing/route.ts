@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSession, isImpersonating } from "@/lib/auth";
+import { publicOrigin } from "@/lib/origin";
 import {
   FIELD_LABELS,
   claimListing,
@@ -173,7 +174,11 @@ export async function POST(req: Request) {
         slug: listing.slug,
         advertiserEmail: session.email,
         changes: result.queued,
-        siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+        // See the note in api/admin/listing-edits: reading SITE_ORIGIN
+        // directly meant this linked the advertiser to the staging host
+        // after the cutover. This one is the worse of the two, because
+        // the link is to their own published listing.
+        siteOrigin: publicOrigin(req),
       });
     });
   }

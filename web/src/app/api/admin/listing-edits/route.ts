@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
+import { publicOrigin } from "@/lib/origin";
 import { reviewEdit } from "@/lib/listing-edits";
 import {
   WRITES_BLOCKED_MESSAGE,
@@ -65,7 +66,13 @@ export async function POST(req: Request) {
         // Read back from the decision rather than the request body, so
         // what the advertiser is told is what we actually filed.
         reason: result.note,
-        siteOrigin: process.env.SITE_ORIGIN?.trim() || undefined,
+        // publicOrigin rather than SITE_ORIGIN on its own. SITE_ORIGIN
+        // outlived the staging deploy it was set for and still pointed
+        // at the Railway subdomain after the cutover, so every link in
+        // these emails aimed at a host the advertiser has no reason to
+        // trust. publicOrigin prefers PUBLIC_SITE_URL and falls back to
+        // the forwarded headers, both of which follow the live domain.
+        siteOrigin: publicOrigin(req),
       });
     });
 
