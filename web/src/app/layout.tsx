@@ -6,7 +6,7 @@ import { NavBar } from "@/components/nav-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { Analytics } from "@/components/analytics";
 import { ChatWidget } from "@/components/chat-widget";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { SITE_NAME } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,9 +27,13 @@ export const metadata: Metadata = {
    * would share with a preview image nobody outside the container can
    * fetch.
    *
-   * SITE_ORIGIN rather than SITE_URL, because staging has to point at
-   * itself: the live domain does not serve /api/blog-image until
-   * cutover. Canonicals are unaffected, they are already absolute.
+   * siteOrigin() rather than a bare variable. This used to read
+   * SITE_ORIGIN directly so that staging pointed at itself, back when
+   * the live domain did not serve /api/blog-image. Cutover settled
+   * that, and the variable was never updated, so every relative URL in
+   * page metadata resolved against a Railway subdomain. Canonicals
+   * happened to escape it, being absolute already, but an og:image
+   * added tomorrow would not have.
    */
   metadataBase: new URL(siteOrigin()),
   title: {
