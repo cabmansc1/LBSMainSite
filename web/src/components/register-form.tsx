@@ -45,6 +45,7 @@ export function RegisterForm({
   annual,
   annualSaving,
   paymentsOn,
+  prefill,
 }: {
   categories: Option[];
   locations: Option[];
@@ -53,6 +54,14 @@ export function RegisterForm({
   annualSaving: string | null;
   /** False when Stripe has no key, so the paid plans cannot be honoured. */
   paymentsOn: boolean;
+  /**
+   * What we already know, for an advertiser who is signed in.
+   *
+   * Somebody who has bought a postcard spot has already given us their
+   * business name, phone and email. Asking for them again is the
+   * difference between a form they finish and a form they close.
+   */
+  prefill?: Partial<Record<"businessName" | "contactName" | "email" | "phone", string>>;
 }) {
   const [plan, setPlan] = useState<Plan>("basic");
   const [busy, setBusy] = useState(false);
@@ -60,10 +69,10 @@ export function RegisterForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
   const [form, setForm] = useState({
-    businessName: "",
-    contactName: "",
-    email: "",
-    phone: "",
+    businessName: prefill?.businessName ?? "",
+    contactName: prefill?.contactName ?? "",
+    email: prefill?.email ?? "",
+    phone: prefill?.phone ?? "",
     website: "",
     description: "",
     category: "",

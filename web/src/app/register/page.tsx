@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card } from "@/components/sections";
 import { RegisterForm } from "@/components/register-form";
+import { getSession } from "@/lib/auth";
+import { getAdvertiserBusiness } from "@/lib/advertiser-business";
 import { getFilterOptions } from "@/lib/directory";
 import {
   annualSavingCents,
@@ -28,6 +30,24 @@ export default async function RegisterPage() {
   ]);
   const saving = annualSavingCents(pricing);
 
+  // An advertiser arriving from their own portal has already told us
+  // their business name, phone and email, once at checkout and again on
+  // their profile. Reading it from the session rather than the URL, so
+  // the link stays short and the values cannot be edited on the way in.
+  const session = await getSession().catch(() => null);
+  const prefill = session
+    ? {
+        email: session.email,
+        contactName: session.firstName ?? "",
+        ...(await getAdvertiserBusiness(session.id, session.email)
+          .then((b) => ({
+            businessName: b.business.businessName,
+            phone: b.business.businessPhone,
+          }))
+          .catch(() => ({}))),
+      }
+    : undefined;
+
   return (
     <div className="mx-auto max-w-[720px] px-6 py-14">
       <div className="mb-6">
@@ -51,6 +71,7 @@ export default async function RegisterPage() {
           annual={money(pricing.annualCents)}
           annualSaving={saving === null ? null : money(saving)}
           paymentsOn={stripeEnabled()}
+          prefill={prefill}
         />
       </Card>
     </div>

@@ -57,7 +57,93 @@ async function ensureTable() {
       INDEX (email)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+  // Added after the table shipped, so tolerated rather than assumed.
+  // Same pattern as the rest of the lbs_ tables: no migrations here.
+  for (const column of [
+    "directory_invite_dismissed_at DATETIME NULL",
+    "directory_invite_dismissals INT NOT NULL DEFAULT 0",
+  ]) {
+    try {
+      await db.execute(
+        sql.raw(`ALTER TABLE lbs_advertiser_business ADD COLUMN ${column}`),
+      );
+    } catch (e) {
+      const code = (e as { code?: string }).code;
+      if (code !== "ER_DUP_FIELDNAME") throw e;
+    }
+  }
   ready = true;
+}
+
+/**
+ * How long the directory invite stays away after being dismissed.
+ *
+ * Escalating rather than fixed, and never permanent. Somebody who says
+ * "not now" once is not saying "never", and asking again in three weeks
+ * is fair. Somebody who has said it three times has answered the
+ * question, and the honest response is to ask far less often rather
+ * than to keep asking at the same rate or to give up and lose the sale.
+ *
+ * Deliberately not random. Random means it can reappear twice in a week
+ * by chance, which reads as a broken banner rather than a reminder.
+ */
+const SNOOZE_DAYS = [21, 45, 90];
+
+const snoozeFor = (dismissals: number) =>
+  SNOOZE_DAYS[Math.min(dismissals, SNOOZE_DAYS.length) - 1] ??
+  SNOOZE_DAYS[SNOOZE_DAYS.length - 1];
+
+/**
+ * Whether to invite this advertiser into the directory right now.
+ *
+ * Only ever called for somebody who has no listing; this decides the
+ * timing, not the eligibility.
+ */
+export async function shouldInviteToDirectory(userId: number): Promise<boolean> {
+  try {
+    await ensureTable();
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT directory_invite_dismissed_at AS at,
+                 directory_invite_dismissals AS n
+          FROM lbs_advertiser_business WHERE user_id = ${userId} LIMIT 1`,
+    )) as unknown as [{ at: string | null; n: number | null }[]];
+    const r = rows[0]?.[0];
+    if (!r?.at) return true;
+
+    const since = Date.now() - new Date(r.at).getTime();
+    const days = snoozeFor(Number(r.n ?? 1));
+    return since > days * 24 * 60 * 60 * 1000;
+  } catch (e) {
+    // A banner is not worth failing a page over, and showing it to
+    // somebody who dismissed it is a smaller fault than hiding it from
+    // everybody because one column is missing.
+    console.error("[advertiser-business] invite check failed:", e);
+    return true;
+  }
+}
+
+/** Records a dismissal and counts it, so the next one waits longer. */
+export async function dismissDirectoryInvite(
+  userId: number,
+  email: string,
+): Promise<boolean> {
+  try {
+    await ensureTable();
+    const { db } = await import("@/lib/db");
+    await db.execute(
+      sql`INSERT INTO lbs_advertiser_business
+            (user_id, email, directory_invite_dismissed_at, directory_invite_dismissals)
+          VALUES (${userId}, ${email}, NOW(), 1)
+          ON DUPLICATE KEY UPDATE
+            directory_invite_dismissed_at = NOW(),
+            directory_invite_dismissals = directory_invite_dismissals + 1`,
+    );
+    return true;
+  } catch (e) {
+    console.error("[advertiser-business] dismiss failed:", e);
+    return false;
+  }
 }
 
 const str = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);

@@ -6,7 +6,10 @@ import {
   saveProfilePassword,
   saveProfilePhone,
 } from "@/lib/profile";
-import { saveAdvertiserBusiness } from "@/lib/advertiser-business";
+import {
+  dismissDirectoryInvite,
+  saveAdvertiserBusiness,
+} from "@/lib/advertiser-business";
 
 /**
  * The account's own details.
@@ -72,6 +75,14 @@ export async function POST(req: Request) {
     // rather than leaving the sidebar showing the old one until they
     // next sign in.
     await setSessionCookie({ ...session, firstName });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "dismiss-directory-invite") {
+    await dismissDirectoryInvite(session.id, session.email);
+    // Always ok. A dismissal that could not be recorded means the
+    // banner returns sooner than intended, which is not worth an error
+    // message on a thing somebody just asked to go away.
     return NextResponse.json({ ok: true });
   }
 

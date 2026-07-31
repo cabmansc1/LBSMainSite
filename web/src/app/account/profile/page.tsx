@@ -4,7 +4,16 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
 import { getProfileDetails } from "@/lib/profile";
-import { getAdvertiserBusiness } from "@/lib/advertiser-business";
+import {
+  getAdvertiserBusiness,
+  shouldInviteToDirectory,
+} from "@/lib/advertiser-business";
+import { DirectoryInvite } from "@/components/directory-invite";
+import {
+  annualSavingCents,
+  getLiveDirectoryPricing,
+  money,
+} from "@/lib/directory-pricing";
 import { ProfileForm } from "@/components/profile-form";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +31,12 @@ export default async function ProfilePage() {
     getPortalContext(session),
     getAdvertiserBusiness(session.id, session.email),
   ]);
+  const [invitePricing, inviteDue] = await Promise.all([
+    getLiveDirectoryPricing().catch(() => null),
+    ctx.listings.length === 0
+      ? shouldInviteToDirectory(session.id).catch(() => false)
+      : Promise.resolve(false),
+  ]);
 
   return (
     <>
@@ -31,6 +46,18 @@ export default async function ProfilePage() {
           How we reach you, and how you sign in.
         </p>
       </div>
+
+      {inviteDue && invitePricing && (
+        <DirectoryInvite
+          monthly={invitePricing.monthlyCents > 0 ? money(invitePricing.monthlyCents) : ""}
+          annual={invitePricing.annualCents > 0 ? money(invitePricing.annualCents) : ""}
+          saving={(() => {
+            const s = annualSavingCents(invitePricing);
+            return s === null ? null : money(s);
+          })()}
+          className="mb-4"
+        />
+      )}
 
       <ProfileForm
         profile={profile}

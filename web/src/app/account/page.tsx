@@ -2,6 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { DirectoryInvite } from "@/components/directory-invite";
+import {
+  annualSavingCents,
+  getLiveDirectoryPricing,
+  money as directoryMoney,
+} from "@/lib/directory-pricing";
+import { shouldInviteToDirectory } from "@/lib/advertiser-business";
 import { getPortalContext } from "@/lib/portal";
 import { Card } from "@/components/sections";
 import { ProfileGaps } from "@/components/profile-gaps";
@@ -43,6 +50,16 @@ export default async function AccountHomePage() {
   ).catch(() => []);
   const todos = allTodos.filter((t) => t.id !== "phone").slice(0, 3);
 
+  // Only for an advertiser with no listing at all, and only when they
+  // have not just dismissed it. Somebody paying for a card and not in
+  // the free directory is a gap that helps both sides to close.
+  const [invitePricing, inviteDue] = await Promise.all([
+    getLiveDirectoryPricing().catch(() => null),
+    ctx.listings.length === 0
+      ? shouldInviteToDirectory(session.id).catch(() => false)
+      : Promise.resolve(false),
+  ]);
+
   const stats = [
     {
       label: "Tentative mail date",
@@ -79,6 +96,26 @@ export default async function AccountHomePage() {
       </div>
 
       <ProfileGaps fields={gaps} />
+
+      {inviteDue && invitePricing && (
+        <DirectoryInvite
+          monthly={
+            invitePricing.monthlyCents > 0
+              ? directoryMoney(invitePricing.monthlyCents)
+              : ""
+          }
+          annual={
+            invitePricing.annualCents > 0
+              ? directoryMoney(invitePricing.annualCents)
+              : ""
+          }
+          saving={(() => {
+            const s = annualSavingCents(invitePricing);
+            return s === null ? null : directoryMoney(s);
+          })()}
+          className="mb-4"
+        />
+      )}
 
       {ctx.warnings.map((w) => (
         <p
