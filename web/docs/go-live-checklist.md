@@ -115,9 +115,30 @@ The short version, in order:
       (`card_305924b17f9d`) and stray account `acct_12b42ba87600`.
 - [ ] **Live Stripe keys** and a webhook endpoint registered against the
       new app. Keep the old endpoint active through cutover.
-- [ ] **`lbspotlight.com` is an indexable soft-404 farm.** Every path
-      returns 200 including `/robots.txt`. Needs noindex or 301s so it
-      stops competing with the real domain.
+- [ ] **`lbspotlight.com` is an indexable soft-404 farm.** It is a
+      separate Railway service, a Vite React app whose Express server
+      answers every unknown path with index.html and a 200, and it has
+      no robots.txt. So a crawler finds an endless site of identical
+      content titled "Lowcountry Business Spotlight", competing with the
+      real domain for the same brand terms.
+      Its real routes are `/`, `/new-movers`, `/new-movers/east-cooper`,
+      `/shared`, `/solo` and `/404`: live landing pages carrying GA4
+      `G-JBTQDGR2S2` and the Meta Pixel, so paid traffic points at them.
+      **While they are in use**, the fix belongs in that service: return
+      a real 404 status for unknown paths and add a robots.txt.
+      **Once they are retired**, point the domain at this app instead
+      and add a host redirect, which consolidates the short domain
+      rather than discarding it:
+      ```ts
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "(www\\.)?lbspotlight\\.com" }],
+        destination: "https://www.lowcountrybusinessspotlight.com/:path*",
+        permanent: true,
+      }
+      ```
+      Verified working against a local build; it excludes
+      `mc.lbspotlight.com`, which is Mission Control.
 
 ### Environment variables to set on Railway
 
