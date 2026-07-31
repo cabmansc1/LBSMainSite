@@ -132,16 +132,18 @@ const MUTED = "#64748B";
 const LINE = "#E2E8F0";
 
 /**
- * One paragraph, in both parts.
+ * The site's typeface, with a fallback that looks like it.
  *
- * Written once as a sentence rather than twice, because a receipt whose
- * plain text and HTML say slightly different things is worse than one
- * with no HTML at all.
+ * Named first for the clients that honour the @font-face below, which
+ * is Apple Mail and iOS Mail and not much else: Gmail, Outlook and
+ * Yahoo all drop web fonts and use the next name they recognise. So the
+ * stack matters more than the import does. Helvetica Neue and Arial are
+ * the closest grotesques that are actually installed everywhere, and
+ * -apple-system picks up SF on Apple hardware, which sits nearer to
+ * Geist than Arial does.
  */
-type Block =
-  | { kind: "p"; text: string }
-  | { kind: "h"; text: string }
-  | { kind: "step"; n: number; text: string };
+const FONT =
+  "Geist, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif";
 
 export function composeOrderReceipt(f: ReceiptFacts): {
   subject: string;
@@ -228,14 +230,14 @@ export function composeOrderReceipt(f: ReceiptFacts): {
    * worse than the plain text it replaced.
    */
   const p = (text: string) =>
-    `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${BODY}">${esc(text)}</p>`;
+    `<p style="margin:0 0 14px;font-family:${FONT};font-size:15px;line-height:1.6;color:${BODY}">${esc(text)}</p>`;
 
   const factRows = facts
     .map(
       ([k, v], i) => `
         <tr>
-          <td style="padding:10px 0;font-size:13px;color:${MUTED};${i ? `border-top:1px solid ${LINE};` : ""}white-space:nowrap;vertical-align:top">${esc(k)}</td>
-          <td style="padding:10px 0 10px 18px;font-size:14px;color:${BODY};font-weight:600;${i ? `border-top:1px solid ${LINE};` : ""}text-align:right">${esc(v)}</td>
+          <td style="padding:10px 0;font-family:${FONT};font-size:13px;color:${MUTED};${i ? `border-top:1px solid ${LINE};` : ""}white-space:nowrap;vertical-align:top">${esc(k)}</td>
+          <td style="padding:10px 0 10px 18px;font-family:${FONT};font-size:14px;color:${BODY};font-weight:600;${i ? `border-top:1px solid ${LINE};` : ""}text-align:right">${esc(v)}</td>
         </tr>`,
     )
     .join("");
@@ -245,25 +247,37 @@ export function composeOrderReceipt(f: ReceiptFacts): {
       (s, i) => `
         <tr>
           <td style="padding:0 12px 12px 0;vertical-align:top">
-            <span style="display:inline-block;width:22px;height:22px;border-radius:11px;background:${NAVY};color:#fff;font-size:12px;font-weight:700;text-align:center;line-height:22px">${i + 1}</span>
+            <span style="display:inline-block;width:22px;height:22px;border-radius:11px;background:${NAVY};color:#fff;font-family:${FONT};font-size:12px;font-weight:700;text-align:center;line-height:22px">${i + 1}</span>
           </td>
-          <td style="padding:0 0 12px;font-size:14.5px;line-height:1.6;color:${BODY}">${esc(s)}</td>
+          <td style="padding:0 0 12px;font-family:${FONT};font-size:14.5px;line-height:1.6;color:${BODY}">${esc(s)}</td>
         </tr>`,
     )
     .join("");
 
   const html = `<!doctype html>
-<html><body style="margin:0;padding:0;background:#F8FAFC">
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  /* Honoured by Apple Mail and iOS Mail. Everything else falls through
+     to the stack in the inline styles, which is the point of having
+     one. */
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&display=swap');
+  body { margin:0; padding:0; }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:${FONT}">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:24px 12px">
     <tr><td align="center">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid ${LINE};border-radius:14px;overflow:hidden">
         <tr>
           <td style="background:${NAVY};padding:20px 28px">
-            <span style="font-size:15px;font-weight:700;color:#ffffff;letter-spacing:-0.01em">Lowcountry Business Spotlight</span>
+            <span style="font-family:${FONT};font-size:15px;font-weight:700;color:#ffffff;letter-spacing:-0.01em">Lowcountry Business Spotlight</span>
           </td>
         </tr>
         <tr><td style="padding:28px">
-          <p style="margin:0 0 6px;font-size:19px;font-weight:700;color:#0F172A;letter-spacing:-0.02em">Your spot is confirmed</p>
+          <p style="margin:0 0 6px;font-family:${FONT};font-size:19px;font-weight:700;color:#0F172A;letter-spacing:-0.02em">Your spot is confirmed</p>
           ${p(greeting)}
           ${p(intro)}
 
@@ -273,14 +287,14 @@ export function composeOrderReceipt(f: ReceiptFacts): {
 
           ${p(schedule)}
 
-          <p style="margin:22px 0 12px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${MUTED}">What happens next</p>
+          <p style="margin:22px 0 12px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${MUTED}">What happens next</p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${stepRows}</table>
 
           ${p(account)}
           ${p(help)}
         </td></tr>
         <tr>
-          <td style="border-top:1px solid ${LINE};padding:16px 28px;font-size:12px;color:${MUTED}">
+          <td style="border-top:1px solid ${LINE};padding:16px 28px;font-family:${FONT};font-size:12px;color:${MUTED}">
             Lowcountry Business Spotlight &middot; hello@lbspotlight.com &middot; 843-212-2969
           </td>
         </tr>
