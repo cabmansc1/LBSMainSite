@@ -66,13 +66,42 @@ async function ensureTable() {
       placements VARCHAR(500) NOT NULL DEFAULT '',
       rating TINYINT NULL,
       approved TINYINT(1) NOT NULL DEFAULT 0,
-      sort_order INT NOT NULL DEFAULT 0,
+      pinned TINYINT(1) NOT NULL DEFAULT 0,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX (approved)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+
+  // The first version of this table had a sort_order column and nothing
+  // that set it, so every row sat at zero and it did nothing but look
+  // like a feature. Pinning replaced it: one checkbox, rather than
+  // dragging twenty rows into an order nobody will maintain.
+  try {
+    await db.execute(
+      sql.raw(
+        "ALTER TABLE lbs_testimonials ADD COLUMN pinned TINYINT(1) NOT NULL DEFAULT 0",
+      ),
+    );
+  } catch (e) {
+    if ((e as { code?: string }).code !== "ER_DUP_FIELDNAME") throw e;
+  }
+  try {
+    await db.execute(sql.raw("ALTER TABLE lbs_testimonials DROP COLUMN sort_order"));
+  } catch (e) {
+    // Never existed on a fresh install, which is the normal case.
+    if ((e as { code?: string }).code !== "ER_CANT_DROP_FIELD_OR_KEY") throw e;
+  }
   ready = true;
 }
+
+/**
+ * How many quotes a placement shows at once.
+ *
+ * Three, because the strip is a three column grid and one row is what a
+ * marketing page can carry: past that it reads as filler and people
+ * stop reading. The rest are not wasted, they rotate.
+ */
+export const SHOWN_PER_PLACEMENT = 3;
 
 const row = (r: Record<string, unknown>): Testimonial => ({
   id: Number(r.id),
@@ -85,6 +114,7 @@ const row = (r: Record<string, unknown>): Testimonial => ({
     .filter(Boolean),
   rating: r.rating === null || r.rating === undefined ? null : Number(r.rating),
   approved: Number(r.approved ?? 0) === 1,
+  pinned: Number(r.pinned ?? 0) === 1,
 });
 
 /** Everything, approved or not. For the admin only. */
@@ -93,7 +123,7 @@ export async function getAllTestimonials(): Promise<Testimonial[]> {
     await ensureTable();
     const { db } = await import("@/lib/db");
     const rows = (await db.execute(
-      sql`SELECT * FROM lbs_testimonials ORDER BY sort_order, id DESC`,
+      sql`SELECT * FROM lbs_testimonials ORDER BY pinned DESC, id DESC`,
     )) as unknown as [Record<string, unknown>[]];
     return (rows[0] ?? []).map(row);
   } catch (e) {
@@ -116,11 +146,16 @@ export async function testimonialsFor(
     await ensureTable();
     const { db } = await import("@/lib/db");
     const rows = (await db.execute(
+      // Pinned first, then a fresh draw from the rest on every render.
+      // Without the shuffle the newest three would be the only three
+      // that ever appeared, and a twentieth review would silently push
+      // the seventeen below it out of sight forever. These pages are
+      // force-dynamic, so a new pick per request costs nothing.
       sql`SELECT * FROM lbs_testimonials
           WHERE approved = 1
             AND FIND_IN_SET(${placement}, REPLACE(placements, ', ', ',')) > 0
-          ORDER BY sort_order, id DESC
-          LIMIT 6`,
+          ORDER BY pinned DESC, RAND()
+          LIMIT ${SHOWN_PER_PLACEMENT}`,
     )) as unknown as [Record<string, unknown>[]];
     const real = (rows[0] ?? []).map(row);
     if (real.length > 0) return real;
@@ -166,16 +201,17 @@ export async function saveTestimonial(input: Testimonial): Promise<boolean> {
                 detail = ${clean(input.detail, 200)},
                 placements = ${placements},
                 rating = ${rating},
-                approved = ${input.approved ? 1 : 0}
+                approved = ${input.approved ? 1 : 0},
+                pinned = ${input.pinned ? 1 : 0}
             WHERE id = ${input.id}`,
       );
     } else {
       await db.execute(
         sql`INSERT INTO lbs_testimonials
-              (quote, author, detail, placements, rating, approved)
+              (quote, author, detail, placements, rating, approved, pinned)
             VALUES (${quote}, ${clean(input.author, 160)},
                     ${clean(input.detail, 200)}, ${placements}, ${rating},
-                    ${input.approved ? 1 : 0})`,
+                    ${input.approved ? 1 : 0}, ${input.pinned ? 1 : 0})`,
       );
     }
     return true;

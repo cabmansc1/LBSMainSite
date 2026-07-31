@@ -15,4 +15,6 @@ export type Testimonial = {
   /** 1 to 5, or null when the review did not carry one. */
   rating?: number | null;
   approved?: boolean;
+  /** Always shown first, ahead of the rotation. */
+  pinned?: boolean;
 };

@@ -28,6 +28,7 @@ const BLANK: Testimonial = {
   placements: ["home"],
   rating: 5,
   approved: false,
+  pinned: false,
 };
 
 export function AdminTestimonials({
@@ -173,16 +174,28 @@ export function AdminTestimonials({
             </div>
           </div>
 
-          <label className="flex items-center gap-2.5 text-[13.5px]">
-            <input
-              type="checkbox"
-              checked={!!editing.approved}
-              onChange={(e) =>
-                setEditing({ ...editing, approved: e.target.checked })
-              }
-            />
-            Approved, and live on the site
-          </label>
+          <div className="grid gap-2">
+            <label className="flex items-center gap-2.5 text-[13.5px]">
+              <input
+                type="checkbox"
+                checked={!!editing.approved}
+                onChange={(e) =>
+                  setEditing({ ...editing, approved: e.target.checked })
+                }
+              />
+              Approved, and live on the site
+            </label>
+            <label className="flex items-center gap-2.5 text-[13.5px]">
+              <input
+                type="checkbox"
+                checked={!!editing.pinned}
+                onChange={(e) =>
+                  setEditing({ ...editing, pinned: e.target.checked })
+                }
+              />
+              Pin to the top, ahead of the rotation
+            </label>
+          </div>
 
           <div className="flex items-center gap-3">
             <button
@@ -229,6 +242,7 @@ export function AdminTestimonials({
                     t.author,
                     t.detail,
                     typeof t.rating === "number" ? `${t.rating} stars` : null,
+                    t.pinned ? "pinned" : null,
                     t.placements.length
                       ? `shown on: ${t.placements.join(", ")}`
                       : "not shown anywhere yet",
@@ -238,6 +252,11 @@ export function AdminTestimonials({
                 </p>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
+                {t.pinned && (
+                  <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border bg-brand-tint border-[#c2e4fb] text-brand-deep">
+                    Pinned
+                  </span>
+                )}
                 <span
                   className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
                     t.approved

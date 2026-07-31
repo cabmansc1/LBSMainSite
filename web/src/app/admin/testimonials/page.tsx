@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
-import { getAllTestimonials, placementOptions } from "@/lib/testimonials";
+import {
+  SHOWN_PER_PLACEMENT,
+  getAllTestimonials,
+  placementOptions,
+} from "@/lib/testimonials";
 import { getLiveZones } from "@/lib/zone-store";
 import { AdminTestimonials } from "@/components/admin-testimonials";
 
@@ -30,9 +34,13 @@ export default async function AdminTestimonialsPage() {
       <div className="mb-5 max-w-[72ch]">
         <h1 className="text-[21px] font-bold tracking-[-0.02em]">Testimonials</h1>
         <p className="text-sm text-muted mt-1">
-          Real customer quotes. Each one is shown only where you pin it, and a
+          Real customer quotes. Each is shown only where you place it, and a
           section stays off the page entirely until it has an approved quote,
           so nothing here ever renders an empty heading.
+          {" "}
+          A placement shows {SHOWN_PER_PLACEMENT} at a time and reshuffles on
+          every visit, so a twentieth review does not push the others out of
+          sight. Pin the ones you always want seen first.
         </p>
       </div>
 
