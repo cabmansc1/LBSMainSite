@@ -4,6 +4,7 @@ import { getLivePricing } from "@/lib/pricing-store";
 import { getLiveDirectoryPricing } from "@/lib/directory-pricing";
 import { ALL_SIZES, type Reach } from "@/lib/pricing";
 import { emailEnabled } from "@/lib/email";
+import { directoryWritesBlocked } from "@/lib/write-guard";
 
 /**
  * Is this deploy actually able to take live money and finish the job?
@@ -237,6 +238,19 @@ export async function stripePreflight(): Promise<Check[]> {
       : mcBlocked
         ? "MC_READ_ONLY=1, which is right for test mode: a test purchase logs the payload it would have sent instead of writing it. Clear this at the same moment you switch to the live key, not before."
         : "Writes are live but the key is a test key. There is no staging Mission Control, so a test purchase will put a fake advertiser on a real card and lock a real category. Set MC_READ_ONLY=1 until you switch to live keys.",
+  });
+
+  // Directory Premium is a Stripe product, and this switch sits in
+  // front of the route that starts it. Left on, the subscribe button
+  // returns 503 and no Premium signup can even reach Stripe: nothing
+  // in the payment setup is wrong, and nothing works.
+  const directoryBlocked = directoryWritesBlocked();
+  checks.push({
+    label: "Directory signups",
+    state: directoryBlocked ? (liveMode ? "fail" : "warn") : "ok",
+    detail: directoryBlocked
+      ? "DIRECTORY_READ_ONLY=1, so /api/register refuses before it reaches Stripe. Nobody can register a listing or subscribe to Premium. Clear it when this deploy is the real site."
+      : "Registration and Premium subscriptions can reach Stripe.",
   });
 
   checks.push({
