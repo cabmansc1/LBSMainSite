@@ -111,9 +111,42 @@ export type ReceiptFacts = {
  * Pure: every fact is passed in, so the wording can be exercised without
  * a database, Mission Control or a Stripe event.
  */
+/**
+ * Escapes text for the HTML part.
+ *
+ * Business names carry ampersands, and "Jack & Sons" arriving as
+ * "Jack &amp; Sons" in an email is the kind of small wrongness that
+ * makes a receipt look automated in the bad sense.
+ */
+const esc = (v: string) =>
+  v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+/** Tokens the HTML uses so the two parts cannot drift apart. */
+const NAVY = "#0B1F33";
+const BODY = "#334155";
+const MUTED = "#64748B";
+const LINE = "#E2E8F0";
+
+/**
+ * One paragraph, in both parts.
+ *
+ * Written once as a sentence rather than twice, because a receipt whose
+ * plain text and HTML say slightly different things is worse than one
+ * with no HTML at all.
+ */
+type Block =
+  | { kind: "p"; text: string }
+  | { kind: "h"; text: string }
+  | { kind: "step"; n: number; text: string };
+
 export function composeOrderReceipt(f: ReceiptFacts): {
   subject: string;
   text: string;
+  html: string;
 } {
   const place = [f.cardName, f.zoneName].filter(Boolean).join(", ");
 
@@ -143,80 +176,120 @@ export function composeOrderReceipt(f: ReceiptFacts): {
   if (f.mailMonth) facts.push([TENTATIVE_MAIL_LABEL, f.mailMonth]);
   if (f.artworkDue) facts.push(["Artwork due", f.artworkDue]);
 
+  // Written once, rendered twice. A receipt whose plain text and HTML
+  // say slightly different things is worse than one with no HTML.
+  const greeting = `Hi ${f.businessName || "there"},`;
+  const intro =
+    "Your Spotlight Postcard spot is paid and reserved. Here is what you bought.";
+
+  const schedule = f.mailMonth
+    ? `${tentativelyMails(f.mailMonth)}. Tentative is the honest word: ` +
+      "routes get added, print schedules shift, and a card sometimes waits " +
+      "on one more advertiser. If the date moves we will tell you, and " +
+      "your artwork deadline moves with it, because artwork is due " +
+      `${ARTWORK_LEAD_DAYS} days before the mail date.`
+    : "Your card is not on the print schedule yet. We will email you the " +
+      `${TENTATIVE_MAIL_LABEL.toLowerCase()} and your artwork deadline as ` +
+      "soon as it is set.";
+
+  const steps = [
+    "Send us your artwork by replying to this email. There is no upload " +
+      "page on the site yet, so a reply is how it reaches us. PDF, PNG or " +
+      "JPG at 300 dpi works best.",
+    "Or let us design it. Design is included in what you already paid. " +
+      "Reply and tell us what the ad should say and we will draft it for you.",
+    "Either way you see a proof and approve it before anything goes to print.",
+  ];
+
+  const account =
+    "Your account is already set up with this email address. Sign in at " +
+    `${siteUrl()}/login and we will send you a code, so there is no ` +
+    "password to invent.";
+  const help =
+    "Questions: reply to this email, write to hello@lbspotlight.com, or " +
+    "call 843-212-2969.";
+
   const lines: string[] = [];
-  lines.push(`Hi ${f.businessName || "there"},`, "");
-  lines.push(
-    ...wrap("Your Spotlight Postcard spot is paid and reserved. Here is what you bought."),
-    "",
-  );
+  lines.push(greeting, "");
+  lines.push(...wrap(intro), "");
   lines.push(...facts.map(([k, v]) => `${k}: ${v}`), "");
-
-  if (f.mailMonth) {
-    lines.push(
-      ...wrap(
-        `${tentativelyMails(f.mailMonth)}. Tentative is the honest word: ` +
-          "routes get added, print schedules shift, and a card sometimes " +
-          "waits on one more advertiser. If the date moves we will tell " +
-          "you, and your artwork deadline moves with it, because artwork " +
-          `is due ${ARTWORK_LEAD_DAYS} days before the mail date.`,
-      ),
-      "",
-    );
-  } else {
-    lines.push(
-      ...wrap(
-        "Your card is not on the print schedule yet. We will email you the " +
-          `${TENTATIVE_MAIL_LABEL.toLowerCase()} and your artwork deadline ` +
-          "as soon as it is set.",
-      ),
-      "",
-    );
-  }
-
+  lines.push(...wrap(schedule), "");
   lines.push("What happens next", "");
-  lines.push(
-    ...wrap(
-      "1. Send us your artwork by replying to this email. There is no " +
-        "upload page on the site yet, so a reply is how it reaches us. " +
-        "PDF, PNG or JPG at 300 dpi works best.",
-      "   ",
-    ),
-  );
-  lines.push(
-    ...wrap(
-      "2. Or let us design it. Design is included in what you already " +
-        "paid. Reply and tell us what the ad should say and we will draft " +
-        "it for you.",
-      "   ",
-    ),
-  );
-  lines.push(
-    ...wrap(
-      "3. Either way you see a proof and approve it before anything goes " +
-        "to print.",
-      "   ",
-    ),
-    "",
-  );
-
-  lines.push(
-    ...wrap(
-      "Your account is already set up with this email address. Sign in at " +
-        `${siteUrl()}/login and we will send you a code, so there is no ` +
-        "password to invent.",
-    ),
-    "",
-  );
-  lines.push(
-    ...wrap(
-      "Questions: reply to this email, write to hello@lbspotlight.com, or " +
-        "call 843-212-2969.",
-    ),
-    "",
-  );
+  steps.forEach((s, i) => lines.push(...wrap(`${i + 1}. ${s}`, "   ")));
+  lines.push("");
+  lines.push(...wrap(account), "");
+  lines.push(...wrap(help), "");
   lines.push("Lowcountry Business Spotlight");
 
-  return { subject, text: lines.join("\n") };
+  /**
+   * Tables and inline styles, because that is what email clients
+   * actually render. No external stylesheet, no flexbox, no web font:
+   * Outlook ignores all three and the layout collapses to something
+   * worse than the plain text it replaced.
+   */
+  const p = (text: string) =>
+    `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${BODY}">${esc(text)}</p>`;
+
+  const factRows = facts
+    .map(
+      ([k, v], i) => `
+        <tr>
+          <td style="padding:10px 0;font-size:13px;color:${MUTED};${i ? `border-top:1px solid ${LINE};` : ""}white-space:nowrap;vertical-align:top">${esc(k)}</td>
+          <td style="padding:10px 0 10px 18px;font-size:14px;color:${BODY};font-weight:600;${i ? `border-top:1px solid ${LINE};` : ""}text-align:right">${esc(v)}</td>
+        </tr>`,
+    )
+    .join("");
+
+  const stepRows = steps
+    .map(
+      (s, i) => `
+        <tr>
+          <td style="padding:0 12px 12px 0;vertical-align:top">
+            <span style="display:inline-block;width:22px;height:22px;border-radius:11px;background:${NAVY};color:#fff;font-size:12px;font-weight:700;text-align:center;line-height:22px">${i + 1}</span>
+          </td>
+          <td style="padding:0 0 12px;font-size:14.5px;line-height:1.6;color:${BODY}">${esc(s)}</td>
+        </tr>`,
+    )
+    .join("");
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:#F8FAFC">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:24px 12px">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid ${LINE};border-radius:14px;overflow:hidden">
+        <tr>
+          <td style="background:${NAVY};padding:20px 28px">
+            <span style="font-size:15px;font-weight:700;color:#ffffff;letter-spacing:-0.01em">Lowcountry Business Spotlight</span>
+          </td>
+        </tr>
+        <tr><td style="padding:28px">
+          <p style="margin:0 0 6px;font-size:19px;font-weight:700;color:#0F172A;letter-spacing:-0.02em">Your spot is confirmed</p>
+          ${p(greeting)}
+          ${p(intro)}
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 22px;border:1px solid ${LINE};border-radius:10px;padding:4px 16px">
+            ${factRows}
+          </table>
+
+          ${p(schedule)}
+
+          <p style="margin:22px 0 12px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${MUTED}">What happens next</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${stepRows}</table>
+
+          ${p(account)}
+          ${p(help)}
+        </td></tr>
+        <tr>
+          <td style="border-top:1px solid ${LINE};padding:16px 28px;font-size:12px;color:${MUTED}">
+            Lowcountry Business Spotlight &middot; hello@lbspotlight.com &middot; 843-212-2969
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  return { subject, text: lines.join("\n"), html };
 }
 
 type Schedule = { mailMonth?: string; cardName?: string; artworkDue?: string };
@@ -319,7 +392,7 @@ export async function sendOrderReceipt(input: {
     const cardId = order?.cardId || md.cardId || "";
     const schedule = await scheduleFor({ cardId, zoneSlug });
 
-    const { subject, text } = composeOrderReceipt({
+    const { subject, text, html } = composeOrderReceipt({
       reference: order?.reference || md.reference || input.sessionId,
       businessName: order?.businessName || md.businessName || "",
       zoneName: zoneBySlug(zoneSlug)?.name,
@@ -332,7 +405,9 @@ export async function sendOrderReceipt(input: {
       artworkDue: schedule.artworkDue,
     });
 
-    const result = await sendEmail({ to, subject, text });
+    // Both parts. Resend sends them as one multipart message, so a
+    // client that refuses HTML still gets the receipt it always got.
+    const result = await sendEmail({ to, subject, text, html });
     if (result.error) {
       // sendEmail already logged the provider's reason; this ties the
       // failure to an order so it can be resent by hand.
