@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
 import { getProfileDetails } from "@/lib/profile";
+import { getAdvertiserBusiness } from "@/lib/advertiser-business";
 import { ProfileForm } from "@/components/profile-form";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +17,10 @@ export default async function ProfilePage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [profile, ctx] = await Promise.all([
+  const [profile, ctx, biz] = await Promise.all([
     getProfileDetails(session.id, session.email),
     getPortalContext(session),
+    getAdvertiserBusiness(session.id, session.email),
   ]);
 
   return (
@@ -30,7 +32,11 @@ export default async function ProfilePage() {
         </p>
       </div>
 
-      <ProfileForm profile={profile} />
+      <ProfileForm
+        profile={profile}
+        business={biz.business}
+        businessSaved={biz.saved}
+      />
 
       {ctx.listings.length > 0 && (
         <section className="mt-4 bg-white border border-line rounded-(--radius-card) p-6 grid gap-2.5">

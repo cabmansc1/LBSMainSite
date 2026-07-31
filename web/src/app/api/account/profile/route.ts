@@ -6,6 +6,7 @@ import {
   saveProfilePassword,
   saveProfilePhone,
 } from "@/lib/profile";
+import { saveAdvertiserBusiness } from "@/lib/advertiser-business";
 
 /**
  * The account's own details.
@@ -72,6 +73,37 @@ export async function POST(req: Request) {
     // next sign in.
     await setSessionCookie({ ...session, firstName });
     return NextResponse.json({ ok: true });
+  }
+
+  if (action === "business") {
+    const businessName = String(body.businessName ?? "").trim();
+    if (businessName.length < 2) {
+      return NextResponse.json(
+        { error: "Enter your business name." },
+        { status: 422 },
+      );
+    }
+    // Looser than the sign-in number: this is a published business line
+    // as often as a mobile, and it is allowed to be blank. Rejecting a
+    // valid number is worse than accepting one with a typo we can see.
+    const businessPhone = String(body.businessPhone ?? "").trim();
+    if (businessPhone && !looksLikePhone(businessPhone)) {
+      return NextResponse.json(
+        { error: "That does not look like a phone number." },
+        { status: 422 },
+      );
+    }
+    const saved = await saveAdvertiserBusiness(session.id, session.email, {
+      businessName,
+      businessPhone,
+      address: String(body.address ?? ""),
+      city: String(body.city ?? ""),
+      state: String(body.state ?? ""),
+      zipCode: String(body.zipCode ?? ""),
+    });
+    return saved
+      ? NextResponse.json({ ok: true })
+      : NextResponse.json({ error: "We could not save that just now." }, { status: 500 });
   }
 
   if (action === "password") {
