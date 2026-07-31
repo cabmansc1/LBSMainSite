@@ -436,16 +436,29 @@ that page.
 1. **In Stripe, switch off test mode.** Everything below happens in the
    live dashboard. The two modes hold entirely separate keys, endpoints,
    coupons and customers; nothing carries across.
-2. **Add the webhook endpoint** at
-   `https://<live domain>/api/stripe/webhook`, subscribed to exactly
-   these four events:
+2. **Add the webhook endpoint** for the domain the app is *actually
+   served from*, subscribed to exactly these four events. Before DNS
+   moves that is the Railway domain, not lowcountrybusinessspotlight.com,
+   which is still the PHP site: an endpoint pointing at a domain the app
+   does not answer on receives nothing.
+
+   The clean way through cutover is to create **both** endpoints in live
+   mode, `https://<railway domain>/api/stripe/webhook` and
+   `https://www.lowcountrybusinessspotlight.com/api/stripe/webhook`, and
+   put **both signing secrets** in `STRIPE_WEBHOOK_SECRET`, comma
+   separated. The app tries each, so whichever endpoint fires is
+   verified and DNS can move with no variable change and no window where
+   payments land unfulfilled. Delete the retired endpoint afterwards.
+
+   The four events:
    - `checkout.session.completed`
    - `charge.refunded`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
 3. **Set `STRIPE_SECRET_KEY`** to the live key (`sk_live_...`).
 4. **Set `STRIPE_WEBHOOK_SECRET`** to the signing secret of the endpoint
-   you just created. **It must be the live one.** A test-mode secret
+   you just created, or to both secrets comma separated if you made two.
+   **They must be the live ones.** A test-mode secret
    against a live key rejects every event as an invalid signature: the
    checkout page works perfectly, the money arrives, and no order is
    ever marked paid, placed on a card, receipted or pushed to the CRM.

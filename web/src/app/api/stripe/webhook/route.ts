@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import type Stripe from "stripe";
-import { getStripe, stripeEnabled } from "@/lib/stripe";
+import { getStripe, stripeEnabled, webhookSecrets } from "@/lib/stripe";
 import { pushToMissionControl } from "@/lib/mission-control";
 import { markPaid, markRefunded } from "@/lib/orders";
 import { findOrCreatePortalUser } from "@/lib/auth";
@@ -111,6 +111,25 @@ async function activateDirectoryPremium(
   }
 }
 
+/**
+ * The first secret that verifies this payload, or null.
+ *
+ * Every secret is tried before giving up, and a rejection is silent by
+ * design: an unsigned or forged request is not an error worth logging
+ * at volume, and the ones that matter surface in Stripe's own delivery
+ * log as 400s against a specific endpoint.
+ */
+function verify(payload: string, signature: string): Stripe.Event | null {
+  for (const secret of webhookSecrets()) {
+    try {
+      return getStripe().webhooks.constructEvent(payload, signature, secret);
+    } catch {
+      // Try the next one.
+    }
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   if (!stripeEnabled() || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Not configured" }, { status: 503 });
@@ -122,14 +141,8 @@ export async function POST(req: Request) {
   }
 
   const payload = await req.text();
-  let event;
-  try {
-    event = getStripe().webhooks.constructEvent(
-      payload,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET,
-    );
-  } catch {
+  const event = verify(payload, signature);
+  if (!event) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 

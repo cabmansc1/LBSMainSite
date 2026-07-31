@@ -1,5 +1,5 @@
 import "server-only";
-import { getStripe, stripeEnabled } from "@/lib/stripe";
+import { getStripe, stripeEnabled, webhookSecrets } from "@/lib/stripe";
 import { getLivePricing } from "@/lib/pricing-store";
 import { getLiveDirectoryPricing } from "@/lib/directory-pricing";
 import { ALL_SIZES, type Reach } from "@/lib/pricing";
@@ -144,11 +144,12 @@ export async function stripePreflight(): Promise<Check[]> {
   // advertiser, a receipt and a CRM record. Everything about it is
   // checked, because a missing one fails silently and looks exactly
   // like a working checkout.
+  const secrets = webhookSecrets();
   checks.push({
     label: "Webhook signing secret",
-    state: process.env.STRIPE_WEBHOOK_SECRET ? "ok" : "fail",
-    detail: process.env.STRIPE_WEBHOOK_SECRET
-      ? "Set. It must be the secret for the endpoint below, in this same mode: a test-mode secret with a live key rejects every event as an invalid signature."
+    state: secrets.length ? "ok" : "fail",
+    detail: secrets.length
+      ? `${secrets.length} secret${secrets.length === 1 ? "" : "s"} configured. Each must belong to an endpoint below and to this same mode: a test-mode secret with a live key rejects every event as an invalid signature. More than one is fine and is how cutover works, since the app answers on two domains at once.`
       : "STRIPE_WEBHOOK_SECRET is not set. The webhook answers 503 and no payment is ever fulfilled.",
   });
 
@@ -173,7 +174,7 @@ export async function stripePreflight(): Promise<Check[]> {
         label: "Webhook endpoint",
         state: "fail",
         detail: ours.length
-          ? `This ${mode} account has an endpoint at ${ours.map((e) => e.url).join(", ")}, which is not ${wantUrl}. Events are going somewhere else.`
+          ? `This ${mode} account posts to ${ours.map((e) => e.url).join(" and ")}, none of which is ${wantUrl}. This deploy will never see an event.`
           : `No endpoint in this ${mode} account points at ${wantUrl ?? WEBHOOK_PATH}. Payments will complete and nothing will be fulfilled.`,
       });
     } else {
@@ -187,6 +188,23 @@ export async function stripePreflight(): Promise<Check[]> {
           : missing.length
             ? `${match.url} is not subscribed to ${missing.join(", ")}.`
             : `${match.url}, enabled, subscribed to all ${REQUIRED_EVENTS.length} events we handle.`,
+      });
+    }
+
+    // Every other endpoint in this mode that points at the app. During
+    // cutover that is expected and wanted; the thing worth saying is
+    // whether this deploy could verify one if it fired, because an
+    // endpoint whose secret is missing is an endpoint whose events are
+    // all rejected.
+    const others = ours.filter((e) => e.url !== match?.url);
+    if (others.length > 0) {
+      checks.push({
+        label: "Other endpoints",
+        state: secrets.length > 1 ? "ok" : "warn",
+        detail:
+          secrets.length > 1
+            ? `Also posting to ${others.map((e) => e.url).join(", ")}. With ${secrets.length} secrets configured this deploy can verify whichever fires, so DNS can move without a variable change.`
+            : `Also posting to ${others.map((e) => e.url).join(", ")}, and only one signing secret is set. Events from the other one are rejected. Add its secret to STRIPE_WEBHOOK_SECRET, comma separated, and cutover needs no change here.`,
       });
     }
   } catch (e) {

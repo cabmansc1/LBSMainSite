@@ -8,6 +8,27 @@ import Stripe from "stripe";
  */
 export const stripeEnabled = () => !!process.env.STRIPE_SECRET_KEY;
 
+/**
+ * The webhook signing secrets this deploy will accept, in order.
+ *
+ * Stripe signs with the secret of the endpoint that fired, and an
+ * endpoint is tied to one URL. During cutover the app answers on two,
+ * the Railway domain and the real one, so two endpoints exist and only
+ * one of their secrets could be the single configured value. Whoever
+ * forgot to swap it at DNS time would get a checkout that works
+ * perfectly while nothing downstream ever runs.
+ *
+ * So the variable takes a list. Set both secrets before cutover and
+ * there is nothing to remember on the day; delete the retired one
+ * afterwards. Separated by commas or whitespace, because both are what
+ * people actually type.
+ */
+export const webhookSecrets = (): string[] =>
+  (process.env.STRIPE_WEBHOOK_SECRET ?? "")
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
 let client: Stripe | null = null;
 
 export function getStripe(): Stripe {
