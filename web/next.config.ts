@@ -71,6 +71,29 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      /**
+       * lbspotlight.com is a second Railway service, a React app that
+       * answers every path with its index.html and a 200. That makes it
+       * an indexable soft-404 farm: /robots.txt, /anything-at-all and a
+       * misspelled URL all return a page, so a crawler finds an endless
+       * site of identical content competing with the real domain for the
+       * same brand terms.
+       *
+       * Once the domain is pointed at this service, every one of those
+       * URLs becomes a permanent redirect to the same path here, which
+       * consolidates whatever the short domain has earned rather than
+       * throwing it away. Until then this rule sits idle and costs
+       * nothing.
+       *
+       * The apex and www only. mc.lbspotlight.com is Mission Control and
+       * must keep answering for itself.
+       */
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "(www\\.)?lbspotlight\\.com" }],
+        destination: "https://www.lowcountrybusinessspotlight.com/:path*",
+        permanent: true,
+      },
       // Legacy query-string forms
       {
         source: "/business.php",
