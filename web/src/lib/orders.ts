@@ -244,6 +244,29 @@ export async function getPostcardOrders(): Promise<Order[]> {
   }
 }
 
+/**
+ * The order behind a Stripe payment.
+ *
+ * Refund handling needs it: the money knows its payment intent and
+ * nothing else, and what an admin has to be told is which business, on
+ * which card, still holds which category.
+ */
+export async function getOrderByPaymentIntent(
+  paymentIntent: string,
+): Promise<Order | null> {
+  try {
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT * FROM lbs_orders WHERE stripe_payment_intent = ${paymentIntent} LIMIT 1`,
+    )) as unknown as [Record<string, unknown>[]];
+    const found = rows[0]?.[0];
+    return found ? row(found) : null;
+  } catch (e) {
+    console.error("[orders] lookup by payment intent failed:", e);
+    return null;
+  }
+}
+
 export async function getOrdersForEmail(email: string): Promise<Order[]> {
   try {
     const { db } = await import("@/lib/db");

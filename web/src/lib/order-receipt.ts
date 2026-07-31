@@ -1,5 +1,5 @@
 import "server-only";
-import { sendEmail } from "@/lib/email";
+import { alertsTo, sendEmail } from "@/lib/email";
 import { cardDisplayName } from "@/lib/card-coverage";
 import {
   ARTWORK_LEAD_DAYS,
@@ -342,5 +342,56 @@ export async function sendOrderReceipt(input: {
     }
   } catch (e) {
     console.error("[order-receipt] could not send receipt:", e);
+  }
+}
+
+/**
+ * Tells us a refund happened and that a spot may still be held.
+ *
+ * Refunding money in Stripe does not take an advertiser off a card.
+ * Mission Control owns the card, the spot may already be at the
+ * printer, and no automatic delete is safe against a card mid
+ * production. So this does the one safe thing: makes sure the manual
+ * step is not forgotten. Before it existed, a refunded advertiser went
+ * on holding an exclusive category against a real sale and nothing
+ * anywhere said so.
+ *
+ * Goes to us, never to the customer: Stripe already emails them about
+ * their own refund.
+ */
+export async function sendRefundAlert(input: {
+  order: { reference: string; businessName: string; category: string; cardId?: string; zoneSlug: string; email: string } | null;
+  fully: boolean;
+  amountRefundedCents: number;
+  amountCents: number;
+}): Promise<void> {
+  const { order, fully, amountRefundedCents, amountCents } = input;
+  const who = order?.businessName || order?.email || "an order we cannot match";
+  const kind = fully ? "Refunded" : "Partly refunded";
+
+  const lines = [
+    `${kind}: ${money(amountRefundedCents)} of ${money(amountCents)}.`,
+    "",
+    `Business: ${who}`,
+    order?.category ? `Category: ${order.category}` : "",
+    order?.zoneSlug ? `Zone: ${order.zoneSlug}` : "",
+    order?.cardId ? `Card: ${order.cardId}` : "",
+    order?.reference ? `Reference: ${order.reference}` : "",
+    "",
+    fully
+      ? "The money is back with them, but they are still on the card in Mission Control and still holding their category. Remove them there if the spot should go back on sale."
+      : "This was a partial refund, so the order is still marked paid and they stay on the card. Nothing to do unless you meant to cancel the spot.",
+    "",
+    `${SITE_URL}/admin/orders`,
+  ].filter((l) => l !== "");
+
+  try {
+    await sendEmail({
+      to: alertsTo(),
+      subject: `${kind}: ${who}${order?.category ? ` (${order.category})` : ""}`,
+      text: lines.join("\n"),
+    });
+  } catch (e) {
+    console.error("[order-receipt] refund alert failed:", e);
   }
 }

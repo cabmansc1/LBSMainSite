@@ -132,6 +132,49 @@ export const TENTATIVE_MAIL_LABEL = "Tentative mail date";
  */
 export const ARTWORK_LEAD_DAYS = 14;
 
+/**
+ * How long somebody who bought late gets to send artwork.
+ *
+ * Short, because they are buying onto a card that is nearly closed and
+ * the print date does not move for them. But not zero: a deadline that
+ * had already passed when they paid was never theirs to miss.
+ */
+export const LATE_BUYER_GRACE_DAYS = 2;
+
+/**
+ * The artwork deadline this advertiser is actually held to.
+ *
+ * The card's own deadline, unless they bought after it, in which case
+ * they get a short window from the day they paid, capped at the mail
+ * date because nothing can arrive after the card prints.
+ *
+ * Without this, buying a spot on a card mailing in three weeks showed
+ * "artwork past due, was due Jul 24" the moment the payment cleared.
+ * The customer had done nothing wrong; we sold them a late spot and
+ * then told them off for it.
+ */
+export function artworkDueFor(
+  mailDateIso: string,
+  purchasedAt?: Date | string | null,
+): Date | undefined {
+  const cardDue = artworkDeadlineFrom(mailDateIso);
+  if (!cardDue || !purchasedAt) return cardDue;
+
+  const bought = new Date(purchasedAt);
+  if (isNaN(bought.getTime()) || bought.getTime() <= cardDue.getTime()) {
+    return cardDue;
+  }
+
+  const grace = new Date(bought);
+  grace.setDate(grace.getDate() + LATE_BUYER_GRACE_DAYS);
+
+  const mailDate = new Date(mailDateIso);
+  if (!isNaN(mailDate.getTime()) && grace.getTime() > mailDate.getTime()) {
+    return mailDate;
+  }
+  return grace;
+}
+
 /** The artwork deadline implied by a card's current tentative date. */
 export function artworkDeadlineFrom(mailDateIso: string): Date | undefined {
   const d = new Date(mailDateIso);

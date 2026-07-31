@@ -266,7 +266,35 @@ export async function POST(req: Request) {
           typeof charge.payment_intent === "string"
             ? charge.payment_intent
             : (charge.payment_intent?.id ?? undefined);
-        if (paymentIntent) await markRefunded(paymentIntent);
+        if (!paymentIntent) break;
+
+        // charge.refunded fires for a partial refund too, and this used
+        // to mark the whole order refunded either way. A goodwill $50
+        // off a $249 spot would have retired the order, taken the
+        // advertiser out of the reports and told the customer their
+        // campaign was cancelled, when they are still on the card and
+        // still owed the mailing they paid for.
+        const fully = charge.amount_refunded >= charge.amount;
+        if (fully) await markRefunded(paymentIntent);
+
+        // Refunding money does not take an advertiser off a card.
+        // Mission Control owns that, the spot may already be at the
+        // printer, and no automatic delete is safe against a card that
+        // is mid-production. So the one thing this can do is make sure
+        // the manual step is not forgotten, which it silently was:
+        // nothing anywhere said a refunded advertiser was still holding
+        // a category.
+        void (async () => {
+          const { getOrderByPaymentIntent } = await import("@/lib/orders");
+          const order = await getOrderByPaymentIntent(paymentIntent);
+          const { sendRefundAlert } = await import("@/lib/order-receipt");
+          await sendRefundAlert({
+            order,
+            fully,
+            amountRefundedCents: charge.amount_refunded,
+            amountCents: charge.amount,
+          });
+        })().catch((e) => console.error("[stripe] refund alert failed:", e));
         break;
       }
 

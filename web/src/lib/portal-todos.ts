@@ -1,7 +1,7 @@
 import "server-only";
 import type { PortalContext } from "@/lib/portal";
 import { getArtworkFor } from "@/lib/artwork";
-import { artworkDeadlineFrom } from "@/lib/mailings";
+import { artworkDeadlineFrom, artworkDueFor } from "@/lib/mailings";
 
 /**
  * What this advertiser still has to do, derived rather than declared.
@@ -54,19 +54,44 @@ export async function getPortalTodos(
   const uploads = await getArtworkFor(ctx.user.email);
   const uploadedFor = new Set(uploads.map((a) => a.cardId));
 
+  // When they actually bought each spot. A deadline that had already
+  // passed when they paid was never theirs to miss, and telling a
+  // brand new customer their artwork is past due is the worst first
+  // thing their account can say to them.
+  const boughtOn = new Map<string, string>();
+  try {
+    const { getOrdersForEmail } = await import("@/lib/orders");
+    for (const o of await getOrdersForEmail(ctx.user.email)) {
+      if (o.cardId && o.createdAt && !boughtOn.has(o.cardId)) {
+        boughtOn.set(o.cardId, o.createdAt);
+      }
+    }
+  } catch (e) {
+    // Falls back to the card's own deadline, which is the old behaviour.
+    console.error("[todos] could not read order dates:", e);
+  }
+
   for (const c of ctx.currentCards) {
-    const due = artworkDeadlineFrom(c.mailDateIso);
+    const due = artworkDueFor(c.mailDateIso, boughtOn.get(c.cardId));
     const overdue = due !== undefined && due.getTime() < now;
+    // Bought after the card's own deadline had passed, so there is no
+    // date to hold them to and none is quoted at them.
+    const boughtLate =
+      due !== undefined &&
+      artworkDeadlineFrom(c.mailDateIso) !== undefined &&
+      due.getTime() !== artworkDeadlineFrom(c.mailDateIso)!.getTime();
 
     if (!ART_SETTLED.has(c.artStatus) && !uploadedFor.has(c.cardId)) {
       todos.push({
         id: `artwork-${c.cardId}`,
         title: `Send artwork for your ${c.zoneName} ad`,
-        detail: c.artworkDeadline
-          ? overdue
-            ? `This was due ${c.artworkDeadline} and the card mails ${c.mailMonth}. Send it now or we will design one for you.`
-            : `Due ${c.artworkDeadline}, mailing ${c.mailMonth}. Send your own or let us design it free.`
-          : `Mailing ${c.mailMonth}. Send your own or let us design it free.`,
+        detail: boughtLate
+          ? `You came onto a card that mails ${c.mailMonth}, so we need this as soon as you can. Send your own or let us design it free.`
+          : c.artworkDeadline
+            ? overdue
+              ? `This was due ${c.artworkDeadline} and the card mails ${c.mailMonth}. Send it now or we will design one for you.`
+              : `Due ${c.artworkDeadline}, mailing ${c.mailMonth}. Send your own or let us design it free.`
+            : `Mailing ${c.mailMonth}. Send your own or let us design it free.`,
         href: "/account/cards",
         action: "Upload artwork",
         overdue,
