@@ -39,6 +39,9 @@ export const EMPTY_BUSINESS: AdvertiserBusiness = {
 
 let ready = false;
 
+/** Exported so the invite query can rely on the columns existing. */
+export const ensureAdvertiserBusinessTable = () => ensureTable();
+
 async function ensureTable() {
   if (ready) return;
   const { db } = await import("@/lib/db");
@@ -62,6 +65,8 @@ async function ensureTable() {
   for (const column of [
     "directory_invite_dismissed_at DATETIME NULL",
     "directory_invite_dismissals INT NOT NULL DEFAULT 0",
+    "directory_invite_emailed_at DATETIME NULL",
+    "directory_invite_emails INT NOT NULL DEFAULT 0",
   ]) {
     try {
       await db.execute(

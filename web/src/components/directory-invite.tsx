@@ -65,7 +65,7 @@ export function DirectoryInvite({
 
   return (
     <div
-      className={`relative bg-navy-950 text-white rounded-(--radius-card) p-6 grid gap-3.5 ${className}`}
+      className={`relative bg-white border border-line rounded-(--radius-card) px-5 py-4 grid gap-2 ${className}`}
     >
       <button
         onClick={dismiss}
@@ -89,41 +89,33 @@ export function DirectoryInvite({
         </p>
       </div>
 
-      {(monthlyOnSale || annualOnSale) && (
-        <div className="border border-white/12 bg-white/4 rounded-[10px] px-4.5 py-3.5 grid gap-1.5">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <b className="text-[15px] font-semibold">Or go Premium</b>
-            <span className="text-[13.5px] text-[#C6D3E0] num">
-              {monthlyOnSale && annualOnSale
-                ? `${monthly} per month, or ${annual} per year`
-                : monthlyOnSale
-                  ? `${monthly} per month`
-                  : `${annual} per year`}
-            </span>
-            {saving !== null && monthlyOnSale && annualOnSale && (
-              <span className="text-[11px] font-bold uppercase tracking-wider text-cta num">
-                Save {saving}
-              </span>
-            )}
-          </div>
-          <p className="text-[13px] text-[#93A5B8] leading-relaxed">
-            Premium adds photos, a special offer on your listing and on
-            your card in the directory, and puts you above the free
-            listings in your category.
-          </p>
-        </div>
-      )}
-
-      <div className="flex items-center gap-4 flex-wrap">
+      {/* Premium is one line, not a panel. The free listing is the ask;
+          the paid tier is the answer to "what else is there", and it
+          does not need equal weight to be read. */}
+      <div className="flex items-center gap-3.5 flex-wrap pt-0.5">
         <Link
           href="/register"
-          className="inline-flex items-center justify-center bg-cta text-navy-950 font-semibold text-[14.5px] px-5 py-2.5 rounded-(--radius-btn) hover:bg-cta-hover hover:text-white transition-colors"
+          className="text-[13px] font-semibold px-3.5 py-2 rounded-(--radius-btn) bg-navy-950 text-white hover:bg-navy-800"
         >
-          List my business
+          Add my free listing
         </Link>
+        {(monthlyOnSale || annualOnSale) && (
+          <span className="text-[12.5px] text-muted num">
+            Premium, with photos and an offer, is{" "}
+            {monthlyOnSale && annualOnSale
+              ? `${monthly} a month or ${annual} a year`
+              : monthlyOnSale
+                ? `${monthly} a month`
+                : `${annual} a year`}
+            {saving !== null && monthlyOnSale && annualOnSale
+              ? ` (save ${saving})`
+              : ""}
+            .
+          </span>
+        )}
         <button
           onClick={dismiss}
-          className="text-[13px] font-semibold text-[#93A5B8] hover:text-white"
+          className="text-[12.5px] font-semibold text-muted hover:text-ink ml-auto"
         >
           Not right now
         </button>
