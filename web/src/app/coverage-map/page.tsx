@@ -6,6 +6,8 @@ import { cardCoverage } from "@/lib/card-coverage";
 import { tentativelyMails } from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
 import { ZONES, zoneBySlug } from "@/lib/zones";
+import { getLiveMailingAreas, getLiveZones } from "@/lib/zone-store";
+import { mapPositionsFrom } from "@/lib/map-positions";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 /**
@@ -46,10 +48,13 @@ export const metadata: Metadata = {
 };
 
 export default async function CoverageMapPage() {
-  const [mailings, descriptions] = await Promise.all([
+  const [mailings, descriptions, zones, areas] = await Promise.all([
     getUpcomingMailings(),
     getCardDescriptions(),
+    getLiveZones(),
+    getLiveMailingAreas(),
   ]);
+  const positions = mapPositionsFrom(zones, areas);
   return (
     <div className="bg-navy-950 text-white">
       <div className="mx-auto max-w-[1120px] px-6 py-14 pb-18">
@@ -65,7 +70,7 @@ export default async function CoverageMapPage() {
           spot availability.
         </p>
         <div className="mt-9">
-          <CoverageMap mailings={mailings} />
+          <CoverageMap mailings={mailings} areas={areas} positions={positions} />
         </div>
 
         {mailings.length > 0 && (

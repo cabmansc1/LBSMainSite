@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MAILING_AREAS } from "@/lib/zones";
+import { MAILING_AREAS, type MailingArea } from "@/lib/zones";
 import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
-import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
+import { MAP_IMG, MAP_POSITIONS, type MapPosition } from "@/lib/map-positions";
 import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
 
 /**
@@ -26,9 +26,20 @@ const availability = (m: UpcomingMailing | undefined) => {
   return { text: "Open", tone: "ok" as const };
 };
 
-export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
+export function CoverageMap({
+  mailings,
+  areas = MAILING_AREAS,
+  positions = MAP_POSITIONS,
+}: {
+  mailings: UpcomingMailing[];
+  /** Live from the admin; the code defaults keep this usable anywhere. */
+  areas?: MailingArea[];
+  positions?: MapPosition[];
+}) {
   const [selected, setSelected] = useState("summerville");
-  const zone = MAILING_AREAS.find((a) => a.slug === selected)!;
+  // Falls back to the first card rather than crashing, in case a saved
+  // pairing folds the selected slug into another area.
+  const zone = areas.find((a) => a.slug === selected) ?? areas[0];
   // Either half of a shared card is this card's mailing.
   const mailing = mailings.find((m) => zone.zoneSlugs.includes(m.zoneSlug));
   const avail = availability(mailing);
@@ -44,8 +55,8 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
           className="w-full h-auto rounded-[10px]"
         >
           <image href={MAP_IMG.src} width={MAP_IMG.w} height={MAP_IMG.h} />
-          {MAP_POSITIONS.map((b) => {
-            const z = MAILING_AREAS.find((x) => x.slug === b.slug);
+          {positions.map((b) => {
+            const z = areas.find((x) => x.slug === b.slug);
             if (!z) return null;
             const sel = selected === b.slug;
             return (

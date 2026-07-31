@@ -5,12 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Card, SectionHeading, TestimonialStrip, FillMeter } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
 import { ZoneMiniMap } from "@/components/zone-mini-map";
-import { ZONES, zoneBySlug } from "@/lib/zones";
+import { zoneBySlug } from "@/lib/zones";
+import {
+  getLiveMailingAreaFor,
+  getLiveZone,
+  getLiveZones,
+  zoneNumbersFor,
+} from "@/lib/zone-store";
 import { getZoneMailing } from "@/lib/mission-control";
 import { formatPrice } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
-import { zoneContent } from "@/lib/zone-content";
+import { fillZoneNumbers, zoneContent } from "@/lib/zone-content";
 import { getPastCards } from "@/lib/past-cards";
 import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
 
@@ -45,11 +51,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const zone = parseZone(slug);
-  if (!zone) return {};
+  const stub = parseZone(slug);
+  if (!stub) return {};
+  // Live, so a count corrected in the admin reaches the search snippet
+  // and not only the page body.
+  const zone = (await getLiveZone(stub.slug)) ?? stub;
+  const area = await getLiveMailingAreaFor(zone.slug);
   // The legacy title and description are the ones with search history
   // behind them, so they carry over rather than being reinvented.
-  const content = zoneContent(zone.slug);
+  const content = zoneContent(zone.slug, zoneNumbersFor(zone, area));
   const title = content?.title ?? `Direct Mail Marketing in ${zone.name}, SC`;
   const description =
     content?.description ??
@@ -73,8 +83,18 @@ export default async function ZonePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const zone = parseZone(slug);
-  if (!zone) notFound();
+  const stub = parseZone(slug);
+  if (!stub) notFound();
+
+  // Everything the admin can correct, read at request time. Falling
+  // back to the code zone means a settings outage costs a number, not
+  // the page.
+  const [liveZones, area] = await Promise.all([
+    getLiveZones(),
+    getLiveMailingAreaFor(stub.slug),
+  ]);
+  const zone = liveZones.find((z) => z.slug === stub.slug) ?? stub;
+  const numbers = zoneNumbersFor(zone, area);
 
   const mailing = await getZoneMailing(zone.slug);
   // Cards already mailed here: the proof that this zone is a real route
@@ -85,8 +105,8 @@ export default async function ZonePage({
   }).catch(() => []);
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
-  const nearby = ZONES.filter((z) => z.slug !== zone.slug).slice(0, 4);
-  const content = zoneContent(zone.slug);
+  const nearby = liveZones.filter((z) => z.slug !== zone.slug).slice(0, 4);
+  const content = zoneContent(zone.slug, numbers);
 
   const serviceJsonLd = {
     "@context": "https://schema.org",
@@ -159,7 +179,7 @@ export default async function ZonePage({
               that needs its working shown. */}
           {zone.reachNote && (
             <p className="mt-3.5 text-[13px] text-[#93A5B8] max-w-[62ch]">
-              {zone.reachNote}
+              {fillZoneNumbers(zone.reachNote, numbers)}
             </p>
           )}
         </div>
@@ -234,7 +254,7 @@ export default async function ZonePage({
             <span className="text-xs font-semibold uppercase tracking-widest text-muted">
               Where we mail
             </span>
-            <ZoneMiniMap highlight={zone.slug} />
+            <ZoneMiniMap highlight={zone.slug} zones={liveZones} />
             <span className="text-xs font-semibold uppercase tracking-widest text-muted">
               Explore nearby zones
             </span>

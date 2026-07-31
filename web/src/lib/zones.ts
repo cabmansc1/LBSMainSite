@@ -77,7 +77,7 @@ export const ZONES: Zone[] = [
     mailsWith: "isle-of-palms",
     reachArea: "Sullivan's Island and Isle of Palms",
     reachNote:
-      "Sullivan's Island and Isle of Palms mail together as one card, 4,915 mailboxes across the two. A larger run adds Mount Pleasant.",
+      "Sullivan's Island and Isle of Palms mail together as one card, {cardMailboxes} mailboxes across the two. A larger run adds Mount Pleasant.",
     zipCodes: ["29482"],
     population: 2_000 /* published on the zone page */,
   },
@@ -90,7 +90,7 @@ export const ZONES: Zone[] = [
     mailsWith: "sullivans-island",
     reachArea: "Isle of Palms and Sullivan's Island",
     reachNote:
-      "Isle of Palms and Sullivan's Island mail together as one card, 4,915 mailboxes across the two. A larger run adds Mount Pleasant.",
+      "Isle of Palms and Sullivan's Island mail together as one card, {cardMailboxes} mailboxes across the two. A larger run adds Mount Pleasant.",
     zipCodes: ["29451"],
     population: 4_300 /* census; our page quotes only income */,
   },
@@ -126,13 +126,15 @@ export type MailingArea = {
   note?: string;
 };
 
-function buildMailingAreas(): MailingArea[] {
+export function mailingAreasFrom(zones: Zone[]): MailingArea[] {
   const placed = new Set<string>();
   const areas: MailingArea[] = [];
 
-  for (const zone of ZONES) {
+  for (const zone of zones) {
     if (placed.has(zone.slug)) continue;
-    const partner = zone.mailsWith ? zoneBySlug(zone.mailsWith) : undefined;
+    const partner = zone.mailsWith
+      ? zones.find((z) => z.slug === zone.mailsWith)
+      : undefined;
     placed.add(zone.slug);
 
     // A zone of one. Named and sized exactly as it always was.
@@ -178,9 +180,79 @@ function buildMailingAreas(): MailingArea[] {
   return areas;
 }
 
-/** What the map draws and the calendar lists: one entry per card. */
-export const MAILING_AREAS: MailingArea[] = buildMailingAreas();
+/**
+ * What the map draws and the calendar lists: one entry per card.
+ *
+ * The code default. Anything reading live figures wants
+ * getLiveMailingAreas from lib/zone-store, which layers the admin's
+ * saved counts on top; this is what it falls back to.
+ */
+export const MAILING_AREAS: MailingArea[] = mailingAreasFrom(ZONES);
 
 /** The card a zone mails on, which for most zones is itself. */
 export const mailingAreaFor = (slug: string) =>
   MAILING_AREAS.find((a) => a.zoneSlugs.includes(slug));
+
+/**
+ * The facts an admin can set per zone, saved as one settings row.
+ *
+ * Deliberately only the countable ones. Prose stays in code, because a
+ * sentence is written rather than measured; the numbers a sentence
+ * quotes come from here through the {mailboxes} token.
+ */
+export type ZoneFacts = {
+  mailboxes?: number | null;
+  population?: number;
+  mailsWith?: string | null;
+};
+
+export type ZoneFactOverrides = Record<string, ZoneFacts>;
+
+/**
+ * Code defaults with the admin's saved facts on top.
+ *
+ * A missing or malformed override changes nothing, which is the whole
+ * point: an empty settings table has to leave the site exactly as it
+ * ships. Pairings are applied from both sides, so setting "mails with"
+ * on one zone is enough.
+ */
+export function zonesWith(overrides: ZoneFactOverrides | null): Zone[] {
+  if (!overrides) return ZONES;
+
+  // Always a copy, never the ZONES entry itself: the pairing pass below
+  // writes to these, and writing through to the module constant would
+  // leak one request's override into every later request.
+  const merged = ZONES.map((zone) => {
+    const next = { ...zone };
+    const patch = overrides[zone.slug];
+    if (!patch) return next;
+
+    // null clears a count back to "we have not counted this one".
+    if (patch.mailboxes === null) delete next.mailboxes;
+    else if (typeof patch.mailboxes === "number" && patch.mailboxes > 0) {
+      next.mailboxes = Math.round(patch.mailboxes);
+    }
+
+    // Population only sizes a map bubble, so a zero would draw nothing.
+    if (typeof patch.population === "number" && patch.population > 0) {
+      next.population = Math.round(patch.population);
+    }
+
+    if (patch.mailsWith === null) delete next.mailsWith;
+    else if (typeof patch.mailsWith === "string" && patch.mailsWith) {
+      next.mailsWith = patch.mailsWith;
+    }
+    return next;
+  });
+
+  // A one-sided pairing would put a zone on a card that does not know
+  // about it, and mailingAreasFrom would then place both separately.
+  const bySlug = new Map(merged.map((z) => [z.slug, z]));
+  for (const zone of merged) {
+    const partner = zone.mailsWith ? bySlug.get(zone.mailsWith) : undefined;
+    if (partner && partner.mailsWith !== zone.slug) {
+      partner.mailsWith = zone.slug;
+    }
+  }
+  return merged;
+}

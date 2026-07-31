@@ -1,15 +1,27 @@
-import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
-import { mailingAreaFor } from "@/lib/zones";
+import { MAP_IMG, mapPositionsFrom } from "@/lib/map-positions";
+import { ZONES, mailingAreasFrom, type Zone } from "@/lib/zones";
 
 /**
  * Static (server-rendered) mini map for zone pages: the Tri-County
  * base map with the current zone's bubble highlighted in orange.
+ *
+ * Takes its zones from the page, which has already read the live ones,
+ * rather than reading them again.
  */
-export function ZoneMiniMap({ highlight }: { highlight: string }) {
+export function ZoneMiniMap({
+  highlight,
+  zones = ZONES,
+}: {
+  highlight: string;
+  zones?: Zone[];
+}) {
+  const areas = mailingAreasFrom(zones);
+  const positions = mapPositionsFrom(zones, areas);
   // Bubbles are drawn per card, so a zone that shares one highlights
   // its partner's bubble. Matching on the zone slug alone left the
   // Sullivan's Island page with nothing lit up at all.
-  const lit = mailingAreaFor(highlight)?.slug ?? highlight;
+  const lit =
+    areas.find((a) => a.zoneSlugs.includes(highlight))?.slug ?? highlight;
   return (
     <svg
       viewBox={`0 0 ${MAP_IMG.w} ${MAP_IMG.h}`}
@@ -18,7 +30,7 @@ export function ZoneMiniMap({ highlight }: { highlight: string }) {
       className="w-full h-auto rounded-[10px] border border-line"
     >
       <image href={MAP_IMG.src} width={MAP_IMG.w} height={MAP_IMG.h} />
-      {MAP_POSITIONS.flatMap((b) => {
+      {positions.flatMap((b) => {
         const sel = b.slug === lit;
         // Both islands light up on either island's page, because the
         // card the page is selling covers both.

@@ -7,6 +7,8 @@ import {
   DIRECTORY_PRICING_KEY,
   MAX_DIRECTORY_PRICE_CENTS,
 } from "@/lib/directory-pricing";
+import { ZONE_FACTS_KEY, MAX_MAILBOXES } from "@/lib/zone-store";
+import { ZONES } from "@/lib/zones";
 import { setCardOrientation, type Orientation } from "@/lib/card-capacity";
 import { CARD_DESCRIPTION_MAX, setCardDescription } from "@/lib/card-details";
 
@@ -70,6 +72,72 @@ export async function POST(req: Request) {
       await saveSetting(DIRECTORY_PRICING_KEY, { monthlyCents, annualCents });
       // Everywhere the Premium price is quoted.
       for (const path of ["/directory-signup", "/register"]) {
+        revalidatePath(path);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "zone-facts") {
+      const overrides = (body.overrides ?? {}) as Record<
+        string,
+        { mailboxes?: number | null; population?: number; mailsWith?: string | null }
+      >;
+      const known = new Set(ZONES.map((z) => z.slug));
+
+      for (const [slug, patch] of Object.entries(overrides)) {
+        // An unknown slug would sit in the settings row forever, doing
+        // nothing and looking like it worked.
+        if (!known.has(slug)) {
+          return NextResponse.json(
+            { error: `Unknown zone: ${slug}` },
+            { status: 422 },
+          );
+        }
+        const { mailboxes, population, mailsWith } = patch ?? {};
+
+        // null is how the admin clears a count. Zero is not: a zone with
+        // no mailboxes in it is not a thing we can mail.
+        if (mailboxes !== null && mailboxes !== undefined) {
+          if (
+            !Number.isInteger(mailboxes) ||
+            mailboxes < 1 ||
+            mailboxes > MAX_MAILBOXES
+          ) {
+            return NextResponse.json(
+              { error: "Mailboxes must be a whole number between 1 and 1,000,000" },
+              { status: 422 },
+            );
+          }
+        }
+        if (population !== undefined) {
+          if (!Number.isInteger(population) || population < 1 || population > 5_000_000) {
+            return NextResponse.json(
+              { error: "Population must be a whole number above zero" },
+              { status: 422 },
+            );
+          }
+        }
+        if (mailsWith !== null && mailsWith !== undefined) {
+          if (!known.has(mailsWith)) {
+            return NextResponse.json(
+              { error: `Unknown zone to share a card with: ${mailsWith}` },
+              { status: 422 },
+            );
+          }
+          // Self-pairing collapses the zone out of the map entirely.
+          if (mailsWith === slug) {
+            return NextResponse.json(
+              { error: "A zone cannot share a card with itself" },
+              { status: 422 },
+            );
+          }
+        }
+      }
+
+      await saveSetting(ZONE_FACTS_KEY, overrides);
+      // Everywhere a zone's size, ZIPs or pairing is quoted. The zone
+      // pages render per request, so they need no entry here.
+      for (const path of ["/coverage-map", "/mailing-calendar", "/pricing"]) {
         revalidatePath(path);
       }
       return NextResponse.json({ ok: true });

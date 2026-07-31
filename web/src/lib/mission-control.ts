@@ -6,7 +6,7 @@ import {
   type UpcomingMailing,
 } from "@/lib/mailings";
 import { sameBusiness } from "@/lib/name-match";
-import { ZONES, mailingAreaFor } from "@/lib/zones";
+import { ZONES } from "@/lib/zones";
 
 /**
  * Mission Control adapter, locked to MC's real contract (from its type
@@ -675,7 +675,8 @@ export async function getZoneMailings(zoneSlug: string): Promise<UpcomingMailing
   // share one, and whichever of the two Mission Control filed it under,
   // both pages have to find it: matching the slug alone left one island
   // showing "coming soon" for a card that was already selling.
-  const slugs = mailingAreaFor(zoneSlug)?.zoneSlugs ?? [zoneSlug];
+  const { getLiveMailingAreaFor } = await import("@/lib/zone-store");
+  const slugs = (await getLiveMailingAreaFor(zoneSlug))?.zoneSlugs ?? [zoneSlug];
   return all.filter((m) => slugs.includes(m.zoneSlug));
 }
 

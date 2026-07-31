@@ -1,4 +1,9 @@
-import { MAILING_AREAS, ZONES, zoneBySlug } from "@/lib/zones";
+import {
+  MAILING_AREAS,
+  ZONES,
+  type MailingArea,
+  type Zone,
+} from "@/lib/zones";
 
 /**
  * Bubble positions for the Tri-County base map
@@ -53,8 +58,8 @@ const MAX_R = 76;
  * and Charleston were drawn smaller than towns a fraction of their size.
  * Edit the population in zones.ts and the map follows.
  */
-export function radiusFor(population: number): number {
-  const pops = ZONES.map((z) => z.population);
+export function radiusFor(population: number, zones: Zone[] = ZONES): number {
+  const pops = zones.map((z) => z.population);
   const lo = Math.sqrt(Math.min(...pops));
   const hi = Math.sqrt(Math.max(...pops));
   if (hi === lo) return (MIN_R + MAX_R) / 2;
@@ -81,31 +86,46 @@ const PLACEMENT: Omit<MapPosition, "r" | "also">[] = [
   { slug: "johns-island", x: 790, y: 768 },
 ];
 
-const circleFor = (slug: string) => {
-  const p = PLACEMENT.find((q) => q.slug === slug);
-  if (!p) return undefined;
-  return { x: p.x, y: p.y, r: radiusFor(zoneBySlug(slug)?.population ?? 10_000) };
-};
-
 /**
  * One entry per card, carrying every circle that card covers.
  *
  * Keyed by mailing area rather than by zone, so a click anywhere on a
  * shared card selects the card. Zones the map has no placement for are
  * dropped rather than drawn at a default position.
+ *
+ * Takes its zones rather than reading the module constant, so the map
+ * follows whatever the admin has saved. Placements stay in code: a
+ * pixel on a base image is not a fact about a place.
  */
-export const MAP_POSITIONS: MapPosition[] = MAILING_AREAS.flatMap((area) => {
-  const lead = PLACEMENT.find((p) => p.slug === area.slug);
-  if (!lead) return [];
-  const also = area.zoneSlugs
-    .filter((s) => s !== area.slug)
-    .map(circleFor)
-    .filter((c) => c !== undefined);
-  return [
-    {
-      ...lead,
-      r: radiusFor(zoneBySlug(area.slug)?.population ?? 10_000),
-      ...(also.length > 0 ? { also } : {}),
-    },
-  ];
-});
+export function mapPositionsFrom(
+  zones: Zone[] = ZONES,
+  areas: MailingArea[] = MAILING_AREAS,
+): MapPosition[] {
+  const popOf = (slug: string) =>
+    zones.find((z) => z.slug === slug)?.population ?? 10_000;
+
+  const circleFor = (slug: string) => {
+    const p = PLACEMENT.find((q) => q.slug === slug);
+    if (!p) return undefined;
+    return { x: p.x, y: p.y, r: radiusFor(popOf(slug), zones) };
+  };
+
+  return areas.flatMap((area) => {
+    const lead = PLACEMENT.find((p) => p.slug === area.slug);
+    if (!lead) return [];
+    const also = area.zoneSlugs
+      .filter((s) => s !== area.slug)
+      .map(circleFor)
+      .filter((c) => c !== undefined);
+    return [
+      {
+        ...lead,
+        r: radiusFor(popOf(area.slug), zones),
+        ...(also.length > 0 ? { also } : {}),
+      },
+    ];
+  });
+}
+
+/** The code-default map, for anything not reading live facts. */
+export const MAP_POSITIONS: MapPosition[] = mapPositionsFrom();

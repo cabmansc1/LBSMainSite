@@ -238,14 +238,15 @@ export async function notifyWaitlistEntries(
     // date in it is a written promise about when somebody's ad mails.
     // The notice reads correctly with no month, so it goes without one.
     if (mcEnabled()) {
-      const { mailingAreaFor } = await import("@/lib/zones");
+      const { getLiveMailingAreaFor } = await import("@/lib/zone-store");
       for (const m of await getUpcomingMailings()) {
         if (!m.mailMonth) continue;
         // Recorded against every zone on the card. Somebody waiting on
         // Sullivan's Island is waiting on the Isle of Palms card, and
         // keying by the one slug Mission Control filed it under left
         // their notice with no date on it.
-        const slugs = mailingAreaFor(m.zoneSlug)?.zoneSlugs ?? [m.zoneSlug];
+        const slugs =
+          (await getLiveMailingAreaFor(m.zoneSlug))?.zoneSlugs ?? [m.zoneSlug];
         for (const slug of slugs) {
           if (!mailMonths.has(slug)) mailMonths.set(slug, m.mailMonth);
         }
