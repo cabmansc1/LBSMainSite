@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { alreadyApplied } from "@/lib/db-errors";
 
 /**
  * Order records for the self-serve postcard checkout.
@@ -87,10 +88,7 @@ export async function ensureOrdersTable() {
     // rather than on the error itself. Reading only the top level meant
     // the expected outcome, the column already existing, logged a full
     // stack trace on every boot and buried the failures that matter.
-    const codeOf = (err: unknown): string | undefined =>
-      (err as { code?: string })?.code ??
-      (err as { cause?: { code?: string } })?.cause?.code;
-    if (codeOf(e) !== "ER_DUP_FIELDNAME") {
+    if (!alreadyApplied(e)) {
       console.error("[orders] could not add card_id column:", e);
     }
   }

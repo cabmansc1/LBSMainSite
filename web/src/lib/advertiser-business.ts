@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { alreadyApplied } from "@/lib/db-errors";
 
 /**
  * An advertiser's own business details: who they are, how to reach the
@@ -73,8 +74,11 @@ async function ensureTable() {
         sql.raw(`ALTER TABLE lbs_advertiser_business ADD COLUMN ${column}`),
       );
     } catch (e) {
-      const code = (e as { code?: string }).code;
-      if (code !== "ER_DUP_FIELDNAME") throw e;
+      // Drizzle wraps the driver error, so the code is on `cause`.
+      // Reading the top level meant this never tolerated anything and
+      // every boot after the first threw here, taking the saved
+      // business details and the invite state down with it.
+      if (!alreadyApplied(e)) throw e;
     }
   }
   ready = true;

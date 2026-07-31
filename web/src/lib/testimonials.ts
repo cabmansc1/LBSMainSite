@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { alreadyApplied, mysqlErrorCode } from "@/lib/db-errors";
 
 /**
  * Customer quotes, and where each one is shown.
@@ -83,13 +84,13 @@ async function ensureTable(force = false) {
       ),
     );
   } catch (e) {
-    if ((e as { code?: string }).code !== "ER_DUP_FIELDNAME") throw e;
+    if (!alreadyApplied(e)) throw e;
   }
   try {
     await db.execute(sql.raw("ALTER TABLE lbs_testimonials DROP COLUMN sort_order"));
   } catch (e) {
     // Never existed on a fresh install, which is the normal case.
-    if ((e as { code?: string }).code !== "ER_CANT_DROP_FIELD_OR_KEY") throw e;
+    if (!alreadyApplied(e)) throw e;
   }
   ready = true;
 }
@@ -226,7 +227,7 @@ export async function saveTestimonial(
       try {
         await go();
       } catch (e) {
-        if ((e as { code?: string }).code !== "ER_BAD_FIELD_ERROR") throw e;
+        if (mysqlErrorCode(e) !== "ER_BAD_FIELD_ERROR") throw e;
         console.warn("[testimonials] schema behind, re-running migration");
         await ensureTable(true);
         await go();

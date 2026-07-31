@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { alreadyApplied } from "@/lib/db-errors";
 import type { SessionUser } from "@/lib/auth";
 import { updateBusiness, type BusinessPatch } from "@/lib/admin-data";
 
@@ -340,10 +341,7 @@ async function ensureTable() {
   } catch (e) {
     // Drizzle wraps the driver error, so the MySQL code is on `cause`
     // rather than on the error itself.
-    const codeOf = (err: unknown): string | undefined =>
-      (err as { code?: string })?.code ??
-      (err as { cause?: { code?: string } })?.cause?.code;
-    if (codeOf(e) !== "ER_DUP_FIELDNAME") {
+    if (!alreadyApplied(e)) {
       console.error("[listing-edits] could not add review_note column:", e);
     }
   }

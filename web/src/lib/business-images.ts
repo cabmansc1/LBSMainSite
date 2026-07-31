@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { alreadyApplied } from "@/lib/db-errors";
 
 /**
  * Logos for directory listings, stored in MySQL.
@@ -58,9 +59,6 @@ async function ensureTable() {
   // CREATE TABLE IF NOT EXISTS does nothing to a table that already
   // exists, and this one predates the gallery. Duplicate column is the
   // expected outcome on every run after the first.
-  const codeOf = (err: unknown): string | undefined =>
-    (err as { code?: string })?.code ??
-    (err as { cause?: { code?: string } })?.cause?.code;
   for (const alter of [
     sql`ALTER TABLE lbs_business_images ADD COLUMN kind VARCHAR(16) NOT NULL DEFAULT 'logo'`,
     sql`ALTER TABLE lbs_business_images ADD COLUMN sort_order INT NOT NULL DEFAULT 0`,
@@ -68,7 +66,7 @@ async function ensureTable() {
     try {
       await db.execute(alter);
     } catch (e) {
-      if (codeOf(e) !== "ER_DUP_FIELDNAME") {
+      if (!alreadyApplied(e)) {
         console.error("[business-images] could not add column:", e);
       }
     }
