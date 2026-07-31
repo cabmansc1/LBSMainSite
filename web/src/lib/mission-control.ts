@@ -2,6 +2,7 @@ import "server-only";
 import {
   UPCOMING_MAILINGS,
   artworkDeadlineFrom,
+  isBookable,
   type CardRoute,
   type UpcomingMailing,
 } from "@/lib/mailings";
@@ -446,9 +447,14 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
         );
 
   const statusRaw = str(raw.status, "open").toLowerCase();
+  // Full and waitlist win over planned: a planned card with every spot
+  // sold is full, and saying "planned" would invite an order that
+  // cannot be placed. Planned only decides how an available card is
+  // described.
   const status: UpcomingMailing["status"] =
     statusRaw.includes("wait") ? "waitlist"
     : statusRaw === "in_production" || spotsTaken >= spotsTotal ? "full"
+    : statusRaw.includes("plan") ? "planned"
     : "open";
 
   const mailDate = str(raw.mailDate ?? raw.mailMonth ?? raw.month);
@@ -488,9 +494,16 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   // the order receipt already does, which is also the two weeks the
   // advertise page has always promised. An explicit value still wins, in
   // case Mission Control grows the field later.
+  //
+  // Not derived for a planned card. Two weeks before a date nobody has
+  // committed to is not a deadline, and printing one is how a customer
+  // ends up rushing artwork for a mailing that later moves. An explicit
+  // deadline from Mission Control still shows, because somebody typing
+  // one in is somebody committing to it.
+  const explicitDeadline = str(raw.artworkDeadline ?? raw.deadline).trim();
   const deadline =
-    str(raw.artworkDeadline ?? raw.deadline).trim() ||
-    formatDeadline(artworkDeadlineFrom(mailDate));
+    explicitDeadline ||
+    (status === "planned" ? "" : formatDeadline(artworkDeadlineFrom(mailDate)));
 
   return {
     id: raw.id,
@@ -505,7 +518,11 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
     spotsTaken,
     status,
     advertisers,
-    isPast: isPastStatus(statusRaw) || !mailDate,
+    // A card with no mail date is normally history: Mission Control
+    // clears the date when a card is done. A planned card is the
+    // opposite, and treating it as past filed a mailing that has not
+    // happened under an advertiser's past campaigns.
+    isPast: isPastStatus(statusRaw) || (!mailDate && status !== "planned"),
     mailDateIso: mailDate,
   };
 }
@@ -651,7 +668,13 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
         c.zoneName.toLowerCase() !== "other" &&
         (!c.mailDateIso || c.mailDateIso.slice(0, 10) >= today),
     )
-    .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso));
+    // Soonest first, but a card with no date yet goes last rather than
+    // first: an empty string sorts before every real date, which put
+    // the least certain card at the top of the calendar.
+    .sort((a, b) => {
+      if (!a.mailDateIso !== !b.mailDateIso) return a.mailDateIso ? -1 : 1;
+      return a.mailDateIso.localeCompare(b.mailDateIso);
+    });
   if (upcoming.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
   return upcoming.map((c) => ({
     cardId: String(c.id),
@@ -732,7 +755,7 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
   // Reading exclusivity off a card that already landed in mailboxes
   // reports categories taken that are free on the card being sold.
   const card = cards.find(
-    (c) => c.zoneSlug === zoneSlug && !c.isPast && c.status === "open",
+    (c) => c.zoneSlug === zoneSlug && !c.isPast && isBookable(c.status),
   );
   if (!card) return [];
   const sold = card.advertisers
@@ -897,7 +920,7 @@ export async function pushToMissionControl(event: SignupEvent): Promise<void> {
         // normalizes to "open", so without it a paid advertiser could be
         // written onto a card that was already printed and delivered.
         const open = cards?.filter(
-          (c) => c.zoneSlug === event.zoneSlug && !c.isPast && c.status === "open",
+          (c) => c.zoneSlug === event.zoneSlug && !c.isPast && isBookable(c.status),
         );
         if (open && open.length > 1) {
           console.error(
@@ -1354,7 +1377,7 @@ export async function checkOrderPlacement(order: {
     const inZone = cards.filter((c) => c.zoneSlug === order.zoneSlug);
     const found = inZone.find((c) => cardHasAdvertiser(c, order));
     if (found) return { state: "placed", cardId: String(found.id), cardName: found.cardName || undefined };
-    card = inZone.find((c) => !c.isPast && c.status === "open") ?? inZone[0];
+    card = inZone.find((c) => !c.isPast && isBookable(c.status)) ?? inZone[0];
   }
   if (!card) return { state: "no-card" };
 

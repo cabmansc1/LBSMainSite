@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
 import { ALL_SIZES, type SpotSize } from "@/lib/pricing";
 import { cardCoverage } from "@/lib/card-coverage";
-import { tentativelyMails, type UpcomingMailing } from "@/lib/mailings";
+import {
+  mailMonthLabel,
+  tentativelyMails,
+  type UpcomingMailing,
+} from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import {
@@ -186,12 +190,21 @@ export default async function PostcardCheckoutPage({
                   </div>
                   <span
                     className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 border ${
-                      left <= 3
-                        ? "bg-cta-tint border-[#f3ddbb] text-[#a05e00]"
-                        : "bg-brand-tint border-[#c2e4fb] text-brand-deep"
+                      m.status === "planned"
+                        ? "bg-surface border-line-strong text-muted"
+                        : left <= 3
+                          ? "bg-cta-tint border-[#f3ddbb] text-[#a05e00]"
+                          : "bg-brand-tint border-[#c2e4fb] text-brand-deep"
                     }`}
                   >
-                    {left <= 3 ? `${left} left` : "Open"}
+                    {/* Which card is planned matters most here, where a
+                        zone has more than one and somebody is choosing
+                        between them. */}
+                    {m.status === "planned"
+                      ? "Planned"
+                      : left <= 3
+                        ? `${left} left`
+                        : "Open"}
                   </span>
                 </div>
                 <div className="mt-3.5 h-1.5 rounded-full bg-line overflow-hidden">
@@ -283,11 +296,23 @@ export default async function PostcardCheckoutPage({
           </nav>
           <h1 className="mt-4 text-[24px] md:text-[34px] font-bold tracking-[-0.03em]">
             Reserve your spot: {cardCoverage(mailing).name ?? z.name},{" "}
-            {mailing.mailMonth}
+            {mailMonthLabel(mailing.mailMonth)}
           </h1>
           {headerFacts.length > 0 && (
             <p className="text-[#93A5B8] text-[14.5px] mt-2 num">
               {headerFacts.join(" · ")}
+            </p>
+          )}
+          {/* Said before the form, not after the payment. A planned card
+              is genuinely bookable, and the month is genuinely not
+              fixed; somebody spending $249 is entitled to both halves of
+              that before they decide. */}
+          {mailing.status === "planned" && (
+            <p className="text-[#93A5B8] text-[14px] mt-2.5 max-w-[60ch]">
+              This card is planned rather than filling. Reserving now holds
+              your category on it, and the month can still move. We confirm
+              the mail date and your artwork deadline before anything goes
+              to print.
             </p>
           )}
           {mailing.cardId && descriptions[mailing.cardId] && (

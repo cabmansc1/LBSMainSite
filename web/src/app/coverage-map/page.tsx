@@ -95,6 +95,11 @@ export default async function CoverageMapPage() {
                     ? { text: "Waitlist", cls: "text-[#93A5B8] border-white/20" }
                     : m.status === "full" || left === 0
                       ? { text: "Full", cls: "text-[#93A5B8] border-white/20" }
+                      // Ahead of the scarcity chip: "2 left" on a card we
+                      // have not committed to printing is pressure we
+                      // have not earned.
+                      : m.status === "planned"
+                        ? { text: "Planned", cls: "text-[#93A5B8] border-white/20" }
                       : left <= 3
                         ? { text: `${left} left`, cls: "text-cta border-cta/50" }
                         // Open is the default state and sat on almost every
@@ -180,7 +185,7 @@ export default async function CoverageMapPage() {
                             href={`/${m.zoneSlug}-direct-mail-marketing`}
                             className="bg-cta text-navy-950 text-[12.5px] font-bold px-3 py-1 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
                           >
-                            Reserve a spot
+                            {m.status === "planned" ? "Reserve early" : "Reserve a spot"}
                           </Link>
                         )
                       ) : (

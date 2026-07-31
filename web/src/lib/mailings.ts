@@ -54,8 +54,22 @@ export type UpcomingMailing = {
   households?: string;
   spotsTotal: number;
   spotsTaken: number;
-  status: "open" | "almost-full" | "full" | "waitlist";
+  /**
+   * "planned" is a card we intend to mail rather than one we are
+   * actively filling: the month is an intention, not a commitment.
+   *
+   * It is still bookable, because reserving ahead of print is the
+   * product. What it changes is what the site claims about it. Before
+   * this existed, an unknown Mission Control status fell through to
+   * "open", so a card pencilled in for December was advertised with an
+   * artwork deadline derived from a date nobody had fixed.
+   */
+  status: "open" | "almost-full" | "full" | "waitlist" | "planned";
 };
+
+/** Bookable now, whatever else it is. Waitlist and full are not. */
+export const isBookable = (status: UpcomingMailing["status"]) =>
+  status === "open" || status === "almost-full" || status === "planned";
 
 export const UPCOMING_MAILINGS: UpcomingMailing[] = [
   { zoneSlug: "summerville", zoneName: "Summerville", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 9, status: "almost-full" },
@@ -87,7 +101,24 @@ export const UPCOMING_MAILINGS: UpcomingMailing[] = [
  * and these helpers are only for upcoming ones.
  */
 export const tentativelyMails = (mailMonth: string) =>
-  `Tentatively mails ${mailMonth}`;
+  hasMailDate(mailMonth)
+    ? `Tentatively mails ${mailMonth}`
+    : "Mail date to be confirmed";
+
+/**
+ * Whether a card has a month worth printing.
+ *
+ * Mission Control leaves the date empty on a card that is planned but
+ * not scheduled, which normalizes to the literal "TBD". Rendered
+ * straight, that produced "Tentatively mails TBD" and a checkout
+ * heading reading "Reserve your spot: James Island, TBD".
+ */
+export const hasMailDate = (mailMonth: string | undefined): boolean =>
+  !!mailMonth && mailMonth.trim().toUpperCase() !== "TBD";
+
+/** The date in a sentence, for a card that may not have one yet. */
+export const mailMonthLabel = (mailMonth: string | undefined) =>
+  hasMailDate(mailMonth) ? (mailMonth as string) : "date to be confirmed";
 
 /** Column heading or stat label form. */
 export const TENTATIVE_MAIL_LABEL = "Tentative mail date";

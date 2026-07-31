@@ -28,6 +28,9 @@ export const metadata: Metadata = {
 const chipFor = (status: string, left: number) => {
   if (status === "waitlist") return <StatusChip tone="info">Waitlist</StatusChip>;
   if (status === "full") return <StatusChip tone="danger">Full</StatusChip>;
+  // Before scarcity, because "2 left" on a card we have not committed to
+  // printing is pressure we have not earned.
+  if (status === "planned") return <StatusChip tone="info">Planned</StatusChip>;
   if (left <= 2) return <StatusChip tone="warn">{left} left</StatusChip>;
   return <StatusChip tone="ok">Open</StatusChip>;
 };

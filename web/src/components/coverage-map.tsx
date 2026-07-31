@@ -6,7 +6,7 @@ import { MAILING_AREAS, type MailingArea } from "@/lib/zones";
 import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
 import { MAP_IMG, MAP_POSITIONS, type MapPosition } from "@/lib/map-positions";
-import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
+import { TENTATIVE_MAIL_LABEL, hasMailDate } from "@/lib/mailings";
 
 /**
  * Coverage bubbles pinned to the printed town markers on the
@@ -21,6 +21,10 @@ import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
 const availability = (m: UpcomingMailing | undefined) => {
   if (!m) return { text: "Coming soon", tone: "info" as const };
   if (m.status === "waitlist") return { text: "Waitlist", tone: "info" as const };
+  // A planned card is bookable, so it is not "coming soon", but it is
+  // not filling either. Saying so beats a spot count on a date that is
+  // still an intention.
+  if (m.status === "planned") return { text: "Planned", tone: "info" as const };
   const left = m.spotsTotal - m.spotsTaken;
   if (left <= 2) return { text: `${left} spot${left === 1 ? "" : "s"} left`, tone: "warn" as const };
   return { text: "Open", tone: "ok" as const };
@@ -143,7 +147,12 @@ export function CoverageMap({
           {[
             ["Households / mailing", zone.households5k],
             ["ZIP codes", zone.zipCodes.join(", ")],
-            [TENTATIVE_MAIL_LABEL, mailing?.mailMonth ?? "Coming soon"],
+            [
+              TENTATIVE_MAIL_LABEL,
+              hasMailDate(mailing?.mailMonth)
+                ? (mailing?.mailMonth as string)
+                : "Coming soon",
+            ],
             ["Ads from", formatPrice(POSTCARD_PRICING["5k"].small.priceCents)],
           ].map(([label, value]) => (
             <div

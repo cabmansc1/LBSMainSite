@@ -18,7 +18,11 @@ import { getLivePricing } from "@/lib/pricing-store";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { fillZoneNumbers, zoneContent } from "@/lib/zone-content";
 import { getPastCards } from "@/lib/past-cards";
-import { TENTATIVE_MAIL_LABEL } from "@/lib/mailings";
+import {
+  TENTATIVE_MAIL_LABEL,
+  hasMailDate,
+  mailMonthLabel,
+} from "@/lib/mailings";
 
 /**
  * Zone landing pages at their EXACT legacy URLs:
@@ -161,7 +165,14 @@ export default async function ZonePage({
                 label: zone.reachArea ? "Households / mailing, both islands" : "Households / mailing",
               },
               { value: zone.zipCodes.join(" · "), label: "ZIP codes covered" },
-              { value: mailing?.mailMonth ?? "Coming soon", label: TENTATIVE_MAIL_LABEL },
+              {
+                // A planned card with no date yet says so, rather than
+                // printing Mission Control's literal "TBD".
+                value: hasMailDate(mailing?.mailMonth)
+                  ? (mailing?.mailMonth as string)
+                  : "Coming soon",
+                label: TENTATIVE_MAIL_LABEL,
+              },
             ].map((chip) => (
               <div
                 key={chip.label}
@@ -194,7 +205,12 @@ export default async function ZonePage({
                   <b className="font-semibold">
                     {mailing.spotsTotal - mailing.spotsTaken} of {mailing.spotsTotal} spots remaining
                   </b>{" "}
-                  on the {mailing.mailMonth} {zone.name} card
+                  {/* "on the December card" reads as a card that exists.
+                      A planned one is an intention, and saying which it
+                      is here is cheaper than a phone call later. */}
+                  {mailing.status === "planned"
+                    ? `on the ${zone.name} card planned for ${mailMonthLabel(mailing.mailMonth)}`
+                    : `on the ${mailing.mailMonth} ${zone.name} card`}
                 </span>
                 <FillMeter taken={mailing.spotsTaken} total={mailing.spotsTotal} />
               </div>
