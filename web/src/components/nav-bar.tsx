@@ -52,6 +52,17 @@ export function NavBar() {
               {l.label}
             </Link>
           ))}
+          {/* Always the same link, signed in or not, because reading the
+              session here would make every page dynamic and eleven of
+              them are still prerendered. /login already redirects to the
+              account when there is a session, so somebody signed in
+              lands where they expected either way. */}
+          <Link
+            href="/login"
+            className="text-[13.5px] text-[#AEBDCC] font-medium hover:text-white whitespace-nowrap"
+          >
+            Advertiser login
+          </Link>
           <Link
             href="/pricing"
             className="bg-cta text-navy-950 text-[13px] font-bold px-4 py-2 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
@@ -84,6 +95,13 @@ export function NavBar() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/login"
+            className="text-[14px] text-[#AEBDCC] font-medium"
+            onClick={() => setOpen(false)}
+          >
+            Advertiser login
+          </Link>
           <Link
             href="/pricing"
             className="bg-cta text-navy-950 text-[13px] font-bold px-4 py-2 rounded-(--radius-btn) w-max"
