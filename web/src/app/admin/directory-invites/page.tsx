@@ -4,6 +4,7 @@ import { emailEnabled } from "@/lib/email";
 import {
   RESEND_AFTER_DAYS,
   getInviteCandidates,
+  getInviteDiagnostics,
   inviteEligibility,
 } from "@/lib/directory-invite-email";
 import { AdminDirectoryInvites } from "@/components/admin-directory-invites";
@@ -25,7 +26,10 @@ export const metadata: Metadata = {
  */
 export default async function AdminDirectoryInvitesPage() {
   await requireAdmin();
-  const candidates = await getInviteCandidates();
+  const [candidates, diag] = await Promise.all([
+    getInviteCandidates(),
+    getInviteDiagnostics(),
+  ]);
   const rows = candidates.map((c) => ({
     ...c,
     ...inviteEligibility(c),
@@ -60,6 +64,32 @@ export default async function AdminDirectoryInvitesPage() {
         than hidden, so the list is the whole picture. Nobody is emailed twice
         within {RESEND_AFTER_DAYS} days.
       </p>
+
+      {rows.length === 0 && diag && (
+        <div className="mb-4 border border-line rounded-(--radius-card) bg-surface p-4.5 text-[13px] text-body grid gap-2 max-w-[72ch]">
+          <b className="text-[13.5px] font-semibold">Why this list is empty</b>
+          <dl className="grid gap-1">
+            {[
+              ["Paid orders", diag.paidOrders],
+              ["…with an email address on them", diag.paidOrdersWithEmail],
+              ["…whose email matches a login", diag.matchedToLogin],
+              ["…who already have a directory listing", diag.alreadyListed],
+            ].map(([label, n]) => (
+              <div key={String(label)} className="flex justify-between gap-4">
+                <dt className="text-muted">{label}</dt>
+                <dd className="num font-semibold">{n}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="text-muted leading-relaxed">
+            An advertiser has to clear all four to appear: a paid order, an
+            email on it, a login created by the purchase, and no listing
+            already under that address. A refunded order does not count,
+            and neither does a test listing you left behind on the same
+            email.
+          </p>
+        </div>
+      )}
 
       <AdminDirectoryInvites rows={rows} />
     </div>

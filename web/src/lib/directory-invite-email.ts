@@ -219,3 +219,48 @@ export async function sendDirectoryInvites(
 
   return results;
 }
+
+/**
+ * Why the list looks the way it does.
+ *
+ * An empty list has five different causes and they are indistinguishable
+ * from outside: nobody has bought anything, the buyer's email never made
+ * it onto the order, the webhook never created their login, they already
+ * have a listing, or they were emailed recently. Guessing between those
+ * from a blank screen wastes an afternoon, so the page counts them.
+ */
+export type InviteDiagnostics = {
+  paidOrders: number;
+  paidOrdersWithEmail: number;
+  matchedToLogin: number;
+  alreadyListed: number;
+  candidates: number;
+};
+
+export async function getInviteDiagnostics(): Promise<InviteDiagnostics | null> {
+  try {
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT
+            COUNT(DISTINCT o.id) AS paidOrders,
+            COUNT(DISTINCT CASE WHEN o.email <> '' THEN o.id END) AS paidOrdersWithEmail,
+            COUNT(DISTINCT CASE WHEN u.id IS NOT NULL THEN o.email END) AS matchedToLogin,
+            COUNT(DISTINCT CASE WHEN d.id IS NOT NULL THEN o.email END) AS alreadyListed
+          FROM lbs_orders o
+          LEFT JOIN directory_users u ON u.email = o.email AND o.email <> ''
+          LEFT JOIN directory_businesses d ON d.email = o.email AND o.email <> ''
+          WHERE o.status = 'paid'`,
+    )) as unknown as [Record<string, unknown>[]];
+    const r = rows[0]?.[0] ?? {};
+    return {
+      paidOrders: Number(r.paidOrders ?? 0),
+      paidOrdersWithEmail: Number(r.paidOrdersWithEmail ?? 0),
+      matchedToLogin: Number(r.matchedToLogin ?? 0),
+      alreadyListed: Number(r.alreadyListed ?? 0),
+      candidates: (await getInviteCandidates()).length,
+    };
+  } catch (e) {
+    console.error("[directory-invite] diagnostics failed:", e);
+    return null;
+  }
+}
