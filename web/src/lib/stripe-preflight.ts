@@ -219,13 +219,24 @@ export async function stripePreflight(): Promise<Check[]> {
 
   // Not Stripe's business, but it decides whether a paid order becomes
   // a placed advertiser, and it is one variable away from silently not.
+  //
+  // Which way is right depends entirely on the key. There is one
+  // Mission Control and no staging copy of it, so with a test key the
+  // dry run is the only thing standing between a test purchase and a
+  // fake advertiser holding a real category on a real card. Reporting
+  // it as blocking in test mode would be telling somebody to do the
+  // dangerous thing early.
+  const mcBlocked = process.env.MC_READ_ONLY === "1";
   checks.push({
     label: "Mission Control writes",
-    state: process.env.MC_READ_ONLY === "1" ? "fail" : "ok",
-    detail:
-      process.env.MC_READ_ONLY === "1"
-        ? "MC_READ_ONLY=1. Paid orders are logged instead of placed: the customer pays and never appears on a card. Clear it before taking live payments."
-        : "Live. A paid order is written to the card.",
+    state: liveMode ? (mcBlocked ? "fail" : "ok") : mcBlocked ? "ok" : "warn",
+    detail: liveMode
+      ? mcBlocked
+        ? "MC_READ_ONLY=1 with a live key. Real customers would pay and never appear on a card. Clear it now."
+        : "Live. A paid order is written to the card."
+      : mcBlocked
+        ? "MC_READ_ONLY=1, which is right for test mode: a test purchase logs the payload it would have sent instead of writing it. Clear this at the same moment you switch to the live key, not before."
+        : "Writes are live but the key is a test key. There is no staging Mission Control, so a test purchase will put a fake advertiser on a real card and lock a real category. Set MC_READ_ONLY=1 until you switch to live keys.",
   });
 
   checks.push({
