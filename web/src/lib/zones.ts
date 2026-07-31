@@ -20,13 +20,14 @@ export type Zone = {
    */
   population: number;
   /**
-   * Deliverable mailboxes counted off a real mailing, where we have one.
+   * Deliverable mailboxes in the zone, counted off real postal routes.
    *
-   * Only set for zones too small to fill a run on their own, which is
-   * the case the reach figures above get wrong: they are the product
-   * tiers, 5,000 and 10,000, and reading them as a promise about one
-   * small zone is how a page ends up offering more mailboxes than the
-   * place contains.
+   * Not the same question as the reach figures above, which are the
+   * product tiers: 5,000 and 10,000 per mailing. This is how much zone
+   * there is to mail, which decides two different things. Below a tier
+   * it is a correction, because a page cannot offer more mailboxes than
+   * the place contains. Above one it is the headroom: how many mailings
+   * it takes to cover the zone.
    */
   mailboxes?: number;
   /**
@@ -59,7 +60,7 @@ export const ZONES: Zone[] = [
   { slug: "mount-pleasant", name: "Mount Pleasant", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29464", "29466"], population: 92_600 /* published on the zone page */ },
   { slug: "daniel-island", name: "Daniel Island & Clements Ferry", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29492"], population: 37_500 /* 15,000+ homes on our page, at 2.5 each */ },
   { slug: "north-charleston", name: "North Charleston", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29405", "29406", "29418", "29420"], population: 115_000 /* published on the zone page */ },
-  { slug: "moncks-corner", name: "Moncks Corner", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29461"], population: 12_000 /* published on the zone page */ },
+  { slug: "moncks-corner", name: "Moncks Corner", households5k: "5,000+", households10k: "10,000+", mailboxes: 21_614, zipCodes: ["29461"], population: 12_000 /* the town; 29461 reaches well past it into Berkeley County */ },
   { slug: "charleston", name: "Charleston", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29401", "29403", "29407", "29412", "29414", "29439", "29455"], population: 150_000 /* published on the zone page */ },
   { slug: "hanahan", name: "Hanahan", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29410"], population: 25_000 /* 2020 census; no zone page figure to draw on yet */ },
   { slug: "goose-creek", name: "Goose Creek", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29445"], population: 45_000 /* published on the zone page */ },
@@ -93,7 +94,7 @@ export const ZONES: Zone[] = [
     zipCodes: ["29451"],
     population: 4_300 /* census; our page quotes only income */,
   },
-  { slug: "james-island", name: "James Island", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29412"], population: 12_000 /* published on the zone page */ },
+  { slug: "james-island", name: "James Island", households5k: "5,000+", households10k: "10,000+", mailboxes: 20_307, zipCodes: ["29412"], population: 12_000 /* the incorporated town; 29412 covers more */ },
   { slug: "johns-island", name: "Johns Island", households5k: "5,000+", households10k: "10,000+", zipCodes: ["29455"], population: 21_000 /* published on the zone page */ },
 ];
 

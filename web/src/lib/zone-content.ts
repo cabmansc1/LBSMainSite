@@ -750,7 +750,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
     statsIntro:
       "James Island is a tight-knit island community nestled between downtown Charleston and Folly Beach, with a strong local identity and a growing mix of established residents and young professionals.",
     stats: [
-      { value: "12,000+", label: "Area Population" },
+      { value: "20,300+", label: "Mailboxes in 29412" },
       { value: "$65,000+", label: "Median Household Income" },
       { value: "29412", label: "Primary Zip Code" },
       { value: "5K–10K", label: "Households Per Mailing" },
@@ -840,7 +840,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
     faqs: [
       {
         q: "How many households receive the postcard?",
-        a: "Each James Island mailing targets 5,000 to 10,000 households within the 29412 zip code. You choose the volume that fits your budget and market.",
+        a: "Each James Island mailing targets 5,000 to 10,000 households within the 29412 zip code. The full zone is 20,307 mailboxes, so you choose the volume that fits your budget and build coverage across several mailings.",
       },
       {
         q: "Which neighborhoods can I target?",
@@ -1041,13 +1041,16 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
   "moncks-corner": {
     title: "Moncks Corner Direct Mail | 9x12 Postcards | LBS",
     description:
-      "Moncks Corner direct mail targeting 5,000–10,000 homes per mailing in zip code 29461. Exclusive 9x12 billboard-style postcards, no competitors on the same mailing. 12,000+ total households available across Moncks Corner, Berkeley County & the Foxbank area. Starting at 5¢ per household.",
+      "Moncks Corner direct mail targeting 5,000–10,000 homes per mailing in zip code 29461. Exclusive 9x12 billboard-style postcards, no competitors on the same mailing. 21,600+ mailboxes across Moncks Corner, Berkeley County & the Foxbank area. Starting at 5¢ per household.",
     heroSub: "Connect with Berkeley County's Tight-Knit Community",
     statsTitle: "Why Moncks Corner is Perfect for Direct Mail Marketing",
     statsIntro:
       "As the county seat of Berkeley County, Moncks Corner is a close-knit community where word of mouth and local reputation matter. With over 12,000 residents and strong community engagement, direct mail delivers exceptional results in this market.",
     stats: [
-      { value: "12,000+", label: "Town Population" },
+      // The town's people and the ZIP's mailboxes, labelled as what they
+      // are. Both were "12,000+" before, which read as one household per
+      // resident and made the pair impossible to believe.
+      { value: "21,600+", label: "Mailboxes in 29461" },
       { value: "$55,000+", label: "Median Household Income" },
       { value: "35.4", label: "Median Age" },
       { value: "30 mi", label: "From Charleston" },
@@ -1126,7 +1129,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
     faqs: [
       {
         q: "How many households receive the postcard?",
-        a: "Each mailing targets 5,000–10,000 households in Moncks Corner and Berkeley County (29461 zip code). The full zone covers 12,000+ homes that can be reached over multiple mailings.",
+        a: "Each mailing targets 5,000–10,000 households in Moncks Corner and Berkeley County (29461 zip code). The full zone is 21,614 mailboxes, so a campaign can cover it over several mailings without repeating an address until you want to.",
       },
       {
         q: "Is my category exclusive?",
@@ -1156,7 +1159,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "Areas We Cover in the 29461 Zip Code",
           body: [
-            "Our Moncks Corner mailing zone covers the entire 29461 zip code, with over 12,000 homes available across a wide range of neighborhoods and communities. Each mailing targets 5,000–10,000 of those households. That includes downtown Moncks Corner and the historic core around Main Street, the rapidly expanding Foxbank development and its surrounding residential areas, the Old Santee Canal corridor near the state park, and established neighborhoods near the Berkeley County government center. We also reach homes along the US-52 corridor heading toward Goose Creek, as well as the lakeside communities near Lake Moultrie that attract both year-round residents and weekend visitors.",
+            "Our Moncks Corner mailing zone covers the entire 29461 zip code, 21,614 mailboxes across a wide range of neighborhoods and communities. Each mailing targets 5,000–10,000 of those households. That includes downtown Moncks Corner and the historic core around Main Street, the rapidly expanding Foxbank development and its surrounding residential areas, the Old Santee Canal corridor near the state park, and established neighborhoods near the Berkeley County government center. We also reach homes along the US-52 corridor heading toward Goose Creek, as well as the lakeside communities near Lake Moultrie that attract both year-round residents and weekend visitors.",
             "This broad coverage means your postcard reaches not just one pocket of Moncks Corner, but the full cross-section of the community -- new construction homeowners, established families, retirees on the lake, and young professionals who commute to Charleston or the naval facilities nearby.",
           ],
         },
@@ -1171,7 +1174,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           title: "How the Program Works",
           body: [
             "Our Moncks Corner direct mail program is designed to be turnkey. You reserve an exclusive spot in your business category -- meaning no competitor in your industry will appear on the same postcard. We handle the ad design at no extra cost, working with you to create a bold, eye-catching layout that includes your logo, offer, contact information, and a trackable QR code. The finished 9x12 postcard is printed on heavy-stock cardstock and mailed via USPS Every Door Direct Mail (EDDM) to targeted residential routes in the 29461 zip code.",
-            "Because the postcard is oversized -- the same dimensions as a standard sheet of paper -- it cannot be hidden inside an envelope or shuffled behind smaller mail pieces. It arrives face-up and impossible to miss. Each mailing targets 5,000 to 10,000 households, with over 12,000 total homes available across the Moncks Corner zone that can be covered over multiple mailings. With pricing starting at just 5 cents per household, it is one of the most cost-effective ways to reach the Moncks Corner market.",
+            "Because the postcard is oversized -- the same dimensions as a standard sheet of paper -- it cannot be hidden inside an envelope or shuffled behind smaller mail pieces. It arrives face-up and impossible to miss. Each mailing targets 5,000 to 10,000 households, out of 21,614 mailboxes across the Moncks Corner zone that can be covered over multiple mailings. With pricing starting at just 5 cents per household, it is one of the most cost-effective ways to reach the Moncks Corner market.",
             "Most of our advertisers see the best results when they commit to multiple mailings throughout the year. Repetition builds familiarity, and familiarity builds trust. By the second or third mailing, Moncks Corner residents start to recognize your brand before they even need your services -- and when the need arises, you are the first business that comes to mind.",
           ],
         },
