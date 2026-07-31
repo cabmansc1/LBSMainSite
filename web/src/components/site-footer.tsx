@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { NewsletterSignup } from "@/components/newsletter-signup";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, CONTACT_EMAIL } from "@/lib/seo";
 
 const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
   {
@@ -59,7 +59,7 @@ const localBusinessJsonLd = {
   url: SITE_URL,
   logo: `${SITE_URL}/brand/lb-spotlight.png`,
   telephone: "+1-843-212-2969",
-  email: "hello@lbspotlight.com",
+  email: CONTACT_EMAIL,
   address: {
     "@type": "PostalAddress",
     streetAddress: "PO Box 357",
@@ -115,7 +115,7 @@ export function SiteFooter() {
             </span>
           </div>
           <p className="mb-2">Summerville, SC</p>
-          <p>843-212-2969 · hello@lbspotlight.com</p>
+          <p>843-212-2969 · {CONTACT_EMAIL}</p>
         </div>
         {COLS.map((col) => (
           <div key={col.heading}>

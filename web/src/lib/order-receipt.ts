@@ -125,6 +125,21 @@ const esc = (v: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
+/**
+ * Makes the addresses in the copy clickable, after escaping.
+ *
+ * The sentences are written once for both parts, so they carry bare
+ * URLs, which is right in plain text and a wasted step in HTML: nobody
+ * copies a link out of an email to paste it into a browser. Escaping
+ * happens first, so nothing here can inject markup.
+ */
+const linkify = (escaped: string) =>
+  escaped.replace(
+    /https:\/\/[^\s<)]+[^\s<).,]/g,
+    (url) =>
+      `<a href="${url}" style="color:#1E9BE9;text-decoration:underline">${url}</a>`,
+  );
+
 /** Tokens the HTML uses so the two parts cannot drift apart. */
 const NAVY = "#0B1F33";
 const BODY = "#334155";
@@ -195,9 +210,9 @@ export function composeOrderReceipt(f: ReceiptFacts): {
       "soon as it is set.";
 
   const steps = [
-    "Send us your artwork by replying to this email. There is no upload " +
-      "page on the site yet, so a reply is how it reaches us. PDF, PNG or " +
-      "JPG at 300 dpi works best.",
+    `Send us your artwork. Upload it at ${siteUrl()}/account/cards, or ` +
+      "just reply to this email with the file attached. Either reaches " +
+      "us. PDF, PNG or JPG at 300 dpi works best.",
     "Or let us design it. Design is included in what you already paid. " +
       "Reply and tell us what the ad should say and we will draft it for you.",
     "Either way you see a proof and approve it before anything goes to print.",
@@ -208,7 +223,7 @@ export function composeOrderReceipt(f: ReceiptFacts): {
     `${siteUrl()}/login and we will send you a code, so there is no ` +
     "password to invent.";
   const help =
-    "Questions: reply to this email, write to hello@lbspotlight.com, or " +
+    "Questions: reply to this email, write to hello@lowcountrybusinessspotlight.com, or " +
     "call 843-212-2969.";
 
   const lines: string[] = [];
@@ -230,7 +245,7 @@ export function composeOrderReceipt(f: ReceiptFacts): {
    * worse than the plain text it replaced.
    */
   const p = (text: string) =>
-    `<p style="margin:0 0 14px;font-family:${FONT};font-size:15px;line-height:1.6;color:${BODY}">${esc(text)}</p>`;
+    `<p style="margin:0 0 14px;font-family:${FONT};font-size:15px;line-height:1.6;color:${BODY}">${linkify(esc(text))}</p>`;
 
   const factRows = facts
     .map(
@@ -249,7 +264,7 @@ export function composeOrderReceipt(f: ReceiptFacts): {
           <td style="padding:0 12px 12px 0;vertical-align:top">
             <span style="display:inline-block;width:22px;height:22px;border-radius:11px;background:${NAVY};color:#fff;font-family:${FONT};font-size:12px;font-weight:700;text-align:center;line-height:22px">${i + 1}</span>
           </td>
-          <td style="padding:0 0 12px;font-family:${FONT};font-size:14.5px;line-height:1.6;color:${BODY}">${esc(s)}</td>
+          <td style="padding:0 0 12px;font-family:${FONT};font-size:14.5px;line-height:1.6;color:${BODY}">${linkify(esc(s))}</td>
         </tr>`,
     )
     .join("");
@@ -295,7 +310,7 @@ export function composeOrderReceipt(f: ReceiptFacts): {
         </td></tr>
         <tr>
           <td style="border-top:1px solid ${LINE};padding:16px 28px;font-family:${FONT};font-size:12px;color:${MUTED}">
-            Lowcountry Business Spotlight &middot; hello@lbspotlight.com &middot; 843-212-2969
+            Lowcountry Business Spotlight &middot; hello@lowcountrybusinessspotlight.com &middot; 843-212-2969
           </td>
         </tr>
       </table>

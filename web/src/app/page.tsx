@@ -10,7 +10,7 @@ import {
 } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
 import { TestimonialStrip } from "@/components/testimonial-strip";
-import { buildMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { buildMetadata, SITE_NAME, SITE_URL, CONTACT_EMAIL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
 import { getSiteStats } from "@/lib/admin-data";
@@ -59,7 +59,7 @@ const homeJsonLd = [
     url: SITE_URL,
     logo: `${SITE_URL}/brand/lb-spotlight.png`,
     telephone: "+1-843-212-2969",
-    email: "hello@lbspotlight.com",
+    email: CONTACT_EMAIL,
   },
   {
     "@context": "https://schema.org",

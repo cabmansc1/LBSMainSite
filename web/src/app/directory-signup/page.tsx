@@ -131,8 +131,8 @@ export default async function DirectorySignupPage() {
         <p className="text-[12.5px] text-muted mt-4">
           Account creation and Premium billing connect in the account phase.
           Until then, new listings go through our team:{" "}
-          <a href="mailto:hello@lbspotlight.com" className="text-brand-deep font-semibold hover:underline">
-            hello@lbspotlight.com
+          <a href="mailto:hello@lowcountrybusinessspotlight.com" className="text-brand-deep font-semibold hover:underline">
+            hello@lowcountrybusinessspotlight.com
           </a>
         </p>
 

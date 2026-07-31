@@ -11,6 +11,17 @@ import type { Metadata } from "next";
 export const SITE_NAME = "Lowcountry Business Spotlight";
 export const SITE_URL = "https://www.lowcountrybusinessspotlight.com";
 
+/**
+ * The address we ask people to write to, and the one mail arrives from.
+ *
+ * Here rather than typed into each page, because it was hardcoded in
+ * six of them, including two LocalBusiness JSON-LD blocks, and moving
+ * from lbspotlight.com meant finding all six. EMAIL_FROM defaults to
+ * the same address, so what a customer is told to write to is what
+ * their reply goes to.
+ */
+export const CONTACT_EMAIL = "hello@lowcountrybusinessspotlight.com";
+
 type PageSeo = {
   title: string;
   description: string;

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/contact-form";
 import { Card, SectionHeading } from "@/components/sections";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, CONTACT_EMAIL } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
-    "Talk to Lowcountry Business Spotlight about postcard advertising, directory listings, or your next mailing. Call 843-212-2969 or email hello@lbspotlight.com.",
+    "Talk to Lowcountry Business Spotlight about postcard advertising, directory listings, or your next mailing. Call 843-212-2969 or email hello@lowcountrybusinessspotlight.com.",
   alternates: { canonical: `${SITE_URL}/contact` },
   openGraph: {
     title: `Contact | ${SITE_NAME}`,
@@ -25,8 +25,8 @@ const WAYS = [
   },
   {
     title: "Email",
-    value: "hello@lbspotlight.com",
-    href: "mailto:hello@lbspotlight.com",
+    value: CONTACT_EMAIL,
+    href: `mailto:${CONTACT_EMAIL}`,
     note: "We reply within one business day",
   },
   {
