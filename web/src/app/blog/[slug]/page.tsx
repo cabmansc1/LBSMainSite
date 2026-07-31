@@ -1,10 +1,30 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPost } from "@/lib/blog";
+import { getPost, getPosts, type BlogPost } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * A handful of posts have neither a meta description nor an excerpt, so
+ * the description falls back to the opening of the post itself before
+ * giving up and composing one. An empty description is a wasted result
+ * snippet.
+ */
+function describe(post: BlogPost): string {
+  const explicit = (post.metaDescription ?? "").trim();
+  if (explicit) return explicit.slice(0, 155);
+  const excerpt = (post.excerpt ?? "").trim();
+  if (excerpt) return excerpt.slice(0, 155);
+  const body = (post.contentHtml ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (body) return body.slice(0, 155);
+  return `${post.title}. Direct mail and local marketing insight from ${SITE_NAME}.`;
+}
 
 export async function generateMetadata({
   params,
@@ -16,11 +36,11 @@ export async function generateMetadata({
   if (!post) return {};
   return {
     title: post.title,
-    description: post.metaDescription ?? post.excerpt.slice(0, 155),
+    description: describe(post),
     alternates: { canonical: `${SITE_URL}/blog/${slug}` },
     openGraph: {
       title: post.title,
-      description: post.metaDescription ?? post.excerpt.slice(0, 155),
+      description: describe(post),
       siteName: SITE_NAME,
       type: "article",
       images: post.imageUrl ? [post.imageUrl] : undefined,
@@ -37,14 +57,48 @@ export default async function BlogPostPage({
   const post = await getPost(slug);
   if (!post) notFound();
 
+  // "More Articles" on the legacy post: the internal links that keep a
+  // reader in the blog and give the newer posts a route to be crawled.
+  const more = (await getPosts().catch(() => []))
+    .filter((p) => p.slug !== post.slug)
+    .slice(0, 3);
+
+  // The legacy post carried dates, a publisher with a logo, the page
+  // itself as mainEntityOfPage, and breadcrumbs. Article rich results
+  // depend on those, so a bare headline and image is a downgrade.
+  const url = `${SITE_URL}/blog/${post.slug}`;
+  const organization = {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE_URL}/brand/lb-spotlight.png`,
+    },
+  };
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
     description: post.metaDescription ?? post.excerpt,
     image: post.imageUrl,
-    url: `${SITE_URL}/blog/${post.slug}`,
-    publisher: { "@type": "Organization", name: SITE_NAME },
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    datePublished: post.publishedAt,
+    dateModified: post.publishedAt,
+    author: organization,
+    publisher: organization,
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/blog` },
+      { "@type": "ListItem", position: 3, name: post.title, item: url },
+    ],
   };
 
   return (
@@ -67,11 +121,23 @@ export default async function BlogPostPage({
 
       <article className="mx-auto max-w-[760px] px-6 py-10">
         {post.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={post.imageUrl}
             alt=""
-            className="w-full rounded-(--radius-card) border border-line mb-8"
+            // The real ratio is whatever the author uploaded, so these
+            // only reserve a sensible block of space up front; the
+            // browser swaps in the file's own ratio once it loads.
+            width={1200}
+            height={675}
+            // The article column is 760px wide with 24px of padding
+            // either side, so 712px is the widest this ever renders.
+            sizes="(min-width: 760px) 712px, 100vw"
+            // The hero is this page's likely LCP element, and the raw
+            // img it replaces had no lazy attribute, so it keeps
+            // loading immediately rather than waiting on the viewport.
+            loading="eager"
+            fetchPriority="high"
+            className="w-full h-auto rounded-(--radius-card) border border-line mb-8"
           />
         )}
         <div
@@ -80,9 +146,42 @@ export default async function BlogPostPage({
         />
       </article>
 
+      {more.length > 0 && (
+        <section className="bg-surface border-t border-line">
+          <div className="mx-auto max-w-[760px] px-6 py-14">
+            <h2 className="text-[19px] font-bold tracking-tight mb-5">
+              More articles
+            </h2>
+            <ul className="grid gap-2.5">
+              {more.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/blog/${p.slug}`}
+                    className="block bg-white border border-line rounded-(--radius-card) px-5 py-4 hover:border-faint transition-colors"
+                  >
+                    <b className="block text-[15px] font-semibold tracking-tight">
+                      {p.title}
+                    </b>
+                    {p.excerpt && (
+                      <span className="text-[13px] text-muted line-clamp-2">
+                        {p.excerpt}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
     </>
   );

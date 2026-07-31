@@ -288,7 +288,7 @@ JSON,
         {"@type": "Question", "name": "How many Daniel Island households receive the postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Each mailing targets 5,000–10,000 households in ZIP code 29492, with over 15,000 total homes available across Daniel Island, The Waterfront, Captain's Island, Cainhoy, and the Clements Ferry Road corridor. You can cover the full zone over multiple mailings."}},
         {"@type": "Question", "name": "Is my business category exclusive on the Daniel Island mailing?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Only one business per category appears on each card. This means no competitors will be on the same mailing reaching Daniel Island households."}},
         {"@type": "Question", "name": "Do you design my ad for the Daniel Island direct mail?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — professional ad design is included at no additional cost. Our designers create eye-catching 9x12 billboard-style postcard ads optimized for the Daniel Island market."}},
-        {"@type": "Question", "name": "How do we measure results from Daniel Island direct mail?", "acceptedAnswer": {"@type": "Answer", "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls from Daniel Island and Clements Ferry residents."}},
+        {"@type": "Question", "name": "How do we measure results from Daniel Island direct mail?", "acceptedAnswer": {"@type": "Answer", "text": "Every card carries QR codes and unique URLs, so you can measure scans and visits from Daniel Island and Clements Ferry residents."}},
         {"@type": "Question", "name": "When is the next Daniel Island print date?", "acceptedAnswer": {"@type": "Answer", "text": "We print on a regular cadence for the Daniel Island and Clements Ferry area. Contact us for current availability and deadlines."}}
     ]
 }
@@ -531,7 +531,7 @@ JSON,
         {"@type": "Question", "name": "How many households receive the postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Each mailing targets 5,000–10,000 households in Moncks Corner and Berkeley County (29461 zip code). The full zone covers 12,000+ homes that can be reached over multiple mailings."}},
         {"@type": "Question", "name": "Is my category exclusive?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Only one business per category appears on each card."}},
         {"@type": "Question", "name": "Do you design my ad?", "acceptedAnswer": {"@type": "Answer", "text": "Yes—ad design is included at no additional cost."}},
-        {"@type": "Question", "name": "How do we measure results?", "acceptedAnswer": {"@type": "Answer", "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls."}},
+        {"@type": "Question", "name": "How do we measure results?", "acceptedAnswer": {"@type": "Answer", "text": "Every card carries QR codes and unique URLs, so you can measure scans and visits."}},
         {"@type": "Question", "name": "When is the next print date?", "acceptedAnswer": {"@type": "Answer", "text": "We print on a regular cadence. Submit the form above for current availability and deadlines."}}
     ]
 }
@@ -579,7 +579,7 @@ JSON,
         {"@type": "Question", "name": "How many Mount Pleasant households receive the postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Each mailing targets 5,000 to 10,000 households across Mount Pleasant ZIP codes 29464 and 29466, with the ability to cover the entire zone of 38,000+ homes over multiple mailings."}},
         {"@type": "Question", "name": "Is my business category exclusive on the Mount Pleasant direct mail postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Only one business per category appears on each card. No competitors will be on the same mailing."}},
         {"@type": "Question", "name": "Do you design my direct mail ad?", "acceptedAnswer": {"@type": "Answer", "text": "Yes — ad design is included at no additional cost."}},
-        {"@type": "Question", "name": "How do we measure direct mail results in Mount Pleasant?", "acceptedAnswer": {"@type": "Answer", "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls."}},
+        {"@type": "Question", "name": "How do we measure direct mail results in Mount Pleasant?", "acceptedAnswer": {"@type": "Answer", "text": "Every card carries QR codes and unique URLs, so you can measure scans and visits."}},
         {"@type": "Question", "name": "When is the next Mount Pleasant direct mail print date?", "acceptedAnswer": {"@type": "Answer", "text": "We print on a regular cadence. Submit the inquiry form for current availability and deadlines."}}
     ]
 }
@@ -626,7 +626,7 @@ JSON,
         {"@type": "Question", "name": "How many households receive the postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Each mailing targets 5,000–10,000 North Charleston homes and businesses. The full zone covers 45,000+ households across ZIPs 29405, 29406, 29418, and 29420, which can be reached over multiple mailings."}},
         {"@type": "Question", "name": "Is my category exclusive?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Only one business per category appears on each card."}},
         {"@type": "Question", "name": "Do you design my ad?", "acceptedAnswer": {"@type": "Answer", "text": "Yes—ad design is included at no additional cost."}},
-        {"@type": "Question", "name": "How do we measure results?", "acceptedAnswer": {"@type": "Answer", "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls."}},
+        {"@type": "Question", "name": "How do we measure results?", "acceptedAnswer": {"@type": "Answer", "text": "Every card carries QR codes and unique URLs, so you can measure scans and visits."}},
         {"@type": "Question", "name": "When is the next print date?", "acceptedAnswer": {"@type": "Answer", "text": "We print on a regular cadence. Submit the form for current availability and deadlines."}}
     ]
 }
@@ -722,7 +722,7 @@ JSON,
         {"@type": "Question", "name": "How many households receive the postcard?", "acceptedAnswer": {"@type": "Answer", "text": "Each mailing targets 5,000–10,000 Summerville households. The full Summerville zone covers 52,000+ homes across ZIPs 29483, 29485, and 29486, which can be reached over multiple mailings."}},
         {"@type": "Question", "name": "Is my category exclusive?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Only one business per category appears on each card."}},
         {"@type": "Question", "name": "Do you design my ad?", "acceptedAnswer": {"@type": "Answer", "text": "Yes—ad design is included at no additional cost."}},
-        {"@type": "Question", "name": "How do we measure results?", "acceptedAnswer": {"@type": "Answer", "text": "We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls."}},
+        {"@type": "Question", "name": "How do we measure results?", "acceptedAnswer": {"@type": "Answer", "text": "Every card carries QR codes and unique URLs, so you can measure scans and visits."}},
         {"@type": "Question", "name": "When is the next print date?", "acceptedAnswer": {"@type": "Answer", "text": "We print on a regular cadence. Submit the form for current availability and deadlines."}}
     ]
 }

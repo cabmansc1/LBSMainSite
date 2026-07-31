@@ -1,24 +1,97 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { getPastCards } from "@/lib/past-cards";
+import { HeroCards, type HeroCard } from "@/components/hero-cards";
 import { Button } from "@/components/ui/button";
 import {
   SectionHeading,
   Card,
-  TestimonialStrip,
   CtaBand,
 } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
-import { buildMetadata } from "@/lib/seo";
+import { TestimonialStrip } from "@/components/testimonial-strip";
+import { buildMetadata, SITE_NAME, SITE_URL, CONTACT_EMAIL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
+import { getSiteStats } from "@/lib/admin-data";
+import { getUpcomingMailings } from "@/lib/mission-control";
 
 export const metadata: Metadata = buildMetadata("home");
 
+/**
+ * Homepage FAQs, ported from index.php where they produced the FAQ rich
+ * result. Two answers stated prices and reach figures that are no longer
+ * true, so those are corrected to what the site actually sells today.
+ * Publishing a stale price is worse than losing the snippet.
+ */
+const HOME_FAQS = [
+  {
+    q: "How much does direct mail advertising cost?",
+    a: "Spotlight Postcards start at $249 per mailing for 5,000 households. Pricing depends on the zone, the reach, and the ad size, and design, print and postage are always included.",
+  },
+  {
+    q: "How many households will see my ad?",
+    a: "Each mailing reaches 5,000 or 10,000 households in one zone, across Charleston, Summerville, Mount Pleasant, Daniel Island, North Charleston, Moncks Corner, Goose Creek and the islands.",
+  },
+  {
+    q: "Do I need to design my own ad?",
+    a: "No. We provide free professional ad design. Send us your logo, your offer and your contact details, and we handle the rest. You approve a proof before anything prints.",
+  },
+  {
+    q: "What makes your postcards different from other advertising?",
+    a: "Each business gets exclusive category placement, so no competitor appears on the same card. Your ad arrives like a mini billboard delivered straight to the mailbox.",
+  },
+  {
+    q: "How do I track my results?",
+    a: "Every card goes out with QR codes and unique landing pages, so scans and visits are measurable. If you send us finished artwork of your own, we print it as supplied, so include your code in the design or ask us to add one.",
+  },
+  {
+    q: "Is the online directory listing free?",
+    a: "Yes. Every business gets a free basic listing in our directory. Paid plans unlock photos, hours, offers and featured placement.",
+  },
+];
+
+const homeJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/brand/lb-spotlight.png`,
+    telephone: "+1-843-212-2969",
+    email: CONTACT_EMAIL,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: HOME_FAQS.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  },
+];
+
+
+
+/**
+ * Fallback only. The real numbers live in site_stats and are edited on
+ * /admin/stats; these are what shows if that table is empty or the
+ * database is unreachable, so the bar never renders blank.
+ *
+ * Mirrors what /admin/stats holds today. It had drifted badly: the old
+ * fallback claimed 50,000 postcards and 75 businesses against the real
+ * 155,000 and 100, so a database blip would have quietly understated
+ * the business by a third of a decade of work. It also carried a
+ * "Service areas" stat the admin does not have, stuck at 11 zones when
+ * there are now 12. Worth re-checking against the admin when these
+ * numbers next move.
+ */
 const STATS = [
-  { value: "50,000+", label: "Postcards mailed" },
-  { value: "75+", label: "Businesses served" },
-  { value: "5,000+", label: "Households per mailing" },
-  { value: "11", label: "Service areas" },
+  { value: "155,000+", label: "Postcards Mailed" },
+  { value: "100+", label: "Local Businesses Served" },
+  { value: "2,500 - 10,000", label: "Households Per Mailing" },
+  { value: "30+", label: "Campaigns Completed" },
 ];
 
 const BENEFITS = [
@@ -33,7 +106,11 @@ const BENEFITS = [
   },
   {
     title: "9×12: too big to ignore",
-    body: "The largest piece in the mailbox that day. It gets flipped, read, and stuck to the fridge.",
+    // Print specs belong on the card about the physical piece. Size is
+    // why it gets noticed, and the stock is why it does not feel like a
+    // flyer once it is in someone's hand, which is the objection this
+    // whole section exists to answer.
+    body: "The largest piece in the mailbox that day. 14pt stock, high-gloss UV coating, full color on both sides. It gets flipped, read, and stuck to the fridge.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -43,7 +120,11 @@ const BENEFITS = [
   },
   {
     title: "Tracking built in",
-    body: "QR codes and unique URLs on every ad, so you see exactly what a mailing brings in.",
+    // The mailer is the unit this claim is true of. Every card goes out
+    // with QR codes on it, which the archive shows plainly. What cannot
+    // be promised is a QR on an advertiser's own finished artwork, and
+    // that caveat belongs in the FAQ rather than on a headline tile.
+    body: "Every mailer goes out with QR codes and unique URLs, so you see exactly what a mailing brings in.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 20V10m6 10V4m6 16v-7m4 7H2" />
@@ -72,11 +153,91 @@ const STEPS = [
   },
   {
     title: "We mail. You answer the phone.",
-    body: "Your card lands in 5,000+ mailboxes. Watch scans and calls roll in from your advertiser dashboard.",
+    body: "Your card lands in 5,000+ mailboxes. Scans show up in your advertiser dashboard as they come in.",
   },
 ];
 
+// Stats, prices and the next card all come from the database and from
+// Mission Control. The page was fully static, so it was baked at build
+// time and never saw an admin edit until something revalidated it.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
+  // The admin stats screen writes site_stats. The homepage was showing a
+  // hardcoded array instead, so editing a stat changed nothing a visitor
+  // could see.
+  const saved = (await getSiteStats().catch(() => []))
+    .filter((s) => s.active && s.value.trim() && s.label.trim())
+    .map((s) => ({ value: s.value, label: s.label }));
+  const stats = saved.length > 0 ? saved : STATS;
+
+  // The closing CTA used to assert "2 spots left" in hardcoded copy,
+  // which was true only by accident. Take it from the card that is
+  // actually filling soonest, and say something safe when none is.
+  const upcoming = await getUpcomingMailings().catch(() => []);
+  const nextCard =
+    upcoming.find((m) => m.status === "open" && m.spotsTaken < m.spotsTotal) ??
+    upcoming[0];
+  const spotsLeft = nextCard
+    ? Math.max(0, nextCard.spotsTotal - nextCard.spotsTaken)
+    : 0;
+  // The hero badge said "September Summerville card: 2 spots left" in
+  // hardcoded copy. It was the first line on the page and it was going
+  // to keep saying September forever. Same source as the closing CTA;
+  // month only, because the year makes the pill wrap on a phone.
+  const heroBadge =
+    nextCard && spotsLeft > 0
+      ? `${nextCard.mailMonth.split(" ")[0]} ${nextCard.zoneName} card: ${spotsLeft} ${
+          spotsLeft === 1 ? "spot" : "spots"
+        } left`
+      : "Now booking upcoming neighborhood cards";
+  const ctaTitle = nextCard
+    ? spotsLeft > 0
+      ? `The ${nextCard.zoneName} card mailing ${nextCard.mailMonth} has ${spotsLeft} ${
+          spotsLeft === 1 ? "spot" : "spots"
+        } left.`
+      : `The ${nextCard.zoneName} card mailing ${nextCard.mailMonth} is full.`
+    : "Claim your category on the next card.";
+  /**
+   * The hero rotates through real mailed cards, newest first.
+   *
+   * A photograph of a card that actually went out argues better than a
+   * mockup, and the archive has enough of them now that showing one was
+   * wasting the rest. Capped at five: this is the hero, not the gallery,
+   * and every extra frame is another image the browser eventually pulls.
+   *
+   * Falls back to the studio sample when nothing is published yet, so a
+   * fresh install still has a hero.
+   */
+  const heroCards: HeroCard[] = (
+    await getPastCards({ publishedOnly: true }).catch(() => [])
+  )
+    .flatMap((c) => {
+      const front = c.images.find((i) => i.side === "front");
+      if (!front) return [];
+      return [
+        {
+          src: `/api/card-image/${front.id}`,
+          alt: front.alt,
+          width: front.width || 920,
+          height: front.height || 614,
+          caption: `${c.cardName ?? c.zoneName}, mailed ${c.mailMonth}`,
+          href: `/cards/${c.slug}`,
+        },
+      ];
+    })
+    .slice(0, 5);
+
+  if (heroCards.length === 0) {
+    heroCards.push({
+      src: "/cards/card-sample-1.webp",
+      alt: "A real 9x12 Lowcountry Business Spotlight postcard with local business ads",
+      width: 920,
+      height: 614,
+      caption: "A real Spotlight Postcard, mailed to 5,000+ households",
+    });
+  }
+
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
 
@@ -87,12 +248,12 @@ export default async function HomePage() {
           <div>
             <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/6 border border-white/14 text-[#C6D3E0]">
               <span className="w-1.5 h-1.5 rounded-full bg-cta" />
-              September Summerville card: 2 spots left
+              {heroBadge}
             </span>
             <h1 className="mt-5 text-4xl md:text-[54px] font-bold tracking-[-0.035em] leading-[1.06] text-balance">
               Your business in{" "}
-              <em className="not-italic text-brand">5,000 mailboxes.</em> One
-              competitor: none.
+              <em className="not-italic text-brand">5,000 mailboxes.</em> Your
+              competitors in none.
             </h1>
             <p className="mt-5 text-[17px] leading-relaxed text-[#AEBDCC] max-w-[50ch]">
               Shared 9×12 postcards mailed to Charleston-area neighborhoods. One
@@ -119,23 +280,13 @@ export default async function HomePage() {
               )}
             </ul>
           </div>
-          <div className="justify-self-center w-full max-w-[460px] rotate-[1.5deg]">
-            <Image
-              src="/cards/card-sample-1.webp"
-              alt="A real 9x12 Lowcountry Business Spotlight postcard with local business ads"
-              width={920}
-              height={614}
-              priority
-              className="rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,.4)]"
-            />
-            <p className="text-center text-[11px] text-[#67768A] pt-3 -rotate-[1.5deg]">
-              A real Spotlight Postcard, mailed to 5,000+ households
-            </p>
+          <div className="justify-self-center w-full max-w-[460px]">
+            <HeroCards cards={heroCards} />
           </div>
         </div>
         <div className="border-t border-white/10">
           <div className="mx-auto max-w-[1120px] px-6 py-7 grid grid-cols-2 md:grid-cols-4 gap-5">
-            {STATS.map((s, i) => (
+            {stats.map((s, i) => (
               <div
                 key={s.label}
                 className={i > 0 ? "md:border-l md:border-white/10 md:pl-5" : ""}
@@ -153,8 +304,8 @@ export default async function HomePage() {
       <section className="mx-auto max-w-[1120px] px-6 py-22">
         <SectionHeading
           eyebrow="Why it works"
-          title="Billboard impact, split eleven ways"
-          sub="You share the card, and the cost, with non-competing local businesses. Everyone gets seen. Nobody pays billboard prices."
+          title="Billboard impact, shared cost"
+          sub="You share the card, and the cost, with local businesses you do not compete with. Everyone gets seen. Nobody pays billboard prices."
         />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {BENEFITS.map((b) => (
@@ -174,7 +325,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="The product"
             title="Real cards, real mailboxes"
-            sub="Every card is a 9×12 full-color postcard printed on heavy stock. These are actual cards we mailed."
+            sub="Every card is 9×12, printed on 14pt stock with a high-gloss UV coating, full color on both sides. These are actual cards we mailed."
           />
           <div className="grid sm:grid-cols-2 gap-3.5">
             <Image
@@ -200,7 +351,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {hasTestimonials("home") && (
+      {(await hasTestimonials("home")) && (
         <section className="mx-auto max-w-[1120px] px-6 py-22">
           <SectionHeading
             eyebrow="Local businesses on LBS"
@@ -227,14 +378,46 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="bg-surface border-y border-line">
+        <div className="mx-auto max-w-[760px] px-6 py-18">
+          <SectionHeading eyebrow="Questions" title="Direct mail, answered" />
+          <div className="mt-8 bg-white border border-line rounded-(--radius-card) overflow-hidden">
+            {HOME_FAQS.map((f) => (
+              <details
+                key={f.q}
+                className="border-b border-line last:border-b-0 group"
+              >
+                <summary className="cursor-pointer list-none px-6 py-4.5 flex items-center justify-between gap-4 text-[15px] font-semibold">
+                  {f.q}
+                  <span className="text-muted text-lg leading-none group-open:hidden">
+                    +
+                  </span>
+                  <span className="text-muted text-lg leading-none hidden group-open:inline">
+                    &minus;
+                  </span>
+                </summary>
+                <p className="px-6 pb-5 text-[14.5px] text-body leading-relaxed">
+                  {f.a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-[1120px] px-6 py-16">
         <CtaBand
-          title="The next Summerville card has 2 spots left."
+          title={ctaTitle}
           sub="Print deadline is coming. Exclusive categories go fast."
           ctaLabel="Claim Your Category"
           ctaHref="/pricing"
         />
       </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+      />
     </>
   );
 }

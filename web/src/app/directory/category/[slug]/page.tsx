@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import { DirectoryPageShell } from "@/components/directory-page-shell";
 import { getCategoryContent } from "@/lib/category-content";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { taxonomyLabel } from "@/lib/taxonomy-labels";
 
 export const dynamic = "force-dynamic";
-
-const pretty = (slug: string) =>
-  slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export async function generateMetadata({
   params,
@@ -14,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const name = pretty(slug);
+  const name = await taxonomyLabel("category", slug);
   return {
     title: `${name} Businesses in the Charleston Area`,
     description: `Find trusted ${name.toLowerCase()} businesses across the Charleston Lowcountry in the ${SITE_NAME} directory.`,
@@ -29,10 +27,11 @@ export default async function DirectoryCategoryPage({
 }) {
   const { slug } = await params;
   const content = getCategoryContent(slug);
+  const name = await taxonomyLabel("category", slug);
   return (
     <DirectoryPageShell
       filters={{ category: slug }}
-      heading={`${pretty(slug)} in the Lowcountry`}
+      heading={`${name} in the Lowcountry`}
       intro={content?.intro}
       faqs={content?.faqs}
     />

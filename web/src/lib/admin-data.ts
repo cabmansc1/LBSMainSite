@@ -11,6 +11,20 @@ import { sql } from "drizzle-orm";
  * install, so SELECT * plus defensive reads beat a brittle mapping.
  */
 
+/**
+ * Status, exactly as the legacy admin derived it: unverified means it is
+ * waiting for review, hidden trumps active, and everything else that is
+ * verified and active is live.
+ */
+export type BusinessStatus = "pending" | "active" | "hidden" | "inactive";
+
+export const businessStatus = (b: {
+  isVerified: boolean;
+  isActive: boolean;
+  isHidden: boolean;
+}): BusinessStatus =>
+  !b.isVerified ? "pending" : b.isHidden ? "hidden" : b.isActive ? "active" : "inactive";
+
 export type AdminBusiness = {
   id: number;
   slug: string;
@@ -26,6 +40,11 @@ export type AdminBusiness = {
   isFeatured: boolean;
   isVerified: boolean;
   isHidden: boolean;
+  isActive: boolean;
+  views: number;
+  inquiries: number;
+  /** Primary photo, so a listing is recognisable at a glance in the list. */
+  logoUrl: string | null;
   createdAt: string | null;
 };
 
@@ -37,16 +56,63 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
   const rows = search
     ? ((await db.execute(
         sql`SELECT id, slug, business_name, category, location_area, city, phone, email,
-                   website, description, plan_type, is_featured, is_verified, is_hidden, created_at
+                   website, description, plan_type, is_featured, is_verified, is_hidden,
+                   is_active, views_count, inquiries_count, created_at
             FROM directory_businesses
             WHERE business_name LIKE ${term} OR slug LIKE ${term} OR email LIKE ${term}
-            ORDER BY business_name LIMIT 300`,
+            ORDER BY business_name LIMIT 500`,
       )) as unknown as [Record<string, unknown>[]])
     : ((await db.execute(
         sql`SELECT id, slug, business_name, category, location_area, city, phone, email,
-                   website, description, plan_type, is_featured, is_verified, is_hidden, created_at
-            FROM directory_businesses ORDER BY business_name LIMIT 300`,
+                   website, description, plan_type, is_featured, is_verified, is_hidden,
+                   is_active, views_count, inquiries_count, created_at
+            FROM directory_businesses ORDER BY business_name LIMIT 500`,
       )) as unknown as [Record<string, unknown>[]]);
+
+  // One query for the primary photo of everything on the page, rather
+  // than one per row.
+  const ids = (rows[0] ?? []).map((r) => Number(r.id)).filter(Boolean);
+  const logos = new Map<number, string>();
+  if (ids.length > 0) {
+    try {
+      // Same path the public directory builds. Getting this wrong is
+      // silent: every thumbnail 404s and the column just looks empty.
+      const base =
+        (
+          process.env.UPLOADS_BASE_URL ??
+          "https://www.lowcountrybusinessspotlight.com/uploads"
+        ).replace(/\/$/, "") + "/business_photos";
+      const photoRows = (await db.execute(
+        sql`SELECT business_id, filename
+            FROM directory_business_photos
+            WHERE business_id IN (${sql.join(
+              ids.map((id) => sql`${id}`),
+              sql`, `,
+            )})
+            ORDER BY is_primary DESC, sort_order ASC, id ASC`,
+      )) as unknown as [Record<string, unknown>[]];
+      for (const p of photoRows[0] ?? []) {
+        const id = Number(p.business_id);
+        if (!p.filename || logos.has(id)) continue;
+        // The upload script also writes a resized copy under medium/,
+        // which is the right size for a 36px cell: the originals run to
+        // 100KB and this is a list of 85 of them.
+        logos.set(id, `${base}/medium/${String(p.filename).replace(/^\//, "")}`);
+      }
+    } catch (e) {
+      // A listing without a thumbnail is a cosmetic loss, not a failure.
+      console.error("[admin] listing photos read failed:", e);
+    }
+
+    // Anything uploaded here wins over the legacy file. The old photos
+    // live on the PHP server's disk, which this app cannot write to, so
+    // a newly uploaded logo would otherwise be stored and then never
+    // shown.
+    const { getBusinessImageIds } = await import("@/lib/business-images");
+    for (const [id, imageId] of await getBusinessImageIds(ids)) {
+      logos.set(id, `/api/business-image/${imageId}`);
+    }
+  }
 
   return (rows[0] ?? []).map((r) => ({
     id: Number(r.id),
@@ -63,8 +129,50 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
     isFeatured: bool(r.is_featured),
     isVerified: bool(r.is_verified),
     isHidden: bool(r.is_hidden),
+    isActive: bool(r.is_active),
+    views: Number(r.views_count ?? 0),
+    inquiries: Number(r.inquiries_count ?? 0),
+    logoUrl: logos.get(Number(r.id)) ?? null,
     createdAt: r.created_at ? String(r.created_at) : null,
   }));
+}
+
+/**
+ * The row actions the legacy admin had, with its exact semantics:
+ * approving only sets verified, hiding and activating are toggles, and
+ * denying removes the listing outright.
+ */
+export async function businessAction(
+  id: number,
+  action: "approve" | "deny" | "toggle_hidden" | "toggle_active" | "toggle_featured" | "delete",
+) {
+  const { db } = await import("@/lib/db");
+  switch (action) {
+    case "approve":
+      await db.execute(
+        sql`UPDATE directory_businesses SET is_verified = 1, is_active = 1 WHERE id = ${id}`,
+      );
+      return;
+    case "toggle_hidden":
+      await db.execute(
+        sql`UPDATE directory_businesses SET is_hidden = NOT is_hidden WHERE id = ${id}`,
+      );
+      return;
+    case "toggle_active":
+      await db.execute(
+        sql`UPDATE directory_businesses SET is_active = NOT is_active WHERE id = ${id}`,
+      );
+      return;
+    case "toggle_featured":
+      await db.execute(
+        sql`UPDATE directory_businesses SET is_featured = NOT is_featured WHERE id = ${id}`,
+      );
+      return;
+    case "deny":
+    case "delete":
+      await db.execute(sql`DELETE FROM directory_businesses WHERE id = ${id}`);
+      return;
+  }
 }
 
 export type BusinessPatch = {
@@ -80,6 +188,15 @@ export type BusinessPatch = {
   isFeatured?: boolean;
   isVerified?: boolean;
   isHidden?: boolean;
+  isActive?: boolean;
+  // Columns the legacy admin has always written and the public page
+  // already renders, but which nothing in this app could set until the
+  // advertiser portal needed them.
+  facebookUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  showHours?: boolean;
 };
 
 /** Column whitelist: patch keys can never reach SQL directly. */
@@ -96,7 +213,65 @@ const COLUMNS: Record<keyof BusinessPatch, string> = {
   isFeatured: "is_featured",
   isVerified: "is_verified",
   isHidden: "is_hidden",
+  isActive: "is_active",
+  facebookUrl: "facebook_url",
+  instagramUrl: "instagram_url",
+  tiktokUrl: "tiktok_url",
+  youtubeUrl: "youtube_url",
+  showHours: "show_hours",
 };
+
+/**
+ * Add a listing by hand.
+ *
+ * Until now the only ways a business could enter the directory were the
+ * public signup form, which creates a request rather than a listing, and
+ * the bulk CSV import. Neither covers the ordinary case: an advertiser
+ * comes aboard and needs a listing today.
+ */
+export async function createBusiness(input: BusinessPatch & { name: string }) {
+  const { db } = await import("@/lib/db");
+  const name = input.name.trim();
+  if (!name) throw new Error("A business name is required");
+
+  const base =
+    name
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 180) || "business";
+
+  // Slugs are the listing's URL, so a clash has to be resolved rather
+  // than left to fail at insert time.
+  const taken = (await db.execute(
+    sql`SELECT slug FROM directory_businesses WHERE slug LIKE ${`${base}%`}`,
+  )) as unknown as [{ slug: string }[]];
+  const existing = new Set((taken[0] ?? []).map((r) => String(r.slug)));
+  let slug = base;
+  for (let n = 2; existing.has(slug); n++) slug = `${base}-${n}`;
+
+  const value = (v: string | boolean | undefined) =>
+    v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v;
+
+  await db.execute(sql`
+    INSERT INTO directory_businesses
+      (business_name, slug, category, location_area, city, state, phone, email,
+       website, description, plan_type, is_featured, is_verified, is_hidden,
+       is_active, created_at)
+    VALUES
+      (${name}, ${slug}, ${value(input.category)}, ${value(input.locationArea)},
+       ${value(input.city)}, 'SC', ${value(input.phone)}, ${value(input.email)},
+       ${value(input.website)}, ${value(input.description)},
+       ${input.planType ?? "basic"}, ${input.isFeatured ? 1 : 0},
+       ${input.isVerified ? 1 : 0}, ${input.isHidden ? 1 : 0}, 1, NOW())
+  `);
+
+  const rows = (await db.execute(
+    sql`SELECT LAST_INSERT_ID() AS id`,
+  )) as unknown as [{ id: number }[]];
+  return { id: Number((rows[0] ?? [])[0]?.id ?? 0), slug };
+}
 
 export async function updateBusiness(id: number, patch: BusinessPatch) {
   const { db } = await import("@/lib/db");
@@ -265,7 +440,14 @@ export type AdminPost = {
   excerpt: string | null;
   content: string | null;
   metaDescription: string | null;
+  /** Exactly what the column holds: a legacy filename or a serving path. */
   featuredImage: string | null;
+  /**
+   * The same value resolved to something an img tag can load, so the
+   * editor can preview a post's image without knowing which of the two
+   * kinds it is.
+   */
+  featuredImageUrl: string | null;
   categoryId: number | null;
   status: string;
   publishedAt: string | null;
@@ -275,6 +457,7 @@ export async function getAdminPosts(): Promise<AdminPost[]> {
   const { db } = await import("@/lib/db");
   const { blogPosts } = await import("@/lib/db/schema-legacy");
   const { desc } = await import("drizzle-orm");
+  const { resolveBlogImageUrl } = await import("@/lib/blog-images");
   const rows = await db
     .select()
     .from(blogPosts)
@@ -288,6 +471,7 @@ export async function getAdminPosts(): Promise<AdminPost[]> {
     content: r.content ?? null,
     metaDescription: r.metaDescription ?? null,
     featuredImage: r.featuredImage ?? null,
+    featuredImageUrl: resolveBlogImageUrl(r.featuredImage) ?? null,
     categoryId: r.categoryId ?? null,
     status: r.status ?? "draft",
     publishedAt: r.publishedAt ? String(r.publishedAt) : null,
@@ -318,6 +502,9 @@ const POST_COLUMNS: Record<keyof PostPatch, string> = {
   excerpt: "excerpt",
   content: "content",
   metaDescription: "meta_description",
+  // Either a legacy filename or the serving path of an uploaded image.
+  // Stored verbatim, since resolveBlogImageUrl is what reads it back and
+  // rewriting it here would strand every post written before uploads.
   featuredImage: "featured_image",
   status: "status",
 };
@@ -441,14 +628,23 @@ export type AdminLead = {
   createdAt: string | null;
 };
 
-/** Mirrors admin/leads.php, reading the same leads table. */
+/**
+ * Mirrors admin/leads.php, reading the same leads table.
+ *
+ * The table is `leads`, with no prefix. This read used to say
+ * `directory_leads`, which does not exist: both capture paths,
+ * process_form.php and save-quiz-lead.php, insert into `leads`, and the
+ * legacy dashboard counts `leads`. The missing table threw, the catch
+ * returned an empty array, and the page reported "No leads captured
+ * yet" however many had come in.
+ */
 export async function getAdminLeads(): Promise<AdminLead[]> {
   const { db } = await import("@/lib/db");
   try {
     const rows = (await db.execute(
       sql`SELECT id, company_name, contact_name, email, phone, location,
                  package_description, created_at
-          FROM directory_leads
+          FROM leads
           ORDER BY created_at DESC
           LIMIT 200`,
     )) as unknown as [Record<string, unknown>[]];
@@ -466,6 +662,32 @@ export async function getAdminLeads(): Promise<AdminLead[]> {
   } catch (e) {
     console.error("[admin] leads query failed:", e);
     return [];
+  }
+}
+
+/**
+ * Removes leads outright, matching admin/leads.php, which has always
+ * done a hard DELETE behind a confirm.
+ *
+ * Safe to be blunt about because the lead was pushed to GoHighLevel at
+ * capture time by process_form.php and save-quiz-lead.php. This table
+ * is the local copy, so deleting a row here does not lose the contact.
+ */
+export async function deleteLeads(ids: number[]): Promise<number> {
+  const clean = ids.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (clean.length === 0) return 0;
+  try {
+    const { db } = await import("@/lib/db");
+    const result = (await db.execute(
+      sql`DELETE FROM leads WHERE id IN (${sql.join(
+        clean.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+    )) as unknown as [{ affectedRows?: number }];
+    return result[0]?.affectedRows ?? 0;
+  } catch (e) {
+    console.error("[admin] could not delete leads:", e);
+    return 0;
   }
 }
 
@@ -528,10 +750,149 @@ export async function setUserActive(id: number, active: boolean) {
   );
 }
 
+export type DeleteUserResult =
+  | { ok: true; unlinkedListings: number }
+  | { ok: false; reason: string };
+
+/**
+ * Removes an advertiser account.
+ *
+ * Refused outright when the account has neighborhood card orders.
+ * directory_card_orders.user_id is NOT NULL and getAdminOrders joins
+ * directory_users with an inner JOIN, so deleting the account does not
+ * just orphan the orders, it removes them from the Orders page and from
+ * the revenue the admin reports. Somebody's paid history would silently
+ * stop existing. Disabling is the right answer there and the error says
+ * so.
+ *
+ * Listings are unlinked rather than deleted. A directory listing is
+ * public content that stands on its own: most of them were created
+ * without an owner in the first place, and the account going away is no
+ * reason for the business to disappear from the directory.
+ *
+ * Login codes go with the account, since leaving a live code behind
+ * would let somebody sign in to a login that no longer exists.
+ */
+export async function deleteUser(id: number): Promise<DeleteUserResult> {
+  if (!Number.isInteger(id) || id <= 0) {
+    return { ok: false, reason: "That is not a valid account." };
+  }
+  try {
+    const { db } = await import("@/lib/db");
+
+    const userRows = (await db.execute(
+      sql`SELECT email FROM directory_users WHERE id = ${id} LIMIT 1`,
+    )) as unknown as [{ email: string }[]];
+    const user = userRows[0]?.[0];
+    if (!user) return { ok: false, reason: "That account no longer exists." };
+
+    const orderRows = (await db.execute(
+      sql`SELECT COUNT(*) AS n FROM directory_card_orders WHERE user_id = ${id}`,
+    )) as unknown as [{ n: number }[]];
+    const orders = Number(orderRows[0]?.[0]?.n ?? 0);
+    if (orders > 0) {
+      return {
+        ok: false,
+        reason:
+          `This account has ${orders} card order${orders === 1 ? "" : "s"}. ` +
+          "Deleting it would remove them from the Orders page and from " +
+          "revenue totals. Set the account inactive instead.",
+      };
+    }
+
+    const unlink = (await db.execute(
+      sql`UPDATE directory_businesses SET user_id = NULL WHERE user_id = ${id}`,
+    )) as unknown as [{ affectedRows?: number }];
+
+    // Best effort: the table is created on first use, so it may not exist.
+    try {
+      await db.execute(
+        sql`DELETE FROM lbs_login_codes WHERE email = ${user.email}`,
+      );
+    } catch {
+      /* no codes table yet */
+    }
+
+    await db.execute(sql`DELETE FROM directory_users WHERE id = ${id}`);
+    return { ok: true, unlinkedListings: unlink[0]?.affectedRows ?? 0 };
+  } catch (e) {
+    console.error("[admin] could not delete user:", e);
+    return { ok: false, reason: "That account could not be deleted." };
+  }
+}
+
 /** Links a listing to a login so the portal can show "your listing". */
 export async function linkListingToUser(businessId: number, userId: number | null) {
   const { db } = await import("@/lib/db");
   await db.execute(
     sql`UPDATE directory_businesses SET user_id = ${userId} WHERE id = ${businessId}`,
   );
+}
+
+/**
+ * Creates a portal login for an advertiser who has never signed in.
+ *
+ * Most advertisers arrived by phone or in person, so they have a
+ * listing and card history but no login, which means no portal and
+ * nothing to view as. This is how one gets made without setting a
+ * password on their behalf or emailing them.
+ *
+ * Any listing already carrying that email is linked to the new login on
+ * the way through. The portal can find a listing by email alone, but
+ * user_id is the reliable join and email is the fallback; leaving it
+ * unlinked keeps a real relationship resting on a heuristic.
+ */
+export async function createLoginForEmail(input: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<
+  | { ok: true; id: number; created: boolean; linkedListings: number }
+  | { ok: false; error: string }
+> {
+  const email = input.email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, error: "That is not a valid email address." };
+  }
+
+  const { db } = await import("@/lib/db");
+  try {
+    const existing = (await db.execute(
+      sql`SELECT id FROM directory_users WHERE email = ${email} LIMIT 1`,
+    )) as unknown as [{ id: number }[]];
+    let id = existing[0]?.[0]?.id ?? 0;
+    const created = !id;
+
+    if (!id) {
+      // Unusable by design: bcrypt can never match it, so the account
+      // exists and codes work while password sign-in stays closed until
+      // the owner chooses one.
+      const unusable = `$2a$12$${".".repeat(53)}`;
+      await db.execute(
+        sql`INSERT INTO directory_users (email, password_hash, first_name, last_name, is_active)
+            VALUES (${email}, ${unusable}, ${input.firstName?.trim() ?? ""},
+                    ${input.lastName?.trim() ?? ""}, 1)`,
+      );
+      const row = (await db.execute(
+        sql`SELECT id FROM directory_users WHERE email = ${email} ORDER BY id DESC LIMIT 1`,
+      )) as unknown as [{ id: number }[]];
+      id = row[0]?.[0]?.id ?? 0;
+      if (!id) return { ok: false, error: "The account could not be created." };
+    }
+
+    const linked = (await db.execute(
+      sql`UPDATE directory_businesses SET user_id = ${id}
+          WHERE email = ${email} AND (user_id IS NULL OR user_id = 0)`,
+    )) as unknown as [{ affectedRows?: number }];
+
+    return {
+      ok: true,
+      id,
+      created,
+      linkedListings: linked[0]?.affectedRows ?? 0,
+    };
+  } catch (e) {
+    console.error("[admin] could not create login:", e);
+    return { ok: false, error: "The account could not be created." };
+  }
 }

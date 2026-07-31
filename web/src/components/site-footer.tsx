@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { NewsletterSignup } from "@/components/newsletter-signup";
+import { SITE_NAME, SITE_URL, CONTACT_EMAIL } from "@/lib/seo";
 
 const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
   {
@@ -33,24 +34,73 @@ const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
   },
 ];
 
+/**
+ * Sitewide LocalBusiness schema, matching what the legacy footer.php
+ * emitted on every page. The areaServed cities and the opening hours are
+ * not decoration: they are the local signals the old site carried on all
+ * 161 URLs, and dropping them would be a sitewide regression rather than
+ * a page-level one.
+ */
+const AREA_SERVED = [
+  "Summerville",
+  "Mount Pleasant",
+  "Daniel Island",
+  "North Charleston",
+  "Moncks Corner",
+  "Charleston",
+];
+
 const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   name: SITE_NAME,
+  description:
+    "Billboard-style direct mail marketing serving the Charleston, SC metro area. Affordable postcard advertising with exclusive category placement.",
   url: SITE_URL,
+  logo: `${SITE_URL}/brand/lb-spotlight.png`,
   telephone: "+1-843-212-2969",
-  email: "hello@lbspotlight.com",
+  email: CONTACT_EMAIL,
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Summerville",
+    streetAddress: "PO Box 357",
+    addressLocality: "Huger",
     addressRegion: "SC",
+    postalCode: "29450",
     addressCountry: "US",
   },
+  areaServed: AREA_SERVED.map((name) => ({
+    "@type": "City",
+    name,
+    containedInPlace: { "@type": "State", name: "South Carolina" },
+  })),
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "09:00",
+      closes: "18:00",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: "Saturday",
+      opens: "10:00",
+      closes: "16:00",
+    },
+  ],
+  priceRange: "$$",
+  knowsAbout: [
+    "Direct Mail Marketing",
+    "Postcard Advertising",
+    "Local Business Advertising",
+  ],
 };
 
 export function SiteFooter() {
   return (
     <footer className="bg-navy-950 text-[#93A5B8] text-[13.5px] mt-auto">
+      {/* Renders its own band, and nothing at all on the signed-in and
+          admin routes this footer also reaches. */}
+      <NewsletterSignup />
       <div className="mx-auto max-w-[1120px] px-6 py-13 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-3 mb-3.5">
@@ -65,7 +115,7 @@ export function SiteFooter() {
             </span>
           </div>
           <p className="mb-2">Summerville, SC</p>
-          <p>843-212-2969 · hello@lbspotlight.com</p>
+          <p>843-212-2969 · {CONTACT_EMAIL}</p>
         </div>
         {COLS.map((col) => (
           <div key={col.heading}>

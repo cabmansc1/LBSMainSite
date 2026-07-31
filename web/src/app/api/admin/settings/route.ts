@@ -3,6 +3,14 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { saveSetting, saveSiteStat, deleteSiteStat } from "@/lib/admin-data";
 import { PRICING_KEY } from "@/lib/pricing-store";
+import {
+  DIRECTORY_PRICING_KEY,
+  MAX_DIRECTORY_PRICE_CENTS,
+} from "@/lib/directory-pricing";
+import { ZONE_FACTS_KEY, MAX_MAILBOXES } from "@/lib/zone-store";
+import { ZONES } from "@/lib/zones";
+import { setCardOrientation, type Orientation } from "@/lib/card-capacity";
+import { CARD_DESCRIPTION_MAX, setCardDescription } from "@/lib/card-details";
 
 /**
  * Admin writes for editable site settings: postcard pricing and the
@@ -28,9 +36,10 @@ export async function POST(req: Request) {
       // Reject anything that is not a positive whole number of cents.
       for (const reach of Object.values(overrides ?? {})) {
         for (const cents of Object.values(reach ?? {})) {
-          if (!Number.isInteger(cents) || cents <= 0 || cents > 10_000_00) {
+          // Zero is allowed: it means the size is not sold at that reach.
+          if (!Number.isInteger(cents) || cents < 0 || cents > 10_000_00) {
             return NextResponse.json(
-              { error: "Prices must be between $1 and $10,000" },
+              { error: "Prices must be between $0 and $10,000" },
               { status: 422 },
             );
           }
@@ -38,6 +47,97 @@ export async function POST(req: Request) {
       }
       await saveSetting(PRICING_KEY, overrides);
       for (const path of ["/pricing", "/advertise", "/roi-calculator", "/compare"]) {
+        revalidatePath(path);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "directory-pricing") {
+      const monthlyCents = Number(body.monthlyCents);
+      const annualCents = Number(body.annualCents);
+      for (const cents of [monthlyCents, annualCents]) {
+        // Zero is allowed and means that term is not sold, the same as
+        // taking an ad size off sale.
+        if (
+          !Number.isInteger(cents) ||
+          cents < 0 ||
+          cents > MAX_DIRECTORY_PRICE_CENTS
+        ) {
+          return NextResponse.json(
+            { error: "Prices must be between $0 and $1,000" },
+            { status: 422 },
+          );
+        }
+      }
+      await saveSetting(DIRECTORY_PRICING_KEY, { monthlyCents, annualCents });
+      // Everywhere the Premium price is quoted.
+      for (const path of ["/directory-signup", "/register"]) {
+        revalidatePath(path);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "zone-facts") {
+      const overrides = (body.overrides ?? {}) as Record<
+        string,
+        { mailboxes?: number | null; population?: number; mailsWith?: string | null }
+      >;
+      const known = new Set(ZONES.map((z) => z.slug));
+
+      for (const [slug, patch] of Object.entries(overrides)) {
+        // An unknown slug would sit in the settings row forever, doing
+        // nothing and looking like it worked.
+        if (!known.has(slug)) {
+          return NextResponse.json(
+            { error: `Unknown zone: ${slug}` },
+            { status: 422 },
+          );
+        }
+        const { mailboxes, population, mailsWith } = patch ?? {};
+
+        // null is how the admin clears a count. Zero is not: a zone with
+        // no mailboxes in it is not a thing we can mail.
+        if (mailboxes !== null && mailboxes !== undefined) {
+          if (
+            !Number.isInteger(mailboxes) ||
+            mailboxes < 1 ||
+            mailboxes > MAX_MAILBOXES
+          ) {
+            return NextResponse.json(
+              { error: "Mailboxes must be a whole number between 1 and 1,000,000" },
+              { status: 422 },
+            );
+          }
+        }
+        if (population !== undefined) {
+          if (!Number.isInteger(population) || population < 1 || population > 5_000_000) {
+            return NextResponse.json(
+              { error: "Population must be a whole number above zero" },
+              { status: 422 },
+            );
+          }
+        }
+        if (mailsWith !== null && mailsWith !== undefined) {
+          if (!known.has(mailsWith)) {
+            return NextResponse.json(
+              { error: `Unknown zone to share a card with: ${mailsWith}` },
+              { status: 422 },
+            );
+          }
+          // Self-pairing collapses the zone out of the map entirely.
+          if (mailsWith === slug) {
+            return NextResponse.json(
+              { error: "A zone cannot share a card with itself" },
+              { status: 422 },
+            );
+          }
+        }
+      }
+
+      await saveSetting(ZONE_FACTS_KEY, overrides);
+      // Everywhere a zone's size, ZIPs or pairing is quoted. The zone
+      // pages render per request, so they need no entry here.
+      for (const path of ["/coverage-map", "/mailing-calendar", "/pricing"]) {
         revalidatePath(path);
       }
       return NextResponse.json({ ok: true });
@@ -53,6 +153,43 @@ export async function POST(req: Request) {
       }
       await saveSiteStat(stat);
       revalidatePath("/");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "card-description") {
+      const cardId = String(body.cardId ?? "");
+      if (!cardId) {
+        return NextResponse.json({ error: "A card is required" }, { status: 422 });
+      }
+      const description = String(body.description ?? "");
+      if (description.length > CARD_DESCRIPTION_MAX) {
+        return NextResponse.json(
+          { error: `Keep it under ${CARD_DESCRIPTION_MAX} characters` },
+          { status: 422 },
+        );
+      }
+      await setCardDescription(cardId, description);
+      // The description shows anywhere a card is offered.
+      for (const path of ["/pricing", "/coverage-map", "/mailing-calendar"]) {
+        revalidatePath(path);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.type === "card-orientation") {
+      const cardId = String(body.cardId ?? "");
+      const orientation = String(body.orientation ?? "") as Orientation;
+      if (!cardId || !["horizontal", "vertical"].includes(orientation)) {
+        return NextResponse.json(
+          { error: "A card and orientation are required" },
+          { status: 422 },
+        );
+      }
+      await setCardOrientation(cardId, orientation);
+      // Capacity feeds availability everywhere a card is sold.
+      for (const path of ["/coverage-map", "/mailing-calendar"]) {
+        revalidatePath(path);
+      }
       return NextResponse.json({ ok: true });
     }
 

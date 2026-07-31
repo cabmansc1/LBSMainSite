@@ -2,11 +2,26 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostcardCheckout } from "@/components/postcard-checkout";
+import { ALL_SIZES, type SpotSize } from "@/lib/pricing";
+import { cardCoverage } from "@/lib/card-coverage";
+import {
+  mailMonthLabel,
+  tentativelyMails,
+  type UpcomingMailing,
+} from "@/lib/mailings";
+import { getCardDescriptions } from "@/lib/card-details";
+import { getLivePricing } from "@/lib/pricing-store";
 import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
   getTakenCategoriesForCard,
+  getMcCategories,
 } from "@/lib/mission-control";
+import {
+  cardCapacity,
+  getCardOrientation,
+  type CardCapacity,
+} from "@/lib/card-capacity";
 import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -27,14 +42,24 @@ const CATEGORIES = [
 ];
 
 /** Spot counts derive from the mailing's remaining capacity. */
-const availabilityFrom = (leftRaw: number) => {
-  const left = Math.max(0, Math.floor(leftRaw)); // half-spots exist in MC
-  return [
-    { size: "small" as const, open: Math.min(4, left) },
-    { size: "medium" as const, open: Math.max(0, Math.min(2, left - 2)) },
-    { size: "large" as const, open: Math.max(0, left - 8) },
-  ];
-};
+/**
+ * Real availability: what still fits in the space left on the card,
+ * from Mission Control's spot counts and the card's orientation.
+ */
+const availabilityFrom = (cap: CardCapacity) =>
+  ALL_SIZES.map((size) => ({ size, open: cap.fits[size] }));
+
+/**
+ * The reach-and-deadline line, built only from facts we hold.
+ *
+ * This used to be a fixed sentence, so a card with neither figure still
+ * read "5,000+ households · artwork deadline Ask us".
+ */
+const mailingFacts = (m: UpcomingMailing): string[] =>
+  [
+    m.households ? `${m.households} households` : null,
+    m.artworkDeadline ? `artwork deadline ${m.artworkDeadline}` : null,
+  ].filter((f): f is string => f !== null);
 
 export async function generateMetadata({
   params,
@@ -61,8 +86,8 @@ export default async function PostcardCheckoutPage({
 }) {
   const { zone } = await params;
   const sp = await searchParams;
-  const initialSize = ["small", "medium", "large"].includes(sp.spot ?? "")
-    ? (sp.spot as "small" | "medium" | "large")
+  const initialSize = ALL_SIZES.includes(sp.spot as SpotSize)
+    ? (sp.spot as SpotSize)
     : undefined;
   const z = zoneBySlug(zone);
   if (!z) notFound();
@@ -72,6 +97,9 @@ export default async function PostcardCheckoutPage({
   const openCards = (await getZoneMailings(zone)).filter(
     (m) => m.status !== "waitlist",
   );
+  // Written per card in the admin: the sentence that tells a buyer what
+  // this card is, which the zone name alone never does.
+  const descriptions = await getCardDescriptions();
   const chosen =
     openCards.find((m) => m.cardId && m.cardId === sp.card) ??
     (openCards.length === 1 ? openCards[0] : undefined);
@@ -79,6 +107,18 @@ export default async function PostcardCheckoutPage({
   const takenCategories = chosen?.cardId
     ? await getTakenCategoriesForCard(chosen.cardId)
     : [];
+  // Mission Control owns the category vocabulary; exclusivity is checked
+  // against its names, so the picker has to offer the same ones.
+  const mcCategories = await getMcCategories();
+  const categoryOptions = mcCategories.length > 0 ? mcCategories : CATEGORIES;
+  const orientation = chosen?.cardId
+    ? await getCardOrientation(chosen.cardId)
+    : "horizontal";
+  const capacity = cardCapacity({
+    orientation,
+    totalSpots: chosen?.spotsTotal,
+    spotsFilled: chosen?.spotsTaken,
+  });
   if (!mailing && openCards.length > 1) {
     return (
       <>
@@ -125,21 +165,47 @@ export default async function PostcardCheckoutPage({
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
                     <b className="text-[16px] font-bold tracking-tight">
-                      Mails {m.mailMonth}
+                      {cardCoverage(m).name ?? tentativelyMails(m.mailMonth)}
                     </b>
-                    <p className="text-[13px] text-muted mt-0.5 num">
-                      {m.households} households · artwork deadline{" "}
-                      {m.artworkDeadline}
-                    </p>
+                    {cardCoverage(m).name && (
+                      <p className="text-[13px] text-body mt-0.5">
+                        {tentativelyMails(m.mailMonth)}
+                      </p>
+                    )}
+                    {m.cardId && descriptions[m.cardId] && (
+                      <p className="text-[13px] text-body mt-1.5 max-w-[52ch]">
+                        {descriptions[m.cardId]}
+                      </p>
+                    )}
+                    {cardCoverage(m).zips.length > 0 && (
+                      <p className="text-[12.5px] text-muted mt-0.5 num">
+                        ZIP {cardCoverage(m).zips.join(", ")} ·{" "}
+                        {cardCoverage(m).routeCount} carrier routes
+                      </p>
+                    )}
+                    {mailingFacts(m).length > 0 && (
+                      <p className="text-[13px] text-muted mt-0.5 num">
+                        {mailingFacts(m).join(" · ")}
+                      </p>
+                    )}
                   </div>
                   <span
                     className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-1 border ${
-                      left <= 3
-                        ? "bg-cta-tint border-[#f3ddbb] text-[#a05e00]"
-                        : "bg-brand-tint border-[#c2e4fb] text-brand-deep"
+                      m.status === "planned"
+                        ? "bg-surface border-line-strong text-muted"
+                        : left <= 3
+                          ? "bg-cta-tint border-[#f3ddbb] text-[#a05e00]"
+                          : "bg-brand-tint border-[#c2e4fb] text-brand-deep"
                     }`}
                   >
-                    {left <= 3 ? `${left} left` : "Open"}
+                    {/* Which card is planned matters most here, where a
+                        zone has more than one and somebody is choosing
+                        between them. */}
+                    {m.status === "planned"
+                      ? "Planned"
+                      : left <= 3
+                        ? `${left} left`
+                        : "Open"}
                   </span>
                 </div>
                 <div className="mt-3.5 h-1.5 rounded-full bg-line overflow-hidden">
@@ -214,6 +280,8 @@ export default async function PostcardCheckoutPage({
   const spotsLeft =
     mailing.status === "full" ? 0 : mailing.spotsTotal - mailing.spotsTaken;
 
+  const headerFacts = mailingFacts(mailing);
+
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -228,11 +296,45 @@ export default async function PostcardCheckoutPage({
             <b className="text-white font-semibold">Checkout</b>
           </nav>
           <h1 className="mt-4 text-[24px] md:text-[34px] font-bold tracking-[-0.03em]">
-            Reserve your spot: {z.name}, {mailing.mailMonth}
+            Reserve your spot: {cardCoverage(mailing).name ?? z.name},{" "}
+            {mailMonthLabel(mailing.mailMonth)}
           </h1>
-          <p className="text-[#93A5B8] text-[14.5px] mt-2 num">
-            {mailing.households} households · artwork deadline{" "}
-            {mailing.artworkDeadline}
+          {headerFacts.length > 0 && (
+            <p className="text-[#93A5B8] text-[14.5px] mt-2 num">
+              {headerFacts.join(" · ")}
+            </p>
+          )}
+          {/* Said before the form, not after the payment. A planned card
+              is genuinely bookable, and the month is genuinely not
+              fixed; somebody spending $249 is entitled to both halves of
+              that before they decide. */}
+          {mailing.status === "planned" && (
+            <p className="text-[#93A5B8] text-[14px] mt-2.5 max-w-[60ch]">
+              This card is planned rather than filling. Reserving now holds
+              your category on it, and the month can still move. We confirm
+              the mail date and your artwork deadline before anything goes
+              to print.
+            </p>
+          )}
+          {mailing.cardId && descriptions[mailing.cardId] && (
+            <p className="text-[#93A5B8] text-[14px] mt-2.5 max-w-[60ch]">
+              {descriptions[mailing.cardId]}
+            </p>
+          )}
+          {cardCoverage(mailing).zips.length > 0 && (
+            <p className="text-[#67768A] text-[13px] mt-1.5 num">
+              {/* Route counts, not the address sum. Routes move right up
+                  to the print deadline, so the sum is provisional and
+                  quoting it reads as a promise. Reach comes from the
+                  distribution figure above. */}
+              Mails to ZIP {cardCoverage(mailing).zips.join(", ")} ·{" "}
+              {cardCoverage(mailing).routeCount} full USPS carrier routes
+            </p>
+          )}
+          <p className="text-[#67768A] text-[13px] mt-1.5 num">
+            {capacity.orientation === "vertical" ? "Vertical" : "Horizontal"}{" "}
+            card · {capacity.remainingSqIn} of {capacity.totalSqIn} square
+            inches still open
           </p>
         </div>
       </header>
@@ -242,12 +344,14 @@ export default async function PostcardCheckoutPage({
           zoneSlug={zone}
           zoneName={z.name}
           mailMonth={mailing.mailMonth}
+          orientation={capacity.orientation}
           reach={sp.reach === "10k" ? "10k" : "5k"}
           initialSize={initialSize}
           cardId={mailing.cardId}
-          availability={availabilityFrom(spotsLeft)}
+          availability={availabilityFrom(capacity)}
           takenCategories={takenCategories}
-          categories={CATEGORIES}
+          categories={categoryOptions}
+          pricing={await getLivePricing()}
         />
       </div>
     </>

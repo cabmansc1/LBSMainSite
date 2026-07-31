@@ -21,8 +21,51 @@ export function AdminPostEditor({ post }: { post: AdminPost | null }) {
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [message, setMessage] = useState("");
 
+  // The preview is a resolved URL, the form field is the stored value.
+  // They are the same string for an uploaded image and different for a
+  // legacy filename, which is why the preview cannot just read the form.
+  const [preview, setPreview] = useState<string | null>(
+    post?.featuredImageUrl ?? null,
+  );
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageError, setImageError] = useState("");
+
   const input =
     "w-full text-sm px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950";
+
+  async function uploadImage(file: File) {
+    setImageBusy(true);
+    setImageError("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      // No content-type header: the browser has to set the multipart
+      // boundary itself, and setting it by hand breaks the parse.
+      const res = await fetch("/api/admin/blog-image", { method: "POST", body });
+      const j = await res.json().catch(() => ({}));
+      // requireAdmin redirects rather than returning 401, and fetch
+      // follows it, so a signed-out admin gets a 200 full of HTML.
+      // ok: true is the only proof the upload actually happened.
+      if (!res.ok || j.ok !== true) {
+        throw new Error(j.error ?? "That upload failed. Sign in again and retry.");
+      }
+      setForm((f) => ({ ...f, featuredImage: j.url }));
+      setPreview(j.url);
+    } catch (e) {
+      setImageError(String(e instanceof Error ? e.message : e));
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  // Nothing is deleted. The bytes are immutable and cached forever, and
+  // the post is what points at them, so clearing the field here and
+  // saving is the whole removal.
+  function removeImage() {
+    setImageError("");
+    setForm((f) => ({ ...f, featuredImage: "" }));
+    setPreview(null);
+  }
 
   async function save(status?: string) {
     setState("saving");
@@ -35,7 +78,9 @@ export function AdminPostEditor({ post }: { post: AdminPost | null }) {
         body: JSON.stringify({ type: "post", id: post?.id, post: payload }),
       });
       const j = await res.json().catch(() => ({}));
-      if (res.ok) {
+      // Same reason as the upload: a redirect to the login page arrives
+      // as a 200, so res.ok alone would report a save that never ran.
+      if (res.ok && j.ok === true) {
         setForm(payload);
         setState("saved");
         setMessage(
@@ -44,7 +89,7 @@ export function AdminPostEditor({ post }: { post: AdminPost | null }) {
         router.refresh();
       } else {
         setState("error");
-        setMessage(j.error ?? "Save failed");
+        setMessage(j.error ?? "Save failed. Sign in again and retry.");
       }
     } catch {
       setState("error");
@@ -169,20 +214,61 @@ export function AdminPostEditor({ post }: { post: AdminPost | null }) {
               {form.metaDescription.length}/160
             </span>
           </label>
-          <label className="grid gap-1.5">
+          <div className="grid gap-2">
             <span className="text-[12.5px] font-medium">Featured image</span>
-            <input
-              className={input}
-              placeholder="filename.jpg"
-              value={form.featuredImage}
-              onChange={(e) =>
-                setForm({ ...form, featuredImage: e.target.value })
-              }
-            />
-            <span className="text-[12px] text-muted">
-              Filename inside /uploads/blog/
+            {/* 16/9, because that is the crop the blog index card uses.
+                Showing it any other shape would promise a framing the
+                published page does not keep. */}
+            <span className="w-full aspect-[16/9] rounded-[10px] border border-line bg-surface overflow-hidden grid place-items-center">
+              {preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={preview}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[11px] text-faint">No image</span>
+              )}
             </span>
-          </label>
+            <input
+              type="file"
+              accept="image/*"
+              disabled={imageBusy}
+              aria-label="Featured image file"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadImage(f);
+                // Cleared so choosing the same file twice still fires.
+                e.target.value = "";
+              }}
+              className="text-[13px] file:mr-3 file:px-3 file:py-1.5 file:rounded-[8px] file:border file:border-line-strong file:bg-white file:text-[12.5px] file:font-semibold file:cursor-pointer"
+            />
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-[12px] text-muted">
+                {imageBusy
+                  ? "Uploading..."
+                  : preview
+                    ? "Choose another file to replace it."
+                    : "Resized to 1600px and converted to WebP automatically."}
+              </span>
+              {preview && !imageBusy && (
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="text-[12.5px] font-semibold text-danger hover:underline ml-auto"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {imageError && (
+              <p className="text-[12.5px] text-danger">{imageError}</p>
+            )}
+            <span className="text-[12px] text-muted">
+              Saved with the post. Publish or save the draft to apply it.
+            </span>
+          </div>
         </div>
       </aside>
     </div>

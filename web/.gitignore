@@ -32,6 +32,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...which is what this does. .env.example holds no values, only the
+# names, and it is the only record of what this app needs to run. The
+# blanket .env* meant it was written, never committed, and drifted for
+# months into documenting six variables no file reads while omitting
+# the one that decides whether email sends.
+!.env.example
 
 # vercel
 .vercel

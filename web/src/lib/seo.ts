@@ -11,6 +11,17 @@ import type { Metadata } from "next";
 export const SITE_NAME = "Lowcountry Business Spotlight";
 export const SITE_URL = "https://www.lowcountrybusinessspotlight.com";
 
+/**
+ * The address we ask people to write to, and the one mail arrives from.
+ *
+ * Here rather than typed into each page, because it was hardcoded in
+ * six of them, including two LocalBusiness JSON-LD blocks, and moving
+ * from lbspotlight.com meant finding all six. EMAIL_FROM defaults to
+ * the same address, so what a customer is told to write to is what
+ * their reply goes to.
+ */
+export const CONTACT_EMAIL = "hello@lowcountrybusinessspotlight.com";
+
 type PageSeo = {
   title: string;
   description: string;
@@ -42,7 +53,9 @@ export const PAGE_SEO: Record<string, PageSeo> = {
 export function buildMetadata(key: keyof typeof PAGE_SEO): Metadata {
   const page = PAGE_SEO[key];
   return {
-    title: page.title,
+    // These titles already carry the brand, so they bypass the layout
+    // template rather than picking it up a second time.
+    title: { absolute: page.title },
     description: page.description,
     alternates: page.canonical
       ? { canonical: `${SITE_URL}${page.canonical === "/" ? "" : page.canonical}` }

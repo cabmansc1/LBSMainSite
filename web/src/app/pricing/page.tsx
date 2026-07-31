@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { PricingCards } from "@/components/pricing-cards";
 import { getLivePricing } from "@/lib/pricing-store";
 import { getUpcomingMailings } from "@/lib/mission-control";
-import { SectionHeading, TestimonialStrip, CtaBand } from "@/components/sections";
+import { cardCoverage } from "@/lib/card-coverage";
+import { getCardDescriptions } from "@/lib/card-details";
+import { SectionHeading, CtaBand } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
+import { TestimonialStrip } from "@/components/testimonial-strip";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata("pricing");
@@ -47,15 +50,39 @@ const faqJsonLd = {
 // Prices are admin-editable, so never serve a build-time snapshot.
 export const dynamic = "force-dynamic";
 
-export default async function PricingPage() {
-  const [pricing, mailings] = await Promise.all([
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ card?: string; reach?: string }>;
+}) {
+  const sp = await searchParams;
+  const [pricing, mailings, descriptions] = await Promise.all([
     getLivePricing(),
     getUpcomingMailings(),
+    getCardDescriptions(),
   ]);
-  // Only offer zones you can actually buy onto right now.
-  const openZones = mailings
+  // Only cards you can actually buy onto right now. One entry per card,
+  // because a zone can be filling several at once and each carries its
+  // own inventory and category locks.
+  const openCards = mailings
     .filter((m) => m.status !== "waitlist" && m.status !== "full")
-    .map((m) => ({ slug: m.zoneSlug, name: m.zoneName }));
+    .map((m) => {
+      const coverage = cardCoverage(m);
+      return {
+        cardId: m.cardId,
+        zoneSlug: m.zoneSlug,
+        zoneName: m.zoneName,
+        mailMonth: m.mailMonth,
+        cardName: coverage.name,
+        zips: coverage.zips,
+        description: m.cardId ? descriptions[m.cardId] : undefined,
+        // Numeric, because the reach toggle has to know whether a card
+        // of that size is actually being mailed. Without it the page
+        // happily took a 10,000 household order for a 5,000 card.
+        households:
+          Number(String(m.households ?? "").replace(/[^0-9]/g, "")) || undefined,
+      };
+    });
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -74,7 +101,12 @@ export default async function PricingPage() {
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6">
-        <PricingCards pricing={pricing} zones={openZones} />
+        <PricingCards
+          pricing={pricing}
+          cards={openCards}
+          initialCard={sp.card ?? ""}
+          initialReach={sp.reach === "10k" ? "10k" : "5k"}
+        />
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           {INCLUDED.map((item) => (
@@ -87,7 +119,7 @@ export default async function PricingPage() {
           ))}
         </div>
 
-        {hasTestimonials("pricing") && (
+        {(await hasTestimonials("pricing")) && (
           <section className="py-22">
             <SectionHeading
               eyebrow="What advertisers say"

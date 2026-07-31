@@ -4,6 +4,8 @@ import {
   setUserPassword,
   setUserActive,
   linkListingToUser,
+  createLoginForEmail,
+  deleteUser,
 } from "@/lib/admin-data";
 
 /**
@@ -19,6 +21,19 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  // Creating a login has no id yet, so it is handled before the check
+  // every other action needs.
+  if (body.action === "create") {
+    const result = await createLoginForEmail({
+      email: String(body.email ?? ""),
+      firstName: String(body.firstName ?? ""),
+      lastName: String(body.lastName ?? ""),
+    });
+    return result.ok
+      ? NextResponse.json(result)
+      : NextResponse.json({ error: result.error }, { status: 422 });
   }
 
   const id = Number(body.id);
@@ -42,6 +57,15 @@ export async function POST(req: Request) {
     if (body.action === "set-active") {
       await setUserActive(id, body.active !== false);
       return NextResponse.json({ ok: true });
+    }
+
+    if (body.action === "delete") {
+      const result = await deleteUser(id);
+      // 409, not 500: a refusal because the account carries paid history
+      // is the endpoint working, and the UI shows the reason.
+      return result.ok
+        ? NextResponse.json({ ok: true, unlinkedListings: result.unlinkedListings })
+        : NextResponse.json({ error: result.reason }, { status: 409 });
     }
 
     if (body.action === "link-listing") {

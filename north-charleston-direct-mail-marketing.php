@@ -604,7 +604,7 @@ include __DIR__ . '/seo_head.php';
 
                 <h3 style="font-size: 1.3rem; font-weight: 700; color: #000000; margin-bottom: 15px; margin-top: 40px;">How the Program Works</h3>
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 25px;">Getting started is straightforward. You select the North Charleston zip codes you want to target — or cover all four for maximum reach. We handle everything from ad design to printing to USPS delivery. Each postcard features multiple local businesses, but your category is exclusively yours. That means if you are a roofer, no other roofing company will appear on the same mailing. This exclusivity eliminates side-by-side comparison and positions you as the go-to provider for your service in the eyes of 5,000–10,000 households per mailing — with 45,000+ total homes available across North Charleston's four zip codes.</p>
-                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 40px;">We also include built-in tracking tools — QR codes, unique landing page URLs, and call tracking numbers — so you can measure exactly how many people respond to your ad. At a cost starting at just 5 cents per household, there is simply no more efficient way to put your business in front of thousands of North Charleston residents each mailing — and build coverage across the entire zone over time.</p>
+                <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 40px;">Every card carries built-in tracking, QR codes and unique landing page URLs, so you can measure how many people respond to your ad. At a cost starting at just 5 cents per household, there is simply no more efficient way to put your business in front of thousands of North Charleston residents each mailing — and build coverage across the entire zone over time.</p>
 
             </div>
         </div>
@@ -769,7 +769,7 @@ include __DIR__ . '/seo_head.php';
                         <span style="font-size: 1.2rem;">+</span>
                     </div>
                     <div class="faq-answer">
-                        We can include a trackable QR code, unique URL, and phone tracking to measure scans, visits, and calls.
+                        Every card carries QR codes and unique URLs, so you can measure scans and visits.
                     </div>
                 </div>
 

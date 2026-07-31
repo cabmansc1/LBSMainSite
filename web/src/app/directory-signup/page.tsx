@@ -3,20 +3,32 @@ import Link from "next/link";
 import { Card, CtaBand } from "@/components/sections";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "List Your Business: Free Directory Listing",
-  description:
-    "Get your Lowcountry business listed free, or go Premium for $10 a month with photos, offers, hours, and featured placement.",
-  alternates: { canonical: `${SITE_URL}/directory-signup` },
-  openGraph: {
-    title: `List Your Business | ${SITE_NAME}`,
-    description: "Free and Premium directory listings for local businesses.",
-    siteName: SITE_NAME,
-    type: "website",
-  },
-};
+/**
+ * The price is quoted here and in the search snippet, so both are built
+ * from the live setting rather than typed. A page advertising one price
+ * while the admin holds another is the failure this exists to prevent.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { getLiveDirectoryPricing, money } = await import(
+    "@/lib/directory-pricing"
+  );
+  const pricing = await getLiveDirectoryPricing();
+  return {
+    title: "List Your Business: Free Directory Listing",
+    description: `Get your Lowcountry business listed free, or go Premium for ${money(
+      pricing.monthlyCents,
+    )} a month with photos, offers, hours, and featured placement.`,
+    alternates: { canonical: `${SITE_URL}/directory-signup` },
+    openGraph: {
+      title: `List Your Business | ${SITE_NAME}`,
+      description: "Free and Premium directory listings for local businesses.",
+      siteName: SITE_NAME,
+      type: "website",
+    },
+  };
+}
 
-const PLANS = [
+const plans = (premiumPrice: string, premiumNote: string) => [
   {
     name: "Basic",
     price: "Free",
@@ -31,8 +43,8 @@ const PLANS = [
   },
   {
     name: "Premium",
-    price: "$10",
-    note: "per month, or $100 per year",
+    price: premiumPrice,
+    note: premiumNote,
     features: [
       "Everything in Basic",
       "Photo gallery and business hours",
@@ -46,7 +58,13 @@ const PLANS = [
   },
 ];
 
-export default function DirectorySignupPage() {
+export default async function DirectorySignupPage() {
+  const { getLiveDirectoryPricing, annualNote, money } = await import(
+    "@/lib/directory-pricing"
+  );
+  const pricing = await getLiveDirectoryPricing();
+  const PLANS = plans(money(pricing.monthlyCents), annualNote(pricing));
+
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -113,8 +131,8 @@ export default function DirectorySignupPage() {
         <p className="text-[12.5px] text-muted mt-4">
           Account creation and Premium billing connect in the account phase.
           Until then, new listings go through our team:{" "}
-          <a href="mailto:hello@lbspotlight.com" className="text-brand-deep font-semibold hover:underline">
-            hello@lbspotlight.com
+          <a href="mailto:hello@lowcountrybusinessspotlight.com" className="text-brand-deep font-semibold hover:underline">
+            hello@lowcountrybusinessspotlight.com
           </a>
         </p>
 

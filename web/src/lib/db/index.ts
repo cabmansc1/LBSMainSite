@@ -15,6 +15,14 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   connectionLimit: 10,
   timezone: "-05:00",
+  /**
+   * A page render must fail fast rather than hang. Without a connect
+   * timeout, a database that is unreachable, as it is from inside the
+   * Docker build, leaves every query waiting on the operating system's
+   * TCP timeout, which is far longer than the 60 seconds a render is
+   * given. That is what failed the deploy.
+   */
+  connectTimeout: 8000,
 });
 
 export const db = drizzle(pool, { schema, mode: "default" });

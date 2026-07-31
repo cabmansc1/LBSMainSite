@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getAdminBusinesses } from "@/lib/admin-data";
+import { getFilterOptions } from "@/lib/directory";
 import { AdminDirectory } from "@/components/admin-directory";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,14 @@ export const metadata: Metadata = {
 /** Successor to admin/manage_directory.php: same tables, same effects. */
 export default async function AdminDirectoryPage() {
   await requireAdmin();
-  const businesses = await getAdminBusinesses();
+  // The same taxonomy the public filters and the advertiser portal use.
+  // Category and location area are stored as slugs and filtered on as
+  // slugs, so typing them by hand produced listings that rendered
+  // correctly and appeared under nothing.
+  const [businesses, options] = await Promise.all([
+    getAdminBusinesses(),
+    getFilterOptions(),
+  ]);
 
   return (
     <div className="mx-auto max-w-[1120px] px-6 py-8">
@@ -26,7 +34,11 @@ export default async function AdminDirectoryPage() {
           appear immediately on both sites.
         </p>
       </div>
-      <AdminDirectory businesses={businesses} />
+      <AdminDirectory
+        businesses={businesses}
+        categories={options.categories}
+        locations={options.locations}
+      />
     </div>
   );
 }

@@ -3,12 +3,27 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/sections";
 import { InquiryForm } from "@/components/inquiry-form";
-import { getBusiness } from "@/lib/directory";
+import { getPastCards } from "@/lib/past-cards";
+import { getBusinesses, getBusiness } from "@/lib/directory";
 import { dealsForBusiness } from "@/lib/lowco-deals";
 import { advertiserAppearances } from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
+import { RichText } from "@/components/rich-text";
+import { richTextToPlain } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
+
+/** Category to schema type, ported from business.php. */
+const SCHEMA_TYPE_BY_CATEGORY: Record<string, string> = {
+  restaurant: "Restaurant",
+  "restaurants-dining": "Restaurant",
+  automotive: "AutoRepair",
+  "health-wellness": "HealthAndBeautyBusiness",
+  beauty: "BeautySalon",
+  "beauty-personal-care": "BeautySalon",
+  legal: "LegalService",
+  "fitness-recreation": "SportsActivityLocation",
+};
 
 export async function generateMetadata({
   params,
@@ -19,8 +34,16 @@ export async function generateMetadata({
   const b = await getBusiness(slug);
   if (!b) return {};
   return {
-    title: `${b.name}: ${b.category} in ${b.locationArea}, SC`,
-    description: b.description.slice(0, 155),
+    // Name and place only. Category too pushed these past 60 characters,
+    // and the legacy titles that rank are just "Name - brand". Plenty of
+    // listings already carry their city in the name, so it is not
+    // repeated.
+    title: b.name.toLowerCase().includes(b.locationArea.toLowerCase())
+      ? b.name
+      : `${b.name} | ${b.locationArea}, SC`,
+    description:
+      richTextToPlain(b.description).slice(0, 155) ||
+      `${b.name} is a ${b.category.toLowerCase()} business in ${b.locationArea}, SC. See contact details, hours and offers in the Lowcountry Business Spotlight directory.`,
     alternates: { canonical: `${SITE_URL}/business/${slug}` },
   };
 }
@@ -36,10 +59,23 @@ export default async function BusinessPage({
 
   // Cross-site and Mission Control lookups are best-effort extras; the
   // page renders fine when either source is unreachable.
-  const [lowcoDeals, appearances] = await Promise.all([
+  const [related, lowcoDeals, archive, appearances] = await Promise.all([
+    // "More X Businesses" on the legacy page: internal links that keep a
+    // visitor in the directory and spread crawl depth across listings.
+    getBusinesses({ category: b.categorySlug })
+      .then((rows) => rows.filter((r) => r.slug !== b.slug).slice(0, 6))
+      .catch(() => []),
     dealsForBusiness(b.name).catch(() => []),
+    getPastCards({ publishedOnly: true }).catch(() => []),
     advertiserAppearances({ name: b.name }).catch(
-      () => [] as { zoneName: string; mailMonth: string }[],
+      () =>
+        [] as {
+          cardId: string;
+          cardName?: string;
+          zoneName: string;
+          mailMonth: string;
+          mailDateIso: string;
+        }[],
     ),
   ]);
 
@@ -51,18 +87,40 @@ export default async function BusinessPage({
     b.socials?.youtube,
   ].filter(Boolean);
 
+  // The legacy page typed the schema by category and carried the map
+  // coordinates and opening hours. Those are the signals that put a
+  // listing in a local pack, so they carry over rather than flattening
+  // every listing to a bare LocalBusiness.
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": SCHEMA_TYPE_BY_CATEGORY[b.categorySlug] ?? "LocalBusiness",
     name: b.name,
-    description: b.description,
+    description: richTextToPlain(b.description),
     url: `${SITE_URL}/business/${b.slug}`,
     telephone: b.phone,
     image: b.logoUrl,
     sameAs: sameAs.length ? sameAs : undefined,
     address: b.address
-      ? { "@type": "PostalAddress", streetAddress: b.address, addressRegion: "SC" }
+      ? {
+          "@type": "PostalAddress",
+          streetAddress: b.address,
+          addressLocality: b.locationArea,
+          addressRegion: "SC",
+        }
       : { "@type": "PostalAddress", addressLocality: b.locationArea, addressRegion: "SC" },
+    geo:
+      b.lat && b.lng
+        ? { "@type": "GeoCoordinates", latitude: b.lat, longitude: b.lng }
+        : undefined,
+    openingHoursSpecification: b.hours?.length
+      ? b.hours
+          .filter((h) => !/closed/i.test(h.text))
+          .map((h) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: h.day,
+            description: h.text,
+          }))
+      : undefined,
   };
 
   const breadcrumbJsonLd = {
@@ -175,7 +233,10 @@ export default async function BusinessPage({
         <div className="grid gap-3.5">
           <Card className="p-6.5 grid gap-3">
             <h2 className="text-[17px] font-semibold tracking-tight">About</h2>
-            <p className="text-sm text-body leading-relaxed">{b.description}</p>
+            <RichText
+              text={b.description}
+              className="text-sm text-body leading-relaxed"
+            />
             {b.tags && b.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {b.tags.map((t) => (
@@ -192,22 +253,83 @@ export default async function BusinessPage({
           </Card>
 
           {appearances.length > 0 && (
-            <Card className="p-6.5 grid gap-2 bg-brand-tint border-brand/25">
-              <span className="text-xs font-semibold uppercase tracking-widest text-brand-deep">
-                As seen in mailboxes
-              </span>
-              <p className="text-sm text-body leading-relaxed">
-                {b.name} appeared on{" "}
-                {appearances
-                  .map((a) => `the ${a.mailMonth} ${a.zoneName} Spotlight card`)
-                  .join(" and ")}
-                , mailed to local homes.
-              </p>
+            <Card className="p-6.5 grid gap-3 bg-brand-tint border-brand/25">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-brand-deep">
+                  As seen in mailboxes
+                </span>
+                <p className="text-sm text-body leading-relaxed mt-1">
+                  {b.name} has appeared on {appearances.length}{" "}
+                  {appearances.length === 1 ? "Spotlight card" : "Spotlight cards"}{" "}
+                  mailed to local homes.
+                </p>
+              </div>
+              {/* One line per card, because prose joined with "and" turns
+                  unreadable the moment a business has ridden three of
+                  them. Cards in the archive link to their own page: the
+                  listing and the card page each make the other real. */}
+              {/* Seventeen lines is a wall, not a list. Show the recent
+                  ones and count the rest. */}
+              <ul className="grid gap-1.5">
+                {appearances.slice(0, 6).map((a) => {
+                  const inArchive = archive.find(
+                    (c) =>
+                      c.mcCardId === a.cardId ||
+                      (c.zoneName === a.zoneName && c.mailMonth === a.mailMonth),
+                  );
+                  // Two cards can share a zone and a month. Tell them
+                  // apart by mail date rather than card name: Mission
+                  // Control names cards for the campaign, so one mailing
+                  // on April 30 is called "May 2026" and printing that
+                  // beside "April 2026" reads like a mistake.
+                  const sameMonth = appearances.filter(
+                    (x) => x.zoneName === a.zoneName && x.mailMonth === a.mailMonth,
+                  );
+                  const exactDate =
+                    a.mailDateIso &&
+                    new Date(a.mailDateIso).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    });
+                  const label =
+                    sameMonth.length > 1 && exactDate
+                      ? `${a.zoneName}, ${exactDate}`
+                      : `${a.zoneName}, ${a.mailMonth}`;
+                  return (
+                    <li
+                      key={a.cardId}
+                      className="flex items-baseline gap-2 text-sm"
+                    >
+                      <span
+                        aria-hidden
+                        className="w-1.5 h-1.5 rounded-full bg-brand shrink-0 translate-y-[-2px]"
+                      />
+                      {inArchive ? (
+                        <Link
+                          href={`/cards/${inArchive.slug}`}
+                          className="font-semibold text-brand-deep hover:underline"
+                        >
+                          {label}
+                        </Link>
+                      ) : (
+                        <span className="text-body">{label}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {appearances.length > 6 && (
+                <p className="text-[13px] text-body">
+                  and {appearances.length - 6} more, going back to{" "}
+                  {appearances[appearances.length - 1].mailMonth}.
+                </p>
+              )}
               <Link
                 href="/gallery"
                 className="text-[13px] font-semibold text-brand-deep hover:underline"
               >
-                Browse past cards →
+                Browse past cards
               </Link>
             </Card>
           )}
@@ -271,7 +393,7 @@ export default async function BusinessPage({
             </Card>
           )}
 
-          {b.photos && b.photos.length > 1 && (
+          {b.photos && b.photos.length > 0 && (
             <Card className="p-6.5 grid gap-3">
               <h2 className="text-[17px] font-semibold tracking-tight">Photos</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -303,6 +425,37 @@ export default async function BusinessPage({
             </Card>
           )}
 
+          {(b.address || b.locationArea) && (
+            <Card className="p-6.5 grid gap-3">
+              <h2 className="text-[17px] font-semibold tracking-tight">Location</h2>
+              <p className="text-sm text-body leading-relaxed">
+                {b.name} serves {b.locationArea} and the surrounding Lowcountry.
+                {b.address ? ` You can find them at ${b.address}.` : ""}
+              </p>
+              {b.lat && b.lng && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold text-brand-deep hover:underline"
+                >
+                  Open in Google Maps
+                </a>
+              )}
+              <p className="text-[13px] text-muted">
+                Looking for more {b.category.toLowerCase()} businesses nearby?
+                Browse the{" "}
+                <Link
+                  href={`/directory/location/${b.locationSlug}`}
+                  className="text-brand-deep font-medium hover:underline"
+                >
+                  {b.locationArea} directory
+                </Link>
+                .
+              </p>
+            </Card>
+          )}
+
           <Card className="p-6.5 grid gap-4">
             <h2 className="text-[17px] font-semibold tracking-tight">
               Contact {b.name}
@@ -310,19 +463,56 @@ export default async function BusinessPage({
             <InquiryForm businessSlug={b.slug} />
           </Card>
 
-          <Card className="p-6.5 grid gap-2.5 bg-surface">
-            <h3 className="text-[15px] font-semibold">Is this your business?</h3>
-            <p className="text-[13px] text-body leading-relaxed">
-              Claim this listing to update your details, add photos and offers,
-              and see how many people view your page.
-            </p>
-            <Link
-              href="/register"
-              className="text-sm font-semibold text-brand-deep hover:underline"
-            >
-              Claim this listing
-            </Link>
-          </Card>
+          {related.length > 0 && (
+            <Card className="p-6.5 grid gap-3.5">
+              <h2 className="text-[17px] font-semibold tracking-tight">
+                More {b.category} businesses
+              </h2>
+              <ul className="grid sm:grid-cols-2 gap-2.5">
+                {related.map((r) => (
+                  <li key={r.slug}>
+                    <Link
+                      href={`/business/${r.slug}`}
+                      className="block border border-line rounded-[10px] px-4 py-3 hover:border-faint transition-colors"
+                    >
+                      <b className="block text-[14px] font-semibold">{r.name}</b>
+                      <span className="text-[12.5px] text-muted">
+                        {r.locationArea}, SC
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={`/directory/category/${b.categorySlug}`}
+                className="text-sm font-semibold text-brand-deep hover:underline"
+              >
+                See all {b.category} businesses
+              </Link>
+            </Card>
+          )}
+
+          {/* Only when nobody owns it. This used to show on every
+              listing, including one the reader had just edited, and it
+              sent them to a registration form that would refuse them:
+              signing up refuses an address that already has an account.
+              An owner who is signed out gets pointed at sign-in instead,
+              which is the thing that actually helps them. */}
+          {!b.claimed && (
+            <Card className="p-6.5 grid gap-2.5 bg-surface">
+              <h3 className="text-[15px] font-semibold">Is this your business?</h3>
+              <p className="text-[13px] text-body leading-relaxed">
+                Claim this listing to update your details, add photos and
+                offers, and see how many people view your page.
+              </p>
+              <Link
+                href="/register"
+                className="text-sm font-semibold text-brand-deep hover:underline"
+              >
+                Claim this listing
+              </Link>
+            </Card>
+          )}
         </div>
 
         <aside className="grid gap-3.5 order-first lg:order-none">

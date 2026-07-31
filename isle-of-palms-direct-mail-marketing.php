@@ -655,7 +655,7 @@ include __DIR__ . '/seo_head.php';
 
                 <h3 style="font-size: 1.4rem; font-weight: 700; color: #000; margin-bottom: 15px; margin-top: 35px;">How Our Isle of Palms Direct Mail Program Works</h3>
                 <p style="font-size: 1.05rem; color: #475569; line-height: 1.8; margin-bottom: 20px;">
-                    Getting started is straightforward. Each mailing targets 5,000 to 10,000 households — and because Isle of Palms is a smaller community, you can combine it with <strong>Mount Pleasant</strong> or <strong>Sullivans Island</strong> zones to hit your desired volume across the East Cooper corridor. We handle everything: ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there is zero competition from your industry on the same card. We also provide trackable QR codes, unique URLs, and dedicated phone numbers so you can measure exactly how many calls and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to reach Isle of Palms homeowners and property owners.
+                    Getting started is straightforward. Each mailing targets 5,000 to 10,000 households — and because Isle of Palms is a smaller community, you can combine it with <strong>Mount Pleasant</strong> or <strong>Sullivans Island</strong> zones to hit your desired volume across the East Cooper corridor. We handle everything: ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there is zero competition from your industry on the same card. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to reach Isle of Palms homeowners and property owners.
                 </p>
             </div>
         </div>
@@ -713,7 +713,7 @@ include __DIR__ . '/seo_head.php';
                 <div class="feature-card">
                     <span class="feature-icon">💰</span>
                     <h3>Affordable & Trackable</h3>
-                    <p>Starting at just 5 cents per household with built-in tracking. QR codes, unique URLs, and call tracking let you measure your ROI from day one.</p>
+                    <p>Starting at just 5 cents per household with built-in tracking. QR codes and unique URLs let you measure your ROI from day one.</p>
                 </div>
             </div>
         </div>

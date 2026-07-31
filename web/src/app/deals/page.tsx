@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CtaBand } from "@/components/sections";
-import { getLowCoDeals } from "@/lib/lowco-deals";
+import { LOWCODEALS_BRAND, getLowCoDeals } from "@/lib/lowco-deals";
+import { rotateDeals } from "@/lib/deal-rotation";
 import { getBusinesses } from "@/lib/directory";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -28,16 +29,19 @@ const money = (n?: number) =>
     : `$${n.toLocaleString("en-US")}`;
 
 export default async function DealsPage() {
-  const [deals, businesses] = await Promise.all([
+  const [allDeals, businesses] = await Promise.all([
     getLowCoDeals(),
     getBusinesses(),
   ]);
+  // Newest few pinned, the rest rotating through the remaining slots on
+  // a five minute clock. See lib/deal-rotation.ts.
+  const deals = rotateDeals(allDeals);
   const listingOffers = businesses.filter((b) => b.offer);
 
   const offerJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: deals.slice(0, 25).map((d, i) => ({
+    itemListElement: deals.map((d, i) => ({
       "@type": "Offer",
       position: i + 1,
       name: d.title,
@@ -130,6 +134,21 @@ export default async function DealsPage() {
                 </a>
               ))}
             </div>
+            {allDeals.length > deals.length && (
+              <p className="text-[13.5px] text-muted mt-5">
+                Showing {deals.length} of {allDeals.length} live deals, rotating
+                through the rest every few minutes.{" "}
+                <a
+                  href={LOWCODEALS_BRAND.site + "/deals"}
+                  target="_blank"
+                  rel="noopener"
+                  className="font-semibold text-[#5C8420] hover:underline"
+                >
+                  See them all on LowCoDeals
+                </a>
+                .
+              </p>
+            )}
           </section>
         )}
 

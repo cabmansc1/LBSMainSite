@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { RoiCalculator } from "@/components/roi-calculator";
 import { CtaBand } from "@/components/sections";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { getLivePricing } from "@/lib/pricing-store";
 
 export const metadata: Metadata = {
   title: "Direct Mail ROI Calculator",
@@ -16,7 +17,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RoiCalculatorPage() {
+// Prices are admin-editable, so never serve a build-time snapshot.
+export const dynamic = "force-dynamic";
+
+export default async function RoiCalculatorPage() {
+  const pricing = await getLivePricing();
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -35,7 +40,7 @@ export default function RoiCalculatorPage() {
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6 py-12">
-        <RoiCalculator />
+        <RoiCalculator pricing={pricing} />
         <div className="mt-14">
           <CtaBand
             title="Like the math? Lock in your category."

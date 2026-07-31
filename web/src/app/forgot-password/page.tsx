@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
           email us and we will reset it for you same-day.
         </p>
         <a
-          href="mailto:hello@lbspotlight.com?subject=Password%20reset"
+          href="mailto:hello@lowcountrybusinessspotlight.com?subject=Password%20reset"
           className="bg-navy-950 text-white font-semibold text-[14.5px] px-5 py-3 rounded-(--radius-btn) hover:bg-navy-800 transition-colors text-center"
         >
           Email us to reset

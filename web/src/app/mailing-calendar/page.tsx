@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { StatusChip, FillMeter, CtaBand } from "@/components/sections";
 import { getUpcomingMailings } from "@/lib/mission-control";
+import { cardCoverage } from "@/lib/card-coverage";
+import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+
+// Reads Mission Control and the database for the live mailing schedule,
+// so it cannot be prerendered: the build container can reach
+// neither, and waiting on them is what failed the deploy.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Mailing Calendar: Upcoming Postcard Dates",
@@ -21,12 +28,18 @@ export const metadata: Metadata = {
 const chipFor = (status: string, left: number) => {
   if (status === "waitlist") return <StatusChip tone="info">Waitlist</StatusChip>;
   if (status === "full") return <StatusChip tone="danger">Full</StatusChip>;
+  // Before scarcity, because "2 left" on a card we have not committed to
+  // printing is pressure we have not earned.
+  if (status === "planned") return <StatusChip tone="info">Planned</StatusChip>;
   if (left <= 2) return <StatusChip tone="warn">{left} left</StatusChip>;
   return <StatusChip tone="ok">Open</StatusChip>;
 };
 
 export default async function MailingCalendarPage() {
-  const mailings = await getUpcomingMailings();
+  const [mailings, descriptions] = await Promise.all([
+    getUpcomingMailings(),
+    getCardDescriptions(),
+  ]);
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -66,7 +79,7 @@ export default async function MailingCalendarPage() {
           <table className="w-full border-collapse text-[13.5px] min-w-[720px]">
             <thead>
               <tr>
-                {["Neighborhood", "Mails", "Artwork deadline", "Reach", "Availability", "Status", ""].map(
+                {["Neighborhood", "Tentatively mails", "Artwork deadline", "Reach", "Availability", "Status", ""].map(
                   (h) => (
                     <th
                       key={h}
@@ -82,13 +95,39 @@ export default async function MailingCalendarPage() {
               {mailings.map((m) => {
                 const left = m.spotsTotal - m.spotsTaken;
                 return (
-                  <tr key={`${m.zoneSlug}-${m.mailMonth}`} className="hover:bg-surface">
+                  <tr
+                    key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`}
+                    className="hover:bg-surface"
+                  >
                     <td className="px-4 py-3.5 border-b border-line font-semibold">
                       {m.zoneName}
+                      {cardCoverage(m).name && (
+                        <span className="block text-[12.5px] font-medium text-muted">
+                          {cardCoverage(m).name}
+                        </span>
+                      )}
+                      {cardCoverage(m).zips.length > 0 && (
+                        <span className="block text-[12px] text-muted num">
+                          ZIP {cardCoverage(m).zips.join(", ")}
+                        </span>
+                      )}
+                      {m.cardId && descriptions[m.cardId] && (
+                        <span className="block text-[12.5px] font-normal text-body mt-1 max-w-[42ch]">
+                          {descriptions[m.cardId]}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3.5 border-b border-line">{m.mailMonth}</td>
-                    <td className="px-4 py-3.5 border-b border-line">{m.artworkDeadline}</td>
-                    <td className="px-4 py-3.5 border-b border-line num">{m.households}</td>
+                    {/* Blank in Mission Control means blank here. These
+                        cells used to print "Ask us" and an invented
+                        "5,000+" rather than admit the schedule is not
+                        set yet. */}
+                    <td className="px-4 py-3.5 border-b border-line">
+                      {m.artworkDeadline ?? <span className="text-faint">TBD</span>}
+                    </td>
+                    <td className="px-4 py-3.5 border-b border-line num">
+                      {m.households ?? <span className="text-faint">TBD</span>}
+                    </td>
                     <td className="px-4 py-3.5 border-b border-line">
                       <FillMeter taken={m.spotsTaken} total={m.spotsTotal} />
                     </td>

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getLivePricing } from "@/lib/pricing-store";
+import { getLiveDirectoryPricing } from "@/lib/directory-pricing";
 import { AdminPricing } from "@/components/admin-pricing";
-import type { Reach, SpotSize } from "@/lib/pricing";
+import { AdminDirectoryPricing } from "@/components/admin-directory-pricing";
+import { ALL_SIZES, type Reach } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -17,10 +19,13 @@ export const metadata: Metadata = {
  */
 export default async function AdminPricingPage() {
   await requireAdmin();
-  const pricing = await getLivePricing();
+  const [pricing, directory] = await Promise.all([
+    getLivePricing(),
+    getLiveDirectoryPricing(),
+  ]);
 
   const rows = (["5k", "10k"] as Reach[]).flatMap((reach) =>
-    (["small", "medium", "large"] as SpotSize[]).map((size) => ({
+    ALL_SIZES.map((size) => ({
       reach,
       size,
       label: pricing[reach][size].size,
@@ -35,10 +40,17 @@ export default async function AdminPricingPage() {
         <p className="text-sm text-muted mt-1">
           Set what each ad size costs at both reach levels. Saving updates the
           pricing page, zone pages, the ROI calculator, and checkout right
-          away, with no deploy.
+          away, with no deploy. A price of zero means that size is not sold
+          at that reach.
         </p>
       </div>
       <AdminPricing initial={rows} />
+      <div className="mt-8">
+        <AdminDirectoryPricing
+          monthlyCents={directory.monthlyCents}
+          annualCents={directory.annualCents}
+        />
+      </div>
     </div>
   );
 }

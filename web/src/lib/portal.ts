@@ -56,6 +56,13 @@ export type PortalContext = {
   warnings: string[];
 };
 
+/**
+ * Exported because callers have to tell "you are not on that card" apart
+ * from "we could not ask". Matching on the string in two places is the
+ * kind of thing that silently drifts, so there is only one copy of it.
+ */
+export const MC_UNAVAILABLE = "Campaign details are unavailable right now.";
+
 const bool = (v: unknown) => v === 1 || v === true || v === "1";
 const str = (v: unknown): string => (v === null || v === undefined ? "" : String(v));
 
@@ -143,7 +150,7 @@ export async function getPortalContext(user: SessionUser): Promise<PortalContext
   const [cards, deals, inquiries] = await Promise.all([
     getAdvertiserCards({ email: user.email, name: primary?.name }).catch((e) => {
       console.error("[portal] Mission Control lookup failed:", e);
-      warnings.push("Campaign details are unavailable right now.");
+      warnings.push(MC_UNAVAILABLE);
       return [] as AdvertiserCard[];
     }),
     primary

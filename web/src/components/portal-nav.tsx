@@ -5,8 +5,12 @@ import { usePathname } from "next/navigation";
 
 /**
  * Portal navigation: sidebar on desktop, bottom bar on phones. Order is
- * Home, Cards, Listings, Messages, Results, with Billing below the five
- * main destinations and off the mobile bar.
+ * Home, To do, Cards, Listings, Messages, with Results, Profile and
+ * Billing below the main destinations.
+ *
+ * The mobile bar holds five and no more. Results moved off it to make
+ * room for To do, because a print deadline is worth more of a phone
+ * screen than a scan chart is.
  */
 
 type Item = {
@@ -15,6 +19,8 @@ type Item = {
   short: string;
   icon: React.ReactNode;
   badge?: number;
+  /** Draws the badge as a warning rather than a plain count. */
+  urgent?: boolean;
   mobile: boolean;
 };
 
@@ -35,12 +41,19 @@ const icon = (d: React.ReactNode) => (
 export function PortalNav({
   variant,
   unreadMessages = 0,
-  cardsNeedingAction = 0,
+  cardCount = 0,
+  listingCount = 0,
+  todoCount = 0,
+  todoOverdue = false,
 }: {
   /** "sidebar" renders the desktop rail; "bottom" the mobile bar. */
   variant: "sidebar" | "bottom";
   unreadMessages?: number;
-  cardsNeedingAction?: number;
+  cardCount?: number;
+  listingCount?: number;
+  todoCount?: number;
+  /** At least one to-do has a date on it that has gone by. */
+  todoOverdue?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -58,11 +71,26 @@ export function PortalNav({
       ),
     },
     {
+      href: "/account/todos",
+      label: "To do",
+      short: "To do",
+      mobile: true,
+      badge: todoCount,
+      urgent: todoOverdue,
+      icon: icon(
+        <>
+          <path d="M9 11.5 11 13.5 15.5 9" />
+          <rect x="3.5" y="4.5" width="17" height="16" rx="2.5" />
+          <path d="M8 2.5v4M16 2.5v4" />
+        </>,
+      ),
+    },
+    {
       href: "/account/cards",
       label: "Cards",
       short: "Cards",
       mobile: true,
-      badge: cardsNeedingAction,
+      badge: cardCount,
       icon: icon(
         <>
           <rect x="3" y="4" width="18" height="16" rx="2.5" />
@@ -75,6 +103,7 @@ export function PortalNav({
       label: "Listings",
       short: "Listings",
       mobile: true,
+      badge: listingCount,
       icon: icon(
         <>
           <path d="M4 21V8l8-5 8 5v13" />
@@ -99,8 +128,20 @@ export function PortalNav({
       href: "/account/results",
       label: "Results",
       short: "Results",
-      mobile: true,
+      mobile: false,
       icon: icon(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />),
+    },
+    {
+      href: "/account/profile",
+      label: "Profile",
+      short: "Profile",
+      mobile: false,
+      icon: icon(
+        <>
+          <circle cx="12" cy="8" r="3.5" />
+          <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+        </>,
+      ),
     },
     {
       href: "/account/billing",
@@ -136,7 +177,11 @@ export function PortalNav({
             {i.icon}
             {i.label}
             {!!i.badge && i.badge > 0 && (
-              <span className="ml-auto bg-cta text-navy-950 text-[11px] font-extrabold rounded-full px-1.5 num">
+              <span
+                className={`ml-auto text-[11px] font-extrabold rounded-full px-1.5 num ${
+                  i.urgent ? "bg-[#e5484d] text-white" : "bg-cta text-navy-950"
+                }`}
+              >
                 {i.badge}
               </span>
             )}
@@ -165,7 +210,11 @@ export function PortalNav({
               {i.icon}
               {i.short}
               {!!i.badge && i.badge > 0 && (
-                <span className="absolute top-0.5 left-1/2 ml-1.5 bg-cta text-navy-950 text-[10px] font-extrabold rounded-full px-1.5 num">
+                <span
+                  className={`absolute top-0.5 left-1/2 ml-1.5 text-[10px] font-extrabold rounded-full px-1.5 num ${
+                    i.urgent ? "bg-[#e5484d] text-white" : "bg-cta text-navy-950"
+                  }`}
+                >
                   {i.badge}
                 </span>
               )}

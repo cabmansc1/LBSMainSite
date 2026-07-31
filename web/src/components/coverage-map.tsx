@@ -2,29 +2,53 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ZONES } from "@/lib/zones";
+import { MAILING_AREAS, type MailingArea } from "@/lib/zones";
 import type { UpcomingMailing } from "@/lib/mailings";
 import { POSTCARD_PRICING, formatPrice } from "@/lib/pricing";
-import { MAP_IMG, MAP_POSITIONS } from "@/lib/map-positions";
+import { MAP_IMG, MAP_POSITIONS, type MapPosition } from "@/lib/map-positions";
+import { TENTATIVE_MAIL_LABEL, hasMailDate } from "@/lib/mailings";
 
 /**
  * Coverage bubbles pinned to the printed town markers on the
  * Tri-County base map. The base map carries its own town labels; the
  * site labels only the two zones the map does not name.
+ *
+ * One bubble per card, not per zone. Isle of Palms and Sullivan's
+ * Island never mail apart, so two bubbles offered a choice that does
+ * not exist and implied twice the reach that does.
  */
 
 const availability = (m: UpcomingMailing | undefined) => {
   if (!m) return { text: "Coming soon", tone: "info" as const };
   if (m.status === "waitlist") return { text: "Waitlist", tone: "info" as const };
+  // A planned card is bookable, so it is not "coming soon", but it is
+  // not filling either. Saying so beats a spot count on a date that is
+  // still an intention.
+  if (m.status === "planned") return { text: "Planned", tone: "info" as const };
   const left = m.spotsTotal - m.spotsTaken;
   if (left <= 2) return { text: `${left} spot${left === 1 ? "" : "s"} left`, tone: "warn" as const };
   return { text: "Open", tone: "ok" as const };
 };
 
-export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
+export function CoverageMap({
+  mailings,
+  areas = MAILING_AREAS,
+  positions = MAP_POSITIONS,
+  fromCents = POSTCARD_PRICING["5k"].small.priceCents,
+}: {
+  mailings: UpcomingMailing[];
+  /** Cheapest live price. The constant was quoting the shipped one. */
+  fromCents?: number;
+  /** Live from the admin; the code defaults keep this usable anywhere. */
+  areas?: MailingArea[];
+  positions?: MapPosition[];
+}) {
   const [selected, setSelected] = useState("summerville");
-  const zone = ZONES.find((z) => z.slug === selected)!;
-  const mailing = mailings.find((m) => m.zoneSlug === selected);
+  // Falls back to the first card rather than crashing, in case a saved
+  // pairing folds the selected slug into another area.
+  const zone = areas.find((a) => a.slug === selected) ?? areas[0];
+  // Either half of a shared card is this card's mailing.
+  const mailing = mailings.find((m) => zone.zoneSlugs.includes(m.zoneSlug));
   const avail = availability(mailing);
   const dotColor = { ok: "bg-ok", warn: "bg-cta", info: "bg-brand" }[avail.tone];
 
@@ -38,8 +62,8 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
           className="w-full h-auto rounded-[10px]"
         >
           <image href={MAP_IMG.src} width={MAP_IMG.w} height={MAP_IMG.h} />
-          {MAP_POSITIONS.map((b) => {
-            const z = ZONES.find((x) => x.slug === b.slug);
+          {positions.map((b) => {
+            const z = areas.find((x) => x.slug === b.slug);
             if (!z) return null;
             const sel = selected === b.slug;
             return (
@@ -57,16 +81,22 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
                   }
                 }}
               >
-                <circle
-                  cx={b.x}
-                  cy={b.y}
-                  r={b.r}
-                  fill={sel ? "rgba(255,140,0,.4)" : "rgba(56,182,255,.3)"}
-                  stroke={sel ? "#E67C00" : "#1287D8"}
-                  strokeWidth={sel ? 4 : 2.5}
-                  className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
-                  style={sel ? { fill: "rgba(255,140,0,.4)" } : undefined}
-                />
+                {/* The card's own circle first, then any island it
+                    shares the card with. They light up together because
+                    they sell together. */}
+                {[{ x: b.x, y: b.y, r: b.r }, ...(b.also ?? [])].map((c) => (
+                  <circle
+                    key={`${c.x}-${c.y}`}
+                    cx={c.x}
+                    cy={c.y}
+                    r={c.r}
+                    fill={sel ? "rgba(255,140,0,.4)" : "rgba(56,182,255,.3)"}
+                    stroke={sel ? "#E67C00" : "#1287D8"}
+                    strokeWidth={sel ? 4 : 2.5}
+                    className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
+                    style={sel ? { fill: "rgba(255,140,0,.4)" } : undefined}
+                  />
+                ))}
                 {b.label && (
                   <text
                     x={b.x}
@@ -94,7 +124,16 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
             <i className="w-2 h-2 rounded-full bg-cta inline-block" />
             Selected
           </span>
-          <span>Bubble size reflects households reached</span>
+          {/* This said "households reached", which is the one thing the
+              bubbles do not show. Every card mails the same 5,000 homes
+              whether it goes to Summerville or Sullivan's Island, so
+              that reading told people a small bubble meant a smaller
+              mailing. radiusFor() scales by population, square rooted so
+              area rather than radius carries the number. */}
+          <span>
+            Bubble size reflects each area&rsquo;s population, not the size of
+            the mailing
+          </span>
         </div>
       </div>
 
@@ -111,8 +150,13 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
           {[
             ["Households / mailing", zone.households5k],
             ["ZIP codes", zone.zipCodes.join(", ")],
-            ["Next mailing", mailing?.mailMonth ?? "Coming soon"],
-            ["Ads from", formatPrice(POSTCARD_PRICING["5k"].small.priceCents)],
+            [
+              TENTATIVE_MAIL_LABEL,
+              hasMailDate(mailing?.mailMonth)
+                ? (mailing?.mailMonth as string)
+                : "Coming soon",
+            ],
+            ["Ads from", formatPrice(fromCents)],
           ].map(([label, value]) => (
             <div
               key={label}
@@ -123,11 +167,21 @@ export function CoverageMap({ mailings }: { mailings: UpcomingMailing[] }) {
             </div>
           ))}
         </dl>
+        {/* Only a card that covers two zones has anything to explain,
+            and it explains it here rather than leaving somebody to
+            wonder why one bubble carries two names. */}
+        {zone.note && (
+          <p className="text-[12.5px] text-[#93A5B8] leading-relaxed -mt-1">
+            {zone.note}
+          </p>
+        )}
         <Link
-          href={`/${zone.slug}-direct-mail-marketing`}
+          href={`/postcards/${zone.slug}/checkout`}
           className="inline-flex items-center justify-center bg-cta text-navy-950 font-semibold text-[15px] px-6 py-3 rounded-(--radius-btn) hover:bg-cta-hover hover:text-white transition-colors"
         >
-          Reserve in {zone.name}
+          {zone.zoneSlugs.length > 1
+            ? "Reserve on this card"
+            : `Reserve in ${zone.name}`}
         </Link>
         <p className="text-xs text-[#67768A] text-center">
           Availability updates live · one business per category

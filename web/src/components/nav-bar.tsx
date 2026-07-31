@@ -8,6 +8,9 @@ const LINKS = [
   { href: "/", label: "Home" },
   { href: "/coverage-map", label: "Service Areas" },
   { href: "/pricing", label: "Advertise" },
+  // The archive of mailed cards is the strongest proof the product is
+  // real, so it belongs in the nav rather than buried in the footer.
+  { href: "/gallery", label: "Past Cards" },
   { href: "/directory", label: "Directory" },
   { href: "/blog", label: "Blog" },
 ];
@@ -17,7 +20,11 @@ export function NavBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-navy-950 text-white">
+    /* Sticky on desktop only. On a phone the menu drops out of this bar
+       and a pinned header eats a real share of a short screen, so it
+       keeps scrolling away there. Anything the page anchors to needs a
+       scroll-margin clear of this, or the jump lands underneath it. */
+    <nav className="bg-navy-950 text-white md:sticky md:top-0 md:z-50">
       <div className="mx-auto max-w-[1120px] px-6 py-4 flex items-center gap-6">
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -45,6 +52,17 @@ export function NavBar() {
               {l.label}
             </Link>
           ))}
+          {/* Always the same link, signed in or not, because reading the
+              session here would make every page dynamic and eleven of
+              them are still prerendered. /login already redirects to the
+              account when there is a session, so somebody signed in
+              lands where they expected either way. */}
+          <Link
+            href="/login"
+            className="text-[13.5px] text-[#AEBDCC] font-medium hover:text-white whitespace-nowrap"
+          >
+            Advertiser login
+          </Link>
           <Link
             href="/pricing"
             className="bg-cta text-navy-950 text-[13px] font-bold px-4 py-2 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
@@ -77,6 +95,13 @@ export function NavBar() {
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/login"
+            className="text-[14px] text-[#AEBDCC] font-medium"
+            onClick={() => setOpen(false)}
+          >
+            Advertiser login
+          </Link>
           <Link
             href="/pricing"
             className="bg-cta text-navy-950 text-[13px] font-bold px-4 py-2 rounded-(--radius-btn) w-max"

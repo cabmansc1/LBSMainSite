@@ -3,18 +3,73 @@
  * postcard_mailings table; the shapes match the Drizzle schema so the
  * swap is a query change only.
  */
+/**
+ * One USPS carrier route on a card, from the route table Mission Control
+ * keeps in the card's notes.
+ *
+ * Only the delivery counts cross over. Mission Control's route table also
+ * carries our cost per route and the demographic columns, and none of
+ * that is business the site has: not on a public page, not in the admin,
+ * not in the payload. It is parsed out and dropped rather than carried
+ * and hidden, because anything carried can leak.
+ */
+export type CardRoute = {
+  /** e.g. 29483-R039 */
+  code: string;
+  zip: string;
+  residential: number;
+  business: number;
+  total: number;
+};
+
 export type UpcomingMailing = {
   /** Mission Control card id. A zone can have several cards filling at once. */
   cardId?: string;
+  /**
+   * What MC calls this card, e.g. "Downtown Summerville" or
+   * "Nexton/Cane Bay". A zone can be filling two cards at once, and the
+   * month alone does not tell a buyer which part of town they are
+   * buying into.
+   */
+  cardName?: string;
+  /** Carrier routes the card mails to, when MC has the route table. */
+  routes?: CardRoute[];
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
-  artworkDeadline: string;
-  households: string;
+  /**
+   * Undefined when Mission Control has not set one. It used to default
+   * to the string "Ask us", which then printed on customer-facing pages
+   * as "artwork deadline Ask us".
+   */
+  artworkDeadline?: string;
+  /**
+   * Deliverable addresses for this card, from Mission Control or summed
+   * from the USPS route table. Undefined when neither is known.
+   *
+   * This used to default to "5,000+", which put an invented reach figure
+   * next to the real route count: the Summerville card page said "2,680
+   * addresses" and "5,000+ households" one line apart.
+   */
+  households?: string;
   spotsTotal: number;
   spotsTaken: number;
-  status: "open" | "almost-full" | "full" | "waitlist";
+  /**
+   * "planned" is a card we intend to mail rather than one we are
+   * actively filling: the month is an intention, not a commitment.
+   *
+   * It is still bookable, because reserving ahead of print is the
+   * product. What it changes is what the site claims about it. Before
+   * this existed, an unknown Mission Control status fell through to
+   * "open", so a card pencilled in for December was advertised with an
+   * artwork deadline derived from a date nobody had fixed.
+   */
+  status: "open" | "almost-full" | "full" | "waitlist" | "planned";
 };
+
+/** Bookable now, whatever else it is. Waitlist and full are not. */
+export const isBookable = (status: UpcomingMailing["status"]) =>
+  status === "open" || status === "almost-full" || status === "planned";
 
 export const UPCOMING_MAILINGS: UpcomingMailing[] = [
   { zoneSlug: "summerville", zoneName: "Summerville", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 9, status: "almost-full" },
@@ -26,6 +81,104 @@ export const UPCOMING_MAILINGS: UpcomingMailing[] = [
   { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 23", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open" },
   { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", artworkDeadline: "Nov 20", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open" },
   { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", artworkDeadline: "Nov 20", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open" },
-  { zoneSlug: "isle-of-palms", zoneName: "Isle of Palms", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
-  { zoneSlug: "sullivans-island", zoneName: "Sullivans Island", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
+  // One row, because it is one card: 3,590 mailboxes on Isle of Palms and
+  // 1,325 on Sullivan's, 4,915 across the two. Two rows at 5,000+ each
+  // offered a choice that does not exist and about twice the reach that
+  // does. getZoneMailings resolves either island to this row.
+  { zoneSlug: "isle-of-palms", zoneName: "Isle of Palms & Sullivans Island", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "4,900+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
 ];
+
+/**
+ * How the site talks about a mail date that has not happened yet.
+ *
+ * Mission Control's mail dates move. Routes get added, print slips, a
+ * card waits for one more advertiser. Presenting a date that shifts as
+ * though it were fixed is how an advertiser ends up feeling misled by a
+ * change that was always normal, and it is also what the artwork
+ * deadline is derived from, so the two need to say the same thing.
+ *
+ * Past cards are not tentative. A card that mailed has an actual date,
+ * and these helpers are only for upcoming ones.
+ */
+export const tentativelyMails = (mailMonth: string) =>
+  hasMailDate(mailMonth)
+    ? `Tentatively mails ${mailMonth}`
+    : "Mail date to be confirmed";
+
+/**
+ * Whether a card has a month worth printing.
+ *
+ * Mission Control leaves the date empty on a card that is planned but
+ * not scheduled, which normalizes to the literal "TBD". Rendered
+ * straight, that produced "Tentatively mails TBD" and a checkout
+ * heading reading "Reserve your spot: James Island, TBD".
+ */
+export const hasMailDate = (mailMonth: string | undefined): boolean =>
+  !!mailMonth && mailMonth.trim().toUpperCase() !== "TBD";
+
+/** The date in a sentence, for a card that may not have one yet. */
+export const mailMonthLabel = (mailMonth: string | undefined) =>
+  hasMailDate(mailMonth) ? (mailMonth as string) : "date to be confirmed";
+
+/** Column heading or stat label form. */
+export const TENTATIVE_MAIL_LABEL = "Tentative mail date";
+
+/**
+ * Days before the tentative mail date that artwork is due.
+ *
+ * Matches what the advertise page has always told people ("typically
+ * two weeks before the mail date"). Derived rather than stored, so a
+ * card whose date moves brings its deadline with it.
+ */
+export const ARTWORK_LEAD_DAYS = 14;
+
+/**
+ * How long somebody who bought late gets to send artwork.
+ *
+ * Short, because they are buying onto a card that is nearly closed and
+ * the print date does not move for them. But not zero: a deadline that
+ * had already passed when they paid was never theirs to miss.
+ */
+export const LATE_BUYER_GRACE_DAYS = 2;
+
+/**
+ * The artwork deadline this advertiser is actually held to.
+ *
+ * The card's own deadline, unless they bought after it, in which case
+ * they get a short window from the day they paid, capped at the mail
+ * date because nothing can arrive after the card prints.
+ *
+ * Without this, buying a spot on a card mailing in three weeks showed
+ * "artwork past due, was due Jul 24" the moment the payment cleared.
+ * The customer had done nothing wrong; we sold them a late spot and
+ * then told them off for it.
+ */
+export function artworkDueFor(
+  mailDateIso: string,
+  purchasedAt?: Date | string | null,
+): Date | undefined {
+  const cardDue = artworkDeadlineFrom(mailDateIso);
+  if (!cardDue || !purchasedAt) return cardDue;
+
+  const bought = new Date(purchasedAt);
+  if (isNaN(bought.getTime()) || bought.getTime() <= cardDue.getTime()) {
+    return cardDue;
+  }
+
+  const grace = new Date(bought);
+  grace.setDate(grace.getDate() + LATE_BUYER_GRACE_DAYS);
+
+  const mailDate = new Date(mailDateIso);
+  if (!isNaN(mailDate.getTime()) && grace.getTime() > mailDate.getTime()) {
+    return mailDate;
+  }
+  return grace;
+}
+
+/** The artwork deadline implied by a card's current tentative date. */
+export function artworkDeadlineFrom(mailDateIso: string): Date | undefined {
+  const d = new Date(mailDateIso);
+  if (isNaN(d.getTime())) return undefined;
+  d.setDate(d.getDate() - ARTWORK_LEAD_DAYS);
+  return d;
+}

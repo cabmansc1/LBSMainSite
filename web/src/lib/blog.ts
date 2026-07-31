@@ -1,10 +1,15 @@
 import "server-only";
+import { resolveBlogImageUrl } from "@/lib/blog-images";
 
 /**
  * Blog reads from directory_blog_posts (published only, ordered like
  * admin/blog_functions.php). Post content is stored HTML from the
- * legacy Quill editor and renders unchanged. Featured images live on
- * the PHP host at /uploads/blog/.
+ * legacy Quill editor and renders unchanged.
+ *
+ * Featured images are one of two things and resolveBlogImageUrl decides
+ * which: posts written before uploads existed name a file on the PHP
+ * host at /uploads/blog/ and still resolve there, while anything
+ * uploaded from this admin is served out of the database.
  */
 
 export type BlogPost = {
@@ -17,10 +22,6 @@ export type BlogPost = {
   imageUrl?: string;
   publishedAt?: string;
 };
-
-const blogImageBase = () =>
-  (process.env.UPLOADS_BASE_URL ?? "https://www.lowcountrybusinessspotlight.com/uploads").replace(/\/$/, "") +
-  "/blog/";
 
 const SAMPLE_POSTS: BlogPost[] = [
   {
@@ -66,7 +67,7 @@ export async function getPosts(): Promise<BlogPost[]> {
       slug: r.slug,
       excerpt: r.excerpt ?? "",
       metaDescription: r.metaDescription ?? undefined,
-      imageUrl: r.featuredImage ? blogImageBase() + r.featuredImage : undefined,
+      imageUrl: resolveBlogImageUrl(r.featuredImage),
       publishedAt: fmtDate(r.publishedAt),
     }));
   } catch (e) {
@@ -95,7 +96,7 @@ export async function getPost(slug: string): Promise<BlogPost | undefined> {
       excerpt: r.excerpt ?? "",
       contentHtml: r.content ?? "",
       metaDescription: r.metaDescription ?? undefined,
-      imageUrl: r.featuredImage ? blogImageBase() + r.featuredImage : undefined,
+      imageUrl: resolveBlogImageUrl(r.featuredImage),
       publishedAt: fmtDate(r.publishedAt),
     };
   } catch (e) {

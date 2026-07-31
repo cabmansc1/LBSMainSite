@@ -87,7 +87,7 @@ export default async function AccountResultsPage() {
                       {c.mailMonth}
                     </td>
                     <td className="px-4 py-3.5 border-b border-line num">
-                      {c.households}
+                      {c.households ?? <span className="text-faint">TBD</span>}
                     </td>
                     <td className="px-4 py-3.5 border-b border-line text-muted">
                       {c.adSize}

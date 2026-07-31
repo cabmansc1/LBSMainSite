@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSession, isImpersonating } from "@/lib/auth";
 import { stripeEnabled, createCheckoutSession } from "@/lib/stripe";
 import {
   pushToMissionControl,
@@ -14,6 +15,7 @@ import { type Reach, type SpotSize } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
 import { zoneBySlug } from "@/lib/zones";
 import { getCard } from "@/lib/cards";
+import { publicOrigin } from "@/lib/origin";
 
 /**
  * Creates a pending order and a Stripe Checkout session.
@@ -26,6 +28,16 @@ import { getCard } from "@/lib/cards";
  * full flow is clickable end to end.
  */
 export async function POST(req: Request) {
+  // Checkout is open to signed-out visitors, so this only rejects the
+  // one case that must never happen: an admin viewing as someone else
+  // starting a payment in their name.
+  if (isImpersonating(await getSession().catch(() => null))) {
+    return NextResponse.json(
+      { error: "You are viewing as an advertiser. Stop before buying." },
+      { status: 403 },
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -44,17 +56,15 @@ export async function POST(req: Request) {
     );
   }
 
-  // Behind Railway's proxy req.url is the internal address (localhost:8080),
-  // so Stripe's return URLs must come from the public origin: an explicit
-  // env first, then the forwarded headers, and req.url only as a last resort.
-  const forwardedHost =
-    req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  const forwardedProto = req.headers.get("x-forwarded-proto") ?? "https";
-  const origin =
-    process.env.PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    (forwardedHost
-      ? `${forwardedProto}://${forwardedHost}`
-      : new URL(req.url).origin);
+  // Shared with registration, which had its own weaker version: see
+  // lib/origin.ts for why req.url is never enough behind a proxy.
+  const origin = publicOrigin(req);
+  // Declared before the metadata blocks below, which carry the phone
+  // through Stripe. Leaving these further down put `phone` in the
+  // temporal dead zone at the point the postcard branch read it.
+  const email = typeof body.email === "string" ? body.email : undefined;
+  const phone = typeof body.phone === "string" ? body.phone.trim() : undefined;
+
   let name: string;
   let amountCents: number;
   let metadata: Record<string, string>;
@@ -98,6 +108,10 @@ export async function POST(req: Request) {
       reach,
       category,
       businessName,
+      // Carried so the paid push can put it on the MC advertiser
+      // record. Stripe metadata is the only thing that survives the
+      // round trip to the hosted page and back into the webhook.
+      ...(phone ? { phone } : {}),
     };
   } else if (kind === "neighborhood-card") {
     const card = await getCard(String(body.cardSlug ?? ""));
@@ -121,14 +135,26 @@ export async function POST(req: Request) {
       spotType,
       category,
       businessName,
+      ...(phone ? { phone } : {}),
     };
   } else {
     return NextResponse.json({ error: "Unknown checkout kind" }, { status: 422 });
   }
 
+  // A price of zero means "not sold at this reach", which is exactly
+  // what the pricing admin says it means. Handing it to Stripe anyway
+  // creates a session with nothing to collect, and Stripe reports that
+  // as no_payment_required, which the webhook treats as settled: the
+  // spot would be placed, the receipt sent and the category locked, for
+  // nothing. Refuse before the money path, not after it.
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    return NextResponse.json(
+      { error: "That option is not on sale right now. Please get in touch." },
+      { status: 422 },
+    );
+  }
+
   const reference = newReference();
-  const email = typeof body.email === "string" ? body.email : undefined;
-  const phone = typeof body.phone === "string" ? body.phone : undefined;
 
   // Record the intent before handing off to Stripe, so a payment always
   // has something on our side to reconcile against.
@@ -140,6 +166,7 @@ export async function POST(req: Request) {
     phone,
     category,
     zoneSlug: metadata.zone ?? metadata.card ?? "",
+    cardId: metadata.cardId,
     spot: metadata.spotSize ?? metadata.spotType ?? "",
     reach: metadata.reach,
     amountCents,
@@ -152,7 +179,9 @@ export async function POST(req: Request) {
     businessName,
     category,
     email,
+    phone,
     zoneSlug: metadata.zone ?? metadata.card,
+    cardId: metadata.cardId,
     spot: metadata.spotSize ?? metadata.spotType,
     amountCents,
     reference,
