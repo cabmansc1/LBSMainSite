@@ -584,9 +584,9 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
   "isle-of-palms": {
     title: "Isle of Palms Direct Mail | 9x12 Postcards | LBS",
     description:
-      "Isle of Palms direct mail covering zip code 29451, 5,000–10,000 homes per mailing. Exclusive 9x12 billboard-style postcards reaching affluent beach homeowners, Wild Dunes Resort area, and vacation property owners. No competitors on the same card. Starting at 5¢ per household.",
+      "Isle of Palms direct mail covering zip code 29451, 3,590 mailboxes on the island. Mailed together with Sullivans Island for 4,915 across the two. Exclusive 9x12 billboard-style postcards reaching affluent beach homeowners, Wild Dunes Resort area, and vacation property owners. No competitors on the same card. Starting at 5¢ per household.",
     heroSub:
-      'Reach 5,000–10,000 Isle of Palms and East Cooper households per mailing with oversized 9"x12" postcards, no competitors on the same card',
+      'Reach every mailbox on Isle of Palms and Sullivans Island, 4,915 across the two, with oversized 9"x12" postcards and no competitors on the same card',
     statsTitle: "Why Isle of Palms Is a Premium Market for Direct Mail",
     statsIntro:
       "Isle of Palms is one of the most affluent beach communities in the Lowcountry. With high-income homeowners, a thriving tourism economy, and a unique mix of full-time residents and vacation property owners, IOP offers an exceptional audience for direct mail.",
@@ -623,7 +623,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           {
             title: "Combine Nearby Zones",
             body: [
-              "Pair Isle of Palms with Mount Pleasant or Sullivans Island to reach 5,000–10,000 households across the East Cooper corridor, all with exclusive category placement.",
+              "Isle of Palms and Sullivans Island mail together as one card, 4,915 mailboxes across the two. Add Mount Pleasant routes for a larger run across the East Cooper corridor, all with exclusive category placement.",
             ],
           },
           {
@@ -683,11 +683,11 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
     faqs: [
       {
         q: "How many households receive the postcard?",
-        a: "Each mailing targets 5,000 to 10,000 households. Because Isle of Palms is a smaller community, you can combine it with Mount Pleasant or Sullivans Island zones to reach your desired volume across the East Cooper corridor.",
+        a: "Isle of Palms (29451) has 3,590 mailboxes. The island always mails together with Sullivans Island, which has 1,325, so a card reaches 4,915 mailboxes across the two. Adding Mount Pleasant routes takes the run higher if you want more volume.",
       },
       {
         q: "Can I combine Isle of Palms with nearby zones for a larger mailing?",
-        a: "Absolutely. Isle of Palms pairs naturally with Mount Pleasant and Sullivans Island. Many businesses combine two or three zones to reach 5,000–10,000 households across the East Cooper corridor while keeping their exclusive category placement on every card.",
+        a: "Yes, and it is how the island normally mails. Isle of Palms and Sullivans Island go out as one card, 4,915 mailboxes across the two. Adding select Mount Pleasant routes takes it up toward 10,000 households across the East Cooper corridor, and your category stays exclusive on every card.",
       },
       {
         q: "Is my category exclusive?",
@@ -734,7 +734,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Isle of Palms Direct Mail Program Works",
           body: [
-            'Getting started is straightforward. Each mailing targets 5,000 to 10,000 households, and because Isle of Palms is a smaller community, you can combine it with <strong>Mount Pleasant</strong> or <strong>Sullivans Island</strong> zones to hit your desired volume across the East Cooper corridor. We handle everything: ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there is zero competition from your industry on the same card. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to reach Isle of Palms homeowners and property owners.',
+            'Getting started is straightforward. Isle of Palms has 3,590 mailboxes, and the island mails together with <strong>Sullivans Island</strong> for 4,915 across the two. If you want more volume than that, we add <strong>Mount Pleasant</strong> routes across the East Cooper corridor. We handle everything: ad design, printing, and USPS Every Door Direct Mail (EDDM) delivery. Each oversized 9"x12" postcard features local businesses with exclusive category placement, so there is zero competition from your industry on the same card. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to reach Isle of Palms homeowners and property owners.',
           ],
         },
       ],
@@ -1464,9 +1464,9 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
   "sullivans-island": {
     title: "Sullivans Island Direct Mail | 9x12 Postcards | LBS",
     description:
-      "Sullivans Island direct mail targeting 29482, 5,000–10,000 households per mailing with nearby zones. Exclusive 9x12 billboard-style postcards reaching one of South Carolina\\",
+      "Sullivans Island direct mail covering 29482, 1,325 mailboxes on the island. Mailed together with Isle of Palms for 4,915 across the two. Exclusive 9x12 billboard-style postcards reaching one of South Carolina's wealthiest communities. Starting at 5¢ per household.",
     heroSub:
-      'Target 5,000–10,000 households per mailing across Sullivans Island and nearby barrier island communities with oversized 9"x12" postcards, no competitors on the same card',
+      'Reach every mailbox on Sullivans Island and Isle of Palms, 4,915 across the two, with oversized 9"x12" postcards and no competitors on the same card',
     statsTitle: "Why Sullivans Island Is a Premium Market for Direct Mail",
     statsIntro:
       "Sullivans Island is one of the most exclusive and affluent communities in all of South Carolina. With sky-high household incomes and a tight-knit island culture, your message reaches residents who have the means, and the motivation, to act on it.",
@@ -1509,7 +1509,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
           {
             title: "Combine Nearby Zones",
             body: [
-              "Pair Sullivans Island with Isle of Palms and Mount Pleasant routes to reach 5,000–10,000 households across the most affluent barrier island communities in the Charleston area.",
+              "Sullivans Island and Isle of Palms mail together as one card, 4,915 mailboxes across the two. Add Mount Pleasant routes for a larger run across the most affluent barrier island communities in the Charleston area.",
             ],
           },
         ],
@@ -1562,11 +1562,11 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
     faqs: [
       {
         q: "How many households receive the postcard on Sullivans Island?",
-        a: "Sullivans Island proper (29482) has approximately 2,000 households. To reach the 5,000–10,000 mailing threshold, we combine Sullivans Island with nearby routes in Mount Pleasant or Isle of Palms, giving you full island coverage plus surrounding affluent communities.",
+        a: "Sullivans Island (29482) has 1,325 mailboxes. The island always mails together with Isle of Palms, which has 3,590, so a card reaches 4,915 mailboxes across the two. Adding Mount Pleasant routes takes the run higher if you want more volume.",
       },
       {
         q: "Can I combine Sullivans Island with other nearby zones for more volume?",
-        a: "Absolutely. Most Sullivans Island advertisers combine 29482 with Isle of Palms (29451) and select Mount Pleasant routes to hit 5,000–10,000 households. This gives you concentrated coverage across the most affluent barrier island communities in the Charleston area.",
+        a: "Yes, and it is how the island normally mails. Sullivans Island and Isle of Palms (29451) go out as one card, 4,915 mailboxes across the two. Adding select Mount Pleasant routes takes it up toward 10,000 households while keeping your category exclusive on every card.",
       },
       {
         q: "Is my category exclusive?",
@@ -1601,7 +1601,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "The Advantage of a Small, Exclusive Market",
           body: [
-            "Most direct mail campaigns aim for broad reach. Sullivans Island flips that model on its head. Here, the advantage is precision and exclusivity. With approximately 2,000 households on the island, you are not casting a wide net and hoping for the best, you are placing your brand directly in front of every single homeowner in one of the Southeast's most desirable communities. The response rates in affluent, low-density markets like this tend to outperform larger suburban mailings because residents have the disposable income to act immediately and the community is small enough that repeat exposure builds name recognition fast. After just two or three mailings, your business becomes a recognized name on the island.",
+            "Most direct mail campaigns aim for broad reach. Sullivans Island flips that model on its head. Here, the advantage is precision and exclusivity. With 1,325 mailboxes on the island, you are not casting a wide net and hoping for the best, you are placing your brand directly in front of every single homeowner in one of the Southeast's most desirable communities. The response rates in affluent, low-density markets like this tend to outperform larger suburban mailings because residents have the disposable income to act immediately and the community is small enough that repeat exposure builds name recognition fast. After just two or three mailings, your business becomes a recognized name on the island.",
           ],
         },
         {
@@ -1613,7 +1613,7 @@ export const ZONE_CONTENT: Record<string, ZoneContent> = {
         {
           title: "How Our Sullivans Island Direct Mail Program Works",
           body: [
-            'Because Sullivans Island has roughly 2,000 households, most advertisers combine the island with nearby routes in <strong>Mount Pleasant</strong> or <strong>Isle of Palms</strong> to reach the 5,000–10,000 household mailing threshold. This is actually an advantage: you get blanket coverage of Sullivans Island plus exposure to the adjacent affluent communities that share the same lifestyle and spending habits. We handle everything, ad design, printing, and USPS EDDM delivery. Each oversized 9"x12" postcard features exclusive category placement, so there is zero competition from your industry on the same card. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to put your brand in front of the Lowcountry\'s highest-income homeowners.',
+            'Sullivans Island has 1,325 mailboxes, so the island mails together with <strong>Isle of Palms</strong> as one card, 4,915 across the two. Advertisers who want a larger run add select <strong>Mount Pleasant</strong> routes. This is actually an advantage: you get blanket coverage of Sullivans Island plus exposure to the adjacent affluent communities that share the same lifestyle and spending habits. We handle everything, ad design, printing, and USPS EDDM delivery. Each oversized 9"x12" postcard features exclusive category placement, so there is zero competition from your industry on the same card. Every card carries trackable QR codes and unique URLs so you can measure how many scans and visits your ad generates. With rates starting at just 5 cents per household, it is one of the most cost-effective ways to put your brand in front of the Lowcountry\'s highest-income homeowners.',
           ],
         },
       ],

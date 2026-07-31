@@ -53,7 +53,10 @@ export async function generateMetadata({
   const title = content?.title ?? `Direct Mail Marketing in ${zone.name}, SC`;
   const description =
     content?.description ??
-    `Reach ${zone.households5k} ${zone.name} households with a shared 9x12 Spotlight Postcard. One exclusive spot per industry, free ad design, from $249 per mailing.`;
+    // reachArea, not the zone name, for a zone that never mails alone:
+    // quoting a two-island figure beside one island's name is the thing
+    // this is here to avoid.
+    `Reach ${zone.households5k} ${zone.reachArea ?? zone.name} households with a shared 9x12 Spotlight Postcard. One exclusive spot per industry, free ad design, from $249 per mailing.`;
   return {
     // Absolute: the legacy title already ends in the brand, and the
     // layout template would push it past what a result page shows.
@@ -91,7 +94,7 @@ export default async function ZonePage({
     name: `Direct Mail Marketing in ${zone.name}, SC`,
     provider: { "@type": "LocalBusiness", name: SITE_NAME, url: SITE_URL },
     areaServed: { "@type": "City", name: zone.name },
-    description: `Shared 9x12 postcard advertising mailed to ${zone.households5k} households in ${zone.name}, South Carolina.`,
+    description: `Shared 9x12 postcard advertising mailed to ${zone.households5k} households in ${zone.reachArea ?? zone.name}, South Carolina.`,
   };
 
   const faqJsonLd = content?.faqs.length
@@ -132,7 +135,10 @@ export default async function ZonePage({
           </div>
           <div className="mt-6.5 flex flex-wrap gap-3">
             {[
-              { value: zone.households5k, label: "Households / mailing" },
+              {
+                value: zone.households5k,
+                label: zone.reachArea ? "Households / mailing, both islands" : "Households / mailing",
+              },
               { value: zone.zipCodes.join(" · "), label: "ZIP codes covered" },
               { value: mailing?.mailMonth ?? "Coming soon", label: TENTATIVE_MAIL_LABEL },
             ].map((chip) => (
@@ -147,6 +153,14 @@ export default async function ZonePage({
               </div>
             ))}
           </div>
+          {/* Spelled out under the figure, because a number covering two
+              islands sitting on one island's page is exactly the claim
+              that needs its working shown. */}
+          {zone.reachNote && (
+            <p className="mt-3.5 text-[13px] text-[#93A5B8] max-w-[62ch]">
+              {zone.reachNote}
+            </p>
+          )}
         </div>
       </header>
 
