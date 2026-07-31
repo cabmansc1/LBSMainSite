@@ -151,8 +151,12 @@ const nextConfig: NextConfig = {
       { source: "/register.php", destination: "/register", permanent: true },
       { source: "/dashboard.php", destination: "/account", permanent: true },
       {
+        // /account/campaigns has never existed. The portal screen is
+        // /account/cards, so this redirect took every old my-cards link
+        // to a 404: worse than no redirect, because a 404 behind a 301
+        // still burns the link and looks deliberate.
         source: "/my-cards.php",
-        destination: "/account/campaigns",
+        destination: "/account/cards",
         permanent: true,
       },
       {
@@ -160,6 +164,95 @@ const nextConfig: NextConfig = {
         destination: "/directory-signup",
         permanent: true,
       },
+      /**
+       * The rest of the legacy pages, found by crawling every .php file
+       * the old site can serve against the new app. Each one 404'd,
+       * which for a page with links pointing at it is a lost visitor
+       * and a lost link.
+       *
+       * Targets are matched by what the page actually was, read from
+       * its own heading, rather than guessed from the filename.
+       */
+      {
+        // "Upcoming Spotlight Postcard Mailings". The closest thing to
+        // an SEO asset in this list: same content, new home.
+        source: "/upcoming-mailers.php",
+        destination: "/mailing-calendar",
+        permanent: true,
+      },
+      {
+        // Submitted to Search Console as a sitemap on the old site, so
+        // it is the one URL here a crawler asks for by habit.
+        source: "/sitemap.php",
+        destination: "/sitemap.xml",
+        permanent: true,
+      },
+      {
+        source: "/directory-landing.php",
+        destination: "/directory",
+        permanent: true,
+      },
+      {
+        // Redirected to a categories.php that no longer exists.
+        source: "/category.php",
+        destination: "/directory",
+        permanent: true,
+      },
+      {
+        source: "/neighborhood-card.php",
+        has: [{ type: "query", key: "slug" }],
+        destination: "/neighborhood-card/:slug",
+        permanent: true,
+      },
+      {
+        source: "/neighborhood-card.php",
+        destination: "/neighborhood-cards",
+        permanent: true,
+      },
+      {
+        source: "/neighborhood-card-checkout.php",
+        destination: "/neighborhood-cards",
+        permanent: true,
+      },
+      {
+        source: "/neighborhood-card-success.php",
+        destination: "/account/cards",
+        permanent: true,
+      },
+      {
+        // "Create Business Listing", which is what /register does now.
+        source: "/create-listing.php",
+        destination: "/register",
+        permanent: true,
+      },
+      {
+        // The dead mockup this project replaced.
+        source: "/manage-listing.php",
+        destination: "/account/listings",
+        permanent: true,
+      },
+      {
+        source: "/forgot-password.php",
+        destination: "/forgot-password",
+        permanent: true,
+      },
+      {
+        source: "/reset-password.php",
+        destination: "/forgot-password",
+        permanent: true,
+      },
+      { source: "/logout.php", destination: "/", permanent: true },
+      /**
+       * Thank-you pages. Nobody arrives from search, but old links and
+       * bookmarks exist, and a 404 is a worse answer than the page the
+       * visitor was thanked for reaching.
+       */
+      {
+        source: "/directory-thank-you.php",
+        destination: "/directory",
+        permanent: true,
+      },
+      { source: "/thank_you.php", destination: "/", permanent: true },
       // Zone landing pages keep their exact paths; only the .php suffix redirects
       {
         source: "/:zone(\\w[\\w-]*)-direct-mail-marketing.php",
