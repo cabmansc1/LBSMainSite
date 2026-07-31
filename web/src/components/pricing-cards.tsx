@@ -203,17 +203,22 @@ const CARD_META: Record<
       "Priority placement",
     ],
   },
+  // The fractions here are the real ones, from card-capacity.ts: a
+  // horizontal card is 192 square inches of ad space, one side is 96,
+  // and a band is the four mediums across the top or the bottom of a
+  // side. Triple is 36 and Quad is 48, so "a whole band" and "half the
+  // card" were both overstating what somebody was buying.
   triple: {
     label: "Triple",
     dims: "3 mediums",
-    sub: "Owns a whole band of the card",
+    sub: "Three of the four spots in one band",
     features: ["Everything in Large", "Three medium spots together", "Impossible to skim past"],
   },
   quad: {
     label: "Quad",
     dims: "2 larges",
-    sub: "Half the card is yours",
-    features: ["Everything in Triple", "Two larges or four mediums", "A half-card takeover"],
+    sub: "A quarter of the whole card",
+    features: ["Everything in Triple", "Two larges or four mediums", "Half of one printed side"],
   },
   full: {
     label: "Full page",

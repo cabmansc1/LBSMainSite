@@ -19,8 +19,8 @@ const SPOT_META: Record<SpotSize, { label: string; dims: string; note: string }>
   small: { label: "Small", dims: "3″ × 2″", note: "Logo, tagline, QR" },
   medium: { label: "Medium", dims: "3″ × 4″", note: "Offer, photo, QR" },
   large: { label: "Large", dims: "4″ × 6″", note: "Dominant position" },
-  triple: { label: "Triple", dims: "3 mediums", note: "Owns a whole band" },
-  quad: { label: "Quad", dims: "2 larges", note: "Half-card takeover" },
+  triple: { label: "Triple", dims: "3 mediums", note: "Three of four in a band" },
+  quad: { label: "Quad", dims: "2 larges", note: "A quarter of the card" },
   full: {
     label: "Full page",
     dims: "one whole side",
