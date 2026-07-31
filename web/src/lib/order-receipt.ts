@@ -369,6 +369,16 @@ export async function sendRefundAlert(input: {
   const who = order?.businessName || order?.email || "an order we cannot match";
   const kind = fully ? "Refunded" : "Partly refunded";
 
+  // Deliberately does not assume which kind of refund this was. A
+  // cancellation and a goodwill credit look identical from Stripe, and
+  // only one of them means somebody has to go and remove a spot. So it
+  // states where things stand and offers both, rather than telling you
+  // to undo something you may have meant to keep.
+  const mcCard =
+    order?.cardId && process.env.MC_BASE_URL?.trim()
+      ? `${process.env.MC_BASE_URL.trim().replace(/\/+$/, "")}/pipeline/${order.cardId}`
+      : "";
+
   const lines = [
     `${kind}: ${money(amountRefundedCents)} of ${money(amountCents)}.`,
     "",
@@ -378,10 +388,24 @@ export async function sendRefundAlert(input: {
     order?.cardId ? `Card: ${order.cardId}` : "",
     order?.reference ? `Reference: ${order.reference}` : "",
     "",
-    fully
-      ? "The money is back with them, but they are still on the card in Mission Control and still holding their category. Remove them there if the spot should go back on sale."
-      : "This was a partial refund, so the order is still marked paid and they stay on the card. Nothing to do unless you meant to cancel the spot.",
+    "Where this stands: they are still on the card in Mission Control and"
+      + ` still holding${order?.category ? ` ${order.category}` : " their category"}.`,
     "",
+    "If this was a cancellation, remove them in Mission Control and the"
+      + " spot goes back on sale.",
+    "If it was goodwill and they are staying on the card, leave them there"
+      + ` and set their amount paid to ${money(Math.max(0, amountCents - amountRefundedCents))}.`,
+    // Mission Control does not hear about refunds, so its amount paid
+    // still reads the full charge. Left alone, a goodwill credit quietly
+    // overstates what the card collected, and the card's own revenue is
+    // what the print run is judged against.
+    "Mission Control still has them down as paying"
+      + ` ${money(amountCents)}, because Stripe refunds do not reach it.`,
+    fully
+      ? ""
+      : "The order stays marked paid here, because only part of it came back.",
+    "",
+    mcCard ? `Card in Mission Control: ${mcCard}` : "",
     `${SITE_URL}/admin/orders`,
   ].filter((l) => l !== "");
 
