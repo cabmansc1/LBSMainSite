@@ -54,8 +54,8 @@ const samplesVisible = () => process.env.SHOW_SAMPLE_TESTIMONIALS === "1";
 
 let ready = false;
 
-async function ensureTable() {
-  if (ready) return;
+async function ensureTable(force = false) {
+  if (ready && !force) return;
   const { db } = await import("@/lib/db");
   await db.execute(
     sql`CREATE TABLE IF NOT EXISTS lbs_testimonials (
@@ -155,7 +155,7 @@ export async function testimonialsFor(
           WHERE approved = 1
             AND FIND_IN_SET(${placement}, REPLACE(placements, ', ', ',')) > 0
           ORDER BY pinned DESC, RAND()
-          LIMIT ${SHOWN_PER_PLACEMENT}`,
+          LIMIT ${sql.raw(String(SHOWN_PER_PLACEMENT))}`,
     )) as unknown as [Record<string, unknown>[]];
     const real = (rows[0] ?? []).map(row);
     if (real.length > 0) return real;
@@ -177,9 +177,21 @@ export async function hasTestimonials(placement: string): Promise<boolean> {
 
 const clean = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
-export async function saveTestimonial(input: Testimonial): Promise<boolean> {
+/**
+ * Returns the reason rather than just false.
+ *
+ * A save that fails with "Could not save it" tells the person at the
+ * screen nothing and tells whoever has to fix it less. The database
+ * message names the problem exactly, usually a column that is not there
+ * yet, and it is admin-only so there is nothing sensitive in showing it.
+ */
+export async function saveTestimonial(
+  input: Testimonial,
+): Promise<{ ok: boolean; error?: string }> {
   const quote = clean(input.quote, 2000);
-  if (quote.length < 10) return false;
+  if (quote.length < 10) {
+    return { ok: false, error: "A quote needs to be at least a sentence." };
+  }
   const placements = input.placements
     .map((p) => p.trim())
     .filter(Boolean)
@@ -193,9 +205,38 @@ export async function saveTestimonial(input: Testimonial): Promise<boolean> {
   try {
     await ensureTable();
     const { db } = await import("@/lib/db");
+
+    /**
+     * Runs the write, and if the schema turns out to be older than this
+     * code, brings it up to date and tries once more.
+     *
+     * The `ready` flag makes ensureTable a no-op after the first call in
+     * a process. That is the right trade for a table that never
+     * changes, and the wrong one the day it does: if the ALTER that adds
+     * a column failed, or the flag was set by a code path that ran
+     * before the column existed, every write afterwards fails on a
+     * missing field and no amount of retrying helps, because the check
+     * that would fix it is skipped.
+     *
+     * ER_BAD_FIELD_ERROR is exactly that situation and nothing else, so
+     * it is safe to answer by re-running the migration rather than by
+     * giving up.
+     */
+    const run = async (go: () => Promise<unknown>) => {
+      try {
+        await go();
+      } catch (e) {
+        if ((e as { code?: string }).code !== "ER_BAD_FIELD_ERROR") throw e;
+        console.warn("[testimonials] schema behind, re-running migration");
+        await ensureTable(true);
+        await go();
+      }
+    };
+
     if (input.id) {
-      await db.execute(
-        sql`UPDATE lbs_testimonials
+      await run(() =>
+        db.execute(
+          sql`UPDATE lbs_testimonials
             SET quote = ${quote},
                 author = ${clean(input.author, 160)},
                 detail = ${clean(input.detail, 200)},
@@ -204,20 +245,26 @@ export async function saveTestimonial(input: Testimonial): Promise<boolean> {
                 approved = ${input.approved ? 1 : 0},
                 pinned = ${input.pinned ? 1 : 0}
             WHERE id = ${input.id}`,
+        ),
       );
     } else {
-      await db.execute(
-        sql`INSERT INTO lbs_testimonials
+      await run(() =>
+        db.execute(
+          sql`INSERT INTO lbs_testimonials
               (quote, author, detail, placements, rating, approved, pinned)
             VALUES (${quote}, ${clean(input.author, 160)},
                     ${clean(input.detail, 200)}, ${placements}, ${rating},
                     ${input.approved ? 1 : 0}, ${input.pinned ? 1 : 0})`,
+        ),
       );
     }
-    return true;
+    return { ok: true };
   } catch (e) {
     console.error("[testimonials] save failed:", e);
-    return false;
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "The database refused that.",
+    };
   }
 }
 

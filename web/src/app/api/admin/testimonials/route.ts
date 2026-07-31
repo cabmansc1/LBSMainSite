@@ -43,12 +43,15 @@ export async function POST(req: Request) {
         { status: 422 },
       );
     }
-    const ok = await saveTestimonial({
+    const saved = await saveTestimonial({
       ...t,
       placements: Array.isArray(t.placements) ? t.placements : [],
     });
-    if (!ok) {
-      return NextResponse.json({ error: "Could not save it." }, { status: 500 });
+    if (!saved.ok) {
+      return NextResponse.json(
+        { error: saved.error ?? "Could not save it." },
+        { status: 500 },
+      );
     }
     revalidatePath("/");
     return NextResponse.json({ ok: true });

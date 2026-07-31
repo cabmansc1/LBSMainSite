@@ -84,7 +84,9 @@ export function AdminTestimonials({
         >
           Add testimonial
         </button>
-        {err && <span className="text-[13px] text-[#b42318]">{err}</span>}
+        {err && !editing && (
+          <span className="text-[13px] text-[#b42318]">{err}</span>
+        )}
       </div>
 
       {editing && (
@@ -196,6 +198,12 @@ export function AdminTestimonials({
               Pin to the top, ahead of the rotation
             </label>
           </div>
+
+          {err && (
+            <p className="text-[13px] text-[#b42318] bg-[#fdf3f2] border border-[#f3c6c2] rounded-lg px-3.5 py-2.5">
+              {err}
+            </p>
+          )}
 
           <div className="flex items-center gap-3">
             <button
