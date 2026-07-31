@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import {
   SectionHeading,
   Card,
-  TestimonialStrip,
   CtaBand,
 } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
+import { TestimonialStrip } from "@/components/testimonial-strip";
 import { buildMetadata, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
@@ -351,7 +351,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {hasTestimonials("home") && (
+      {(await hasTestimonials("home")) && (
         <section className="mx-auto max-w-[1120px] px-6 py-22">
           <SectionHeading
             eyebrow="Local businesses on LBS"

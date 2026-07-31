@@ -4,8 +4,9 @@ import { getLivePricing } from "@/lib/pricing-store";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
 import { getCardDescriptions } from "@/lib/card-details";
-import { SectionHeading, TestimonialStrip, CtaBand } from "@/components/sections";
+import { SectionHeading, CtaBand } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
+import { TestimonialStrip } from "@/components/testimonial-strip";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata("pricing");
@@ -118,7 +119,7 @@ export default async function PricingPage({
           ))}
         </div>
 
-        {hasTestimonials("pricing") && (
+        {(await hasTestimonials("pricing")) && (
           <section className="py-22">
             <SectionHeading
               eyebrow="What advertisers say"

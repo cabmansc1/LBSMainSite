@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, SectionHeading, TestimonialStrip, FillMeter } from "@/components/sections";
+import { Card, SectionHeading, FillMeter } from "@/components/sections";
 import { hasTestimonials } from "@/lib/testimonials";
+import { TestimonialStrip } from "@/components/testimonial-strip";
 import { ZoneMiniMap } from "@/components/zone-mini-map";
 import { zoneBySlug } from "@/lib/zones";
 import {
@@ -431,7 +432,7 @@ export default async function ZonePage({
         </section>
       ) : null}
 
-      {hasTestimonials(`zone:${zone.slug}`) && (
+      {(await hasTestimonials(`zone:${zone.slug}`)) && (
       <section className="bg-surface border-y border-line">
         <div className="mx-auto max-w-[1120px] px-6 py-16">
           <SectionHeading

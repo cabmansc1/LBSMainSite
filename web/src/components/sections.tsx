@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { testimonialsFor } from "@/lib/testimonials";
 
 export function SectionHeading({
   eyebrow,
@@ -65,26 +64,6 @@ export function StatusChip({
   );
 }
 
-export function TestimonialStrip({ placement }: { placement: string }) {
-  const items = testimonialsFor(placement);
-  if (items.length === 0) return null;
-  return (
-    <div className="grid md:grid-cols-3 gap-3.5">
-      {items.map((t) => (
-        <Card key={t.quote} className="p-7 flex flex-col gap-4.5">
-          <span className="text-[34px] leading-[0.6] font-bold text-brand">“</span>
-          <blockquote className="text-[15.5px] leading-relaxed flex-1">
-            {t.quote}
-          </blockquote>
-          <div>
-            <b className="block text-[13.5px] font-semibold">{t.author}</b>
-            <span className="text-[12.5px] text-muted">{t.detail}</span>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
 
 export function CtaBand({
   title,
