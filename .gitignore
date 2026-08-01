@@ -7,7 +7,13 @@
 *_config.php.bak
 
 # --- User-uploaded content (98MB of photos; back up separately) ---
-uploads/
+# Anchored. Unanchored, this matched a directory named uploads at ANY
+# depth, so web/src/app/admin/uploads/ was silently dropped by git add
+# and the admin route 404ed in production while building fine locally,
+# because the file was on disk and simply never in the repo. The rule
+# was only ever meant for the PHP site's own storage directory here at
+# the root.
+/uploads/
 
 # --- Composer installer artifacts (kept vendor/, but not these) ---
 composer.phar
