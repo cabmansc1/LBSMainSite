@@ -261,6 +261,7 @@ type McCard = {
   zoneName: string;
   mailMonth: string;
   artworkDeadline?: string;
+  artworkDeadlineIso?: string;
   households?: string;
   spotsTotal: number;
   spotsTaken: number;
@@ -491,12 +492,12 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   // live store: a card carries mailDate and startDate and nothing else
   // date-like. So every screen that offered to show a deadline has been
   // rendering nothing at all. Derive it from the mail date the same way
-  // the order receipt already does, which is also the two weeks the
-  // advertise page has always promised. An explicit value still wins, in
+  // the order receipt already does, from the single ARTWORK_LEAD_DAYS
+  // constant the advertise page quotes too. An explicit value still wins, in
   // case Mission Control grows the field later.
   //
-  // Not derived for a planned card. Two weeks before a date nobody has
-  // committed to is not a deadline, and printing one is how a customer
+  // Not derived for a planned card. A lead time counted back from a date
+  // nobody has committed to is not a deadline, and printing one is how a customer
   // ends up rushing artwork for a mailing that later moves. An explicit
   // deadline from Mission Control still shows, because somebody typing
   // one in is somebody committing to it.
@@ -504,6 +505,10 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   const deadline =
     explicitDeadline ||
     (status === "planned" ? "" : formatDeadline(artworkDeadlineFrom(mailDate)));
+  // Judged on the derived date, never on the displayed string. See the
+  // note on UpcomingMailing.artworkDeadlineIso: a display string has no
+  // year, and this has to agree with artworkDueFor, which derives too.
+  const deadlineDate = status === "planned" ? undefined : artworkDeadlineFrom(mailDate);
 
   return {
     id: raw.id,
@@ -513,6 +518,7 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
     zoneName,
     mailMonth: formatMailMonth(mailDate),
     artworkDeadline: deadline || undefined,
+    artworkDeadlineIso: deadlineDate?.toISOString(),
     households: reach !== undefined ? reach.toLocaleString("en-US") : undefined,
     spotsTotal,
     spotsTaken,
@@ -684,6 +690,7 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
     zoneName: c.zoneName,
     mailMonth: c.mailMonth,
     artworkDeadline: c.artworkDeadline,
+    artworkDeadlineIso: c.artworkDeadlineIso,
     households: c.households,
     spotsTotal: c.spotsTotal,
     spotsTaken: c.spotsTaken,
@@ -762,6 +769,94 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
     .map(advertiserCategory)
     .filter((c): c is string => !!c);
   return uniqueCategories([...sold, ...(await heldCategoriesForCard(card.id))]);
+}
+
+/**
+ * The same question as getTakenCategories, answered honestly.
+ *
+ * The two functions above return an empty array for three situations
+ * that are not the same thing: Mission Control could not be reached, the
+ * card id matched nothing, and the card genuinely has no advertisers
+ * yet. For anything that draws a screen that conflation is harmless and
+ * deliberate, because a card that renders as empty during an outage is a
+ * cosmetic problem.
+ *
+ * For a sale it is not harmless. Treating "we could not ask" as "nothing
+ * is taken" is how two plumbers end up on one card, and category
+ * exclusivity is the entire product. The clash does surface later, when
+ * the paid order is pushed to Mission Control, but later means after the
+ * customer's money is taken and the fix is a refund and an apology.
+ *
+ * So the checkout uses this instead, and refuses rather than guesses. A
+ * customer asked to try again in a minute is a far smaller cost than a
+ * printed card carrying two of the same trade.
+ */
+export type TakenCheck =
+  | { ok: true; taken: string[] }
+  | { ok: false; reason: "unreachable" | "unknown-card" };
+
+/**
+ * Whether a card can still be sold, checked against Mission Control
+ * rather than trusted from the page that submitted the order.
+ *
+ * The picker already filters to `!isPast && isBookable(status)`, but
+ * filtering a list is not enforcing a rule: the page a customer is
+ * looking at may have been rendered before the card closed. A tab left
+ * open on Monday will happily post an order on Thursday for a card that
+ * went to print on Wednesday.
+ */
+export type CardSaleState =
+  | { ok: true; zoneSlug: string; status: UpcomingMailing["status"] }
+  | { ok: false; reason: "unreachable" | "unknown-card" | "not-bookable" };
+
+export async function checkCardForSale(cardId: string): Promise<CardSaleState> {
+  const cards = await fetchCards();
+  if (!cards) return { ok: false, reason: "unreachable" };
+  const card = cards.find((c) => String(c.id) === String(cardId));
+  if (!card) return { ok: false, reason: "unknown-card" };
+  if (card.isPast || !isBookable(card.status)) {
+    return { ok: false, reason: "not-bookable" };
+  }
+  return { ok: true, zoneSlug: card.zoneSlug, status: card.status };
+}
+
+export async function checkTakenForCard(cardId: string): Promise<TakenCheck> {
+  const cards = await fetchCards();
+  if (!cards) return { ok: false, reason: "unreachable" };
+  const card = cards.find((c) => String(c.id) === String(cardId));
+  if (!card) return { ok: false, reason: "unknown-card" };
+  const sold = card.advertisers
+    .map(advertiserCategory)
+    .filter((c): c is string => !!c);
+  return {
+    ok: true,
+    taken: uniqueCategories([...sold, ...(await heldCategoriesForCard(card.id))]),
+  };
+}
+
+export async function checkTakenForZone(zoneSlug: string): Promise<TakenCheck> {
+  const cards = await fetchCards();
+  if (!cards) {
+    // Without Mission Control configured at all this is local
+    // development, where the sample list is the intended behaviour and
+    // there is no real money to protect.
+    return mcEnabled()
+      ? { ok: false, reason: "unreachable" }
+      : { ok: true, taken: ["Plumbing", "Dental"] };
+  }
+  const card = cards.find(
+    (c) => c.zoneSlug === zoneSlug && !c.isPast && isBookable(c.status),
+  );
+  // No open card in the zone is a real answer, not a failure: there is
+  // nothing to clash with because there is nothing to sell.
+  if (!card) return { ok: true, taken: [] };
+  const sold = card.advertisers
+    .map(advertiserCategory)
+    .filter((c): c is string => !!c);
+  return {
+    ok: true,
+    taken: uniqueCategories([...sold, ...(await heldCategoriesForCard(card.id))]),
+  };
 }
 
 /**

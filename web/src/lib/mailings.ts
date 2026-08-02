@@ -44,6 +44,23 @@ export type UpcomingMailing = {
    */
   artworkDeadline?: string;
   /**
+   * The same deadline as a date, so a page can tell whether it has
+   * passed. artworkDeadline is a display string like "Jul 24" and
+   * cannot be compared to anything.
+   *
+   * Derived from the mail date rather than parsed back out of the
+   * display string, for two reasons. "Jul 24" carries no year, so
+   * parsing it in January reads as this year when the card means next.
+   * And the derived date is what artworkDueFor already uses to work out
+   * a late buyer's grace window, so judging by anything else would let
+   * a card call itself open while the grace maths called it late.
+   *
+   * Undefined for a planned card, whose month nobody has committed to,
+   * and undefined when Mission Control supplied a deadline we cannot
+   * place on a calendar. Undefined means "do not judge", not "passed".
+   */
+  artworkDeadlineIso?: string;
+  /**
    * Deliverable addresses for this card, from Mission Control or summed
    * from the USPS route table. Undefined when neither is known.
    *
@@ -126,11 +143,17 @@ export const TENTATIVE_MAIL_LABEL = "Tentative mail date";
 /**
  * Days before the tentative mail date that artwork is due.
  *
- * Matches what the advertise page has always told people ("typically
- * two weeks before the mail date"). Derived rather than stored, so a
- * card whose date moves brings its deadline with it.
+ * Seven, down from fourteen. Two weeks was generous to the print
+ * schedule and expensive on the sales side: it closed the self-serve
+ * window a fortnight before a card mailed, which is exactly the stretch
+ * when a half-full card most needs to be sellable.
+ *
+ * Derived rather than stored, so a card whose date moves brings its
+ * deadline with it, and every surface that quotes a number interpolates
+ * this one. Change it here and the receipt, the advertise page FAQ and
+ * the card picker all follow.
  */
-export const ARTWORK_LEAD_DAYS = 14;
+export const ARTWORK_LEAD_DAYS = 7;
 
 /**
  * How long somebody who bought late gets to send artwork.

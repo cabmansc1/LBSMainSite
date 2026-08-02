@@ -50,25 +50,48 @@ const availabilityFrom = (cap: CardCapacity) =>
   ALL_SIZES.map((size) => ({ size, open: cap.fits[size] }));
 
 /**
- * The reach line, built only from facts we hold.
+ * The reach and deadline line, built only from facts we hold.
  *
- * No artwork deadline here, deliberately. This is the card picker, seen
- * before anyone has bought anything, and the card's own deadline is the
- * wrong number to show them: it is derived from the mail date and has
- * usually passed on exactly the cards we most want to sell. Downtown
- * Summerville sat here with three spots left and "artwork deadline Jul
- * 24" printed underneath it on the second of August, which reads as
- * "you are too late" on a card that was still open.
+ * A deadline still ahead is one of the better reasons to act today
+ * rather than next week, so it stays. A deadline already behind us is
+ * the opposite: Downtown Summerville sat here on the second of August
+ * with three spots left and "artwork deadline Jul 24" underneath it,
+ * which reads as "you are too late" on a card that was still selling.
+ * Removing the line outright fixed that one card and cost the other two
+ * their urgency, which was the wrong trade.
  *
- * A late buyer is not held to that date anyway. artworkDueFor gives
- * them a short window from the day they pay, so the honest deadline
- * cannot be known until the sale exists. It is shown on the receipt and
- * in the portal, which are the two places it is true.
+ * So the date shows while it means something, and turns into a prompt
+ * to call once it does not. A late buyer is genuinely still welcome,
+ * they are simply not on the self-serve timeline any more: artworkDueFor
+ * gives them a short window from the day they pay, and that date cannot
+ * be known until the sale exists.
+ *
+ * No date at all leaves the line off rather than guessing. A planned
+ * card has no committed month, so it has no deadline to miss.
  */
-const mailingFacts = (m: UpcomingMailing): string[] =>
-  [m.households ? `${m.households} households` : null].filter(
-    (f): f is string => f !== null,
-  );
+const mailingFacts = (
+  m: UpcomingMailing,
+  // Injectable for tests; the page is force-dynamic, so the default is
+  // evaluated per request rather than frozen at build time.
+  now: number = Date.now(),
+): string[] => {
+  const due = m.artworkDeadlineIso ? Date.parse(m.artworkDeadlineIso) : NaN;
+  const deadline = Number.isNaN(due)
+    ? // Undefined means "do not judge", not "passed": a planned card, or
+      // one whose deadline Mission Control gave us in a form we cannot
+      // place on a calendar. Show what we were given, if anything.
+      m.artworkDeadline
+      ? `artwork deadline ${m.artworkDeadline}`
+      : null
+    : due > now
+      ? `artwork deadline ${m.artworkDeadline}`
+      : "closing soon, call to confirm";
+
+  return [
+    m.households ? `${m.households} households` : null,
+    deadline,
+  ].filter((f): f is string => f !== null);
+};
 
 export async function generateMetadata({
   params,
