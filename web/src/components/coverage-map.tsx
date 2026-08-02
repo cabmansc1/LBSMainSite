@@ -182,15 +182,33 @@ export function CoverageMap({
                   </g>
                 ))}
                 {b.label && (
+                  /*
+                    Size and offset both move with the breakpoint,
+                    because the marker does. The y attribute is computed
+                    from b.r, which stays 13 in JavaScript while CSS
+                    draws the marker at 30 on a phone, so the label was
+                    landing inside its own marker there. The transform
+                    lifts it clear; the attribute alone is still the
+                    right answer for desktop and the no-CSS fallback.
+
+                    19 units rendered at 7.8px on desktop and 3.9px on a
+                    phone, which is smaller than any text on the page and
+                    smaller than the labels the base map prints beside
+                    it.
+                  */
                   <text
                     x={b.x}
                     y={b.labelAbove ? b.y - b.r - 12 : b.y + b.r + 24}
                     textAnchor="middle"
                     fill="#0B1F33"
-                    fontSize="19"
+                    fontSize="26"
                     fontWeight="700"
-                    className="pointer-events-none"
-                    style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,.9)", strokeWidth: 6 }}
+                    className={`pointer-events-none [font-size:48px] sm:[font-size:26px] [stroke-width:11px] sm:[stroke-width:7px] ${
+                      b.labelAbove
+                        ? "[transform:translateY(-23px)] sm:[transform:translateY(-5px)]"
+                        : "[transform:translateY(23px)] sm:[transform:translateY(5px)]"
+                    }`}
+                    style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,.92)" }}
                   >
                     {b.label}
                   </text>
