@@ -1,0 +1,85 @@
+# Checks that run on a clean checkout, because six failures in one day
+# reached production while every local check passed.
+#
+# What each step is here to have caught:
+#
+#   npm ci + build   Two separate `server-only` imports that reached a
+#                    shared barrel and dragged sharp and the database
+#                    driver into the browser bundle. Both broke the
+#                    build; neither broke a page anybody had open.
+#
+#   source-ignored   An unanchored `uploads/` in .gitignore matched
+#                    src/app/admin/uploads/, so `git add -A` skipped a
+#                    route file without a word. It built perfectly here,
+#                    because the file was on disk, and 404ed in
+#                    production, because it was never in the repo. A
+#                    clean build cannot catch that on its own: nothing
+#                    imports a route file, so its absence is silent.
+#
+#   lint budget      Not a demand that the existing problems get fixed.
+#                    A ratchet, so the count cannot grow while nobody is
+#                    looking.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # ci, not install: the lockfile is the point. An install that is
+      # free to resolve a different tree is not testing what deploys.
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      # No .gitignore pattern may match anything under src. --no-index
+      # tests the pattern rather than the index, so this fires on the
+      # rule itself, before a file goes missing rather than after.
+      - name: Source files are not gitignored
+        working-directory: .
+        run: |
+          hits=$(find web/src -type d | git check-ignore --no-index -v --stdin 2>/dev/null || true)
+          if [ -n "$hits" ]; then
+            echo "::error::A .gitignore rule matches a path under web/src."
+            echo "Anything below it can be skipped by git add without warning."
+            echo "$hits"
+            exit 1
+          fi
+          echo "No ignore rule matches web/src."
+
+      # Fails when the count grows, not when it is above zero. Lower
+      # LINT_BUDGET as problems get fixed; never raise it to make a red
+      # build green.
+      - name: Lint budget
+        env:
+          LINT_BUDGET: 12
+        run: |
+          out=$(npm run lint 2>&1 || true)
+          echo "$out"
+          n=$(printf '%s' "$out" | grep -oE '[0-9]+ problems' | tail -1 | grep -oE '^[0-9]+' || true)
+          n=${n:-0}
+          echo "eslint problems: $n (budget $LINT_BUDGET)"
+          if [ "$n" -gt "$LINT_BUDGET" ]; then
+            echo "::error::Lint problems went from $LINT_BUDGET to $n."
+            exit 1
+          fi
