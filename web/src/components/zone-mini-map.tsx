@@ -29,7 +29,7 @@ export function ZoneMiniMap({
     areas.find((a) => a.zoneSlugs.includes(highlight))?.slug ?? highlight;
   return (
     <svg
-      viewBox={`0 0 ${MAP_IMG.w} ${MAP_IMG.h}`}
+      viewBox={`${MAP_IMG.view.x} ${MAP_IMG.view.y} ${MAP_IMG.view.w} ${MAP_IMG.view.h}`}
       role="img"
       aria-label="Zone highlighted on the Lowcountry coverage map"
       className="w-full h-auto rounded-[10px] border border-line"

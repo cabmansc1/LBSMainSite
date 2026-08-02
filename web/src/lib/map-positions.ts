@@ -19,6 +19,26 @@ export const MAP_IMG = {
   src: "/map/coverage-base.webp",
   w: 1536,
   h: 1024,
+  /**
+   * The part of the artwork worth showing, as an SVG viewBox.
+   *
+   * The full image carries a lot of nothing: empty Dorchester beige down
+   * the left, open Atlantic bottom-right, and Berkeley green across the
+   * top. Measured against the artwork itself, every printed label pill
+   * and every marker falls inside x 431-1351, y 122-931, so this is that
+   * box with 34 units of air around it.
+   *
+   * Cropping the view rather than enlarging the labels is what fixes the
+   * mismatch. Text drawn at 19 units was smaller than the labels the map
+   * prints beside it, and setting it to 48 made it larger; neither
+   * matched. Zooming scales the printed labels and ours by the same
+   * 1.55x, so they can be the same size and stay that way.
+   *
+   * The frame goes from 1.50 to 1.13, which is squarer. That suits a
+   * phone, where width is the scarce dimension, and costs a taller card
+   * on desktop.
+   */
+  view: { x: 397, y: 88, w: 988, h: 877 },
 };
 
 export type MapPosition = {

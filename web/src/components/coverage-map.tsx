@@ -81,7 +81,7 @@ export function CoverageMap({
     <div className="grid lg:grid-cols-[1.35fr_.65fr] gap-4 items-stretch">
       <div className="bg-white border border-line rounded-2xl p-3 overflow-hidden">
         <svg
-          viewBox={`0 0 ${MAP_IMG.w} ${MAP_IMG.h}`}
+          viewBox={`${MAP_IMG.view.x} ${MAP_IMG.view.y} ${MAP_IMG.view.w} ${MAP_IMG.view.h}`}
           role="group"
           aria-label="Charleston Lowcountry service zone map"
           className="w-full h-auto rounded-[10px]"
@@ -148,7 +148,24 @@ export function CoverageMap({
                           fill={TONE_FILL[tone]}
                           fillOpacity={0.22}
                           r={c.r + 11}
-                          className="[r:46px] sm:[r:25px]"
+                          className="[r:32px] sm:[r:25px]"
+                        />
+                        {/* White under navy, so the ring stays legible
+                            wherever it lands. Two of the printed labels
+                            sit hard against their own dot, Summerville
+                            and West Ashley, and a bare navy ring drawn
+                            across a navy pill just muddied the text. The
+                            white keeps the two apart without moving the
+                            marker off the dot it belongs to. */}
+                        <circle
+                          cx={c.x}
+                          cy={c.y}
+                          fill="none"
+                          stroke="#fff"
+                          strokeWidth={8}
+                          strokeOpacity={0.95}
+                          r={c.r + 11}
+                          className="[r:32px] sm:[r:25px]"
                         />
                         <circle
                           cx={c.x}
@@ -157,7 +174,7 @@ export function CoverageMap({
                           stroke="#0B1F33"
                           strokeWidth={3}
                           r={c.r + 11}
-                          className="[r:46px] sm:[r:25px]"
+                          className="[r:32px] sm:[r:25px]"
                         />
                       </>
                     )}
@@ -175,8 +192,8 @@ export function CoverageMap({
                       strokeWidth={sel ? 4 : 3}
                       className={`transition-[r] duration-150 ${
                         sel
-                          ? "[r:34px] sm:[r:16px]"
-                          : "[r:30px] sm:[r:13px] group-hover:[r:16px]"
+                          ? "[r:24px] sm:[r:16px]"
+                          : "[r:20px] sm:[r:13px] group-hover:[r:16px]"
                       }`}
                     />
                   </g>
@@ -191,22 +208,26 @@ export function CoverageMap({
                     lifts it clear; the attribute alone is still the
                     right answer for desktop and the no-CSS fallback.
 
-                    19 units rendered at 7.8px on desktop and 3.9px on a
-                    phone, which is smaller than any text on the page and
-                    smaller than the labels the base map prints beside
-                    it.
+                    Size matches the labels the base map prints, near
+                    enough, now that the cropped viewBox magnifies both by
+                    1.55x. Making ours bigger instead put them in a
+                    different tier from the nine printed ones, which read
+                    as two maps stacked. A phone still gets a little more,
+                    because at 318px wide everything is small and these
+                    three are the only labels that have to carry a zone
+                    nobody else names.
                   */
                   <text
                     x={b.x}
                     y={b.labelAbove ? b.y - b.r - 12 : b.y + b.r + 24}
                     textAnchor="middle"
                     fill="#0B1F33"
-                    fontSize="26"
+                    fontSize="20"
                     fontWeight="700"
-                    className={`pointer-events-none [font-size:48px] sm:[font-size:26px] [stroke-width:11px] sm:[stroke-width:7px] ${
+                    className={`pointer-events-none [font-size:28px] sm:[font-size:20px] [stroke-width:7px] sm:[stroke-width:5px] ${
                       b.labelAbove
-                        ? "[transform:translateY(-23px)] sm:[transform:translateY(-5px)]"
-                        : "[transform:translateY(23px)] sm:[transform:translateY(5px)]"
+                        ? "[transform:translateY(-11px)] sm:[transform:translateY(-1px)]"
+                        : "[transform:translateY(11px)] sm:[transform:translateY(1px)]"
                     }`}
                     style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,.92)" }}
                   >
