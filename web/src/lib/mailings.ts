@@ -44,6 +44,23 @@ export type UpcomingMailing = {
    */
   artworkDeadline?: string;
   /**
+   * The same deadline as a date, so a page can tell whether it has
+   * passed. artworkDeadline is a display string like "Jul 24" and
+   * cannot be compared to anything.
+   *
+   * Derived from the mail date rather than parsed back out of the
+   * display string, for two reasons. "Jul 24" carries no year, so
+   * parsing it in January reads as this year when the card means next.
+   * And the derived date is what artworkDueFor already uses to work out
+   * a late buyer's grace window, so judging by anything else would let
+   * a card call itself open while the grace maths called it late.
+   *
+   * Undefined for a planned card, whose month nobody has committed to,
+   * and undefined when Mission Control supplied a deadline we cannot
+   * place on a calendar. Undefined means "do not judge", not "passed".
+   */
+  artworkDeadlineIso?: string;
+  /**
    * Deliverable addresses for this card, from Mission Control or summed
    * from the USPS route table. Undefined when neither is known.
    *

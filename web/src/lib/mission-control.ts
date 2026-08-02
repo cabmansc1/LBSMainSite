@@ -261,6 +261,7 @@ type McCard = {
   zoneName: string;
   mailMonth: string;
   artworkDeadline?: string;
+  artworkDeadlineIso?: string;
   households?: string;
   spotsTotal: number;
   spotsTaken: number;
@@ -504,6 +505,10 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   const deadline =
     explicitDeadline ||
     (status === "planned" ? "" : formatDeadline(artworkDeadlineFrom(mailDate)));
+  // Judged on the derived date, never on the displayed string. See the
+  // note on UpcomingMailing.artworkDeadlineIso: a display string has no
+  // year, and this has to agree with artworkDueFor, which derives too.
+  const deadlineDate = status === "planned" ? undefined : artworkDeadlineFrom(mailDate);
 
   return {
     id: raw.id,
@@ -513,6 +518,7 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
     zoneName,
     mailMonth: formatMailMonth(mailDate),
     artworkDeadline: deadline || undefined,
+    artworkDeadlineIso: deadlineDate?.toISOString(),
     households: reach !== undefined ? reach.toLocaleString("en-US") : undefined,
     spotsTotal,
     spotsTaken,
@@ -684,6 +690,7 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
     zoneName: c.zoneName,
     mailMonth: c.mailMonth,
     artworkDeadline: c.artworkDeadline,
+    artworkDeadlineIso: c.artworkDeadlineIso,
     households: c.households,
     spotsTotal: c.spotsTotal,
     spotsTaken: c.spotsTaken,
