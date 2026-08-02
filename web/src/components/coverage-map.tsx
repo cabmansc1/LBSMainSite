@@ -32,6 +32,17 @@ const TONE_FILL = {
   info: "#93A5B8",
 } as const;
 
+/**
+ * Order the phone's list puts them in: the ones closing first, then the
+ * ones you can still get on, then the ones not selling yet.
+ *
+ * Sorted rather than headed, because the dots already carry the grouping
+ * and a heading per group costs a row of a list that is six rows long
+ * on a phone already. The sort is stable, so zones sharing a status keep
+ * the geographic order the rest of the site lists them in.
+ */
+const TONE_RANK = { warn: 0, ok: 1, info: 2 } as const;
+
 const availability = (m: UpcomingMailing | undefined) => {
   if (!m) return { text: "Coming soon", tone: "info" as const };
   if (m.status === "waitlist") return { text: "Waitlist", tone: "info" as const };
@@ -193,6 +204,77 @@ export function CoverageMap({
             <i className="w-2 h-2 rounded-full inline-block" style={{ background: TONE_FILL.info }} />
             Coming soon
           </span>
+        </div>
+
+        {/*
+          The phone's actual control. Below the sm breakpoint the map is
+          about 318px wide, and twelve zones on an image that size cannot
+          all carry a 44px touch target: Hanahan and North Charleston are
+          83 image units apart, which is 17px on that screen, so the
+          markers are capped well under what a finger needs no matter how
+          they are drawn. Bigger markers made that three times better and
+          still not good.
+
+          So on a phone the map stops being the control and becomes the
+          picture, and these buttons do the selecting. They are ordinary
+          buttons at a real size, they say the availability out loud
+          rather than only in colour, and they cannot be missed by a
+          thumb. The map still responds, for anyone who does hit it.
+        */}
+        <div className="sm:hidden px-3 pb-3 pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted mb-2">
+            Pick an area
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {positions
+              .map((b) => {
+                const z = areas.find((x) => x.slug === b.slug);
+                return z
+                  ? {
+                      b,
+                      z,
+                      a: availability(
+                        mailings.find((m) => z.zoneSlugs.includes(m.zoneSlug)),
+                      ),
+                    }
+                  : null;
+              })
+              .filter((e) => e !== null)
+              .sort((p, q) => TONE_RANK[p.a.tone] - TONE_RANK[q.a.tone])
+              .map(({ b, z, a }) => {
+              const on = selected === b.slug;
+              return (
+                <button
+                  key={b.slug}
+                  onClick={() => setSelected(b.slug)}
+                  aria-pressed={on}
+                  className={`min-h-11 text-left rounded-[10px] border px-3 py-2 transition-colors ${
+                    on
+                      ? "border-cta bg-cta-tint"
+                      : "border-line bg-white active:bg-surface"
+                  }`}
+                >
+                  {/* items-start, not items-center: "Daniel Island &
+                      Clements Ferry" wraps to two lines and a centred dot
+                      then floats between them instead of marking the
+                      name. The margin drops it onto the optical centre
+                      of the first line. */}
+                  <span className="flex items-start gap-1.5">
+                    <i
+                      className="w-2 h-2 rounded-full inline-block shrink-0 mt-[5px]"
+                      style={{ background: TONE_FILL[a.tone] }}
+                    />
+                    <span className="text-[13px] font-semibold leading-tight">
+                      {z.name}
+                    </span>
+                  </span>
+                  <span className="block text-[11.5px] text-muted mt-0.5">
+                    {a.text}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
