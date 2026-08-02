@@ -765,6 +765,94 @@ export async function getTakenCategories(zoneSlug: string): Promise<string[]> {
 }
 
 /**
+ * The same question as getTakenCategories, answered honestly.
+ *
+ * The two functions above return an empty array for three situations
+ * that are not the same thing: Mission Control could not be reached, the
+ * card id matched nothing, and the card genuinely has no advertisers
+ * yet. For anything that draws a screen that conflation is harmless and
+ * deliberate, because a card that renders as empty during an outage is a
+ * cosmetic problem.
+ *
+ * For a sale it is not harmless. Treating "we could not ask" as "nothing
+ * is taken" is how two plumbers end up on one card, and category
+ * exclusivity is the entire product. The clash does surface later, when
+ * the paid order is pushed to Mission Control, but later means after the
+ * customer's money is taken and the fix is a refund and an apology.
+ *
+ * So the checkout uses this instead, and refuses rather than guesses. A
+ * customer asked to try again in a minute is a far smaller cost than a
+ * printed card carrying two of the same trade.
+ */
+export type TakenCheck =
+  | { ok: true; taken: string[] }
+  | { ok: false; reason: "unreachable" | "unknown-card" };
+
+/**
+ * Whether a card can still be sold, checked against Mission Control
+ * rather than trusted from the page that submitted the order.
+ *
+ * The picker already filters to `!isPast && isBookable(status)`, but
+ * filtering a list is not enforcing a rule: the page a customer is
+ * looking at may have been rendered before the card closed. A tab left
+ * open on Monday will happily post an order on Thursday for a card that
+ * went to print on Wednesday.
+ */
+export type CardSaleState =
+  | { ok: true; zoneSlug: string; status: UpcomingMailing["status"] }
+  | { ok: false; reason: "unreachable" | "unknown-card" | "not-bookable" };
+
+export async function checkCardForSale(cardId: string): Promise<CardSaleState> {
+  const cards = await fetchCards();
+  if (!cards) return { ok: false, reason: "unreachable" };
+  const card = cards.find((c) => String(c.id) === String(cardId));
+  if (!card) return { ok: false, reason: "unknown-card" };
+  if (card.isPast || !isBookable(card.status)) {
+    return { ok: false, reason: "not-bookable" };
+  }
+  return { ok: true, zoneSlug: card.zoneSlug, status: card.status };
+}
+
+export async function checkTakenForCard(cardId: string): Promise<TakenCheck> {
+  const cards = await fetchCards();
+  if (!cards) return { ok: false, reason: "unreachable" };
+  const card = cards.find((c) => String(c.id) === String(cardId));
+  if (!card) return { ok: false, reason: "unknown-card" };
+  const sold = card.advertisers
+    .map(advertiserCategory)
+    .filter((c): c is string => !!c);
+  return {
+    ok: true,
+    taken: uniqueCategories([...sold, ...(await heldCategoriesForCard(card.id))]),
+  };
+}
+
+export async function checkTakenForZone(zoneSlug: string): Promise<TakenCheck> {
+  const cards = await fetchCards();
+  if (!cards) {
+    // Without Mission Control configured at all this is local
+    // development, where the sample list is the intended behaviour and
+    // there is no real money to protect.
+    return mcEnabled()
+      ? { ok: false, reason: "unreachable" }
+      : { ok: true, taken: ["Plumbing", "Dental"] };
+  }
+  const card = cards.find(
+    (c) => c.zoneSlug === zoneSlug && !c.isPast && isBookable(c.status),
+  );
+  // No open card in the zone is a real answer, not a failure: there is
+  // nothing to clash with because there is nothing to sell.
+  if (!card) return { ok: true, taken: [] };
+  const sold = card.advertisers
+    .map(advertiserCategory)
+    .filter((c): c is string => !!c);
+  return {
+    ok: true,
+    taken: uniqueCategories([...sold, ...(await heldCategoriesForCard(card.id))]),
+  };
+}
+
+/**
  * Postcard appearances for a business (any card, past or upcoming),
  * matched by email or normalized business name. Powers the "As seen on
  * the … Spotlight card" badge on directory listings.

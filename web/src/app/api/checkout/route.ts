@@ -3,8 +3,9 @@ import { getSession, isImpersonating } from "@/lib/auth";
 import { stripeEnabled, createCheckoutSession } from "@/lib/stripe";
 import {
   pushToMissionControl,
-  getTakenCategories,
-  getTakenCategoriesForCard,
+  checkCardForSale,
+  checkTakenForCard,
+  checkTakenForZone,
 } from "@/lib/mission-control";
 import {
   createPendingOrder,
@@ -78,18 +79,76 @@ export async function POST(req: Request) {
     if (!zone || !tier) {
       return NextResponse.json({ error: "Unknown zone or spot" }, { status: 422 });
     }
+    const cardId = typeof body.cardId === "string" ? body.cardId : undefined;
+
+    // The card has to still be for sale, checked here rather than taken
+    // on trust from the page. The picker filters to bookable cards, but
+    // that filter ran when the page was rendered: a tab opened on Monday
+    // will happily post an order on Thursday for a card that closed on
+    // Wednesday, and until now this route would have taken the money.
+    if (cardId) {
+      const state = await checkCardForSale(cardId).catch(() => ({
+        ok: false as const,
+        reason: "unreachable" as const,
+      }));
+      if (!state.ok) {
+        if (state.reason === "unreachable") {
+          return NextResponse.json(
+            {
+              error:
+                "We could not confirm that card just now. Please try again in a moment.",
+            },
+            { status: 503 },
+          );
+        }
+        return NextResponse.json(
+          {
+            error:
+              "That card is no longer taking reservations. Pick another mailing and we will get you on the next one.",
+          },
+          { status: 409 },
+        );
+      }
+      // A card id from another zone would price the spot off this zone
+      // and place the advertiser on that one.
+      if (state.zoneSlug !== zone.slug) {
+        return NextResponse.json(
+          { error: "That card is not in this area." },
+          { status: 422 },
+        );
+      }
+    }
+
     // Category exclusivity is the product promise: never sell a category
     // Mission Control already shows as taken on that zone's card.
     // Exclusivity is per card, not per zone: a zone can have several
     // cards filling, and the same category may be free on one and taken
     // on another.
-    const cardId = typeof body.cardId === "string" ? body.cardId : undefined;
-    const taken = await (cardId
-      ? getTakenCategoriesForCard(cardId)
-      : getTakenCategories(zone.slug)
-    ).catch(() => [] as string[]);
+    //
+    // Fails closed. This used to catch every error into an empty list,
+    // so an unreachable Mission Control read as "nothing is taken" and
+    // the sale went through: two of the same trade on one card, silently,
+    // with the clash surfacing only when the paid order was pushed back
+    // to MC, which is after the money is taken.
+    const check = await (cardId
+      ? checkTakenForCard(cardId)
+      : checkTakenForZone(zone.slug)
+    ).catch(() => ({ ok: false as const, reason: "unreachable" as const }));
+
+    if (!check.ok) {
+      return NextResponse.json(
+        {
+          error:
+            check.reason === "unknown-card"
+              ? "We could not find that card. Please pick a mailing again."
+              : "We could not confirm which categories are still open on that card. Please try again in a moment.",
+        },
+        { status: check.reason === "unknown-card" ? 409 : 503 },
+      );
+    }
+
     const normalize = (v: string) => v.trim().toLowerCase();
-    if (taken.some((t) => normalize(t) === normalize(category))) {
+    if (check.taken.some((t) => normalize(t) === normalize(category))) {
       return NextResponse.json(
         {
           error:
