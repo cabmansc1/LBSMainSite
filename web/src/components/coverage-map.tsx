@@ -132,14 +132,34 @@ export function CoverageMap({
                         rather than something marker design can fix. */}
                     <circle cx={c.x} cy={c.y} r={40} fill="transparent" />
                     {sel && (
-                      <circle
-                        cx={c.x}
-                        cy={c.y}
-                        fill={TONE_FILL[tone]}
-                        fillOpacity={0.28}
-                        r={c.r + 11}
-                        className="[r:44px] sm:[r:24px]"
-                      />
+                      <>
+                        {/* Selection is a navy ring, deliberately not a
+                            colour. The fill already carries availability,
+                            and an orange "selected" would be
+                            indistinguishable from an orange "almost
+                            full": two different facts, one appearance,
+                            and no way for a reader to tell which they
+                            were looking at. A ring is a different
+                            channel, so it can say "this one" without
+                            saying anything about spots. */}
+                        <circle
+                          cx={c.x}
+                          cy={c.y}
+                          fill={TONE_FILL[tone]}
+                          fillOpacity={0.22}
+                          r={c.r + 11}
+                          className="[r:46px] sm:[r:25px]"
+                        />
+                        <circle
+                          cx={c.x}
+                          cy={c.y}
+                          fill="none"
+                          stroke="#0B1F33"
+                          strokeWidth={3}
+                          r={c.r + 11}
+                          className="[r:46px] sm:[r:25px]"
+                        />
+                      </>
                     )}
                     {/* Markers are drawn far larger on a phone, where the
                         whole map is 318px wide and a desktop-sized dot
@@ -255,9 +275,12 @@ export function CoverageMap({
                   // the zone name was invisible on the phone while the
                   // status line below it, which carries text-muted, read
                   // perfectly.
+                  // ring rather than a thicker border, so selecting a
+                  // zone does not shift every button in the grid by a
+                  // pixel.
                   className={`min-h-11 text-left rounded-[10px] border px-3 py-2 transition-colors text-ink ${
                     on
-                      ? "border-cta bg-cta-tint"
+                      ? "border-cta bg-cta-tint ring-2 ring-cta"
                       : "border-line bg-white active:bg-surface"
                   }`}
                 >
@@ -275,8 +298,14 @@ export function CoverageMap({
                       {z.name}
                     </span>
                   </span>
-                  <span className="block text-[11.5px] text-muted mt-0.5">
-                    {a.text}
+                  {/* Says it, rather than only colouring it. A tint and a
+                      ring are invisible to anybody who cannot separate
+                      orange from white, and this is the control the whole
+                      page turns on. */}
+                  <span className="block text-[11.5px] mt-0.5">
+                    <span className={on ? "font-semibold text-[#9a5c00]" : "text-muted"}>
+                      {on ? `Selected · ${a.text}` : a.text}
+                    </span>
                   </span>
                 </button>
               );
