@@ -32,6 +32,17 @@ const TONE_FILL = {
   info: "#93A5B8",
 } as const;
 
+/**
+ * Order the phone's list puts them in: the ones closing first, then the
+ * ones you can still get on, then the ones not selling yet.
+ *
+ * Sorted rather than headed, because the dots already carry the grouping
+ * and a heading per group costs a row of a list that is six rows long
+ * on a phone already. The sort is stable, so zones sharing a status keep
+ * the geographic order the rest of the site lists them in.
+ */
+const TONE_RANK = { warn: 0, ok: 1, info: 2 } as const;
+
 const availability = (m: UpcomingMailing | undefined) => {
   if (!m) return { text: "Coming soon", tone: "info" as const };
   if (m.status === "waitlist") return { text: "Waitlist", tone: "info" as const };
@@ -215,12 +226,22 @@ export function CoverageMap({
             Pick an area
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {positions.map((b) => {
-              const z = areas.find((x) => x.slug === b.slug);
-              if (!z) return null;
-              const a = availability(
-                mailings.find((m) => z.zoneSlugs.includes(m.zoneSlug)),
-              );
+            {positions
+              .map((b) => {
+                const z = areas.find((x) => x.slug === b.slug);
+                return z
+                  ? {
+                      b,
+                      z,
+                      a: availability(
+                        mailings.find((m) => z.zoneSlugs.includes(m.zoneSlug)),
+                      ),
+                    }
+                  : null;
+              })
+              .filter((e) => e !== null)
+              .sort((p, q) => TONE_RANK[p.a.tone] - TONE_RANK[q.a.tone])
+              .map(({ b, z, a }) => {
               const on = selected === b.slug;
               return (
                 <button
