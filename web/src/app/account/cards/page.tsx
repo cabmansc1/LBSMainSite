@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
+import { deadlineLabel, ownDeadlines } from "@/lib/artwork-due";
 import { artworkByteLimit, getArtworkFor } from "@/lib/artwork";
 import { Card, StatusChip } from "@/components/sections";
 import { ArtworkUpload } from "@/components/artwork-upload";
@@ -32,6 +33,13 @@ export default async function AccountCardsPage() {
     if (list) list.push(a);
     else artworkByCard.set(a.cardId, [a]);
   }
+
+  // The deadline each of these advertisers is actually held to, which is
+  // not always the card's. This panel used to print the card's date
+  // regardless, so somebody who bought after it had passed opened their
+  // account to a bold amber date from before the day they paid, while
+  // the dashboard was correctly telling them "as soon as you can".
+  const deadlines = await ownDeadlines(session.email, currentCards);
 
   return (
     <>
@@ -99,13 +107,13 @@ export default async function AccountCardsPage() {
                       {c.category ? ` · ${c.category}` : ""}
                     </p>
                   </div>
-                  {c.artworkDeadline && (
+                  {deadlineLabel(deadlines.get(c.cardId)) && (
                     <div className="text-right">
                       <div className="text-[10.5px] font-bold uppercase tracking-widest text-muted">
                         Artwork deadline
                       </div>
                       <div className="text-[15px] font-bold text-[#9a5c00]">
-                        {c.artworkDeadline}
+                        {deadlineLabel(deadlines.get(c.cardId))}
                       </div>
                     </div>
                   )}

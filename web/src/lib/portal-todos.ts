@@ -1,7 +1,7 @@
 import "server-only";
 import type { PortalContext } from "@/lib/portal";
 import { getArtworkFor } from "@/lib/artwork";
-import { artworkDeadlineFrom, artworkDueFor } from "@/lib/mailings";
+import { formatDue, ownDeadlines } from "@/lib/artwork-due";
 
 /**
  * What this advertiser still has to do, derived rather than declared.
@@ -58,28 +58,21 @@ export async function getPortalTodos(
   // passed when they paid was never theirs to miss, and telling a
   // brand new customer their artwork is past due is the worst first
   // thing their account can say to them.
-  const boughtOn = new Map<string, string>();
-  try {
-    const { getOrdersForEmail } = await import("@/lib/orders");
-    for (const o of await getOrdersForEmail(ctx.user.email)) {
-      if (o.cardId && o.createdAt && !boughtOn.has(o.cardId)) {
-        boughtOn.set(o.cardId, o.createdAt);
-      }
-    }
-  } catch (e) {
-    // Falls back to the card's own deadline, which is the old behaviour.
-    console.error("[todos] could not read order dates:", e);
-  }
+  //
+  // Shared with the cards page rather than worked out here. This logic
+  // living only in this file is why the dashboard knew about the late
+  // buyer and the cards page did not, and told them different things.
+  const deadlines = await ownDeadlines(ctx.user.email, ctx.currentCards, now);
 
   for (const c of ctx.currentCards) {
-    const due = artworkDueFor(c.mailDateIso, boughtOn.get(c.cardId));
-    const overdue = due !== undefined && due.getTime() < now;
-    // Bought after the card's own deadline had passed, so there is no
-    // date to hold them to and none is quoted at them.
-    const boughtLate =
-      due !== undefined &&
-      artworkDeadlineFrom(c.mailDateIso) !== undefined &&
-      due.getTime() !== artworkDeadlineFrom(c.mailDateIso)!.getTime();
+    const own = deadlines.get(c.cardId);
+    const { overdue = false, boughtLate = false } = own ?? {};
+    // The resolved date rather than the card's display string, so this
+    // and the cards page quote the same day. Mission Control can carry
+    // an explicit deadline that differs from the derived one, and the
+    // derived one is what the grace maths uses, so it has to be the one
+    // shown or the two screens disagree again by a different route.
+    const dueLabel = own?.due ? formatDue(own.due) : undefined;
 
     if (!ART_SETTLED.has(c.artStatus) && !uploadedFor.has(c.cardId)) {
       todos.push({
@@ -87,10 +80,10 @@ export async function getPortalTodos(
         title: `Send artwork for your ${c.zoneName} ad`,
         detail: boughtLate
           ? `You came onto a card that mails ${c.mailMonth}, so we need this as soon as you can. Send your own or let us design it free.`
-          : c.artworkDeadline
+          : dueLabel
             ? overdue
-              ? `This was due ${c.artworkDeadline} and the card mails ${c.mailMonth}. Send it now or we will design one for you.`
-              : `Due ${c.artworkDeadline}, mailing ${c.mailMonth}. Send your own or let us design it free.`
+              ? `This was due ${dueLabel} and the card mails ${c.mailMonth}. Send it now or we will design one for you.`
+              : `Due ${dueLabel}, mailing ${c.mailMonth}. Send your own or let us design it free.`
             : `Mailing ${c.mailMonth}. Send your own or let us design it free.`,
         href: "/account/cards",
         action: "Upload artwork",
