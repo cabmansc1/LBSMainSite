@@ -9,14 +9,28 @@ import { MAP_IMG, MAP_POSITIONS, type MapPosition } from "@/lib/map-positions";
 import { TENTATIVE_MAIL_LABEL, hasMailDate } from "@/lib/mailings";
 
 /**
- * Coverage bubbles pinned to the printed town markers on the
- * Tri-County base map. The base map carries its own town labels; the
- * site labels only the two zones the map does not name.
+ * Coverage markers pinned to the printed town markers on the base map.
+ * The base map carries its own town labels; the site labels only the
+ * three zones it does not name.
  *
- * One bubble per card, not per zone. Isle of Palms and Sullivan's
- * Island never mail apart, so two bubbles offered a choice that does
- * not exist and implied twice the reach that does.
+ * One marker per card, not per zone. Isle of Palms and Sullivan's
+ * Island never mail apart, so two offered a choice that does not exist
+ * and implied twice the reach that does. West Ashley and Kiawah get a
+ * marker each for the opposite reason: the base map names them, they
+ * are not zones, and a printed neighbourhood with nothing to click
+ * reads as "they do not mail here" to the person who lives there.
  */
+
+/**
+ * Marker fill by availability. The same three tones availability()
+ * already returns, so the map and the panel beside it can never
+ * disagree about whether a card is filling.
+ */
+const TONE_FILL = {
+  ok: "#38B6FF",
+  warn: "#FF8C00",
+  info: "#93A5B8",
+} as const;
 
 const availability = (m: UpcomingMailing | undefined) => {
   if (!m) return { text: "Coming soon", tone: "info" as const };
@@ -66,6 +80,10 @@ export function CoverageMap({
             const z = areas.find((x) => x.slug === b.slug);
             if (!z) return null;
             const sel = selected === b.slug;
+            // This marker's own card, not the selected one's.
+            const tone = availability(
+              mailings.find((m) => z.zoneSlugs.includes(m.zoneSlug)),
+            ).tone;
             return (
               <g
                 key={b.slug}
@@ -81,29 +99,45 @@ export function CoverageMap({
                   }
                 }}
               >
-                {/* The card's own circle first, then any island it
-                    shares the card with. They light up together because
-                    they sell together. */}
+                {/* The card's own marker first, then any island it
+                    shares the card with and any neighbourhood inside it
+                    the base map names separately. They light up
+                    together because they sell together.
+
+                    Fill carries availability, the ring carries
+                    selection. Keeping those on separate channels
+                    matters: an almost-full card and the selected card
+                    were both going to be orange, and one of them would
+                    have been lying. */}
                 {[{ x: b.x, y: b.y, r: b.r }, ...(b.also ?? [])].map((c) => (
-                  <circle
-                    key={`${c.x}-${c.y}`}
-                    cx={c.x}
-                    cy={c.y}
-                    r={c.r}
-                    fill={sel ? "rgba(255,140,0,.4)" : "rgba(56,182,255,.3)"}
-                    stroke={sel ? "#E67C00" : "#1287D8"}
-                    strokeWidth={sel ? 4 : 2.5}
-                    className="transition-[fill] duration-150 group-hover:[fill:rgba(56,182,255,.5)]"
-                    style={sel ? { fill: "rgba(255,140,0,.4)" } : undefined}
-                  />
+                  <g key={`${c.x}-${c.y}`}>
+                    {sel && (
+                      <circle
+                        cx={c.x}
+                        cy={c.y}
+                        r={c.r + 11}
+                        fill={TONE_FILL[tone]}
+                        fillOpacity={0.28}
+                      />
+                    )}
+                    <circle
+                      cx={c.x}
+                      cy={c.y}
+                      r={sel ? c.r + 3 : c.r}
+                      fill={TONE_FILL[tone]}
+                      stroke="#fff"
+                      strokeWidth={sel ? 4 : 3}
+                      className="transition-[r] duration-150 group-hover:[r:16]"
+                    />
+                  </g>
                 ))}
                 {b.label && (
                   <text
                     x={b.x}
-                    y={b.labelAbove ? b.y - b.r - 14 : b.y + b.r + 26}
+                    y={b.labelAbove ? b.y - b.r - 12 : b.y + b.r + 24}
                     textAnchor="middle"
-                    fill="#1F2937"
-                    fontSize="23"
+                    fill="#0B1F33"
+                    fontSize="19"
                     fontWeight="700"
                     className="pointer-events-none"
                     style={{ paintOrder: "stroke", stroke: "rgba(255,255,255,.9)", strokeWidth: 6 }}
@@ -115,25 +149,28 @@ export function CoverageMap({
             );
           })}
         </svg>
+        {/* Reads the colours off the markers now, rather than
+            apologising for them. The old legend had to spend a sentence
+            explaining that bubble size did NOT mean the size of the
+            mailing, which is the clearest sign an encoding is wrong: if
+            the caption has to correct what the picture says, change the
+            picture. Every card mails the same 5,000 or 10,000 homes, so
+            the only thing worth encoding is whether you can still get
+            on it. */}
         <div className="flex flex-wrap gap-4.5 px-3 py-2 text-xs text-muted">
           <span className="flex items-center gap-1.5">
-            <i className="w-2 h-2 rounded-full bg-brand inline-block" />
-            Open spots
+            <i className="w-2 h-2 rounded-full inline-block" style={{ background: TONE_FILL.ok }} />
+            Spots open
           </span>
           <span className="flex items-center gap-1.5">
-            <i className="w-2 h-2 rounded-full bg-cta inline-block" />
-            Selected
+            <i className="w-2 h-2 rounded-full inline-block" style={{ background: TONE_FILL.warn }} />
+            Almost full
           </span>
-          {/* This said "households reached", which is the one thing the
-              bubbles do not show. Every card mails the same 5,000 homes
-              whether it goes to Summerville or Sullivan's Island, so
-              that reading told people a small bubble meant a smaller
-              mailing. radiusFor() scales by population, square rooted so
-              area rather than radius carries the number. */}
-          <span>
-            Bubble size reflects each area&rsquo;s population, not the size of
-            the mailing
+          <span className="flex items-center gap-1.5">
+            <i className="w-2 h-2 rounded-full inline-block" style={{ background: TONE_FILL.info }} />
+            Coming soon
           </span>
+          <span>Every card mails 5,000 or 10,000 homes, whichever you pick</span>
         </div>
       </div>
 

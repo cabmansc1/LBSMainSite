@@ -6,7 +6,7 @@ import { cardCoverage } from "@/lib/card-coverage";
 import { tentativelyMails } from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
 import { ZONES, zoneBySlug } from "@/lib/zones";
-import { getLiveMailingAreas, getLiveZones } from "@/lib/zone-store";
+import { getLiveMailingAreas } from "@/lib/zone-store";
 import { mapPositionsFrom } from "@/lib/map-positions";
 import { getLivePricing } from "@/lib/pricing-store";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
@@ -49,14 +49,17 @@ export const metadata: Metadata = {
 };
 
 export default async function CoverageMapPage() {
-  const [mailings, descriptions, zones, areas, pricing] = await Promise.all([
+  // No getLiveZones here any more. Marker positions stopped depending on
+  // zone populations when they stopped being sized by them, and this
+  // page is force-dynamic, so that was a database read on every render
+  // feeding nothing. getLiveMailingAreas still reflects saved pairings.
+  const [mailings, descriptions, areas, pricing] = await Promise.all([
     getUpcomingMailings(),
     getCardDescriptions(),
-    getLiveZones(),
     getLiveMailingAreas(),
     getLivePricing(),
   ]);
-  const positions = mapPositionsFrom(zones, areas);
+  const positions = mapPositionsFrom(areas);
   return (
     <div className="bg-navy-950 text-white">
       <div className="mx-auto max-w-[1120px] px-6 py-14 pb-18">

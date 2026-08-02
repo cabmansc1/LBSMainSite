@@ -2,8 +2,13 @@ import { MAP_IMG, mapPositionsFrom } from "@/lib/map-positions";
 import { ZONES, mailingAreasFrom, type Zone } from "@/lib/zones";
 
 /**
- * Static (server-rendered) mini map for zone pages: the Tri-County
- * base map with the current zone's bubble highlighted in orange.
+ * Static (server-rendered) mini map for zone pages: the coverage base
+ * map with the current zone's marker highlighted in orange.
+ *
+ * No availability colours here, unlike the full map. This is a server
+ * component with no card data, and it answers "where is this place",
+ * not "can I still get on it". Inventing a status it cannot check would
+ * be worse than showing none.
  *
  * Takes its zones from the page, which has already read the live ones,
  * rather than reading them again.
@@ -16,7 +21,7 @@ export function ZoneMiniMap({
   zones?: Zone[];
 }) {
   const areas = mailingAreasFrom(zones);
-  const positions = mapPositionsFrom(zones, areas);
+  const positions = mapPositionsFrom(areas);
   // Bubbles are drawn per card, so a zone that shares one highlights
   // its partner's bubble. Matching on the zone slug alone left the
   // Sullivan's Island page with nothing lit up at all.
@@ -39,10 +44,11 @@ export function ZoneMiniMap({
             key={`${b.slug}-${c.x}`}
             cx={c.x}
             cy={c.y}
-            r={sel ? c.r + 6 : c.r * 0.6}
-            fill={sel ? "rgba(255,140,0,.45)" : "rgba(56,182,255,.25)"}
-            stroke={sel ? "#E67C00" : "rgba(18,135,216,.55)"}
-            strokeWidth={sel ? 4 : 1.5}
+            r={sel ? c.r + 3 : c.r - 2}
+            fill={sel ? "#FF8C00" : "#38B6FF"}
+            fillOpacity={sel ? 1 : 0.75}
+            stroke="#fff"
+            strokeWidth={sel ? 4 : 2.5}
           />
         ));
       })}
