@@ -111,15 +111,30 @@ export function CoverageMap({
                     have been lying. */}
                 {[{ x: b.x, y: b.y, r: b.r }, ...(b.also ?? [])].map((c) => (
                   <g key={`${c.x}-${c.y}`}>
+                    {/* The tap target, invisible and much larger than the
+                        marker. r=40 is the ceiling: Hanahan and North
+                        Charleston are 83 units apart, so anything bigger
+                        would have two zones fighting over the same
+                        finger. Even this is only 17px across on a phone,
+                        well under the 44px a touch target wants, which
+                        is a fact about twelve zones on a 318px image
+                        rather than something marker design can fix. */}
+                    <circle cx={c.x} cy={c.y} r={40} fill="transparent" />
                     {sel && (
                       <circle
                         cx={c.x}
                         cy={c.y}
-                        r={c.r + 11}
                         fill={TONE_FILL[tone]}
                         fillOpacity={0.28}
+                        r={c.r + 11}
+                        className="[r:44px] sm:[r:24px]"
                       />
                     )}
+                    {/* Markers are drawn far larger on a phone, where the
+                        whole map is 318px wide and a desktop-sized dot
+                        renders at five pixels across. The r attribute is
+                        the no-CSS fallback; the classes are what actually
+                        apply, verified in Chromium at both widths. */}
                     <circle
                       cx={c.x}
                       cy={c.y}
@@ -127,7 +142,11 @@ export function CoverageMap({
                       fill={TONE_FILL[tone]}
                       stroke="#fff"
                       strokeWidth={sel ? 4 : 3}
-                      className="transition-[r] duration-150 group-hover:[r:16]"
+                      className={`transition-[r] duration-150 ${
+                        sel
+                          ? "[r:34px] sm:[r:16px]"
+                          : "[r:30px] sm:[r:13px] group-hover:[r:16px]"
+                      }`}
                     />
                   </g>
                 ))}
@@ -154,9 +173,13 @@ export function CoverageMap({
             explaining that bubble size did NOT mean the size of the
             mailing, which is the clearest sign an encoding is wrong: if
             the caption has to correct what the picture says, change the
-            picture. Every card mails the same 5,000 or 10,000 homes, so
-            the only thing worth encoding is whether you can still get
-            on it. */}
+            picture. Reach is a per-card fact and it varies, which is
+            why the panel reports it per zone and the legend no longer
+            claims anything about it: the Isle of Palms and Sullivan's
+            card reaches 4,915, and a legend saying every card mails
+            5,000 was wrong about the one zone the map is most likely to
+            be asked about. What every marker does share is whether you
+            can still get on it, so that is what the colour carries. */}
         <div className="flex flex-wrap gap-4.5 px-3 py-2 text-xs text-muted">
           <span className="flex items-center gap-1.5">
             <i className="w-2 h-2 rounded-full inline-block" style={{ background: TONE_FILL.ok }} />
@@ -170,7 +193,6 @@ export function CoverageMap({
             <i className="w-2 h-2 rounded-full inline-block" style={{ background: TONE_FILL.info }} />
             Coming soon
           </span>
-          <span>Every card mails 5,000 or 10,000 homes, whichever you pick</span>
         </div>
       </div>
 

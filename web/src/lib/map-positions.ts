@@ -45,12 +45,13 @@ export type MapPosition = {
 /**
  * Every marker is the same size.
  *
- * They used to scale by population, which encoded the one variable a
- * buyer cannot act on: every card mails the same 5,000 or 10,000 homes
- * whether it goes to Summerville or Sullivan's Island. The legend had
- * to carry a sentence explaining that the size did NOT mean what
- * everyone assumes it means, which is the clearest possible sign the
- * encoding was wrong.
+ * They used to scale by population, which is not what a buyer is
+ * choosing between. Reach is set by the card, not by how many people
+ * live in the town: Summerville and Sullivan's Island sell the same
+ * product at different reaches, and Sullivan's shares a card that
+ * covers 4,915. The legend had to carry a sentence explaining that
+ * marker size did NOT mean what everyone assumes it means, which is the
+ * clearest possible sign the encoding was wrong.
  *
  * On this base map it was also destructive. Summerville drew at r=76
  * and swallowed its own printed label; Charleston at r=74 covered the
