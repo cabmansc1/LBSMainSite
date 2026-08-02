@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, SectionHeading, CtaBand } from "@/components/sections";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
+import { ARTWORK_LEAD_DAYS } from "@/lib/mailings";
 import { getLivePricing } from "@/lib/pricing-store";
 
 export const metadata: Metadata = {
@@ -54,7 +55,7 @@ const ADVERTISE_FAQS = [
   },
   {
     q: "What is the deadline to get on the next mailing?",
-    a: "Artwork deadlines are two weeks before the tentative mail date. Contact us early to secure your spot, because exclusive categories fill up fast.",
+    a: `Artwork deadlines are ${ARTWORK_LEAD_DAYS} days before the tentative mail date. Contact us early to secure your spot, because exclusive categories fill up fast.`,
   },
   {
     q: "Do you offer discounts for multiple mailings?",

@@ -143,11 +143,17 @@ export const TENTATIVE_MAIL_LABEL = "Tentative mail date";
 /**
  * Days before the tentative mail date that artwork is due.
  *
- * Matches what the advertise page has always told people ("typically
- * two weeks before the mail date"). Derived rather than stored, so a
- * card whose date moves brings its deadline with it.
+ * Seven, down from fourteen. Two weeks was generous to the print
+ * schedule and expensive on the sales side: it closed the self-serve
+ * window a fortnight before a card mailed, which is exactly the stretch
+ * when a half-full card most needs to be sellable.
+ *
+ * Derived rather than stored, so a card whose date moves brings its
+ * deadline with it, and every surface that quotes a number interpolates
+ * this one. Change it here and the receipt, the advertise page FAQ and
+ * the card picker all follow.
  */
-export const ARTWORK_LEAD_DAYS = 14;
+export const ARTWORK_LEAD_DAYS = 7;
 
 /**
  * How long somebody who bought late gets to send artwork.

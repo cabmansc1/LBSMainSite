@@ -492,12 +492,12 @@ function normalizeCard(raw: McCardRaw, advertisers: McAdvertiser[]): McCard {
   // live store: a card carries mailDate and startDate and nothing else
   // date-like. So every screen that offered to show a deadline has been
   // rendering nothing at all. Derive it from the mail date the same way
-  // the order receipt already does, which is also the two weeks the
-  // advertise page has always promised. An explicit value still wins, in
+  // the order receipt already does, from the single ARTWORK_LEAD_DAYS
+  // constant the advertise page quotes too. An explicit value still wins, in
   // case Mission Control grows the field later.
   //
-  // Not derived for a planned card. Two weeks before a date nobody has
-  // committed to is not a deadline, and printing one is how a customer
+  // Not derived for a planned card. A lead time counted back from a date
+  // nobody has committed to is not a deadline, and printing one is how a customer
   // ends up rushing artwork for a mailing that later moves. An explicit
   // deadline from Mission Control still shows, because somebody typing
   // one in is somebody committing to it.
