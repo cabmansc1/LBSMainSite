@@ -248,7 +248,14 @@ export function CoverageMap({
                   key={b.slug}
                   onClick={() => setSelected(b.slug)}
                   aria-pressed={on}
-                  className={`min-h-11 text-left rounded-[10px] border px-3 py-2 transition-colors ${
+                  // text-ink on the button, not on each span. The page
+                  // wrapper is bg-navy-950 text-white, so anything on a
+                  // white card that does not name a colour inherits white
+                  // and disappears. That is exactly what happened here:
+                  // the zone name was invisible on the phone while the
+                  // status line below it, which carries text-muted, read
+                  // perfectly.
+                  className={`min-h-11 text-left rounded-[10px] border px-3 py-2 transition-colors text-ink ${
                     on
                       ? "border-cta bg-cta-tint"
                       : "border-line bg-white active:bg-surface"
