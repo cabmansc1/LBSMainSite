@@ -73,26 +73,39 @@ export async function getMcAccountRoster(): Promise<McAccountRoster> {
 
   const emails = customers.map((c) => c.email).filter(Boolean);
   const logins = new Set<string>();
-  const listings = new Set<string>();
+  let allListings: { name: string; email: string }[] = [];
 
-  if (emails.length > 0) {
+  {
     const { db } = await import("@/lib/db");
-    const list = sql.join(
-      emails.map((e) => sql`${e}`),
-      sql`, `,
-    );
     try {
-      const users = (await db.execute(
-        sql`SELECT LOWER(email) AS email FROM directory_users
-            WHERE LOWER(email) IN (${list})`,
-      )) as unknown as [{ email: string }[]];
-      for (const r of users[0] ?? []) logins.add(String(r.email));
+      if (emails.length > 0) {
+        // A login is an email address, so email is the whole of its
+        // identity and there is nothing else to match on.
+        const users = (await db.execute(
+          sql`SELECT LOWER(email) AS email FROM directory_users
+              WHERE LOWER(email) IN (${sql.join(
+                emails.map((e) => sql`${e}`),
+                sql`, `,
+              )})`,
+        )) as unknown as [{ email: string }[]];
+        for (const r of users[0] ?? []) logins.add(String(r.email));
+      }
 
+      // Listings are different, and every name in the directory is
+      // loaded rather than filtered by email, because email alone gets
+      // this wrong. The two systems are typed by different people:
+      // Mission Control can hold owner@ while the listing was created
+      // under office@, and the business is the same business. Matching
+      // on email only would report "no listing" for a listing that is
+      // sitting right there, and the button next to that badge creates a
+      // second one.
       const biz = (await db.execute(
-        sql`SELECT LOWER(email) AS email FROM directory_businesses
-            WHERE LOWER(email) IN (${list})`,
-      )) as unknown as [{ email: string }[]];
-      for (const r of biz[0] ?? []) listings.add(String(r.email));
+        sql`SELECT business_name, LOWER(email) AS email FROM directory_businesses`,
+      )) as unknown as [{ business_name: string; email: string | null }[]];
+      allListings = (biz[0] ?? []).map((r) => ({
+        name: String(r.business_name ?? ""),
+        email: String(r.email ?? ""),
+      }));
     } catch (e) {
       // The list is still worth showing without the annotations; what is
       // not acceptable is showing it with every row wrongly marked as
@@ -101,6 +114,14 @@ export async function getMcAccountRoster(): Promise<McAccountRoster> {
       return { rows: null, enabled: true };
     }
   }
+
+  const { sameBusiness } = await import("@/lib/name-match");
+  const listedEmails = new Set(allListings.map((l) => l.email).filter(Boolean));
+  const hasListingFor = (c: McCustomer) => {
+    if (c.email && listedEmails.has(c.email)) return true;
+    if (!c.businessName.trim()) return false;
+    return allListings.some((l) => sameBusiness(c.businessName, l.name));
+  };
 
   const slugs = await categorySlugs();
   const slugFor = (raw: string) => {
@@ -114,7 +135,7 @@ export async function getMcAccountRoster(): Promise<McAccountRoster> {
     rows: customers.map((c) => ({
       ...c,
       hasLogin: !!c.email && logins.has(c.email),
-      hasListing: !!c.email && listings.has(c.email),
+      hasListing: hasListingFor(c),
       categorySlug: slugFor(c.category),
       blocked: c.email ? undefined : "No email in Mission Control",
     })),

@@ -706,14 +706,16 @@ export function AdminDirectory({
   businesses,
   categories: taxonomyCategories,
   locations: taxonomyLocations,
-  advertiserEmails,
+  advertiserIds,
   missionControlRead,
 }: {
   businesses: AdminBusiness[];
   categories: TaxonomyOption[];
   locations: TaxonomyOption[];
-  /** Lowercase emails that have bought a card spot. */
-  advertiserEmails: string[];
+  /** Listing ids belonging to a business that has bought a card spot.
+   *  Matched on the server by email and by name, since the directory and
+   *  Mission Control are typed by different people. */
+  advertiserIds: number[];
   missionControlRead: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -725,12 +727,8 @@ export function AdminDirectory({
   // next month is relabelled by the purchase and not by anyone
   // remembering to change it.
   const [customer, setCustomer] = useState<"" | "advertiser" | "directory">("");
-  const advertisers = useMemo(
-    () => new Set(advertiserEmails),
-    [advertiserEmails],
-  );
-  const isAdvertiser = (b: AdminBusiness) =>
-    !!b.email && advertisers.has(b.email.trim().toLowerCase());
+  const advertisers = useMemo(() => new Set(advertiserIds), [advertiserIds]);
+  const isAdvertiser = (b: AdminBusiness) => advertisers.has(b.id);
   const [selected, setSelected] = useState<number[]>([]);
   const [bulk, setBulk] = useState("");
   const [busyRow, setBusyRow] = useState<number | null>(null);

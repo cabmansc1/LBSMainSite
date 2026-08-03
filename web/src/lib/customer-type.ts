@@ -20,33 +20,52 @@ import { sql } from "drizzle-orm";
  *   Mission Ctrl every spot ever sold, including the years before this
  *                site could sell one. Most advertisers are only here.
  *
- * Email is the join, the same as everywhere else in this app.
+ * Matched on email and on name, not on email alone. The directory and
+ * Mission Control are typed by different people at different times, so a
+ * listing created under office@ against an advertiser recorded as owner@
+ * is the ordinary case rather than the exception. Email alone would
+ * label most real advertisers directory-only, which is exactly the
+ * mistake this is meant to prevent. name-match.ts is deliberately
+ * conservative about what counts as the same business.
  */
 
 export type AdvertiserIndex = {
-  /** Lowercase emails that have bought a card spot. */
-  emails: Set<string>;
+  /** Ids of the listings that belong to a postcard advertiser. */
+  businessIds: Set<number>;
   /**
-   * False when Mission Control could not be read, so the set is orders
-   * only. Worth surfacing rather than hiding: with MC missing, the great
-   * majority of real advertisers would be labelled directory-only, and a
-   * label that is confidently wrong is worse than one that admits it.
+   * False when Mission Control could not be read, so the answer is
+   * orders only. Worth surfacing rather than hiding: with MC missing,
+   * the great majority of real advertisers would be labelled
+   * directory-only, and a label that is confidently wrong is worse than
+   * one that admits it.
    */
   missionControl: boolean;
 };
 
-export async function getAdvertiserIndex(): Promise<AdvertiserIndex> {
+type Listing = { id: number; name: string; email: string };
+
+export async function getAdvertiserIndex(
+  listings: Listing[],
+): Promise<AdvertiserIndex> {
+  // Everyone who has bought a card spot, by whatever we know them as.
   const emails = new Set<string>();
+  const names: string[] = [];
 
   try {
     const { db } = await import("@/lib/db");
     const { ensureOrdersTable } = await import("@/lib/orders");
     await ensureOrdersTable();
     const rows = (await db.execute(
-      sql`SELECT DISTINCT LOWER(email) AS email FROM lbs_orders
-          WHERE status = 'paid' AND email <> ''`,
-    )) as unknown as [{ email: string }[]];
-    for (const r of rows[0] ?? []) emails.add(String(r.email));
+      sql`SELECT DISTINCT LOWER(email) AS email, business_name
+          FROM lbs_orders
+          WHERE status = 'paid'`,
+    )) as unknown as [{ email: string | null; business_name: string | null }[]];
+    for (const r of rows[0] ?? []) {
+      const email = String(r.email ?? "");
+      if (email) emails.add(email);
+      const name = String(r.business_name ?? "").trim();
+      if (name) names.push(name);
+    }
   } catch (e) {
     console.error("[customer-type] order lookup failed:", e);
   }
@@ -58,12 +77,28 @@ export async function getAdvertiserIndex(): Promise<AdvertiserIndex> {
       const customers = await getMcCustomers();
       if (customers) {
         missionControl = true;
-        for (const c of customers) if (c.email) emails.add(c.email);
+        for (const c of customers) {
+          if (c.email) emails.add(c.email);
+          if (c.businessName.trim()) names.push(c.businessName);
+        }
       }
     }
   } catch (e) {
     console.error("[customer-type] Mission Control lookup failed:", e);
   }
 
-  return { emails, missionControl };
+  const { sameBusiness } = await import("@/lib/name-match");
+  const businessIds = new Set<number>();
+  for (const listing of listings) {
+    const email = listing.email.trim().toLowerCase();
+    if (email && emails.has(email)) {
+      businessIds.add(listing.id);
+      continue;
+    }
+    if (listing.name.trim() && names.some((n) => sameBusiness(listing.name, n))) {
+      businessIds.add(listing.id);
+    }
+  }
+
+  return { businessIds, missionControl };
 }

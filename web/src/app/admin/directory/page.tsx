@@ -18,11 +18,19 @@ export default async function AdminDirectoryPage() {
   // Category and location area are stored as slugs and filtered on as
   // slugs, so typing them by hand produced listings that rendered
   // correctly and appeared under nothing.
-  const [businesses, options, advertisers] = await Promise.all([
+  const [businesses, options] = await Promise.all([
     getAdminBusinesses(),
     getFilterOptions(),
-    getAdvertiserIndex(),
   ]);
+  // Needs the listings themselves, because an advertiser is matched to
+  // one by name as well as by email.
+  const advertisers = await getAdvertiserIndex(
+    businesses.map((b) => ({
+      id: b.id,
+      name: b.name,
+      email: b.email ?? "",
+    })),
+  );
 
   return (
     <div className="mx-auto max-w-[1120px] px-6 py-8">
@@ -40,7 +48,7 @@ export default async function AdminDirectoryPage() {
         businesses={businesses}
         categories={options.categories}
         locations={options.locations}
-        advertiserEmails={[...advertisers.emails]}
+        advertiserIds={[...advertisers.businessIds]}
         missionControlRead={advertisers.missionControl}
       />
     </div>
