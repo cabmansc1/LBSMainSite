@@ -5,6 +5,7 @@ import {
   businessAction,
   createBusiness,
   updateBusiness,
+  InvalidPatch,
   type BusinessPatch,
 } from "@/lib/admin-data";
 
@@ -93,6 +94,11 @@ export async function PATCH(req: Request) {
     const result = await updateBusiness(id, patch);
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
+    // A rejected address is the admin's typo, not a broken server, and
+    // the form can only fix it if it is told which one.
+    if (e instanceof InvalidPatch) {
+      return NextResponse.json({ error: e.message }, { status: 422 });
+    }
     console.error("[admin] business update failed:", e);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }

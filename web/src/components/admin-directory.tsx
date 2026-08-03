@@ -60,6 +60,24 @@ function TaxonomySelect({
   );
 }
 
+/** Same four the listing page renders and the portal can edit. */
+const SOCIALS = [
+  ["facebookUrl", "Facebook"],
+  ["instagramUrl", "Instagram"],
+  ["tiktokUrl", "TikTok"],
+  ["youtubeUrl", "YouTube"],
+] as const satisfies readonly (readonly [keyof AdminBusiness, string])[];
+
+// Typing the bare handle is what people do, and the server turns it into
+// a real address, so the placeholder shows the short form rather than
+// implying a full URL is required.
+const SOCIAL_HINTS: Record<(typeof SOCIALS)[number][0], string> = {
+  facebookUrl: "facebook.com/theirpage",
+  instagramUrl: "instagram.com/theirhandle",
+  tiktokUrl: "tiktok.com/@theirhandle",
+  youtubeUrl: "youtube.com/@theirchannel",
+};
+
 function EditPanel({
   business,
   categories,
@@ -73,6 +91,7 @@ function EditPanel({
 }) {
   const [form, setForm] = useState(business);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [error, setError] = useState("");
   const [logo, setLogo] = useState<string | null>(business.logoUrl);
   const [logoBusy, setLogoBusy] = useState(false);
   const [logoError, setLogoError] = useState("");
@@ -139,10 +158,24 @@ function EditPanel({
           website: form.website,
           description: form.description,
           planType: form.planType,
+          facebookUrl: form.facebookUrl,
+          instagramUrl: form.instagramUrl,
+          tiktokUrl: form.tiktokUrl,
+          youtubeUrl: form.youtubeUrl,
         }),
       });
-      setState(res.ok ? "saved" : "error");
+      if (!res.ok) {
+        // A rejected address is a typo to correct, not a failure to
+        // shrug at, so the reason comes back rather than "Save failed".
+        const body = await res.json().catch(() => null);
+        setError(body?.error ? String(body.error) : "");
+        setState("error");
+        return;
+      }
+      setError("");
+      setState("saved");
     } catch {
+      setError("");
       setState("error");
     }
   }
@@ -259,6 +292,20 @@ function EditPanel({
             </span>
             <input {...field("website")} />
           </label>
+          {/* The listing page has rendered these for as long as the
+              columns have existed, and the advertiser portal can set
+              them, but the admin could not: a business that gave us its
+              Facebook over the phone had nowhere to put it. */}
+          <div className="grid sm:grid-cols-2 gap-3.5">
+            {SOCIALS.map(([key, label]) => (
+              <label key={key} className="grid gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+                  {label}
+                </span>
+                <input {...field(key)} placeholder={SOCIAL_HINTS[key]} />
+              </label>
+            ))}
+          </div>
           <label className="grid gap-1.5">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
               Plan
@@ -297,7 +344,7 @@ function EditPanel({
           )}
           {state === "error" && (
             <span className="text-[13px] font-semibold text-[#a33]">
-              Save failed
+              {error || "Save failed"}
             </span>
           )}
           <button
