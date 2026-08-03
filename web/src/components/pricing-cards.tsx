@@ -462,7 +462,45 @@ export function PricingCards({
           </div>
         ) : cards.length > 0 ? (
           <>
+            {/* Month first, neighborhood second.
+                Reading order is the order these get used: the month
+                narrows what is on offer, and the neighborhood is the
+                actual choice. The other way round, a buyer picked their
+                neighborhood and then reached for the month, which is
+                exactly when a filter is most likely to invalidate what
+                they had already chosen. */}
             <div className="flex gap-2.5 flex-wrap">
+              {months.length > 1 && (
+                <select
+                  value={month}
+                  onChange={(e) => {
+                    const m = e.target.value;
+                    setMonth(m);
+                    // Only drop the pick when this filter would actually
+                    // hide it. Clearing every time meant going back to
+                    // "Any month" threw away a choice that was still on
+                    // the list, and a card mailing the month you just
+                    // chose was discarded along with the ones that were
+                    // not.
+                    const survives = atReach.some(
+                      (c) => keyOf(c) === picked && (!m || c.mailMonth === m),
+                    );
+                    if (!survives) {
+                      setPicked("");
+                      remember("", reach);
+                    }
+                  }}
+                  aria-label="Estimated mailing month"
+                  className="flex-1 min-w-[150px] text-[15px] font-medium px-4 py-3 rounded-[10px] bg-white text-navy-950 border border-line-strong cursor-pointer focus:outline-none focus:border-navy-950"
+                >
+                  <option value="">Any month</option>
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              )}
               <select
                 value={picked}
                 onChange={(e) => {
@@ -479,26 +517,6 @@ export function PricingCards({
                   </option>
                 ))}
               </select>
-              {months.length > 1 && (
-                <select
-                  value={month}
-                  onChange={(e) => {
-                    setMonth(e.target.value);
-                    // The card that was picked may not mail that month.
-                    setPicked("");
-                    remember("", reach);
-                  }}
-                  aria-label="Estimated mailing month"
-                  className="flex-1 min-w-[150px] text-[15px] font-medium px-4 py-3 rounded-[10px] bg-white text-navy-950 border border-line-strong cursor-pointer focus:outline-none focus:border-navy-950"
-                >
-                  <option value="">Any month</option>
-                  {months.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              )}
             </div>
             {card?.description && (
               <p className="text-[13px] text-body mt-2.5">{card.description}</p>
