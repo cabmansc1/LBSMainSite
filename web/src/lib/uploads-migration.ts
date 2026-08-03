@@ -230,9 +230,76 @@ async function record(
         VALUES (${category}, ${sourceId}, ${filename.slice(0, 255)},
                 ${status}, ${newId}, ${bytes}, ${note.slice(0, 500)})
         ON DUPLICATE KEY UPDATE
-          status = VALUES(status), new_id = VALUES(new_id),
+          status = VALUES(status), new_id = COALESCE(VALUES(new_id), new_id),
           bytes = VALUES(bytes), note = VALUES(note)`,
   );
+}
+
+/**
+ * The blob id an earlier attempt stored, if it got that far.
+ *
+ * new_id is a fact about where the bytes now live, not part of the
+ * status, which is why record() above refuses to overwrite a known id
+ * with null. A later attempt that fails still knows the bytes are safe.
+ */
+async function priorNewId(
+  category: Category,
+  sourceId: number,
+): Promise<number | null> {
+  const { db } = await import("@/lib/db");
+  const rows = (await db.execute(
+    sql`SELECT new_id FROM lbs_upload_migration
+        WHERE category = ${category} AND source_id = ${sourceId}
+          AND new_id IS NOT NULL
+        LIMIT 1`,
+  )) as unknown as [{ new_id: number }[]];
+  const n = Number(rows[0]?.[0]?.new_id ?? 0);
+  return n > 0 ? n : null;
+}
+
+/**
+ * Redirects the source row at the bytes now held in the database.
+ *
+ * Always the step after the bytes are stored, never before: if this runs
+ * first and the store then fails, the photo has been unhooked from the
+ * old host and hooked to nothing.
+ *
+ * The directory photo case blanks the filename rather than nulling it.
+ * Both readers of that column skip a falsy filename, so an empty string
+ * hides the row exactly as null would, and pendingFor already excludes
+ * `filename <> ''` so the row stays out of later batches. The difference
+ * is that this cannot be refused: nothing in this repo creates
+ * directory_business_photos, the legacy PHP writes a filename on every
+ * insert and so never exercised a null, and a NOT NULL column there
+ * would reject the update after the bytes were already stored.
+ *
+ * alt_text is deliberately left in place. It is the only copy of that
+ * text anywhere, the blob table has nowhere to put it yet, and clearing
+ * the filename already hides the row.
+ *
+ * Card artwork gets no pointer at all: logo_filename is read by the
+ * admin orders list as a yes/no "has artwork" flag and nothing renders
+ * the file, so clearing it would make every historic order look like the
+ * customer never sent anything.
+ */
+async function pointAtStored(
+  category: Category,
+  sourceId: number,
+  newId: number,
+): Promise<void> {
+  const { db } = await import("@/lib/db");
+  if (category === "business_photos") {
+    await db.execute(
+      sql`UPDATE directory_business_photos SET filename = ''
+          WHERE id = ${sourceId}`,
+    );
+  } else if (category === "blog") {
+    const { blogImagePath } = await import("@/lib/blog-images");
+    await db.execute(
+      sql`UPDATE directory_blog_posts SET featured_image = ${blogImagePath(newId)}
+          WHERE id = ${sourceId}`,
+    );
+  }
 }
 
 /**
@@ -319,6 +386,28 @@ export async function migrateBatch(
   out.attempted = pending.length;
 
   for (const p of pending) {
+    // Storing the bytes and pointing the row at them are two writes, and
+    // a row that failed between them is offered again. Without this, that
+    // retry would store the same photo a second time and the listing
+    // would render it twice. A partial row is finished, never redone.
+    const prior = await priorNewId(category, p.sourceId);
+    if (prior !== null) {
+      try {
+        await pointAtStored(category, p.sourceId, prior);
+        await record(
+          category, p.sourceId, p.filename, "done", prior, 0,
+          "bytes were already stored by an earlier attempt",
+        );
+        out.done++;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        await record(category, p.sourceId, p.filename, "failed", prior, 0, msg);
+        out.failed++;
+        out.errors.push({ filename: p.filename, error: msg.slice(0, 200) });
+      }
+      continue;
+    }
+
     const got = await fetchFile(sourceUrl(category, p.filename));
 
     if (!got.ok) {
@@ -329,6 +418,10 @@ export async function migrateBatch(
       out.errors.push({ filename: p.filename, error: got.error });
       continue;
     }
+
+    // Known as soon as the bytes are stored, so the catch below reports a
+    // failure without losing where they went.
+    let storedId: number | null = null;
 
     try {
       if (category === "business_photos") {
@@ -341,35 +434,42 @@ export async function migrateBatch(
         )) as unknown as [{ is_primary: number }[]];
         const kind = Number(rows[0]?.[0]?.is_primary ?? 0) === 1 ? "logo" : "gallery";
 
-        const saved = await saveBusinessImage(Number(p.extra), got.bytes, kind);
-        if ("error" in saved) throw new Error(saved.error);
+        // reuseIdentical because a run that stored the bytes and then
+        // failed on the update recorded no id to find them by. The
+        // resize is deterministic, so the same legacy file coming back
+        // through here produces the row that is already there.
+        const saved = await saveBusinessImage(Number(p.extra), got.bytes, kind, {
+          reuseIdentical: true,
+        });
+        // saveBusinessImage answers an upload form, so its error is
+        // written for a customer. detail carries what actually went
+        // wrong, which is the only version worth writing to a log a
+        // migration is going to be debugged from.
+        if ("error" in saved) throw new Error(saved.detail ?? saved.error);
+        storedId = saved.id;
 
-        // Only after the bytes are safely stored. The read path skips a
-        // row with no filename, so this is what stops the migrated photo
-        // rendering twice: once from the blob and once from a URL on a
-        // host that is about to be switched off.
-        //
-        // alt_text is deliberately left in place. It is the only copy of
-        // that text anywhere, the blob table has nowhere to put it yet,
-        // and nulling the filename already hides the row.
-        await db.execute(
-          sql`UPDATE directory_business_photos SET filename = NULL
-              WHERE id = ${p.sourceId}`,
+        // Written before the source row is touched, so a run interrupted
+        // here can be resumed rather than storing the photo again.
+        await record(
+          category, p.sourceId, p.filename, "failed", saved.id, got.bytes.length,
+          "bytes stored, source row not yet updated",
         );
+        await pointAtStored(category, p.sourceId, saved.id);
         await record(
           category, p.sourceId, p.filename, "done", saved.id, got.bytes.length,
           `${kind}, ${saved.width}x${saved.height}`,
         );
       } else if (category === "blog") {
-        const { saveBlogImage, blogImagePath } = await import("@/lib/blog-images");
+        const { saveBlogImage } = await import("@/lib/blog-images");
         const saved = await saveBlogImage(got.bytes);
         if ("error" in saved) throw new Error(saved.error);
+        storedId = saved.id;
 
-        await db.execute(
-          sql`UPDATE directory_blog_posts
-              SET featured_image = ${blogImagePath(saved.id)}
-              WHERE id = ${p.sourceId}`,
+        await record(
+          category, p.sourceId, p.filename, "failed", saved.id, got.bytes.length,
+          "bytes stored, source row not yet updated",
         );
+        await pointAtStored(category, p.sourceId, saved.id);
         await record(
           category, p.sourceId, p.filename, "done", saved.id, got.bytes.length,
           `${saved.width}x${saved.height}`,
@@ -407,14 +507,11 @@ export async function migrateBatch(
         const idRow = (await db.execute(
           sql`SELECT LAST_INSERT_ID() AS id`,
         )) as unknown as [{ id: number }[]];
+        storedId = Number(idRow[0]?.[0]?.id ?? 0) || null;
 
-        // logo_filename is left alone. The admin orders list reads it as
-        // a yes/no "has artwork" flag and nothing renders the file, so
-        // clearing it would turn every historic order into one that looks
-        // like the customer never sent anything.
         await record(
           category, p.sourceId, p.filename, "done",
-          Number(idRow[0]?.[0]?.id ?? 0), got.bytes.length,
+          storedId, got.bytes.length,
           got.mime || "unknown type",
         );
       }
@@ -422,7 +519,7 @@ export async function migrateBatch(
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`[uploads-migration] ${category}/${p.filename} failed:`, e);
-      await record(category, p.sourceId, p.filename, "failed", null, 0, msg);
+      await record(category, p.sourceId, p.filename, "failed", storedId, 0, msg);
       out.failed++;
       out.errors.push({ filename: p.filename, error: msg.slice(0, 200) });
     }
@@ -498,12 +595,17 @@ export async function getProblems(): Promise<
 }
 
 /**
- * Clears the failed rows so a run can try them again.
+ * Puts the failed rows back in the queue so a run can try them again.
  *
  * Only 'failed', never 'missing'. A file the old host does not have is
  * not going to appear because we asked a second time, and offering that
  * as a retry button would just be a way to make the same run take longer
  * every time it is pressed.
+ *
+ * Reset rather than deleted. A failed row can be carrying the id of
+ * bytes that were stored before the failure, and that id is what stops
+ * the retry storing them a second time. Deleting the row would throw
+ * away the one record of where the file went.
  */
 export async function retryFailed(): Promise<number> {
   try {
@@ -512,7 +614,11 @@ export async function retryFailed(): Promise<number> {
     const before = (await db.execute(
       sql`SELECT COUNT(*) AS n FROM lbs_upload_migration WHERE status = 'failed'`,
     )) as unknown as [{ n: number }[]];
-    await db.execute(sql`DELETE FROM lbs_upload_migration WHERE status = 'failed'`);
+    await db.execute(
+      sql`UPDATE lbs_upload_migration
+          SET status = 'pending', note = ''
+          WHERE status = 'failed'`,
+    );
     return Number(before[0]?.[0]?.n ?? 0);
   } catch (e) {
     console.error("[uploads-migration] retry reset failed:", e);

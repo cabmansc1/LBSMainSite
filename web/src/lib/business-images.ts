@@ -140,7 +140,26 @@ export async function saveBusinessImage(
   businessId: number,
   input: Buffer,
   kind: ImageKind = "logo",
-): Promise<{ id: number; width: number; height: number } | { error: string }> {
+  opts: {
+    /**
+     * Return the existing row when the resize produces bytes this
+     * business already has, instead of inserting a second copy.
+     *
+     * For the uploads migration. The resize is deterministic, so a file
+     * a previous run already stored comes out byte for byte identical,
+     * and that is the only evidence available that it was stored: a run
+     * that failed after storing recorded no id, and nothing on the blob
+     * row says where it came from. Off by default, because a person
+     * uploading the same photo twice on purpose should get two rows.
+     */
+    reuseIdentical?: boolean;
+  } = {},
+): Promise<
+  | { id: number; width: number; height: number }
+  // error is what an upload form shows a customer; detail is what
+  // actually went wrong, for callers that log rather than render.
+  | { error: string; detail?: string }
+> {
   try {
     await ensureTable();
     const sharp = (await import("sharp")).default;
@@ -159,6 +178,21 @@ export async function saveBusinessImage(
       .toBuffer({ resolveWithObject: true });
 
     const { db } = await import("@/lib/db");
+
+    if (opts.reuseIdentical) {
+      const same = (await db.execute(
+        sql`SELECT id FROM lbs_business_images
+            WHERE business_id = ${businessId} AND kind = ${kind}
+              AND width = ${out.info.width} AND height = ${out.info.height}
+              AND bytes = ${out.data}
+            ORDER BY id LIMIT 1`,
+      )) as unknown as [{ id: number }[]];
+      const found = Number(same[0]?.[0]?.id ?? 0);
+      if (found > 0) {
+        return { id: found, width: out.info.width, height: out.info.height };
+      }
+    }
+
     // Appended after whatever is already there, so an upload never
     // reorders a gallery somebody has already arranged.
     const next = (await db.execute(
@@ -184,7 +218,10 @@ export async function saveBusinessImage(
     };
   } catch (e) {
     console.error("[business-images] save failed:", e);
-    return { error: "That image could not be processed." };
+    return {
+      error: "That image could not be processed.",
+      detail: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
