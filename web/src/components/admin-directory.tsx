@@ -2,7 +2,7 @@
 
 import { DescriptionEditor } from "@/components/description-editor";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { AdminBusiness } from "@/lib/admin-data";
 
@@ -706,15 +706,31 @@ export function AdminDirectory({
   businesses,
   categories: taxonomyCategories,
   locations: taxonomyLocations,
+  advertiserEmails,
+  missionControlRead,
 }: {
   businesses: AdminBusiness[];
   categories: TaxonomyOption[];
   locations: TaxonomyOption[];
+  /** Lowercase emails that have bought a card spot. */
+  advertiserEmails: string[];
+  missionControlRead: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [status, setStatus] = useState("");
+  // Postcard advertiser or directory-only. Derived from what they have
+  // bought rather than stored, so a directory signup that buys a spot
+  // next month is relabelled by the purchase and not by anyone
+  // remembering to change it.
+  const [customer, setCustomer] = useState<"" | "advertiser" | "directory">("");
+  const advertisers = useMemo(
+    () => new Set(advertiserEmails),
+    [advertiserEmails],
+  );
+  const isAdvertiser = (b: AdminBusiness) =>
+    !!b.email && advertisers.has(b.email.trim().toLowerCase());
   const [selected, setSelected] = useState<number[]>([]);
   const [bulk, setBulk] = useState("");
   const [busyRow, setBusyRow] = useState<number | null>(null);
@@ -725,6 +741,7 @@ export function AdminDirectory({
     pending: businesses.filter((b) => statusOf(b) === "pending").length,
     active: businesses.filter((b) => statusOf(b) === "active").length,
     hidden: businesses.filter((b) => b.isHidden).length,
+    advertisers: businesses.filter(isAdvertiser).length,
   };
   const totalViews = businesses.reduce((n, b) => n + b.views, 0);
   const totalInquiries = businesses.reduce((n, b) => n + b.inquiries, 0);
@@ -745,6 +762,8 @@ export function AdminDirectory({
     if (category && b.category !== category) return false;
     if (location && b.locationArea !== location) return false;
     if (status && statusOf(b) !== status) return false;
+    if (customer === "advertiser" && !isAdvertiser(b)) return false;
+    if (customer === "directory" && isAdvertiser(b)) return false;
     return true;
   });
 
@@ -790,17 +809,48 @@ export function AdminDirectory({
         onDone={() => window.location.reload()}
       />
 
+      {!missionControlRead && (
+        // Almost every advertiser predates this website and exists only
+        // in Mission Control, so without it the split is not merely
+        // incomplete, it is wrong for most rows. Better to say so than to
+        // let the labels be read as fact.
+        <p className="mb-4 text-[13px] text-[#7a4a00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-4 py-2.5">
+          Mission Control could not be read, so postcard advertisers are
+          counted from website orders only. Anyone who bought before this
+          site existed is showing as directory only until it answers again.
+        </p>
+      )}
+
       <div className="border border-line rounded-(--radius-card) bg-white px-5 py-4 mb-4 flex gap-8 flex-wrap">
         {[
           { n: counts.total, label: "Total businesses", filter: "" },
           { n: counts.pending, label: "Pending review", filter: "pending", warn: true },
           { n: counts.active, label: "Active", filter: "active" },
           { n: counts.hidden, label: "Hidden", filter: "hidden" },
+          // Who they are, rather than what state their listing is in.
+          // Clearing the status alongside it, because "hidden postcard
+          // advertisers" is a combination nobody means to ask for by
+          // pressing one number.
+          {
+            n: counts.advertisers,
+            label: "Postcard advertisers",
+            filter: "",
+            customer: "advertiser" as const,
+          },
+          {
+            n: counts.total - counts.advertisers,
+            label: "Directory only",
+            filter: "",
+            customer: "directory" as const,
+          },
         ].map((s) => (
           <button
             key={s.label}
             type="button"
-            onClick={() => setStatus(s.filter)}
+            onClick={() => {
+              setStatus(s.filter);
+              setCustomer(s.customer ?? "");
+            }}
             className="text-left"
           >
             <b
@@ -1062,6 +1112,13 @@ export function AdminDirectory({
                         Featured
                       </span>
                     )}
+                    <span
+                      className={`block text-[11px] font-semibold mt-1 ${
+                        isAdvertiser(b) ? "text-[#a05e00]" : "text-muted"
+                      }`}
+                    >
+                      {isAdvertiser(b) ? "Postcard advertiser" : "Directory only"}
+                    </span>
                   </td>
                   <td className="px-4 py-3.5 border-b border-line num text-muted">
                     {b.views.toLocaleString("en-US")}
