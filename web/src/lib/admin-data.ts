@@ -46,6 +46,10 @@ export type AdminBusiness = {
   /** Primary photo, so a listing is recognisable at a glance in the list. */
   logoUrl: string | null;
   createdAt: string | null;
+  facebookUrl: string | null;
+  instagramUrl: string | null;
+  tiktokUrl: string | null;
+  youtubeUrl: string | null;
 };
 
 const bool = (v: unknown) => v === 1 || v === true || v === "1";
@@ -57,7 +61,8 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
     ? ((await db.execute(
         sql`SELECT id, slug, business_name, category, location_area, city, phone, email,
                    website, description, plan_type, is_featured, is_verified, is_hidden,
-                   is_active, views_count, inquiries_count, created_at
+                   is_active, views_count, inquiries_count, created_at,
+                   facebook_url, instagram_url, tiktok_url, youtube_url
             FROM directory_businesses
             WHERE business_name LIKE ${term} OR slug LIKE ${term} OR email LIKE ${term}
             ORDER BY business_name LIMIT 500`,
@@ -65,7 +70,8 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
     : ((await db.execute(
         sql`SELECT id, slug, business_name, category, location_area, city, phone, email,
                    website, description, plan_type, is_featured, is_verified, is_hidden,
-                   is_active, views_count, inquiries_count, created_at
+                   is_active, views_count, inquiries_count, created_at,
+                   facebook_url, instagram_url, tiktok_url, youtube_url
             FROM directory_businesses ORDER BY business_name LIMIT 500`,
       )) as unknown as [Record<string, unknown>[]]);
 
@@ -134,6 +140,10 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
     inquiries: Number(r.inquiries_count ?? 0),
     logoUrl: logos.get(Number(r.id)) ?? null,
     createdAt: r.created_at ? String(r.created_at) : null,
+    facebookUrl: (r.facebook_url as string) ?? null,
+    instagramUrl: (r.instagram_url as string) ?? null,
+    tiktokUrl: (r.tiktok_url as string) ?? null,
+    youtubeUrl: (r.youtube_url as string) ?? null,
   }));
 }
 
@@ -273,11 +283,41 @@ export async function createBusiness(input: BusinessPatch & { name: string }) {
   return { id: Number((rows[0] ?? [])[0]?.id ?? 0), slug };
 }
 
+/**
+ * Fields that end up in an href on a public page.
+ *
+ * Somebody typing "facebook.com/joesbbq" is the normal case, and stored
+ * as typed it makes a link that resolves against our own domain. The
+ * portal has always tidied these on the way in; the admin writes the
+ * same columns and needs the same treatment.
+ */
+const URL_FIELDS = [
+  "website",
+  "facebookUrl",
+  "instagramUrl",
+  "tiktokUrl",
+  "youtubeUrl",
+] as const satisfies readonly (keyof BusinessPatch)[];
+
+export class InvalidPatch extends Error {}
+
 export async function updateBusiness(id: number, patch: BusinessPatch) {
   const { db } = await import("@/lib/db");
+  const { normalizeUrl } = await import("@/lib/listing-edits");
+  const clean: BusinessPatch = { ...patch };
+  for (const field of URL_FIELDS) {
+    const raw = clean[field];
+    if (typeof raw !== "string") continue;
+    const url = normalizeUrl(raw);
+    if (url === null) {
+      throw new InvalidPatch(`That ${field === "website" ? "website" : "link"} does not look like a web address.`);
+    }
+    clean[field] = url;
+  }
+
   const sets = [];
   for (const [key, column] of Object.entries(COLUMNS)) {
-    const value = patch[key as keyof BusinessPatch];
+    const value = clean[key as keyof BusinessPatch];
     if (value === undefined) continue;
     const stored = typeof value === "boolean" ? (value ? 1 : 0) : value;
     sets.push(sql`${sql.raw(`\`${column}\``)} = ${stored}`);

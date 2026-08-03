@@ -43,6 +43,7 @@ const GROUPS: Group[] = [
       { href: "/admin/leads", label: "Leads", hint: "Forms and quizzes" },
       { href: "/admin/waitlist", label: "Waitlist", hint: "Category is taken" },
       { href: "/admin/directory-invites", label: "Directory invites", hint: "Advertisers not listed yet" },
+      { href: "/admin/mc-accounts", label: "MC customers", hint: "Set up existing advertisers" },
     ],
   },
   {

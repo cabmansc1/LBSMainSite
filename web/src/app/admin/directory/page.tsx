@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getAdminBusinesses } from "@/lib/admin-data";
 import { getFilterOptions } from "@/lib/directory";
+import { getAdvertiserIndex } from "@/lib/customer-type";
 import { AdminDirectory } from "@/components/admin-directory";
 
 export const dynamic = "force-dynamic";
@@ -17,9 +18,10 @@ export default async function AdminDirectoryPage() {
   // Category and location area are stored as slugs and filtered on as
   // slugs, so typing them by hand produced listings that rendered
   // correctly and appeared under nothing.
-  const [businesses, options] = await Promise.all([
+  const [businesses, options, advertisers] = await Promise.all([
     getAdminBusinesses(),
     getFilterOptions(),
+    getAdvertiserIndex(),
   ]);
 
   return (
@@ -38,6 +40,8 @@ export default async function AdminDirectoryPage() {
         businesses={businesses}
         categories={options.categories}
         locations={options.locations}
+        advertiserEmails={[...advertisers.emails]}
+        missionControlRead={advertisers.missionControl}
       />
     </div>
   );
