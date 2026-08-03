@@ -134,6 +134,12 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Nothing to delete" }, { status: 422 });
   }
   revalidatePath("/gallery");
-  if (slug) revalidatePath(`/cards/${slug}`);
+  if (slug) {
+    revalidatePath(`/cards/${slug}`);
+    // Deleting a card removes a URL, so the sitemap is as stale as the
+    // gallery is. Saving one already refreshes it; deleting one did not,
+    // which left a deleted card advertised to crawlers as a live page.
+    revalidatePath("/sitemap.xml");
+  }
   return NextResponse.json({ ok: true });
 }

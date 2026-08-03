@@ -171,6 +171,47 @@ export function AdminGallery({
     }
   }
 
+  /**
+   * Removes the card and its photos outright.
+   *
+   * Unpublishing was the only way out of a card entered wrongly, which
+   * hides it and leaves it in the list forever. The two are not the same
+   * thing: a card that mailed but should not be public is a draft, and a
+   * card that should never have been created is rubbish.
+   *
+   * Typed confirmation rather than a plain OK, because the photos go with
+   * it and there is no undo.
+   */
+  async function removeCard(card: PastCard) {
+    const label = card.cardName || `${card.zoneName}, ${card.mailMonth}`;
+    const answer = window.prompt(
+      `Delete "${label}" and its ${card.images.length} photo${
+        card.images.length === 1 ? "" : "s"
+      }? This cannot be undone.\n\nType DELETE to confirm.`,
+    );
+    if (answer !== "DELETE") return;
+
+    setBusy(card.slug);
+    setMessage("");
+    try {
+      const res = await fetch(
+        `/api/admin/card-images?slug=${encodeURIComponent(card.slug)}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        throw new Error(
+          (await res.json().catch(() => ({}))).error ?? "That did not delete.",
+        );
+      }
+      setRows((r) => r.filter((c) => c.slug !== card.slug));
+      setMessage(`Deleted ${label}.`);
+    } catch (e) {
+      setMessage(String(e instanceof Error ? e.message : e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function removeImage(slug: string, imageId: number) {
     setBusy(slug);
     try {
@@ -382,6 +423,14 @@ export function AdminGallery({
                                   className="text-[12.5px] font-semibold text-brand-deep hover:underline"
                                 >
                                   {isOpen ? "Close" : "Edit"}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busy === c.slug}
+                                  onClick={() => removeCard(c)}
+                                  className="text-[12.5px] font-semibold text-danger hover:underline disabled:opacity-40"
+                                >
+                                  Delete
                                 </button>
                               </span>
                             </div>
