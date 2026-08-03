@@ -595,12 +595,17 @@ export async function getProblems(): Promise<
 }
 
 /**
- * Clears the failed rows so a run can try them again.
+ * Puts the failed rows back in the queue so a run can try them again.
  *
  * Only 'failed', never 'missing'. A file the old host does not have is
  * not going to appear because we asked a second time, and offering that
  * as a retry button would just be a way to make the same run take longer
  * every time it is pressed.
+ *
+ * Reset rather than deleted. A failed row can be carrying the id of
+ * bytes that were stored before the failure, and that id is what stops
+ * the retry storing them a second time. Deleting the row would throw
+ * away the one record of where the file went.
  */
 export async function retryFailed(): Promise<number> {
   try {
@@ -609,7 +614,11 @@ export async function retryFailed(): Promise<number> {
     const before = (await db.execute(
       sql`SELECT COUNT(*) AS n FROM lbs_upload_migration WHERE status = 'failed'`,
     )) as unknown as [{ n: number }[]];
-    await db.execute(sql`DELETE FROM lbs_upload_migration WHERE status = 'failed'`);
+    await db.execute(
+      sql`UPDATE lbs_upload_migration
+          SET status = 'pending', note = ''
+          WHERE status = 'failed'`,
+    );
     return Number(before[0]?.[0]?.n ?? 0);
   } catch (e) {
     console.error("[uploads-migration] retry reset failed:", e);
