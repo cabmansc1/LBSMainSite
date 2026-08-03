@@ -1433,6 +1433,115 @@ export async function getUpcomingCardRoster(): Promise<RosterCard[] | null> {
 }
 
 /**
+ * Every business that has actually bought a spot, once each.
+ *
+ * Mission Control is where the customer list has always lived, and most
+ * of it predates this site: those businesses have no order here, no
+ * listing here and no login here, which is why the portal was only ever
+ * useful to people who bought through the website. This is the list that
+ * closes that gap.
+ *
+ * An advertiser row is per card, so somebody who has ridden six cards
+ * appears six times. They are folded by email, since email is what ties
+ * a person to their cards, their listing and their login everywhere else
+ * in this app.
+ *
+ * Rows with no email are kept rather than dropped. No login can be made
+ * for them, but they are real customers and the admin needs to see that
+ * they are unreachable rather than be handed a list that quietly omits
+ * them. Prospects are excluded: a parked category is not a customer.
+ */
+export type McCustomer = {
+  /** Lowercase, or "" when Mission Control has no address for them. */
+  email: string;
+  businessName: string;
+  contactName: string;
+  phone: string;
+  category: string;
+  /** How many cards they have ridden. */
+  cards: number;
+  /** The most recent one, for deciding who is worth contacting. */
+  lastCard: string;
+  lastMailDateIso: string;
+  paidCents: number;
+};
+
+export async function getMcCustomers(): Promise<McCustomer[] | null> {
+  const cards = await fetchCards();
+  if (!cards) return null;
+
+  const byKey = new Map<string, McCustomer>();
+  for (const card of cards) {
+    for (const a of card.advertisers) {
+      if (isProspectRow(a)) continue;
+      const name = str(a.businessName).trim();
+      const email = str(a.email).trim().toLowerCase();
+      if (!name && !email) continue;
+
+      // Email when we have one; otherwise the name, so the same business
+      // across six cards is still one row rather than six.
+      const key = email || `name:${slugify(name)}`;
+      const label = card.cardName || `${card.zoneName}, ${card.mailMonth}`;
+      const existing = byKey.get(key);
+      const paid = Math.round(Number(a.amountPaid ?? 0) * 100) || 0;
+
+      if (!existing) {
+        byKey.set(key, {
+          email,
+          businessName: name,
+          contactName: str(a.contactName).trim(),
+          phone: str(a.phone).trim(),
+          category: str(a.category).trim(),
+          cards: 1,
+          lastCard: label,
+          lastMailDateIso: card.mailDateIso,
+          paidCents: paid,
+        });
+        continue;
+      }
+
+      existing.cards += 1;
+      existing.paidCents += paid;
+      // Later cards carry the fresher contact details, so they win where
+      // the earlier row had nothing.
+      existing.contactName ||= str(a.contactName).trim();
+      existing.phone ||= str(a.phone).trim();
+      existing.category ||= str(a.category).trim();
+      if (card.mailDateIso > existing.lastMailDateIso) {
+        existing.lastMailDateIso = card.mailDateIso;
+        existing.lastCard = label;
+        if (name) existing.businessName = name;
+      }
+    }
+  }
+
+  return [...byKey.values()].sort(
+    (a, b) =>
+      b.lastMailDateIso.localeCompare(a.lastMailDateIso) ||
+      a.businessName.localeCompare(b.businessName),
+  );
+}
+
+/**
+ * Whether this address belongs to a real Mission Control customer.
+ *
+ * Sign-in uses this to decide if an address has earned an account. It is
+ * the same standard the site's own tables provide, read from the system
+ * that holds the customers who predate the site.
+ */
+export async function isMcCustomerEmail(emailRaw: string): Promise<boolean> {
+  const email = emailRaw.trim().toLowerCase();
+  if (!email) return false;
+  const cards = await fetchCards();
+  if (!cards) return false;
+  return cards.some((card) =>
+    card.advertisers.some(
+      (a) => !isProspectRow(a) && str(a.email).trim().toLowerCase() === email,
+    ),
+  );
+}
+
+/**
  * Did a paid order actually land on its card in Mission Control?
  *
  * The webhook fires the placement as fire-and-forget, inside the

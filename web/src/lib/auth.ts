@@ -227,7 +227,24 @@ export async function findOrCreatePortalUser(
   )) as unknown as [{ orders: number | string; listings: number | string }[]];
   const row = claim[0]?.[0];
   if (Number(row?.orders ?? 0) === 0 && Number(row?.listings ?? 0) === 0) {
-    return null;
+    // Both of those are this site's tables, and the customer list is
+    // older than this site. Somebody who bought a spot through Mission
+    // Control before the website could sell one has no order here and no
+    // listing here, so this check turned away real customers and made the
+    // portal useful only to people who arrived after it was built.
+    //
+    // Mission Control is the same standard of evidence, read from the
+    // system that holds it: a non-prospect advertiser row means they
+    // bought something. Asked only when the local tables come up empty,
+    // so the ordinary sign-in still costs no network call.
+    try {
+      const { isMcCustomerEmail } = await import("@/lib/mission-control");
+      if (!(await isMcCustomerEmail(email))) return null;
+    } catch (e) {
+      // Mission Control being unreachable must not become a way in.
+      console.error("[auth] Mission Control customer check failed:", e);
+      return null;
+    }
   }
 
   return createPortalUser(email);
