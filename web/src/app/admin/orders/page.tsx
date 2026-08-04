@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getAdminOrders } from "@/lib/admin-data";
 import { getPostcardOrders } from "@/lib/orders";
+import { getCardAdFilesForOrders } from "@/lib/uploads-migration";
 import { checkOrderPlacement, type PlacementCheck } from "@/lib/mission-control";
 import { StatusChip } from "@/components/sections";
 import { AdminPostcardOrders } from "@/components/admin-postcard-orders";
@@ -32,6 +33,11 @@ export default async function AdminOrdersPage() {
     getAdminOrders(),
     getPostcardOrders(),
   ]);
+
+  // Artwork the uploads migration pulled off the old PHP host. Nothing
+  // rendered these before, so the only way to get one was to know its
+  // URL over there, and that host is going away.
+  const artworkFiles = await getCardAdFilesForOrders(orders.map((o) => o.id));
 
   const paid = orders.filter((o) => o.status === "paid");
   const revenue = paid.reduce((sum, o) => sum + o.amountCents, 0);
@@ -219,6 +225,14 @@ export default async function AdminOrdersPage() {
                       <StatusChip tone="ok">Approved</StatusChip>
                     ) : (
                       <StatusChip tone="info">To review</StatusChip>
+                    )}
+                    {artworkFiles.has(o.id) && (
+                      <a
+                        href={`/api/admin/card-ad-file/${artworkFiles.get(o.id)}`}
+                        className="block mt-1 text-[12px] font-semibold text-brand-deep hover:underline"
+                      >
+                        Download
+                      </a>
                     )}
                   </td>
                   <td className="px-4 py-3.5 border-b border-line">

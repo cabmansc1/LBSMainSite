@@ -567,6 +567,85 @@ export async function surveyUploads(): Promise<{
   };
 }
 
+/**
+ * A migrated print file, for the admin to download.
+ *
+ * These are the only reason to keep the bytes at all. Nothing renders
+ * them: they are artwork a customer sent for a press, and until this
+ * they were reachable only by knowing their URL on the PHP host. Once
+ * that host is switched off, a table nothing reads is a table whose
+ * contents may as well not exist, and the first time a printer asks for
+ * a file is the wrong moment to discover it.
+ *
+ * Stored untouched, so what comes back out is byte for byte what came in.
+ */
+export async function getCardAdFile(
+  id: number,
+): Promise<
+  { bytes: Buffer; mime: string; filename: string } | undefined
+> {
+  try {
+    await ensureTables();
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT bytes, mime, filename, original_filename
+          FROM lbs_card_ad_files WHERE id = ${id} LIMIT 1`,
+    )) as unknown as [
+      {
+        bytes: Buffer;
+        mime: string;
+        filename: string;
+        original_filename: string;
+      }[],
+    ];
+    const r = rows[0]?.[0];
+    if (!r) return undefined;
+    return {
+      bytes: r.bytes,
+      mime: String(r.mime ?? "application/octet-stream"),
+      // What the customer called it, falling back to the name it was
+      // stored under. A press file named business_photos_69a8_1772.pdf
+      // helps nobody.
+      filename:
+        String(r.original_filename ?? "").trim() ||
+        String(r.filename ?? "") ||
+        `artwork-${id}`,
+    };
+  } catch (e) {
+    console.error("[uploads-migration] card ad file read failed:", e);
+    return undefined;
+  }
+}
+
+/** Legacy order id to the id of its migrated artwork file. */
+export async function getCardAdFilesForOrders(
+  orderIds: number[],
+): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  if (orderIds.length === 0) return out;
+  try {
+    await ensureTables();
+    const { db } = await import("@/lib/db");
+    // Newest per order: re-running the migration for an order would add
+    // a row rather than replace one, and the latest is the one to offer.
+    const rows = (await db.execute(
+      sql`SELECT order_id, MAX(id) AS id FROM lbs_card_ad_files
+          WHERE order_id IN (${sql.join(
+            orderIds.map((id) => sql`${id}`),
+            sql`, `,
+          )})
+          GROUP BY order_id`,
+    )) as unknown as [{ order_id: number; id: number }[]];
+    for (const r of rows[0] ?? []) {
+      out.set(Number(r.order_id), Number(r.id));
+    }
+  } catch (e) {
+    // The orders list is still worth showing without download links.
+    console.error("[uploads-migration] card ad file lookup failed:", e);
+  }
+  return out;
+}
+
 /** Everything that did not make it, for the admin to look at. */
 export async function getProblems(): Promise<
   { category: string; filename: string; status: string; note: string; url: string }[]
