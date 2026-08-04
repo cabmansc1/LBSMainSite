@@ -8,6 +8,17 @@ import type { AdminBusiness } from "@/lib/admin-data";
 
 const PLANS = ["basic", "featured", "elite"];
 
+/** Same ceiling the advertiser portal and the upload route enforce. */
+const MAX_GALLERY = 8;
+
+/**
+ * Which plans include the gallery, mirroring isPremiumPlan on the server.
+ * Only used to word a warning here; the server decides what the portal is
+ * allowed to do.
+ */
+const isPremiumPlanType = (plan: string | null | undefined) =>
+  plan === "featured" || plan === "elite";
+
 export type TaxonomyOption = { name: string; slug: string };
 
 /**
@@ -93,22 +104,54 @@ function EditPanel({
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState("");
   const [logo, setLogo] = useState<string | null>(business.logoUrl);
+  const [logoId, setLogoId] = useState<number | null>(null);
+  const [gallery, setGallery] = useState<number[]>([]);
   const [logoBusy, setLogoBusy] = useState(false);
   const [logoError, setLogoError] = useState("");
 
-  async function uploadLogo(file: File) {
+  // What the listing already has. The row carries a logo URL for the
+  // list, but not the image ids, and removing one needs the id: deleting
+  // by business is what used to take the gallery with it.
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/admin/business-image?businessId=${business.id}`,
+        );
+        const j = await res.json().catch(() => ({}));
+        if (!live || !res.ok) return;
+        setLogoId(typeof j.logo === "number" ? j.logo : null);
+        setGallery(Array.isArray(j.gallery) ? j.gallery : []);
+      } catch {
+        // The panel still edits text without this; only the image
+        // controls go quiet.
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [business.id]);
+
+  async function upload(file: File, kind: "logo" | "gallery") {
     setLogoBusy(true);
     setLogoError("");
     try {
       const body = new FormData();
       body.append("businessId", String(business.id));
+      body.append("kind", kind);
       body.append("file", file);
       // No content-type header: the browser has to set the multipart
       // boundary itself, and setting it by hand breaks the parse.
       const res = await fetch("/api/admin/business-image", { method: "POST", body });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error ?? "That upload failed.");
-      setLogo(j.url);
+      if (kind === "logo") {
+        setLogo(j.url);
+        setLogoId(Number(j.id) || null);
+      } else {
+        setGallery((g) => [...g, Number(j.id)]);
+      }
     } catch (e) {
       setLogoError(String(e instanceof Error ? e.message : e));
     } finally {
@@ -116,16 +159,24 @@ function EditPanel({
     }
   }
 
-  async function removeLogo() {
+  async function removeImage(imageId: number, kind: "logo" | "gallery") {
     setLogoBusy(true);
     setLogoError("");
     try {
       const res = await fetch(
-        `/api/admin/business-image?businessId=${business.id}`,
+        `/api/admin/business-image?businessId=${business.id}&imageId=${imageId}`,
         { method: "DELETE" },
       );
-      if (!res.ok) throw new Error("Could not remove that image.");
-      setLogo(null);
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "Could not remove that image.");
+      }
+      if (kind === "logo") {
+        setLogo(null);
+        setLogoId(null);
+      } else {
+        setGallery((g) => g.filter((id) => id !== imageId));
+      }
     } catch (e) {
       setLogoError(String(e instanceof Error ? e.message : e));
     } finally {
@@ -217,22 +268,22 @@ function EditPanel({
                   disabled={logoBusy}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) uploadLogo(f);
+                    if (f) upload(f, "logo");
                     e.target.value = "";
                   }}
                   className="text-[13px] file:mr-3 file:px-3 file:py-1.5 file:rounded-[8px] file:border file:border-line-strong file:bg-white file:text-[12.5px] file:font-semibold file:cursor-pointer"
                 />
                 <span className="text-[12px] text-muted">
                   {logoBusy
-                    ? "Uploading..."
+                    ? "Working..."
                     : "Resized to 600px and converted to WebP automatically."}
                 </span>
               </div>
-              {logo && (
+              {logo && logoId !== null && (
                 <button
                   type="button"
                   disabled={logoBusy}
-                  onClick={removeLogo}
+                  onClick={() => removeImage(logoId, "logo")}
                   className="text-[12.5px] font-semibold text-danger hover:underline disabled:opacity-40"
                 >
                   Remove
@@ -240,6 +291,71 @@ function EditPanel({
               )}
             </div>
             {logoError && <p className="text-[12.5px] text-danger">{logoError}</p>}
+          </div>
+
+          {/* The gallery an advertiser normally fills from their own
+              portal. Here so it can be done for them, which is the whole
+              of the difference: uploading was admin-only for the logo and
+              advertiser-only for the photos, so a customer who sent their
+              pictures by email had nowhere for them to go. */}
+          <div className="grid gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+              Photos ({gallery.length}/{MAX_GALLERY})
+            </span>
+            {gallery.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {gallery.map((id) => (
+                  <span
+                    key={id}
+                    className="relative w-20 h-20 rounded-[10px] border border-line bg-surface overflow-hidden"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/business-image/${id}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      disabled={logoBusy}
+                      onClick={() => removeImage(id, "gallery")}
+                      aria-label="Remove this photo"
+                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-navy-950/80 text-white text-[13px] leading-none grid place-items-center hover:bg-danger disabled:opacity-40"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              disabled={logoBusy || gallery.length >= MAX_GALLERY}
+              onChange={async (e) => {
+                // One at a time, because the cap is checked server-side
+                // per upload and firing eight at once would race past it.
+                const files = [...(e.target.files ?? [])];
+                e.target.value = "";
+                for (const f of files.slice(0, MAX_GALLERY - gallery.length)) {
+                  await upload(f, "gallery");
+                }
+              }}
+              className="text-[13px] file:mr-3 file:px-3 file:py-1.5 file:rounded-[8px] file:border file:border-line-strong file:bg-white file:text-[12.5px] file:font-semibold file:cursor-pointer disabled:opacity-40"
+            />
+            {!isPremiumPlanType(form.planType) && (
+              // The public listing page renders photos without checking
+              // the plan, so adding them here really does hand over what
+              // Premium sells. Said plainly rather than blocked: doing it
+              // deliberately for a comp or a goodwill fix is reasonable,
+              // doing it by accident is not.
+              <p className="text-[12px] text-[#7a4a00]">
+                This listing is {form.planType ?? "basic"}. Photos show on the
+                public page whatever the plan, so these will be visible without
+                Premium.
+              </p>
+            )}
           </div>
 
           <label className="grid gap-1.5">
