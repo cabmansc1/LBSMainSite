@@ -496,6 +496,25 @@ function AddListing({
   const [description, setDescription] = useState("");
   const [state, setState] = useState<"idle" | "saving" | "error">("idle");
   const [message, setMessage] = useState("");
+  // Held rather than uploaded, because an image needs a listing id and
+  // there is no listing yet. It goes up straight after the row exists.
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  function chooseLogo(file: File | null) {
+    setLogoPreview(file ? URL.createObjectURL(file) : null);
+    setLogoFile(file);
+  }
+
+  // An object URL is held by the document until revoked. The cleanup
+  // runs both when the preview is replaced and when the panel closes,
+  // which covers every way one stops being needed.
+  useEffect(
+    () => () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+    },
+    [logoPreview],
+  );
 
   async function create() {
     if (!name.trim()) return;
@@ -519,7 +538,31 @@ function AddListing({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Could not create the listing");
-      setMessage(`Created. It is live at /business/${data.slug}`);
+
+      // The listing exists from here on. A logo that fails after this
+      // point must not be reported as a failure to create, because the
+      // row is there and pressing Create again would make a second one.
+      let logoNote = "";
+      if (logoFile && data.id) {
+        try {
+          const body = new FormData();
+          body.append("businessId", String(data.id));
+          body.append("kind", "logo");
+          body.append("file", logoFile);
+          const up = await fetch("/api/admin/business-image", {
+            method: "POST",
+            body,
+          });
+          if (!up.ok) {
+            const j = await up.json().catch(() => ({}));
+            logoNote = ` The logo did not upload (${j.error ?? "unknown reason"}); add it from Edit.`;
+          }
+        } catch {
+          logoNote = " The logo did not upload; add it from Edit.";
+        }
+      }
+
+      setMessage(`Created. It is live at /business/${data.slug}.${logoNote}`);
       setName("");
       setCategory("");
       setLocationArea("");
@@ -527,7 +570,8 @@ function AddListing({
       setWebsite("");
       setEmail("");
       setDescription("");
-      setState("idle");
+      chooseLogo(null);
+      setState(logoNote ? "error" : "idle");
       onDone();
     } catch (e) {
       setState("error");
@@ -649,6 +693,44 @@ function AddListing({
           placeholder="What they do, in a sentence or two. This is the listing's About text."
         />
       </label>
+      <div className="grid gap-1.5">
+        <span className="text-[11px] uppercase tracking-wider text-muted font-semibold">
+          Logo
+        </span>
+        <div className="flex items-center gap-3.5 flex-wrap">
+          <span className="w-16 h-16 rounded-[10px] border border-line bg-surface overflow-hidden grid place-items-center shrink-0">
+            {logoPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoPreview}
+                alt=""
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <span className="text-[11px] text-faint">None</span>
+            )}
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            disabled={state === "saving"}
+            onChange={(e) => {
+              chooseLogo(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+            className="text-[13px] file:mr-3 file:px-3 file:py-1.5 file:rounded-[8px] file:border file:border-line-strong file:bg-white file:text-[12.5px] file:font-semibold file:cursor-pointer"
+          />
+          {logoFile && (
+            <button
+              type="button"
+              onClick={() => chooseLogo(null)}
+              className="text-[12.5px] font-semibold text-danger hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
       <div className="flex items-center gap-3 flex-wrap">
         <button
           type="button"
