@@ -2,7 +2,7 @@ import "server-only";
 import { tentativelyMails } from "@/lib/mailings";
 import { PLANNED_REACH } from "@/lib/pricing";
 import { zoneBySlug } from "@/lib/zones";
-import { SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE, SITE_URL } from "@/lib/seo";
 
 /**
  * The message the waitlist promised.
@@ -22,7 +22,7 @@ import { SITE_URL } from "@/lib/seo";
  * product that does not exist yet.
  */
 
-const PHONE = "(843) 212-2969";
+const PHONE = CONTACT_PHONE;
 
 /**
  * Duplicated from the public waitlist route, which owns the writing of

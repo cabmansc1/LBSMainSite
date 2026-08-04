@@ -1,5 +1,6 @@
 import "server-only";
 import { alertsTo, sendEmail } from "@/lib/email";
+import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
  * Notifications for a captured lead.
@@ -132,7 +133,7 @@ export function composeQuizRecommendation(f: QuizLeadFacts, siteUrl: string) {
     "See what is filling now and pick a neighborhood:\n" +
     `${siteUrl}/pricing\n\n` +
     "Prefer to talk it through? Reply to this email or call " +
-    "(843) 212-2969.\n\n" +
+    `${CONTACT_PHONE}.\n\n` +
     "Lowcountry Business Spotlight\n";
   return { subject, text };
 }

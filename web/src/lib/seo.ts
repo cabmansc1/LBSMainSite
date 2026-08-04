@@ -22,6 +22,22 @@ export const SITE_URL = "https://www.lowcountrybusinessspotlight.com";
  */
 export const CONTACT_EMAIL = "hello@lowcountrybusinessspotlight.com";
 
+/**
+ * The phone number, in the three shapes anything needs it.
+ *
+ * It was written out by hand in fourteen files and four different
+ * formats, so changing it meant finding every one and getting each
+ * format right, and a missed instance is a customer ringing a number we
+ * no longer answer. Three constants rather than one because a tel: href
+ * and a JSON-LD telephone field are not free text: the first must be
+ * digits, the second is read by machines that expect E.164.
+ */
+export const CONTACT_PHONE = "854-946-4500";
+/** For a tel: href. Digits only, with the country code. */
+export const CONTACT_PHONE_TEL = "+18549464500";
+/** For schema.org telephone fields. */
+export const CONTACT_PHONE_INTL = "+1-854-946-4500";
+
 type PageSeo = {
   title: string;
   description: string;

@@ -5,7 +5,7 @@ import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
 import { getCardDescriptions } from "@/lib/card-details";
 import { zoneBySlug } from "@/lib/zones";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE, CONTACT_PHONE_TEL, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 // Reads Mission Control and the database for the live mailing schedule,
 // so it cannot be prerendered: the build container can reach
@@ -68,10 +68,10 @@ export default async function MailingCalendarPage() {
               and we will tell you which zones still have room.
             </p>
             <a
-              href="tel:+18432122969"
+              href={`tel:${CONTACT_PHONE_TEL}`}
               className="inline-block mt-4 text-sm font-semibold text-brand-deep hover:underline"
             >
-              843-212-2969
+              {CONTACT_PHONE}
             </a>
           </div>
         ) : (
@@ -144,7 +144,7 @@ export default async function MailingCalendarPage() {
                         </Link>
                       ) : (
                         <a
-                          href="tel:+18432122969"
+                          href={`tel:${CONTACT_PHONE_TEL}`}
                           className="text-brand-deep font-semibold hover:underline whitespace-nowrap"
                         >
                           Call to book

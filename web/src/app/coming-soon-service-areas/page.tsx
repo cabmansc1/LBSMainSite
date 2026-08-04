@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, SectionHeading, CtaBand } from "@/components/sections";
 import { ZONES } from "@/lib/zones";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE, CONTACT_PHONE_TEL, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 /**
  * Successor to the legacy coming-soon-service-areas page (indexed, in the
@@ -49,10 +49,10 @@ export default function ComingSoonServiceAreasPage() {
           </p>
           <p className="mt-4">
             <a
-              href="tel:+18432122969"
+              href={`tel:${CONTACT_PHONE_TEL}`}
               className="text-brand font-semibold hover:underline"
             >
-              Call 843-212-2969
+              Call {CONTACT_PHONE}
             </a>
           </p>
         </div>

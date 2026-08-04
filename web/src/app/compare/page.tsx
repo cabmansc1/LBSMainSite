@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, SectionHeading, CtaBand } from "@/components/sections";
 import { Button } from "@/components/ui/button";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE, CONTACT_PHONE_TEL, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 /**
  * Successor to the legacy /compare page (indexed, in the live sitemap).
@@ -177,10 +177,10 @@ export default function ComparePage() {
             </p>
             <p className="text-sm">
               <a
-                href="tel:+18432122969"
+                href={`tel:${CONTACT_PHONE_TEL}`}
                 className="font-semibold text-brand-deep hover:underline"
               >
-                Call 843-212-2969
+                Call {CONTACT_PHONE}
               </a>
               <span className="text-muted"> or </span>
               <Link href="/contact" className="font-semibold text-brand-deep hover:underline">

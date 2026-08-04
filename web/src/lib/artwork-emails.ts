@@ -1,5 +1,6 @@
 import "server-only";
 import { alertsTo, sendEmail } from "@/lib/email";
+import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
  * Notifications when artwork arrives.
@@ -54,7 +55,7 @@ export function composeArtworkReceipt(f: ArtworkFacts) {
     // corrected file overwrote the old one and that we will guess which
     // to use.
     "If you need to send a different version, upload it in your account under Cards. We keep every version and print the newest, so nothing you have already sent gets lost.",
-    "Lowcountry Business Spotlight\n(843) 212-2969",
+    `Lowcountry Business Spotlight\n${CONTACT_PHONE}`,
   ];
   const text = paragraphs.join("\n\n");
 

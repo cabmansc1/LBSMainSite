@@ -307,7 +307,7 @@ export const LEGAL_PAGES: Record<string, LegalPage> = {
           },
           {
             type: "p",
-            text: 'Lowcountry Business Spotlight PO Box 357 Huger, SC 29450 Email: "> Phone: (843) 212-2969',
+            text: 'Lowcountry Business Spotlight PO Box 357 Huger, SC 29450 Email: "> Phone: 854-946-4500',
           },
         ],
       },
@@ -571,7 +571,7 @@ export const LEGAL_PAGES: Record<string, LegalPage> = {
           },
           {
             type: "p",
-            text: 'Lowcountry Business Spotlight PO Box 357 Huger, SC 29450 Email: "> Phone: (843) 212-2969',
+            text: 'Lowcountry Business Spotlight PO Box 357 Huger, SC 29450 Email: "> Phone: 854-946-4500',
           },
         ],
       },

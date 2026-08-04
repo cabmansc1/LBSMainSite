@@ -8,7 +8,7 @@ import {
   tentativelyMails,
 } from "@/lib/mailings";
 import { HOUSEHOLDS, POSTCARD_PRICING, type Reach, type SpotSize } from "@/lib/pricing";
-import { SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE, SITE_URL } from "@/lib/seo";
 import { zoneBySlug } from "@/lib/zones";
 
 /**
@@ -224,7 +224,7 @@ export function composeOrderReceipt(f: ReceiptFacts): {
     "password to invent.";
   const help =
     "Questions: reply to this email, write to hello@lowcountrybusinessspotlight.com, or " +
-    "call 843-212-2969.";
+    `call ${CONTACT_PHONE}.`;
 
   const lines: string[] = [];
   lines.push(greeting, "");
@@ -310,7 +310,7 @@ export function composeOrderReceipt(f: ReceiptFacts): {
         </td></tr>
         <tr>
           <td style="border-top:1px solid ${LINE};padding:16px 28px;font-family:${FONT};font-size:12px;color:${MUTED}">
-            Lowcountry Business Spotlight &middot; hello@lowcountrybusinessspotlight.com &middot; 843-212-2969
+            Lowcountry Business Spotlight &middot; hello@lowcountrybusinessspotlight.com &middot; ${CONTACT_PHONE}
           </td>
         </tr>
       </table>

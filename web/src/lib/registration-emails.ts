@@ -1,5 +1,6 @@
 import "server-only";
 import { alertsTo, sendEmail } from "@/lib/email";
+import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
  * Somebody listed their business.
@@ -78,7 +79,7 @@ export function composePremiumWelcome(f: SignupFacts) {
       // the next step is a login screen they do not know they can pass.
       "To edit it, sign in with your email address and we will send you a code. No password to remember.",
       "You can change your phone, description, website, hours and social links yourself, and they go live straight away.",
-      "Lowcountry Business Spotlight\n(843) 212-2969",
+      `Lowcountry Business Spotlight\n${CONTACT_PHONE}`,
     ].join("\n\n"),
   };
 }
