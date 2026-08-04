@@ -1,5 +1,5 @@
 import "server-only";
-import { alertsTo, sendEmail } from "@/lib/email";
+import { sendAlertEmail, sendEmail } from "@/lib/email";
 import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
@@ -57,8 +57,7 @@ export function composeSignupAlert(f: SignupFacts) {
 
 /** Never throws: a signup that saved is saved whatever the mail server does. */
 export async function sendSignupAlert(f: SignupFacts): Promise<void> {
-  await sendEmail({
-    to: alertsTo(),
+  await sendAlertEmail("signup", {
     ...composeSignupAlert(f),
     replyTo: f.email,
   }).catch((e) => console.error("[registration-email] alert failed:", e));

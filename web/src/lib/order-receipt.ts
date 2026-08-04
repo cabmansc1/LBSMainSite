@@ -1,5 +1,5 @@
 import "server-only";
-import { alertsTo, sendEmail } from "@/lib/email";
+import { sendAlertEmail, sendEmail } from "@/lib/email";
 import { cardDisplayName } from "@/lib/card-coverage";
 import {
   ARTWORK_LEAD_DAYS,
@@ -514,8 +514,7 @@ export async function sendRefundAlert(input: {
   ].filter((l) => l !== "");
 
   try {
-    await sendEmail({
-      to: alertsTo(),
+    await sendAlertEmail("refund", {
       subject: `${kind}: ${who}${order?.category ? ` (${order.category})` : ""}`,
       text: lines.join("\n"),
     });

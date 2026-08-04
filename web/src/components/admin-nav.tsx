@@ -61,6 +61,7 @@ const GROUPS: Group[] = [
       { href: "/admin/qr", label: "QR codes", hint: "Generate and track" },
       { href: "/admin/import", label: "Import", hint: "Bulk CSV" },
       { href: "/admin/integrations", label: "Integrations", hint: "Email, GHL, MC" },
+      { href: "/admin/alerts", label: "Alerts", hint: "Who gets told what" },
       { href: "/admin/uploads", label: "Legacy uploads", hint: "Move files off the old host" },
     ],
   },

@@ -1,5 +1,5 @@
 import "server-only";
-import { alertsTo, sendEmail } from "@/lib/email";
+import { sendAlertEmail, sendEmail } from "@/lib/email";
 import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
@@ -98,7 +98,7 @@ export async function sendArtworkEmails(f: ArtworkFacts): Promise<void> {
     sendEmail({ to: f.email, ...receipt }).catch((e) =>
       console.error("[artwork-email] receipt failed:", e),
     ),
-    sendEmail({ to: alertsTo(), ...alert, replyTo: f.email }).catch((e) =>
+    sendAlertEmail("artwork", { ...alert, replyTo: f.email }).catch((e) =>
       console.error("[artwork-email] alert failed:", e),
     ),
   ]);

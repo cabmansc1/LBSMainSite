@@ -46,12 +46,26 @@ const urgentKinds = (): Set<string> => {
 };
 
 export async function smsAlert(event: ActivityEvent): Promise<void> {
-  if (!urgentKinds().has(event.kind)) return;
+  // The recipients screen decides this when anybody is configured there.
+  // Null means nobody is, and only then do the environment variables get
+  // a say, so a deliberate "no texts for inquiries" is never overridden
+  // by a leftover ALERT_SMS_KINDS.
+  const { routeFor } = await import("@/lib/alert-routing");
+  const routed = await routeFor(event.kind, "sms");
+
+  let to: string[];
+  if (routed === null) {
+    if (!urgentKinds().has(event.kind)) return;
+    to = recipients();
+  } else {
+    to = routed.map((r) => r.phone).filter(Boolean);
+    if (to.length === 0) return;
+  }
 
   const body = [event.title, event.detail].filter(Boolean).join(" - ").slice(0, 320);
 
-  if (!smsEnabled()) {
-    console.log(`[sms preview] would text: ${body}`);
+  if (!sid() || !token() || !from()) {
+    console.log(`[sms preview] would text ${to.join(", ") || "nobody"}: ${body}`);
     return;
   }
 
@@ -62,7 +76,7 @@ export async function smsAlert(event: ActivityEvent): Promise<void> {
 
   // One request per recipient: Twilio sends to a single To per call, and
   // one bad number must not silently cost the others their message.
-  for (const to of recipients()) {
+  for (const number of to) {
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -70,18 +84,18 @@ export async function smsAlert(event: ActivityEvent): Promise<void> {
           Authorization: `Basic ${auth}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({ To: to, From: from()!, Body: body }),
+        body: new URLSearchParams({ To: number, From: from()!, Body: body }),
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) {
         // Twilio explains itself in the body, and the status alone
         // rarely says which of the two numbers it objected to.
         console.error(
-          `[sms] ${to} failed: ${res.status} ${(await res.text()).slice(0, 300)}`,
+          `[sms] ${number} failed: ${res.status} ${(await res.text()).slice(0, 300)}`,
         );
       }
     } catch (e) {
-      console.error(`[sms] ${to} failed:`, e);
+      console.error(`[sms] ${number} failed:`, e);
     }
   }
 }

@@ -1,5 +1,5 @@
 import "server-only";
-import { alertsTo, sendEmail } from "@/lib/email";
+import { sendAlertEmail, sendEmail } from "@/lib/email";
 import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
@@ -146,7 +146,7 @@ export function composeQuizRecommendation(f: QuizLeadFacts, siteUrl: string) {
 export async function sendAdvertiseLeadAlert(f: AdvertiseLeadFacts) {
   try {
     const { subject, text } = composeAdvertiseAlert(f);
-    await sendEmail({ to: alertsTo(), subject, text, replyTo: f.email });
+    await sendAlertEmail("inquiry", { subject, text, replyTo: f.email });
   } catch (e) {
     console.error("[lead-emails] advertise alert failed:", e);
   }
@@ -158,8 +158,7 @@ export async function sendQuizLeadEmails(f: QuizLeadFacts, siteUrl: string) {
   // second cannot cost the first.
   try {
     const alert = composeQuizAlert(f);
-    await sendEmail({
-      to: alertsTo(),
+    await sendAlertEmail("inquiry", {
       subject: alert.subject,
       text: alert.text,
       replyTo: f.email,

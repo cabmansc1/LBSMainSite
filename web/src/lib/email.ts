@@ -37,6 +37,42 @@ export const emailEnabled = () => !!KEY();
 export const alertsTo = () =>
   process.env.LEAD_ALERT_EMAIL?.trim() || "andrew@lowcountrybusinessspotlight.com";
 
+/**
+ * Sends an alert to whoever the recipients screen says wants this kind.
+ *
+ * One place rather than six, because "who should be told" is now a
+ * question with an answer that changes, and six copies of the lookup is
+ * five chances to miss a change to it.
+ *
+ * Nobody configured means the single address above, which is what every
+ * one of these did before. Somebody configured but nobody wanting this
+ * kind means silence, deliberately: that is a choice made on the screen
+ * and overriding it would make the screen a lie.
+ */
+export async function sendAlertEmail(
+  kind: string,
+  opts: { subject: string; text: string; html?: string; replyTo?: string },
+): Promise<void> {
+  let to: string[];
+  try {
+    const { alertEmailsFor } = await import("@/lib/alert-routing");
+    const routed = await alertEmailsFor(kind as never);
+    to = routed === null ? [alertsTo()] : routed;
+  } catch (e) {
+    // Routing being unreadable must not mean nobody is told.
+    console.error("[email] alert routing failed, using the default:", e);
+    to = [alertsTo()];
+  }
+
+  await Promise.all(
+    to.map((address) =>
+      sendEmail({ to: address, ...opts }).catch((e) =>
+        console.error(`[email] alert to ${address} failed:`, e),
+      ),
+    ),
+  );
+}
+
 export type SendResult = { sent: boolean; id?: string; error?: string };
 
 export async function sendEmail(opts: {

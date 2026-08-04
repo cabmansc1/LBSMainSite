@@ -1,5 +1,5 @@
 import "server-only";
-import { alertsTo, sendEmail } from "@/lib/email";
+import { sendAlertEmail, sendEmail } from "@/lib/email";
 import { FIELD_LABELS, type ReviewField } from "@/lib/listing-edits";
 import { CONTACT_PHONE } from "@/lib/seo";
 
@@ -160,8 +160,7 @@ export function composeDecision(f: DecisionFacts) {
 export async function sendQueuedAlert(f: QueuedFacts): Promise<void> {
   if (f.changes.length === 0) return;
   const label = await labeller();
-  await sendEmail({
-    to: alertsTo(),
+  await sendAlertEmail("listing_edit", {
     ...composeQueuedAlert({
       ...f,
       changes: f.changes.map((c) => ({

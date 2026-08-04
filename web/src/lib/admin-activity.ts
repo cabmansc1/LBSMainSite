@@ -47,6 +47,17 @@ export type ActivityRow = ActivityEvent & {
   createdAt: string;
 };
 
+/** Every kind, for anything that has to offer a choice of all of them. */
+export const CATEGORY_KINDS: ActivityKind[] = [
+  "artwork",
+  "order",
+  "refund",
+  "inquiry",
+  "signup",
+  "listing_edit",
+  "waitlist",
+];
+
 export const KIND_LABEL: Record<ActivityKind, string> = {
   artwork: "Artwork",
   order: "Order",

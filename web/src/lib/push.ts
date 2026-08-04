@@ -112,14 +112,26 @@ export async function pushToAdmins(event: ActivityEvent): Promise<void> {
     return;
   }
 
-  let subs: { id: number; endpoint: string; p256dh: string; auth: string }[];
+  let subs: {
+    id: number;
+    email: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  }[];
   try {
     await ensureTable();
     const { db } = await import("@/lib/db");
     const rows = (await db.execute(
-      sql`SELECT id, endpoint, p256dh, auth FROM lbs_push_subscriptions`,
+      sql`SELECT id, email, endpoint, p256dh, auth FROM lbs_push_subscriptions`,
     )) as unknown as [
-      { id: number; endpoint: string; p256dh: string; auth: string }[],
+      {
+        id: number;
+        email: string;
+        endpoint: string;
+        p256dh: string;
+        auth: string;
+      }[],
     ];
     subs = rows[0] ?? [];
   } catch (e) {
@@ -127,6 +139,18 @@ export async function pushToAdmins(event: ActivityEvent): Promise<void> {
     return;
   }
   if (subs.length === 0) return;
+
+  // A subscription belongs to a browser but is stamped with the admin
+  // who registered it, which is what lets the recipients screen decide
+  // who gets what. Null means nobody is configured there, and then every
+  // switched-on browser is notified, as it was before routing existed.
+  const { routeFor } = await import("@/lib/alert-routing");
+  const routed = await routeFor(event.kind, "push");
+  if (routed !== null) {
+    const wanted = new Set(routed.map((r) => r.email.toLowerCase()));
+    subs = subs.filter((s) => wanted.has(String(s.email).toLowerCase()));
+    if (subs.length === 0) return;
+  }
 
   const webpush = (await import("web-push")).default;
   webpush.setVapidDetails(vapidSubject(), vapidPublicKey(), vapidPrivateKey());
