@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { getInquiries } from "@/lib/admin-data";
+import { getInquiryStates } from "@/lib/inquiries";
+import { AdminInquiryControls } from "@/components/admin-inquiry-row";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -19,14 +21,28 @@ const str = (v: unknown): string =>
 export default async function AdminInquiriesPage() {
   await requireAdmin();
   const rows = await getInquiries();
+  // One query for the whole page rather than one per row.
+  const states = await getInquiryStates(rows.map((r) => Number(r.id)));
+  const open = rows.filter(
+    (r) => states.get(Number(r.id))?.status !== "handled",
+  ).length;
 
   return (
     <div className="mx-auto max-w-[1120px] px-6 py-8">
       <div className="mb-5">
         <h1 className="text-[21px] font-bold tracking-[-0.02em]">Inquiries</h1>
         <p className="text-sm text-muted mt-1">
-          Messages sent through directory listing contact forms.
+          Messages sent through directory listing contact forms. The business
+          is emailed a copy the moment one arrives, with the sender set as the
+          reply address so they can answer directly.
         </p>
+        {rows.length > 0 && (
+          <p className="text-[13px] font-semibold mt-2">
+            {open === 0
+              ? "All handled."
+              : `${open} still open of ${rows.length}.`}
+          </p>
+        )}
       </div>
 
       {rows.length === 0 ? (
@@ -70,6 +86,10 @@ export default async function AdminInquiriesPage() {
               <p className="text-sm text-body leading-relaxed whitespace-pre-line border-t border-line pt-2.5">
                 {str(r.message)}
               </p>
+              <AdminInquiryControls
+                id={Number(r.id)}
+                state={states.get(Number(r.id))}
+              />
             </div>
           ))}
         </div>

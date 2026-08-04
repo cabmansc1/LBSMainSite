@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { getInquiryStates } from "@/lib/inquiries";
+import { InquiryHandledToggle } from "@/components/inquiry-handled-toggle";
 import { getPortalContext } from "@/lib/portal";
 import { Card } from "@/components/sections";
 
@@ -14,6 +16,7 @@ export default async function AccountMessagesPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const { inquiries, listings } = await getPortalContext(session);
+  const states = await getInquiryStates(inquiries.map((q) => q.id));
 
   return (
     <>
@@ -66,12 +69,18 @@ export default async function AccountMessagesPage() {
               <p className="text-sm text-body leading-relaxed whitespace-pre-line border-t border-line pt-2.5">
                 {q.message}
               </p>
-              <a
-                href={`mailto:${q.email}?subject=Re: your enquiry`}
-                className="text-[13px] font-semibold text-brand-deep hover:underline"
-              >
-                Reply by email
-              </a>
+              <span className="flex items-center justify-between gap-3 flex-wrap">
+                <a
+                  href={`mailto:${q.email}?subject=Re: your enquiry`}
+                  className="text-[13px] font-semibold text-brand-deep hover:underline"
+                >
+                  Reply by email
+                </a>
+                <InquiryHandledToggle
+                  id={q.id}
+                  handled={states.get(q.id)?.status === "handled"}
+                />
+              </span>
             </Card>
           ))}
         </div>

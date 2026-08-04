@@ -1,5 +1,6 @@
 import "server-only";
 import type { PortalContext } from "@/lib/portal";
+import { countUnhandled } from "@/lib/inquiries";
 import { getArtworkFor } from "@/lib/artwork";
 import { formatDue, ownDeadlines } from "@/lib/artwork-due";
 
@@ -14,10 +15,9 @@ import { formatDue, ownDeadlines } from "@/lib/artwork-due";
  *   approval back, so the button would be a lie. It needs proofs
  *   uploaded on our side first.
  *
- *   Reply to an inquiry. There is no read or replied flag on
- *   directory_business_inquiries, so the item could never clear itself.
- *   A to-do that never goes away teaches people to ignore the list, and
- *   then the artwork deadline gets ignored with it.
+ * Replying to an inquiry used to be on that list too, for the same
+ * reason. It is here now: lbs_inquiry_state gives it something to clear
+ * against, set from either the portal or the admin.
  *
  * Order is by consequence. A missed print deadline cannot be undone
  * after the card goes to press; an unfinished listing can be fixed any
@@ -137,6 +137,26 @@ export async function getPortalTodos(
         weight: 40,
       });
     }
+  }
+
+  // Buildable now that an inquiry can be marked replied. It could not
+  // exist before: nothing cleared it, and a to-do that never goes away
+  // teaches people to ignore the list, taking the artwork deadline with
+  // it.
+  const unanswered = await countUnhandled(ctx.listings.map((l) => l.id));
+  if (unanswered > 0) {
+    todos.push({
+      id: "inquiries",
+      title:
+        unanswered === 1
+          ? "Answer a customer message"
+          : `Answer ${unanswered} customer messages`,
+      detail:
+        "Somebody asked about your business through your listing. Mark it replied once you have answered.",
+      href: "/account/messages",
+      action: "Read it",
+      weight: 35,
+    });
   }
 
   if (missingPhone) {

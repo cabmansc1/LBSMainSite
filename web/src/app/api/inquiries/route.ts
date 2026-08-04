@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getBusiness, usingSampleData } from "@/lib/directory";
 
 /**
@@ -56,6 +56,31 @@ export async function POST(req: Request) {
     name,
     email,
     message,
+  });
+
+  // After the response, so the person who filled in the form is not kept
+  // waiting on a mail server. Before this, nothing was sent at all: the
+  // row was written and everybody involved was left to find out by
+  // looking, which for the business meant never.
+  after(async () => {
+    const { businessNotifyEmail } = await import("@/lib/inquiries");
+    const { sendInquiryEmails } = await import("@/lib/inquiry-emails");
+    await sendInquiryEmails({
+      businessName: business.name,
+      businessEmail: await businessNotifyEmail(business.id),
+      businessSlug: business.slug,
+      fromName: name,
+      fromEmail: email,
+      message,
+    });
+
+    const { recordActivity } = await import("@/lib/admin-activity");
+    await recordActivity({
+      kind: "inquiry",
+      title: `${name} messaged ${business.name}`,
+      detail: message.slice(0, 200),
+      href: "/admin/inquiries",
+    });
   });
 
   return NextResponse.json({ ok: true });
