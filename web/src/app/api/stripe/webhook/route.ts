@@ -195,6 +195,23 @@ export async function POST(req: Request) {
         // Only push the first time, so a retried webhook cannot place the
         // same advertiser on a card twice in Mission Control.
         if (firstTime) {
+          // Inside the idempotency guard for the same reason as the rest:
+          // a Stripe retry must not buzz the phone twice for one sale.
+          void import("@/lib/admin-activity").then((m) =>
+            m.recordActivity({
+              kind: "order",
+              title: `Paid: ${md.businessName || md.email || "an advertiser"}`,
+              detail: [
+                md.zone || md.card,
+                md.spotSize || md.spotType,
+                s.amount_total ? `$${Math.round(s.amount_total / 100)}` : "",
+              ]
+                .filter(Boolean)
+                .join(" - "),
+              href: "/admin/orders",
+            }),
+          );
+
           // Buying is what creates the account. Without this the
           // customer pays and then meets a login wall, which is the
           // dead end the success page used to point them at.
@@ -294,6 +311,27 @@ export async function POST(req: Request) {
             fully,
             amountRefundedCents: charge.amount_refunded,
             amountCents: charge.amount,
+          });
+
+          // A refunded advertiser is still on the card holding their
+          // category until somebody takes them off by hand, so this is
+          // one of the few things genuinely worth a text.
+          const { recordActivity } = await import("@/lib/admin-activity");
+          await recordActivity({
+            kind: "refund",
+            title: `${fully ? "Refunded" : "Partly refunded"}: ${
+              order?.businessName || "an advertiser"
+            }`,
+            detail: [
+              `$${Math.round(charge.amount_refunded / 100)} of $${Math.round(
+                charge.amount / 100,
+              )}`,
+              order?.zoneSlug,
+              "still on the card until removed in Mission Control",
+            ]
+              .filter(Boolean)
+              .join(" - "),
+            href: "/admin/orders",
           });
         })().catch((e) => console.error("[stripe] refund alert failed:", e));
         break;

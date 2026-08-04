@@ -61,12 +61,13 @@ const GROUPS: Group[] = [
       { href: "/admin/qr", label: "QR codes", hint: "Generate and track" },
       { href: "/admin/import", label: "Import", hint: "Bulk CSV" },
       { href: "/admin/integrations", label: "Integrations", hint: "Email, GHL, MC" },
+      { href: "/admin/alerts", label: "Alerts", hint: "Who gets told what" },
       { href: "/admin/uploads", label: "Legacy uploads", hint: "Move files off the old host" },
     ],
   },
 ];
 
-export function AdminNav() {
+export function AdminNav({ unseen = 0 }: { unseen?: number }) {
   const pathname = usePathname();
   const [open, setOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -117,6 +118,16 @@ export function AdminNav() {
         }`}
       >
         Dashboard
+        {/* The count lives on Dashboard because that is where the feed
+            is, so the badge points at the thing that clears it. */}
+        {unseen > 0 && (
+          <span
+            className="ml-1.5 inline-block min-w-[17px] px-1 text-[11px] font-bold leading-[17px] text-center rounded-full bg-cta text-navy-950"
+            aria-label={`${unseen} new since you last looked`}
+          >
+            {unseen > 99 ? "99+" : unseen}
+          </span>
+        )}
       </Link>
 
       <div className="hidden md:flex items-center gap-1.5">

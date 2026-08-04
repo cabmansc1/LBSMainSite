@@ -4,6 +4,7 @@ import { pushToMissionControl } from "@/lib/mission-control";
 import { ghlSend } from "@/lib/ghl";
 import { buildTags, tagFields } from "@/lib/ghl-tags";
 import { addWaitlistEntry } from "@/lib/waitlist";
+import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
  * Category waitlist: when a category is exclusive on the current
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
   });
   if (!saved) {
     return NextResponse.json(
-      { error: "We could not save that. Please call us on (843) 212-2969." },
+      { error: `We could not save that. Please call us on ${CONTACT_PHONE}.` },
       { status: 500 },
     );
   }

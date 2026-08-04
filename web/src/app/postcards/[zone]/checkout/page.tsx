@@ -22,7 +22,7 @@ import {
   getCardOrientation,
   type CardCapacity,
 } from "@/lib/card-capacity";
-import { SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE, CONTACT_PHONE_TEL, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -292,10 +292,10 @@ export default async function PostcardCheckoutPage({
               Ask about {z.name}
             </Link>
             <a
-              href="tel:+18432122969"
+              href={`tel:${CONTACT_PHONE_TEL}`}
               className="bg-white border border-line-strong font-semibold text-[15px] px-5 py-3 rounded-(--radius-btn) hover:border-faint"
             >
-              Call 843-212-2969
+              Call {CONTACT_PHONE}
             </a>
           </div>
           <p className="text-[13px] text-muted">

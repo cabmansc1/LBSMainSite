@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CONTACT_PHONE } from "@/lib/seo";
 
 type State = { status: string; reference?: string; amountCents?: number };
 
@@ -56,7 +57,7 @@ export function OrderStatus({ sessionId }: { sessionId: string }) {
       <p className="text-[14.5px] text-body max-w-[46ch]">
         Your payment went through and we are still finishing the confirmation.
         Nothing more is needed from you; if you do not get a receipt within a
-        few minutes, call us on 843-212-2969 and we will sort it.
+        few minutes, call us on {CONTACT_PHONE} and we will sort it.
       </p>
     );
   }

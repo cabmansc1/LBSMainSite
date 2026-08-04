@@ -9,7 +9,7 @@ import { ZONES, zoneBySlug } from "@/lib/zones";
 import { getLiveMailingAreas } from "@/lib/zone-store";
 import { mapPositionsFrom } from "@/lib/map-positions";
 import { getLivePricing } from "@/lib/pricing-store";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE_TEL, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 /**
  * How many zones we mail, counted rather than typed.
@@ -200,7 +200,7 @@ export default async function CoverageMapPage() {
                         )
                       ) : (
                         <a
-                          href="tel:+18432122969"
+                          href={`tel:${CONTACT_PHONE_TEL}`}
                           className="bg-cta text-navy-950 text-[12.5px] font-bold px-3 py-1 rounded-(--radius-btn) hover:bg-[#FFA033] whitespace-nowrap"
                         >
                           Call to book

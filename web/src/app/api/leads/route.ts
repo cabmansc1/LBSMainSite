@@ -1,7 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { ghlConfigured, ghlSend } from "@/lib/ghl";
 import { recordLead, type LeadInput } from "@/lib/leads";
-import { SITE_URL } from "@/lib/seo";
+import { CONTACT_PHONE, SITE_URL } from "@/lib/seo";
 import { buildTags, tagFields } from "@/lib/ghl-tags";
 
 /**
@@ -206,7 +206,7 @@ export async function POST(req: Request) {
   // asking them to phone.
   if (!saved && !ghlConfigured(source)) {
     return NextResponse.json(
-      { error: "We could not save that. Please call us on (843) 212-2969." },
+      { error: `We could not save that. Please call us on ${CONTACT_PHONE}.` },
       { status: 500 },
     );
   }

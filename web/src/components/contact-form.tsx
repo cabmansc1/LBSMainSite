@@ -8,6 +8,7 @@ import {
   LABEL_CLASS,
   submitLead,
 } from "@/components/lead-capture";
+import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
  * The contact form, replacing the advertise/contact path that
@@ -43,7 +44,7 @@ export function ContactForm() {
         <b className="text-[17px] font-semibold">Thanks, we have it.</b>
         <p className="text-[14.5px] text-muted max-w-[52ch]">
           Someone will reply within one business day. If it is urgent, call or
-          text 843-212-2969 and you will reach a person.
+          text {CONTACT_PHONE} and you will reach a person.
         </p>
       </div>
     );

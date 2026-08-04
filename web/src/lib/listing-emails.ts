@@ -1,6 +1,7 @@
 import "server-only";
-import { alertsTo, sendEmail } from "@/lib/email";
+import { sendAlertEmail, sendEmail } from "@/lib/email";
 import { FIELD_LABELS, type ReviewField } from "@/lib/listing-edits";
+import { CONTACT_PHONE } from "@/lib/seo";
 
 /**
  * Notifications for the half of a listing edit that waits on a person.
@@ -126,7 +127,7 @@ export function composeDecision(f: DecisionFacts) {
         // Worth repeating here, because this email is the moment
         // somebody learns how the split works.
         "Your phone, description, website, hours and social links you can change yourself at any time, and those go live straight away. Only your name, category and area come to us first.",
-        "Lowcountry Business Spotlight\n(843) 212-2969",
+        `Lowcountry Business Spotlight\n${CONTACT_PHONE}`,
       ]
         .filter(Boolean)
         .join("\n\n"),
@@ -142,8 +143,8 @@ export function composeDecision(f: DecisionFacts) {
       reason,
       "Your listing is unchanged and still live.",
       reason
-        ? "If that does not sound right, reply to this email or call us on (843) 212-2969."
-        : "Reply to this email or call us on (843) 212-2969 and we will explain and sort it out.",
+        ? `If that does not sound right, reply to this email or call us on ${CONTACT_PHONE}.`
+        : `Reply to this email or call us on ${CONTACT_PHONE} and we will explain and sort it out.`,
       "Lowcountry Business Spotlight",
     ]
       .filter(Boolean)
@@ -159,8 +160,7 @@ export function composeDecision(f: DecisionFacts) {
 export async function sendQueuedAlert(f: QueuedFacts): Promise<void> {
   if (f.changes.length === 0) return;
   const label = await labeller();
-  await sendEmail({
-    to: alertsTo(),
+  await sendAlertEmail("listing_edit", {
     ...composeQueuedAlert({
       ...f,
       changes: f.changes.map((c) => ({
