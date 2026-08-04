@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { getArtworkGaps, getRecentArtwork, type ArtworkGap } from "@/lib/artwork";
+import { getUpcomingCardRoster } from "@/lib/mission-control";
+import { getLatestProofs } from "@/lib/proofs";
+import { AdminProofRow, type ProofTarget } from "@/components/admin-proofs";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -35,10 +38,36 @@ const when = (iso: string | null) => {
 
 export default async function AdminArtworkPage() {
   await requireAdmin();
-  const [report, recent] = await Promise.all([
+  const [report, recent, roster, proofs] = await Promise.all([
     getArtworkGaps(),
     getRecentArtwork(),
+    // Everyone riding a card that has not printed, not only those still
+    // missing artwork: a proof is sent after the ad is designed, which is
+    // usually after their file has already arrived.
+    getUpcomingCardRoster().catch(() => null),
+    getLatestProofs(),
   ]);
+
+  // Latest proof per advertiser and card, matched on the same pair the
+  // proofs table is keyed by.
+  const proofFor = new Map(
+    proofs.map((p) => [`${p.email.toLowerCase()}|${p.cardId}`, p]),
+  );
+  const proofTargets: ProofTarget[] = (roster ?? []).flatMap((card) =>
+    card.advertisers
+      // A prospect has bought nothing, so there is no ad to proof.
+      .filter((a) => !a.isProspect && a.email)
+      .map((a) => ({
+        email: a.email,
+        cardId: card.cardId,
+        businessName: a.businessName,
+        cardLabel: `${card.cardName} · ${card.mailMonth}`,
+        mcStatus: a.artStatus,
+        proof: proofFor.get(`${a.email.toLowerCase()}|${card.cardId}`),
+      })),
+  );
+  const awaiting = proofTargets.filter((t) => t.proof?.status === "sent").length;
+  const needsProof = proofTargets.filter((t) => !t.proof).length;
 
   // Grouped by card, because the question is always asked about one card
   // at a time: what is still missing before this one goes to print.
@@ -85,6 +114,38 @@ export default async function AdminArtworkPage() {
       )}
 
       <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mb-3">
+        Proofs
+      </h2>
+      <p className="text-[13px] text-muted mb-3 max-w-[74ch]">
+        The ad as it will print, sent for approval. Uploading here is not the
+        same as their artwork coming in, so it never tells them we have
+        received something they did not send. Approval is recorded here and
+        never written back to Mission Control; where the two disagree the row
+        says so.
+        {proofTargets.length > 0 && (
+          <>
+            {" "}
+            <b className="text-body">
+              {needsProof} not sent, {awaiting} waiting on the advertiser.
+            </b>
+          </>
+        )}
+      </p>
+      {proofTargets.length === 0 ? (
+        <p className="text-sm text-muted border border-line rounded-(--radius-card) bg-white px-5 py-6">
+          {roster === null
+            ? "Mission Control did not answer, so there is nobody to list."
+            : "Nobody is riding a card that has not printed yet."}
+        </p>
+      ) : (
+        <div className="grid gap-2.5">
+          {proofTargets.map((t) => (
+            <AdminProofRow key={`${t.email}|${t.cardId}`} target={t} />
+          ))}
+        </div>
+      )}
+
+      <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted mt-9 mb-3">
         Still missing
       </h2>
       {byCard.size === 0 ? (

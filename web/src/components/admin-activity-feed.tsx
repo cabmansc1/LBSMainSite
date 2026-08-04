@@ -25,6 +25,7 @@ const TONE: Record<ActivityKind, string> = {
   signup: "bg-surface text-body",
   listing_edit: "bg-surface text-body",
   waitlist: "bg-cta-tint text-[#7a4a00]",
+  proof: "bg-brand-tint text-brand-deep",
 };
 
 /**
