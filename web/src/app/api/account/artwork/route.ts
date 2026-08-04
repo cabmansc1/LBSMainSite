@@ -86,6 +86,23 @@ export async function POST(req: Request) {
   // mail server negotiates, and a slow send cannot fail an upload that
   // already succeeded.
   after(async () => {
+    // The badge, the feed, the phone and the Slack channel. Email was
+    // the only way this reached anybody, and an inbox is a bad place to
+    // keep a print deadline.
+    const { recordActivity } = await import("@/lib/admin-activity");
+    await recordActivity({
+      kind: "artwork",
+      title: `Artwork from ${ctx.listings[0]?.name || session.email}`,
+      detail: [
+        `${card.zoneName}, ${card.mailMonth}`,
+        filename,
+        card.artworkDeadline ? `due ${card.artworkDeadline}` : "",
+      ]
+        .filter(Boolean)
+        .join(" - "),
+      href: "/admin/artwork",
+    });
+
     const { sendArtworkEmails } = await import("@/lib/artwork-emails");
     await sendArtworkEmails({
       email: session.email,

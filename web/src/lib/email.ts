@@ -35,7 +35,7 @@ export const emailEnabled = () => !!KEY();
  * that gets changed in two.
  */
 export const alertsTo = () =>
-  process.env.LEAD_ALERT_EMAIL?.trim() || "exumandrew@gmail.com";
+  process.env.LEAD_ALERT_EMAIL?.trim() || "andrew@lowcountrybusinessspotlight.com";
 
 export type SendResult = { sent: boolean; id?: string; error?: string };
 

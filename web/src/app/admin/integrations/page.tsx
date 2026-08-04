@@ -4,6 +4,9 @@ import { ghlWebhookUrl } from "@/lib/ghl";
 import { emailEnabled } from "@/lib/email";
 import { mcEnabled, mcKeySource } from "@/lib/mission-control";
 import { GHL_SURFACES } from "@/lib/ghl-sample";
+import { pushEnabled } from "@/lib/push";
+import { smsEnabled } from "@/lib/alerts-sms";
+import { slackEnabled } from "@/lib/alerts-slack";
 import { AdminGhlTest } from "@/components/admin-ghl-test";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +53,30 @@ export default async function AdminIntegrationsPage() {
               process.env.MC_READ_ONLY === "1"
                 ? `${mcKeySource()}, writes blocked`
                 : `${mcKeySource()}, WRITES LIVE`,
+          },
+          // The alert channels. An unconfigured one is not broken, it
+          // just prints what it would have sent to the log, so the
+          // wording says which of the two it is doing.
+          {
+            label: "Phone push",
+            value: pushEnabled() ? "Ready" : "Not configured",
+            note: pushEnabled()
+              ? "Switch it on per browser from the Dashboard"
+              : "No VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY",
+          },
+          {
+            label: "SMS",
+            value: smsEnabled() ? "Sending" : "Preview only",
+            note: smsEnabled()
+              ? `${process.env.ALERT_SMS_TO ?? ""} from ${process.env.TWILIO_FROM ?? ""}`
+              : "Needs TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM, ALERT_SMS_TO",
+          },
+          {
+            label: "Slack",
+            value: slackEnabled() ? "Posting" : "Not configured",
+            note: slackEnabled()
+              ? "Incoming webhook is set"
+              : "No SLACK_WEBHOOK_URL",
           },
         ].map((s) => (
           <div

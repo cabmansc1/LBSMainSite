@@ -3,6 +3,9 @@ import Link from "next/link";
 import { Card } from "@/components/sections";
 import { requireAdmin } from "@/lib/admin";
 import { getDashboardStats } from "@/lib/admin-stats";
+import { markSeen, recentActivity } from "@/lib/admin-activity";
+import { AdminActivityFeed } from "@/components/admin-activity-feed";
+import { AdminPushToggle } from "@/components/admin-push-toggle";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -20,8 +23,19 @@ const money = (cents: number | null) =>
   cents === null ? "-" : `$${Math.round(cents / 100).toLocaleString("en-US")}`;
 
 export default async function AdminDashboardPage() {
-  await requireAdmin();
-  const s = await getDashboardStats();
+  const session = await requireAdmin();
+  const [s, feed] = await Promise.all([
+    getDashboardStats(),
+    recentActivity(session.email),
+  ]);
+
+  // Marked against what this render actually contains, not against the
+  // newest row at the time of writing: something arriving between the
+  // two would otherwise be marked read without ever being on screen.
+  // After the read, so the divider still shows on this page load.
+  if (feed.rows.length > 0) {
+    await markSeen(session.email, feed.rows[0].id);
+  }
 
   const stats = [
     {
@@ -87,6 +101,11 @@ export default async function AdminDashboardPage() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_340px] gap-4 mt-6 items-start">
+        <AdminActivityFeed feed={feed} />
+        <AdminPushToggle />
       </div>
 
       <p className="text-[12.5px] text-muted mt-4 max-w-[70ch]">

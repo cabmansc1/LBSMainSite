@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 import { AdminNav } from "@/components/admin-nav";
+import { unseenCount } from "@/lib/admin-activity";
 
 
 /**
@@ -20,6 +21,10 @@ export default async function AdminLayout({
     return <div className="bg-surface min-h-full">{children}</div>;
   }
 
+  // Read here rather than per page, so the count is on every admin
+  // screen and not only the ones that remembered to ask for it.
+  const unseen = await unseenCount(session.email);
+
   return (
     <div className="bg-surface min-h-full">
       {/* relative, because the mobile menu drops out of this bar */}
@@ -28,7 +33,7 @@ export default async function AdminLayout({
           <b className="text-[13.5px] font-bold shrink-0">
             LBS <span className="text-brand">Admin</span>
           </b>
-          <AdminNav />
+          <AdminNav unseen={unseen} />
           <span className="ml-auto text-[#93A5B8]">
             <LogoutButton />
           </span>
