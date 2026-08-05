@@ -4,6 +4,7 @@ import { getArtworkGaps, getRecentArtwork, type ArtworkGap } from "@/lib/artwork
 import { getUpcomingCardRoster } from "@/lib/mission-control";
 import { getLatestProofs } from "@/lib/proofs";
 import { AdminProofRow, type ProofTarget } from "@/components/admin-proofs";
+import { AdminArtworkDelete } from "@/components/admin-artwork-delete";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -244,6 +245,7 @@ export default async function AdminArtworkPage() {
                 <span className="text-[12px] text-muted num ml-auto">
                   {when(a.createdAt)}
                 </span>
+                <AdminArtworkDelete id={a.id} filename={a.filename} />
               </div>
               {(a.note || a.uploadedBy) && (
                 <div className="text-[12.5px] text-muted">

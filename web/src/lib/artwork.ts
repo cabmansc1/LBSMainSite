@@ -379,3 +379,43 @@ export async function getRecentArtwork(limit = 200): Promise<Artwork[]> {
     return [];
   }
 }
+
+/**
+ * Removes an uploaded file.
+ *
+ * There was no way to. A file sent to the wrong card, a test upload, or a
+ * customer's third attempt at the same logo all stayed forever, and the
+ * admin's list is the place somebody looks to decide whether a card is
+ * ready, so junk in it costs more than the disk it uses.
+ *
+ * `owner` scopes the delete to one advertiser's own uploads. The admin
+ * passes nothing and can remove any; the portal passes the signed-in
+ * address, so an id belonging to somebody else deletes nothing rather
+ * than deleting theirs.
+ *
+ * Returns whether a row actually went, so a caller can tell "removed"
+ * from "that was not yours" instead of reporting success either way.
+ */
+export async function deleteArtwork(
+  id: number,
+  owner?: string,
+): Promise<boolean> {
+  if (!Number.isInteger(id) || id <= 0) return false;
+  try {
+    await ensureTable();
+    const { db } = await import("@/lib/db");
+    await db.execute(
+      owner
+        ? sql`DELETE FROM lbs_artwork WHERE id = ${id}
+              AND email = ${owner.toLowerCase()}`
+        : sql`DELETE FROM lbs_artwork WHERE id = ${id}`,
+    );
+    const check = (await db.execute(
+      sql`SELECT COUNT(*) AS n FROM lbs_artwork WHERE id = ${id}`,
+    )) as unknown as [{ n: number | string }[]];
+    return Number(check[0]?.[0]?.n ?? 0) === 0;
+  } catch (e) {
+    console.error("[artwork] delete failed:", e);
+    return false;
+  }
+}
