@@ -1064,7 +1064,7 @@ export function AdminDirectory({
             {totalViews.toLocaleString("en-US")}
           </b>
           <span className="text-[12px] text-muted num">
-            total views · {totalInquiries} inquiries
+            views in 30 days · {totalInquiries} inquiries
           </span>
         </div>
       </div>
@@ -1088,7 +1088,7 @@ export function AdminDirectory({
                   {b.name}
                 </span>
                 <span className="num text-muted whitespace-nowrap">
-                  {b.views.toLocaleString("en-US")} views · {b.inquiries} inq
+                  {b.views.toLocaleString("en-US")} views 30d · {b.inquiries} inq
                 </span>
               </li>
             ))}
@@ -1210,7 +1210,7 @@ export function AdminDirectory({
                   }
                 />
               </th>
-              {["Business", "Category / area", "Status", "Views", "Plan", "Added", "Actions"].map(
+              {["Business", "Category / area", "Status", "Views 30d", "Plan", "Added", "Actions"].map(
                 (h) => (
                   <th
                     key={h}

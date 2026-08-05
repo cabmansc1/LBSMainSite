@@ -136,7 +136,12 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
     isVerified: bool(r.is_verified),
     isHidden: bool(r.is_hidden),
     isActive: bool(r.is_active),
-    views: Number(r.views_count ?? 0),
+    // The legacy views_count is deliberately not used. It was written by
+    // the PHP site, stopped moving when traffic came here, and its value
+    // is whatever had accumulated by then. Filled from lbs_listing_views
+    // by the caller instead, which counts real visits and can say when
+    // it started.
+    views: 0,
     inquiries: Number(r.inquiries_count ?? 0),
     logoUrl: logos.get(Number(r.id)) ?? null,
     createdAt: r.created_at ? String(r.created_at) : null,

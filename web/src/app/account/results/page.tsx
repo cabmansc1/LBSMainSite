@@ -19,12 +19,20 @@ export const metadata: Metadata = {
 export default async function AccountResultsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  const { pastCards, currentCards, inquiries } = await getPortalContext(session);
+  const { pastCards, currentCards, inquiries, listings } =
+    await getPortalContext(session);
 
   const homesReached = pastCards.reduce((sum, c) => {
     const n = Number(String(c.households).replace(/[^0-9]/g, ""));
     return sum + (isFinite(n) ? n : 0);
   }, 0);
+
+  // Their own listing's views, counted here rather than taken from the
+  // legacy column, which stopped meaning anything when traffic moved and
+  // is not a number to put in front of the person it describes.
+  const { viewsFor } = await import("@/lib/listing-views");
+  const views = await viewsFor(listings.map((l) => l.id), 30);
+  const views30 = [...views.values()].reduce((n, v) => n + v, 0);
 
   const stats = [
     { label: "Cards mailed", value: String(pastCards.length) },
@@ -32,6 +40,9 @@ export default async function AccountResultsPage() {
       label: "Homes reached",
       value: homesReached ? homesReached.toLocaleString("en-US") : "0",
     },
+    ...(listings.length > 0
+      ? [{ label: "Listing views (30d)", value: views30.toLocaleString("en-US") }]
+      : []),
     { label: "Enquiries", value: String(inquiries.length) },
     { label: "Running now", value: String(currentCards.length) },
   ];
