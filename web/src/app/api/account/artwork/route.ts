@@ -122,3 +122,36 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, id: saved.id });
 }
+
+/**
+ * An advertiser removing a file they sent.
+ *
+ * Same reason the admin can: the wrong file, or the third attempt at the
+ * same logo. Scoped to their own address, so an id belonging to another
+ * business deletes nothing. Blocked while viewing as somebody, since
+ * support looking at an account should not be able to destroy what is in
+ * it.
+ */
+export async function DELETE(req: Request) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+  if (isImpersonating(session)) {
+    return NextResponse.json(
+      { error: "You are viewing as this advertiser. Stop to make changes." },
+      { status: 403 },
+    );
+  }
+
+  const id = Number(new URL(req.url).searchParams.get("id"));
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ error: "Which file?" }, { status: 422 });
+  }
+
+  const { deleteArtwork } = await import("@/lib/artwork");
+  const removed = await deleteArtwork(id, session.email);
+  return removed
+    ? NextResponse.json({ ok: true })
+    : NextResponse.json({ error: "That file is not there." }, { status: 404 });
+}

@@ -81,6 +81,34 @@ export function ArtworkUpload({
     }
   }
 
+  /**
+   * Taking back a file sent by mistake.
+   *
+   * Confirmed by name: the rows are the same shape and often the same
+   * logo twice, so the wrong one is one careless click away, and there is
+   * no undo.
+   */
+  async function remove(id: number, filename: string) {
+    if (!window.confirm(`Remove ${filename}? We will no longer have it.`)) {
+      return;
+    }
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await fetch(`/api/account/artwork?id=${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        throw new Error((await res.json().catch(() => ({}))).error ?? "Failed");
+      }
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "That did not remove.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="border-t border-line pt-3.5 grid gap-3">
       {existing.length > 0 && (
@@ -108,6 +136,14 @@ export function ArtworkUpload({
                   Latest
                 </span>
               )}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => remove(a.id, a.filename)}
+                className="ml-auto text-[12px] font-semibold text-danger hover:underline disabled:opacity-40"
+              >
+                Remove
+              </button>
               {a.note && (
                 <span className="text-[12px] text-muted basis-full">{a.note}</span>
               )}
