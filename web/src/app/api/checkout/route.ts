@@ -13,7 +13,7 @@ import {
   newReference,
 } from "@/lib/orders";
 import { type Reach, type SpotSize } from "@/lib/pricing";
-import { getLivePricing } from "@/lib/pricing-store";
+import { getPricingFor } from "@/lib/advertiser-rates";
 import { zoneBySlug } from "@/lib/zones";
 import { getCard } from "@/lib/cards";
 import { publicOrigin } from "@/lib/origin";
@@ -29,10 +29,15 @@ import { publicOrigin } from "@/lib/origin";
  * full flow is clickable end to end.
  */
 export async function POST(req: Request) {
+  // Read once and reused: it decides both whether this is an admin
+  // buying in somebody else's name and, further down, whose agreed rate
+  // applies.
+  const viewer = await getSession().catch(() => null);
+
   // Checkout is open to signed-out visitors, so this only rejects the
   // one case that must never happen: an admin viewing as someone else
   // starting a payment in their name.
-  if (isImpersonating(await getSession().catch(() => null))) {
+  if (isImpersonating(viewer)) {
     return NextResponse.json(
       { error: "You are viewing as an advertiser. Stop before buying." },
       { status: 403 },
@@ -74,7 +79,11 @@ export async function POST(req: Request) {
     const zone = zoneBySlug(String(body.zoneSlug ?? ""));
     const spotSize = String(body.spotSize ?? "") as SpotSize;
     const reach = (String(body.reach ?? "5k") as Reach) ?? "5k";
-    const pricing = await getLivePricing();
+    // The signed-in buyer's own price table. An account on a permanent
+    // rate is charged what was agreed rather than what is on the wall,
+    // and the checkout page reads the same function, so what they were
+    // shown and what they are charged come from one place.
+    const pricing = await getPricingFor(viewer?.email);
     const tier = zone && pricing[reach]?.[spotSize];
     if (!zone || !tier) {
       return NextResponse.json({ error: "Unknown zone or spot" }, { status: 422 });

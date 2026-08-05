@@ -5,7 +5,11 @@ import { Card } from "@/components/sections";
 import { PhotoGrid } from "@/components/photo-lightbox";
 import { InquiryForm } from "@/components/inquiry-form";
 import { getPastCards } from "@/lib/past-cards";
-import { getBusinesses, getBusiness } from "@/lib/directory";
+import {
+  getBusinesses,
+  getBusiness,
+  getBusinessForPreview,
+} from "@/lib/directory";
 import { dealsForBusiness } from "@/lib/lowco-deals";
 import { advertiserAppearances } from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
@@ -33,7 +37,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const b = await getBusiness(slug);
-  if (!b) return {};
+  // Unpublished, so either it does not exist or only an admin can see
+  // it. Said out loud rather than left to inherit whatever the root
+  // metadata says, because the one thing that must never happen is a
+  // listing nobody has approved turning up in a search result.
+  if (!b) return { robots: { index: false, follow: false } };
   return {
     // Name and place only. Category too pushed these past 60 characters,
     // and the legacy titles that rank are just "Name - brand". Plenty of
@@ -55,7 +63,21 @@ export default async function BusinessPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const b = await getBusiness(slug);
+  let b = await getBusiness(slug);
+
+  // A submission is unverified until it is approved, and unverified is
+  // what this page refuses to render, so reviewing one meant approving
+  // it first and looking afterwards. An admin gets to see it as it would
+  // appear; everybody else still gets the 404.
+  let preview = false;
+  if (!b) {
+    const { getSession } = await import("@/lib/auth");
+    const viewer = await getSession().catch(() => null);
+    if (viewer?.role === "admin") {
+      b = await getBusinessForPreview(slug);
+      preview = !!b;
+    }
+  }
   if (!b) notFound();
 
   // Cross-site and Mission Control lookups are best-effort extras; the
@@ -174,6 +196,17 @@ export default async function BusinessPage({
 
   return (
     <>
+      {preview && (
+        // Unmissable on purpose. This page is indistinguishable from the
+        // live one otherwise, and mistaking a preview for a published
+        // listing is how something gets left unapproved for a week.
+        <div className="bg-cta text-navy-950 px-6 py-2.5 text-[13px] font-bold text-center">
+          Not published. Only you can see this.{" "}
+          <Link href="/admin/directory" className="underline">
+            Approve or remove it in Directory
+          </Link>
+        </div>
+      )}
       <header className="bg-navy-950 text-white">
         <div className="mx-auto max-w-[1120px] px-6 pt-11 pb-13">
           <nav className="text-[12.5px] text-[#67768A] flex gap-2" aria-label="Breadcrumb">
