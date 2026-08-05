@@ -84,21 +84,31 @@ export default async function BusinessPage({
   // After the response, so a visitor never waits on a write they will not
   // see, and a failure to count cannot stop a listing rendering. A preview
   // is not a view: nobody has found this listing, an admin is checking it.
+  //
+  // The request data is read HERE and passed in, never inside the
+  // callback. A Server Component cannot use headers() or cookies() inside
+  // after(): Next has to know during rendering which parts of the tree
+  // touch request data, and after() runs once rendering is over. Calling
+  // them in there throws, and because after() swallows its own errors it
+  // throws silently, which is exactly how this shipped counting nothing.
   if (!preview) {
+    const { headers } = await import("next/headers");
+    const h = await headers();
+    // The first hop is the real client; the rest are proxies adding
+    // themselves, and taking the last would count every visitor as the
+    // same one.
+    const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim();
+    const userAgent = h.get("user-agent") ?? "";
+    const { getSession } = await import("@/lib/auth");
+    const viewer = await getSession().catch(() => null);
     const listingId = b.id;
+
     after(async () => {
-      const { headers } = await import("next/headers");
-      const h = await headers();
-      const { getSession } = await import("@/lib/auth");
-      const viewer = await getSession().catch(() => null);
       const { recordListingView } = await import("@/lib/listing-views");
       await recordListingView({
         businessId: listingId,
-        // The first hop is the real client; the rest are proxies adding
-        // themselves, and taking the last would count every visitor as
-        // the same one.
-        ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim(),
-        userAgent: h.get("user-agent") ?? "",
+        ip,
+        userAgent,
         isAdmin: viewer?.role === "admin",
       });
     });
