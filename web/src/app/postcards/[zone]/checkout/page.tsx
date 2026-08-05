@@ -10,7 +10,8 @@ import {
   type UpcomingMailing,
 } from "@/lib/mailings";
 import { getCardDescriptions } from "@/lib/card-details";
-import { getLivePricing } from "@/lib/pricing-store";
+import { getPricingWithList } from "@/lib/advertiser-rates";
+import { getSession } from "@/lib/auth";
 import { zoneBySlug } from "@/lib/zones";
 import {
   getZoneMailings,
@@ -123,6 +124,13 @@ export default async function PostcardCheckoutPage({
     : undefined;
   const z = zoneBySlug(zone);
   if (!z) notFound();
+
+  // The same function the checkout API charges from, so an account on an
+  // agreed rate is quoted what it will actually pay. Quoting list and
+  // charging less is a pleasant surprise; the reverse is the reason this
+  // goes through one place.
+  const viewer = await getSession().catch(() => null);
+  const rates = await getPricingWithList(viewer?.email);
 
   // A zone can have several cards filling at once, so the card is chosen
   // explicitly rather than assumed from the zone.
@@ -383,7 +391,8 @@ export default async function PostcardCheckoutPage({
           availability={availabilityFrom(capacity)}
           takenCategories={takenCategories}
           categories={categoryOptions}
-          pricing={await getLivePricing()}
+          pricing={rates.pricing}
+          listPricing={rates.hasRate ? rates.list : undefined}
         />
       </div>
     </>

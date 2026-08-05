@@ -61,6 +61,7 @@ export function PostcardCheckout({
   takenCategories,
   categories,
   pricing = POSTCARD_PRICING,
+  listPricing,
 }: {
   /** Spot preselected from the pricing page link. */
   initialSize?: SpotSize;
@@ -86,6 +87,9 @@ export function PostcardCheckout({
    * stays as the default so the component still works on its own.
    */
   pricing?: typeof POSTCARD_PRICING;
+  /** Set only when this buyer is on an agreed rate, so the saving can be
+   *  shown against what everybody else pays. */
+  listPricing?: typeof POSTCARD_PRICING;
 }) {
   const [size, setSize] = useState<SpotSize>(initialSize ?? "medium");
   const [business, setBusiness] = useState("");
@@ -95,6 +99,8 @@ export function PostcardCheckout({
   const [status, setStatus] = useState<"idle" | "sending" | "error" | "waitlisted">("idle");
 
   const priceCents = pricing[reach][size].priceCents;
+  const listCents = listPricing?.[reach][size].priceCents;
+  const discounted = typeof listCents === "number" && listCents > priceCents;
   const openFor = (s: SpotSize) => availability.find((a) => a.size === s)?.open ?? 0;
   const norm = (v: string) => v.trim().toLowerCase();
   const takenSet = new Set(takenCategories.map(norm));
@@ -364,9 +370,21 @@ export function PostcardCheckout({
             </div>
             <div className="flex justify-between border-t border-line-strong pt-3 text-[16px]">
               <dt className="font-bold">Due today</dt>
-              <dd className="font-bold num">{formatPrice(priceCents)}</dd>
+              <dd className="font-bold num">
+                {discounted && (
+                  <span className="font-normal text-muted line-through mr-2">
+                    {formatPrice(listCents!)}
+                  </span>
+                )}
+                {formatPrice(priceCents)}
+              </dd>
             </div>
           </dl>
+          {discounted && (
+            <p className="text-[12.5px] font-semibold text-ok -mt-1">
+              Your agreed rate, already applied.
+            </p>
+          )}
           <button
             onClick={checkout}
             disabled={!ready || status === "sending"}
