@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
 /** Admin edits to a directory listing. Same tables as the legacy admin. */
 export async function PATCH(req: Request) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   let body: { id?: number; ids?: number[]; action?: string } & BusinessPatch;
   try {
@@ -79,8 +79,13 @@ export async function PATCH(req: Request) {
     const ids = Array.isArray((body as { ids?: number[] }).ids)
       ? (body as { ids: number[] }).ids.map(Number).filter(Boolean)
       : [id];
+    // Denying now keeps the listing and explains itself, so it needs the
+    // reason and who decided.
+    const reason = String((body as { reason?: unknown }).reason ?? "");
     try {
-      for (const target of ids) await businessAction(target, action);
+      for (const target of ids) {
+        await businessAction(target, action, { reason, by: session.email });
+      }
       revalidatePath("/directory");
       return NextResponse.json({ ok: true, count: ids.length });
     } catch (e) {

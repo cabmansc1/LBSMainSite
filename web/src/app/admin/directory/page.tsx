@@ -22,8 +22,20 @@ export default async function AdminDirectoryPage() {
     getAdminBusinesses(),
     getFilterOptions(),
   ]);
+  // Real views over the last 30 days. The legacy column stopped moving
+  // when traffic came here, so a small number now is correct rather than
+  // broken: counting started when this did.
+  const { viewsFor } = await import("@/lib/listing-views");
+  const views = await viewsFor(businesses.map((b) => b.id), 30);
+  for (const b of businesses) b.views = views.get(b.id) ?? 0;
+
   // Needs the listings themselves, because an advertiser is matched to
   // one by name as well as by email.
+  // Denied listings, so the queue can tell "nobody has looked at this"
+  // apart from "we looked and said no".
+  const { getReviews } = await import("@/lib/listing-review");
+  const reviews = await getReviews(businesses.map((b) => b.id));
+
   const advertisers = await getAdvertiserIndex(
     businesses.map((b) => ({
       id: b.id,
@@ -49,6 +61,10 @@ export default async function AdminDirectoryPage() {
         categories={options.categories}
         locations={options.locations}
         advertiserIds={[...advertisers.businessIds]}
+        rejected={[...reviews.entries()].map(([id, r]) => ({
+          id,
+          reason: r.reason,
+        }))}
         missionControlRead={advertisers.missionControl}
       />
     </div>

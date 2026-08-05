@@ -99,6 +99,17 @@ export async function POST(req: Request) {
     // what matters: an unverified listing nobody looks at is the same
     // as no listing at all.
     after(async () => {
+      // Them first. Submitting into silence and then waiting on a review
+      // nobody mentioned is how a business decides it has been ignored.
+      const { sendListingReceived } = await import(
+        "@/lib/listing-status-emails"
+      );
+      await sendListingReceived({
+        businessName: String(body.businessName ?? ""),
+        email: String(body.email ?? ""),
+        slug: result.slug,
+      });
+
       const { sendSignupAlert } = await import("@/lib/registration-emails");
       await sendSignupAlert({
         businessName: String(body.businessName ?? ""),

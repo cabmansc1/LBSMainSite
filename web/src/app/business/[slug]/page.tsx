@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import { Card } from "@/components/sections";
 import { PhotoGrid } from "@/components/photo-lightbox";
 import { InquiryForm } from "@/components/inquiry-form";
@@ -79,6 +80,29 @@ export default async function BusinessPage({
     }
   }
   if (!b) notFound();
+
+  // After the response, so a visitor never waits on a write they will not
+  // see, and a failure to count cannot stop a listing rendering. A preview
+  // is not a view: nobody has found this listing, an admin is checking it.
+  if (!preview) {
+    const listingId = b.id;
+    after(async () => {
+      const { headers } = await import("next/headers");
+      const h = await headers();
+      const { getSession } = await import("@/lib/auth");
+      const viewer = await getSession().catch(() => null);
+      const { recordListingView } = await import("@/lib/listing-views");
+      await recordListingView({
+        businessId: listingId,
+        // The first hop is the real client; the rest are proxies adding
+        // themselves, and taking the last would count every visitor as
+        // the same one.
+        ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim(),
+        userAgent: h.get("user-agent") ?? "",
+        isAdmin: viewer?.role === "admin",
+      });
+    });
+  }
 
   // Cross-site and Mission Control lookups are best-effort extras; the
   // page renders fine when either source is unreachable.
