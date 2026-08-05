@@ -29,6 +29,7 @@ const GROUPS: Group[] = [
       { href: "/admin/pricing", label: "Pricing", hint: "Sizes and rates" },
       { href: "/admin/rates", label: "Agreed rates", hint: "What one advertiser pays" },
       { href: "/admin/discounts", label: "Discount codes", hint: "One-off codes for checkout" },
+      { href: "/admin/ads", label: "Ad spaces", hint: "What runs on listing pages" },
       { href: "/admin/zones", label: "Zones", hint: "Mailboxes and pairings" },
       { href: "/admin/stripe", label: "Stripe", hint: "Live payment readiness" },
       { href: "/admin/categories", label: "Categories", hint: "Exclusivity list" },

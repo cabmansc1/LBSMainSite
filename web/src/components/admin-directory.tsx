@@ -808,10 +808,13 @@ async function act(action: string, ids: number[], reason?: string) {
 function RowMenu({
   business,
   busy,
+  adsOverride,
   onAction,
 }: {
   business: AdminBusiness;
   busy: boolean;
+  /** true or false when set by hand, undefined when following Featured. */
+  adsOverride?: boolean;
   onAction: (id: number, action: string, confirmText?: string) => void;
 }) {
   const [at, setAt] = useState<{ top: number; right: number } | null>(null);
@@ -889,6 +892,30 @@ function RowMenu({
             <button type="button" className={item} onClick={() => run("toggle_featured")}>
               {business.isFeatured ? "Unfeature" : "Feature"}
             </button>
+            {/* Whether this listing carries advertising. The default
+                follows Featured; either answer can be forced here, and
+                the label says which of the two is in force. */}
+            <button
+              type="button"
+              className={item}
+              onClick={() =>
+                run(
+                  adsOverride === undefined
+                    ? business.isFeatured
+                      ? "ads_on"
+                      : "ads_off"
+                    : "ads_auto",
+                )
+              }
+            >
+              {adsOverride === undefined
+                ? business.isFeatured
+                  ? "Ads: off (Featured) — turn on"
+                  : "Ads: on — turn off"
+                : adsOverride
+                  ? "Ads: forced on — follow Featured"
+                  : "Ads: forced off — follow Featured"}
+            </button>
             <a
               href={`/business/${business.slug}`}
               target="_blank"
@@ -922,6 +949,7 @@ export function AdminDirectory({
   locations: taxonomyLocations,
   advertiserIds,
   rejected = [],
+  adsSetByHand = [],
   missionControlRead,
 }: {
   businesses: AdminBusiness[];
@@ -933,6 +961,9 @@ export function AdminDirectory({
   advertiserIds: number[];
   /** Listings turned down, with why, so the row can say so. */
   rejected?: { id: number; reason: string }[];
+  /** Listings whose advertising was set by hand, either way. Anything
+   *  not here follows the Featured rule. */
+  adsSetByHand?: { id: number; showAds: boolean }[];
   missionControlRead: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -951,6 +982,10 @@ export function AdminDirectory({
   );
   const reasonFor = (id: number) =>
     rejected.find((r) => r.id === id)?.reason ?? "";
+  const adsOverrides = useMemo(
+    () => new Map(adsSetByHand.map((a) => [a.id, a.showAds])),
+    [adsSetByHand],
+  );
   const isAdvertiser = (b: AdminBusiness) => advertisers.has(b.id);
   const [selected, setSelected] = useState<number[]>([]);
   const [bulk, setBulk] = useState("");
@@ -1434,6 +1469,7 @@ export function AdminDirectory({
                       <RowMenu
                         business={b}
                         busy={busyRow === b.id}
+                        adsOverride={adsOverrides.get(b.id)}
                         onAction={runRow}
                       />
                     </div>

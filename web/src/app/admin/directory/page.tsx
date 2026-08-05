@@ -36,6 +36,11 @@ export default async function AdminDirectoryPage() {
   const { getReviews } = await import("@/lib/listing-review");
   const reviews = await getReviews(businesses.map((b) => b.id));
 
+  // Which listings have had their advertising set by hand. Everything
+  // else follows the rule: Featured carries no ads.
+  const { getAdsOverrides } = await import("@/lib/ads");
+  const adsOverrides = await getAdsOverrides();
+
   const advertisers = await getAdvertiserIndex(
     businesses.map((b) => ({
       id: b.id,
@@ -64,6 +69,10 @@ export default async function AdminDirectoryPage() {
         rejected={[...reviews.entries()].map(([id, r]) => ({
           id,
           reason: r.reason,
+        }))}
+        adsSetByHand={[...adsOverrides.entries()].map(([id, showAds]) => ({
+          id,
+          showAds,
         }))}
         missionControlRead={advertisers.missionControl}
       />
