@@ -31,6 +31,11 @@ export default async function AdminDirectoryPage() {
 
   // Needs the listings themselves, because an advertiser is matched to
   // one by name as well as by email.
+  // Denied listings, so the queue can tell "nobody has looked at this"
+  // apart from "we looked and said no".
+  const { getReviews } = await import("@/lib/listing-review");
+  const reviews = await getReviews(businesses.map((b) => b.id));
+
   const advertisers = await getAdvertiserIndex(
     businesses.map((b) => ({
       id: b.id,
@@ -56,6 +61,10 @@ export default async function AdminDirectoryPage() {
         categories={options.categories}
         locations={options.locations}
         advertiserIds={[...advertisers.businessIds]}
+        rejected={[...reviews.entries()].map(([id, r]) => ({
+          id,
+          reason: r.reason,
+        }))}
         missionControlRead={advertisers.missionControl}
       />
     </div>

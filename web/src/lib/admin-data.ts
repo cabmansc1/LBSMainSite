@@ -160,14 +160,25 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
 export async function businessAction(
   id: number,
   action: "approve" | "deny" | "toggle_hidden" | "toggle_active" | "toggle_featured" | "delete",
+  opts: { reason?: string; by?: string } = {},
 ) {
   const { db } = await import("@/lib/db");
   switch (action) {
-    case "approve":
+    case "approve": {
       await db.execute(
         sql`UPDATE directory_businesses SET is_verified = 1, is_active = 1 WHERE id = ${id}`,
       );
+      // An approval after a rejection is a second look that went the
+      // other way, so the rejection goes with it.
+      const { clearRejected } = await import("@/lib/listing-review");
+      await clearRejected(id).catch(() => {});
+      // Told, at last. A free listing used to go live in silence, so the
+      // only way to find out was to go and look.
+      await notifyListing(id, "approved").catch((e) =>
+        console.error("[admin] approval email failed:", e),
+      );
       return;
+    }
     case "toggle_hidden":
       await db.execute(
         sql`UPDATE directory_businesses SET is_hidden = NOT is_hidden WHERE id = ${id}`,
@@ -183,11 +194,63 @@ export async function businessAction(
         sql`UPDATE directory_businesses SET is_featured = NOT is_featured WHERE id = ${id}`,
       );
       return;
-    case "deny":
+    case "deny": {
+      // Kept, not deleted. A rejection that removes the row leaves no
+      // record it happened, no reason and nothing to tell the business,
+      // so a real shop with a thin description got the same treatment as
+      // spam and no answer if they asked why.
+      //
+      // Unverified and inactive keeps it off the public site exactly as
+      // deleting did; the difference is that it can be explained and, if
+      // they put it right, approved.
+      await db.execute(
+        sql`UPDATE directory_businesses SET is_verified = 0, is_active = 0
+            WHERE id = ${id}`,
+      );
+      const { markRejected } = await import("@/lib/listing-review");
+      await markRejected(id, opts.reason ?? "", opts.by ?? "");
+      await notifyListing(id, "rejected", opts.reason ?? "").catch((e) =>
+        console.error("[admin] rejection email failed:", e),
+      );
+      return;
+    }
     case "delete":
+      // Still a real delete, and now genuinely different from denying.
       await db.execute(sql`DELETE FROM directory_businesses WHERE id = ${id}`);
       return;
   }
+}
+
+/**
+ * Emails the business about its own listing.
+ *
+ * The address and slug are read here rather than passed in, because the
+ * only thing every caller has is the id and one lookup is cheaper than
+ * threading two more arguments through a bulk action.
+ */
+async function notifyListing(
+  id: number,
+  outcome: "approved" | "rejected",
+  reason = "",
+): Promise<void> {
+  const { db } = await import("@/lib/db");
+  const rows = (await db.execute(
+    sql`SELECT business_name, email, slug FROM directory_businesses
+        WHERE id = ${id} LIMIT 1`,
+  )) as unknown as [
+    { business_name: string; email: string | null; slug: string }[],
+  ];
+  const r = rows[0]?.[0];
+  if (!r?.email) return;
+
+  const facts = {
+    businessName: String(r.business_name ?? ""),
+    email: String(r.email),
+    slug: String(r.slug ?? ""),
+  };
+  const emails = await import("@/lib/listing-status-emails");
+  if (outcome === "approved") await emails.sendListingApproved(facts);
+  else await emails.sendListingRejected({ ...facts, reason });
 }
 
 export type BusinessPatch = {

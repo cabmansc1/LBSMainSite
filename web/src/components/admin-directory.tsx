@@ -758,21 +758,37 @@ function AddListing({
   );
 }
 
-const statusOf = (b: AdminBusiness) =>
-  !b.isVerified ? "pending" : b.isHidden ? "hidden" : b.isActive ? "active" : "inactive";
+/**
+ * Rejected has to come first.
+ *
+ * A denied listing is unverified, and unverified alone reads as pending,
+ * so without this a rejection would sit in the review queue forever
+ * looking like nobody had got to it yet.
+ */
+const statusOf = (b: AdminBusiness, rejected?: Set<number>) =>
+  rejected?.has(b.id)
+    ? "rejected"
+    : !b.isVerified
+      ? "pending"
+      : b.isHidden
+        ? "hidden"
+        : b.isActive
+          ? "active"
+          : "inactive";
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "text-[#a05e00] bg-[#fff4e5] border-[#ffd9a3]",
+  rejected: "text-danger bg-[#fdecec] border-[#f5c6c6]",
   active: "text-ok bg-[#e5f5ec] border-[#bfe8d2]",
   hidden: "text-muted bg-surface border-line",
   inactive: "text-muted bg-surface border-line",
 };
 
-async function act(action: string, ids: number[]) {
+async function act(action: string, ids: number[], reason?: string) {
   const res = await fetch("/api/admin/business", {
     method: "PATCH",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ action, ids }),
+    body: JSON.stringify({ action, ids, reason }),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Failed");
 }
@@ -905,6 +921,7 @@ export function AdminDirectory({
   categories: taxonomyCategories,
   locations: taxonomyLocations,
   advertiserIds,
+  rejected = [],
   missionControlRead,
 }: {
   businesses: AdminBusiness[];
@@ -914,6 +931,8 @@ export function AdminDirectory({
    *  Matched on the server by email and by name, since the directory and
    *  Mission Control are typed by different people. */
   advertiserIds: number[];
+  /** Listings turned down, with why, so the row can say so. */
+  rejected?: { id: number; reason: string }[];
   missionControlRead: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -926,6 +945,12 @@ export function AdminDirectory({
   // remembering to change it.
   const [customer, setCustomer] = useState<"" | "advertiser" | "directory">("");
   const advertisers = useMemo(() => new Set(advertiserIds), [advertiserIds]);
+  const rejectedIds = useMemo(
+    () => new Set(rejected.map((r) => r.id)),
+    [rejected],
+  );
+  const reasonFor = (id: number) =>
+    rejected.find((r) => r.id === id)?.reason ?? "";
   const isAdvertiser = (b: AdminBusiness) => advertisers.has(b.id);
   const [selected, setSelected] = useState<number[]>([]);
   const [bulk, setBulk] = useState("");
@@ -934,10 +959,11 @@ export function AdminDirectory({
 
   const counts = {
     total: businesses.length,
-    pending: businesses.filter((b) => statusOf(b) === "pending").length,
-    active: businesses.filter((b) => statusOf(b) === "active").length,
+    pending: businesses.filter((b) => statusOf(b, rejectedIds) === "pending").length,
+    active: businesses.filter((b) => statusOf(b, rejectedIds) === "active").length,
     hidden: businesses.filter((b) => b.isHidden).length,
     advertisers: businesses.filter(isAdvertiser).length,
+    rejected: businesses.filter((b) => rejectedIds.has(b.id)).length,
   };
   const totalViews = businesses.reduce((n, b) => n + b.views, 0);
   const totalInquiries = businesses.reduce((n, b) => n + b.inquiries, 0);
@@ -957,7 +983,7 @@ export function AdminDirectory({
     }
     if (category && b.category !== category) return false;
     if (location && b.locationArea !== location) return false;
-    if (status && statusOf(b) !== status) return false;
+    if (status && statusOf(b, rejectedIds) !== status) return false;
     if (customer === "advertiser" && !isAdvertiser(b)) return false;
     if (customer === "directory" && isAdvertiser(b)) return false;
     return true;
@@ -967,11 +993,16 @@ export function AdminDirectory({
     visible.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
   }
 
-  async function runRow(id: number, action: string, confirmText?: string) {
+  async function runRow(
+    id: number,
+    action: string,
+    confirmText?: string,
+    reason?: string,
+  ) {
     if (confirmText && !window.confirm(confirmText)) return;
     setBusyRow(id);
     try {
-      await act(action, [id]);
+      await act(action, [id], reason);
       window.location.reload();
     } catch (e) {
       alert(String(e instanceof Error ? e.message : e));
@@ -982,7 +1013,7 @@ export function AdminDirectory({
   async function runBulk() {
     if (!bulk || selected.length === 0) return;
     if (
-      (bulk === "delete" || bulk === "deny") &&
+      bulk === "delete" &&
       !window.confirm(`Remove ${selected.length} listing(s)? This cannot be undone.`)
     ) {
       return;
@@ -1023,6 +1054,9 @@ export function AdminDirectory({
           { n: counts.pending, label: "Pending review", filter: "pending", warn: true },
           { n: counts.active, label: "Active", filter: "active" },
           { n: counts.hidden, label: "Hidden", filter: "hidden" },
+          ...(counts.rejected > 0
+            ? [{ n: counts.rejected, label: "Turned down", filter: "rejected" }]
+            : []),
           // Who they are, rather than what state their listing is in.
           // Clearing the status alongside it, because "hidden postcard
           // advertisers" is a combination nobody means to ask for by
@@ -1231,7 +1265,7 @@ export function AdminDirectory({
           </thead>
           <tbody>
             {visible.map((b) => {
-              const st = statusOf(b);
+              const st = statusOf(b, rejectedIds);
               return (
                 <tr key={b.id} className="group hover:bg-surface align-top">
                   <td className="px-4 py-3.5 border-b border-line">
@@ -1308,6 +1342,13 @@ export function AdminDirectory({
                         Featured
                       </span>
                     )}
+                    {st === "rejected" && reasonFor(b.id) && (
+                      // What they were told. Worth having in front of you
+                      // when they ring up about it.
+                      <span className="block text-[11.5px] text-muted mt-1 max-w-[26ch]">
+                        {reasonFor(b.id)}
+                      </span>
+                    )}
                     <span
                       className={`block text-[11px] font-semibold mt-1 ${
                         isAdvertiser(b) ? "text-[#a05e00]" : "text-muted"
@@ -1337,6 +1378,22 @@ export function AdminDirectory({
                       {/* Approve and Deny stay in the open: they are the
                           only actions with a queue behind them, and
                           burying them costs a business their listing. */}
+                      {st === "rejected" && (
+                        <button
+                          type="button"
+                          disabled={busyRow === b.id}
+                          onClick={() =>
+                            runRow(
+                              b.id,
+                              "approve",
+                              `Publish ${b.name} after all? They will be emailed that it is live.`,
+                            )
+                          }
+                          className="text-[12px] font-semibold px-2.5 py-1.5 rounded-[8px] bg-ok text-white disabled:opacity-40"
+                        >
+                          Approve anyway
+                        </button>
+                      )}
                       {st === "pending" && (
                         <>
                           <button
@@ -1350,9 +1407,17 @@ export function AdminDirectory({
                           <button
                             type="button"
                             disabled={busyRow === b.id}
-                            onClick={() =>
-                              runRow(b.id, "deny", `Deny and remove ${b.name}?`)
-                            }
+                            onClick={() => {
+                              // The reason is the whole point: it goes to
+                              // the business, and a rejection nobody can
+                              // explain is one they cannot put right.
+                              const why = window.prompt(
+                                `Why is ${b.name} not going on the site? This is emailed to them.`,
+                                "",
+                              );
+                              if (why === null) return;
+                              runRow(b.id, "deny", undefined, why);
+                            }}
                             className="text-[12px] font-semibold px-2.5 py-1.5 rounded-[8px] border border-line-strong disabled:opacity-40"
                           >
                             Deny
