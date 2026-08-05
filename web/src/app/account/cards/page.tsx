@@ -176,18 +176,52 @@ export default async function AccountCardsPage() {
         </p>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {pastCards.map((c) => (
-            <Card key={c.cardId} className="p-5 grid gap-1.5">
-              <b className="text-[15px] font-semibold">{c.zoneName}</b>
-              <span className="text-[12.5px] text-muted">
-                Mailed {c.mailMonth}
-              </span>
-              <span className="text-[12.5px] text-muted num">
-                {c.households ? `${c.households} homes · ` : ""}
-                {c.adSize}
-              </span>
-            </Card>
-          ))}
+          {pastCards.map((c) => {
+            // Everything we hold for a card that has already mailed. It
+            // was all still here and none of it was reachable: a business
+            // wanting the file they ran last spring had no way to get it
+            // back, which is exactly when somebody asks for it.
+            const files = artworkByCard.get(c.cardId) ?? [];
+            const ran = latestProof.get(c.cardId);
+            return (
+              <Card key={c.cardId} className="p-5 grid gap-1.5">
+                <b className="text-[15px] font-semibold">{c.zoneName}</b>
+                <span className="text-[12.5px] text-muted">
+                  Mailed {c.mailMonth}
+                </span>
+                <span className="text-[12.5px] text-muted num">
+                  {c.households ? `${c.households} homes · ` : ""}
+                  {c.adSize}
+                </span>
+
+                {(files.length > 0 || ran) && (
+                  <div className="border-t border-line mt-1.5 pt-2 grid gap-1">
+                    {ran && (
+                      <a
+                        href={`/api/proof/${ran.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[12.5px] font-semibold text-brand-deep hover:underline"
+                      >
+                        {ran.status === "approved"
+                          ? "The ad that ran"
+                          : `Proof v${ran.version}`}
+                      </a>
+                    )}
+                    {files.map((a) => (
+                      <a
+                        key={a.id}
+                        href={`/api/account/artwork/${a.id}`}
+                        className="text-[12.5px] text-brand-deep hover:underline break-all"
+                      >
+                        {a.filename}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
       )}
     </>
