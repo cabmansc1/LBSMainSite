@@ -24,7 +24,7 @@ export default async function AccountLayout({
   if (!session) redirect("/login");
 
   const ctx = await getPortalContext(session);
-  const { listings, currentCards, inquiries } = ctx;
+  const { listings, currentCards } = ctx;
 
   // Who this account is, in the order we would rather say it.
   //
@@ -46,6 +46,14 @@ export default async function AccountLayout({
   // interesting. The Cards one used to be "current cards that are not
   // waitlisted", which is just how many cards they are on, and Listings
   // had none at all even when there was one to count.
+  // Messages showed the total, called it unread, and so never went down
+  // however many had been answered. A badge that cannot reach zero reads
+  // as a permanent unfinished job and teaches people to ignore the rest.
+  const { countUnhandled } = await import("@/lib/inquiries");
+  const unanswered = await countUnhandled(listings.map((l) => l.id)).catch(
+    () => 0,
+  );
+
   const gaps = await missingProfileFields(session.email).catch(() => []);
   const todos = await getPortalTodos(
     ctx,
@@ -83,7 +91,7 @@ export default async function AccountLayout({
 
         <PortalNav
           variant="sidebar"
-          unreadMessages={inquiries.length}
+          unreadMessages={unanswered}
           cardCount={currentCards.length}
           listingCount={listings.length}
           todoCount={todos.length}
@@ -103,7 +111,7 @@ export default async function AccountLayout({
 
       <PortalNav
         variant="bottom"
-        unreadMessages={inquiries.length}
+        unreadMessages={unanswered}
         cardCount={currentCards.length}
         listingCount={listings.length}
         todoCount={todos.length}

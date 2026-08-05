@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/sections";
+import { PhotoGrid } from "@/components/photo-lightbox";
 import { InquiryForm } from "@/components/inquiry-form";
 import { getPastCards } from "@/lib/past-cards";
 import { getBusinesses, getBusiness } from "@/lib/directory";
@@ -396,18 +397,7 @@ export default async function BusinessPage({
           {b.photos && b.photos.length > 0 && (
             <Card className="p-6.5 grid gap-3">
               <h2 className="text-[17px] font-semibold tracking-tight">Photos</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {b.photos.slice(0, 9).map((p) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={p.url}
-                    src={p.url}
-                    alt={p.alt}
-                    loading="lazy"
-                    className="w-full aspect-square object-cover rounded-[10px] border border-line bg-surface"
-                  />
-                ))}
-              </div>
+              <PhotoGrid photos={b.photos.slice(0, 9)} />
             </Card>
           )}
 

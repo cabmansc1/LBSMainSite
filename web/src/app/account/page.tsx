@@ -30,6 +30,10 @@ export default async function AccountHomePage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const ctx = await getPortalContext(session);
+  const { countUnhandled } = await import("@/lib/inquiries");
+  const unanswered = await countUnhandled(ctx.listings.map((l) => l.id)).catch(
+    () => 0,
+  );
   // Contact details checkout let them skip. Asked for here, where the
   // sale is banked and a form field costs nothing.
   const gaps = await missingProfileFields(session.email).catch(() => []);
@@ -75,7 +79,14 @@ export default async function AccountHomePage() {
     {
       label: "Messages",
       value: String(ctx.inquiries.length),
-      note: ctx.inquiries.length ? "From your listing" : "No enquiries yet",
+      // The number is every message ever, which is the useful lifetime
+      // figure. The note is what is actually outstanding, so the card
+      // cannot be read as "you owe seven people a reply" forever.
+      note: unanswered
+        ? `${unanswered} waiting on a reply`
+        : ctx.inquiries.length
+          ? "All answered"
+          : "No enquiries yet",
     },
     {
       label: "Cards run",
