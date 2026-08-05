@@ -197,6 +197,17 @@ const rankPlan = (b: DirectoryBusiness) =>
 
 export async function getBusinesses(
   filters: DirectoryFilters = {},
+  opts: {
+    /**
+     * Drop the active, verified and not-hidden test.
+     *
+     * Only getBusinessForPreview passes this, and only for an admin. It
+     * is an option rather than a separate query so a preview renders
+     * through exactly the same code as the live page: a preview built
+     * from a second query is a preview of something else.
+     */
+    includeUnpublished?: boolean;
+  } = {},
 ): Promise<DirectoryBusiness[]> {
   if (usingSampleData()) {
     let rows = SAMPLE;
@@ -272,11 +283,13 @@ export async function getBusinesses(
   // Matches legacy Business.php exactly: businesses.category and
   // businesses.location_area STORE SLUGS, and filters compare slugs
   // directly. Display labels come from the taxonomy tables afterward.
-  const conds = [
-    eq(businesses.isActive, true),
-    eq(businesses.isVerified, true),
-    eq(businesses.isHidden, false),
-  ];
+  const conds = opts.includeUnpublished
+    ? []
+    : [
+        eq(businesses.isActive, true),
+        eq(businesses.isVerified, true),
+        eq(businesses.isHidden, false),
+      ];
   if (filters.category) conds.push(eq(businesses.category, filters.category));
   if (filters.location)
     conds.push(eq(businesses.locationArea, filters.location));
@@ -528,6 +541,26 @@ export async function getBusiness(
 ): Promise<DirectoryBusiness | undefined> {
   if (usingSampleData()) return SAMPLE.find((b) => b.slug === slug);
   const all = await getBusinesses();
+  return all.find((b) => b.slug === slug);
+}
+
+/**
+ * A listing as it would look if published, for reviewing one before it is.
+ *
+ * A submission sits unverified until somebody approves it, and unverified
+ * is exactly what the public page refuses to render, so the only way to
+ * see what had been submitted was to approve it and look afterwards. That
+ * is approving something unseen, on a form anybody can post to.
+ *
+ * Named rather than a flag on getBusiness, so nothing reaches this by
+ * forgetting to pass something. The caller checks the session; this only
+ * answers the question.
+ */
+export async function getBusinessForPreview(
+  slug: string,
+): Promise<DirectoryBusiness | undefined> {
+  if (usingSampleData()) return SAMPLE.find((b) => b.slug === slug);
+  const all = await getBusinesses({}, { includeUnpublished: true });
   return all.find((b) => b.slug === slug);
 }
 
