@@ -10,10 +10,10 @@ import { formatDue, ownDeadlines } from "@/lib/artwork-due";
  * Every item has to be something we can see the state of and something
  * they can finish. That rules out two obvious-sounding entries:
  *
- *   Approve your proof. Mission Control tracks proofApproved, but we
- *   have no proof file to show them and MC_READ_ONLY blocks writing the
- *   approval back, so the button would be a lie. It needs proofs
- *   uploaded on our side first.
+ * Approving a proof used to be ruled out here: there was no proof file
+ * to show and MC_READ_ONLY blocked writing the approval back, so the
+ * button would have been a lie. Proofs are ours now, kept in lbs_proofs
+ * and never written to Mission Control, so the button means what it says.
  *
  * Replying to an inquiry used to be on that list too, for the same
  * reason. It is here now: lbs_inquiry_state gives it something to clear
@@ -137,6 +137,30 @@ export async function getPortalTodos(
         weight: 40,
       });
     }
+  }
+
+  // The other one the header ruled out. Proofs live here now, so there
+  // is a file to show them and an approval to record; it is still never
+  // written back to Mission Control.
+  const { getProofsFor } = await import("@/lib/proofs");
+  const waiting = (await getProofsFor(ctx.user.email)).filter(
+    (p) => p.status === "sent",
+  );
+  for (const proof of waiting) {
+    const card = ctx.currentCards.find((c) => c.cardId === proof.cardId);
+    todos.push({
+      id: `proof-${proof.id}`,
+      title: card
+        ? `Approve your proof for ${card.zoneName}, ${card.mailMonth}`
+        : "Approve your ad proof",
+      detail:
+        "This is the ad as it will print. Approving it is what lets it go, and telling us what is wrong is faster than a phone call.",
+      href: "/account/cards",
+      action: "Look at it",
+      // Above everything except a deadline that is actually passing: a
+      // proof nobody answers becomes a missed print date.
+      weight: 15,
+    });
   }
 
   // Buildable now that an inquiry can be marked replied. It could not

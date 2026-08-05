@@ -6,6 +6,7 @@ import { getPortalContext } from "@/lib/portal";
 import { deadlineLabel, ownDeadlines } from "@/lib/artwork-due";
 import { artworkByteLimit, getArtworkFor } from "@/lib/artwork";
 import { Card, StatusChip } from "@/components/sections";
+import { ProofApproval } from "@/components/proof-approval";
 import { ArtworkUpload } from "@/components/artwork-upload";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,16 @@ export default async function AccountCardsPage() {
   // account to a bold amber date from before the day they paid, while
   // the dashboard was correctly telling them "as soon as you can".
   const deadlines = await ownDeadlines(session.email, currentCards);
+
+  // The proof for each card, so an advertiser sees the ad they are being
+  // asked to approve beside the card it goes on rather than in an inbox.
+  const { getProofsFor } = await import("@/lib/proofs");
+  const allProofs = await getProofsFor(session.email);
+  const latestProof = new Map<string, (typeof allProofs)[number]>();
+  for (const p of allProofs) {
+    // Ordered newest first, so the first one seen for a card wins.
+    if (!latestProof.has(p.cardId)) latestProof.set(p.cardId, p);
+  }
 
   return (
     <>
@@ -81,6 +92,7 @@ export default async function AccountCardsPage() {
               100,
               Math.round((c.spotsTaken / Math.max(1, c.spotsTotal)) * 100),
             );
+            const proof = latestProof.get(c.cardId);
             return (
               <Card key={c.cardId} className="p-6 grid gap-3.5">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -133,6 +145,16 @@ export default async function AccountCardsPage() {
                     />
                   </div>
                 </div>
+
+                {proof && (
+                  <ProofApproval
+                    id={proof.id}
+                    version={proof.version}
+                    status={proof.status}
+                    note={proof.note}
+                    response={proof.response}
+                  />
+                )}
 
                 <ArtworkUpload
                   cardId={c.cardId}

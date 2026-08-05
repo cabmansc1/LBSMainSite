@@ -30,7 +30,8 @@ export type ActivityKind =
   | "signup"
   | "listing_edit"
   | "waitlist"
-  | "refund";
+  | "refund"
+  | "proof";
 
 export type ActivityEvent = {
   kind: ActivityKind;
@@ -56,6 +57,7 @@ export const CATEGORY_KINDS: ActivityKind[] = [
   "signup",
   "listing_edit",
   "waitlist",
+  "proof",
 ];
 
 export const KIND_LABEL: Record<ActivityKind, string> = {
@@ -66,6 +68,7 @@ export const KIND_LABEL: Record<ActivityKind, string> = {
   listing_edit: "Listing change",
   waitlist: "Waitlist",
   refund: "Refund",
+  proof: "Proof",
 };
 
 let ready = false;
