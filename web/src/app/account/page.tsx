@@ -15,6 +15,8 @@ import { ProfileGaps } from "@/components/profile-gaps";
 import { missingProfileFields } from "@/lib/profile";
 import { getPortalTodos } from "@/lib/portal-todos";
 import { TodoList } from "@/components/todo-list";
+import { getUpcomingMailings } from "@/lib/mission-control";
+import { isBookable, mailMonthLabel, type UpcomingMailing } from "@/lib/mailings";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -57,11 +59,18 @@ export default async function AccountHomePage() {
   // Only for an advertiser with no listing at all, and only when they
   // have not just dismissed it. Somebody paying for a card and not in
   // the free directory is a gap that helps both sides to close.
-  const [invitePricing, inviteDue] = await Promise.all([
+  const [invitePricing, inviteDue, openMailings] = await Promise.all([
     getLiveDirectoryPricing().catch(() => null),
     ctx.listings.length === 0
       ? shouldInviteToDirectory(session.id).catch(() => false)
       : Promise.resolve(false),
+    // Comes out of the same 60-second Mission Control snapshot the cards
+    // above already read, so this costs nothing extra. On the dashboard
+    // because the mobile bar holds five items and Book a spot is not one
+    // of them; without this a phone has no way to reach it.
+    getUpcomingMailings()
+      .then((all) => all.filter((m) => isBookable(m.status)))
+      .catch(() => [] as UpcomingMailing[]),
   ]);
 
   const stats = [
@@ -190,6 +199,58 @@ export default async function AccountHomePage() {
           </Card>
         ))}
       </div>
+
+      {openMailings.length > 0 && (
+        <>
+          <div className="flex items-baseline gap-3 mt-8 mb-3">
+            <h2 className="text-[10.5px] font-bold uppercase tracking-widest text-muted">
+              Still filling
+            </h2>
+            {openMailings.length > 3 && (
+              <Link
+                href="/account/book"
+                className="text-[12.5px] font-semibold text-brand-deep hover:underline ml-auto"
+              >
+                See all {openMailings.length}
+              </Link>
+            )}
+          </div>
+          <div className="grid gap-2.5">
+            {openMailings.slice(0, 3).map((m) => {
+              const left = Math.max(0, m.spotsTotal - m.spotsTaken);
+              return (
+                <Card
+                  key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`}
+                  className="p-4 flex flex-wrap items-center gap-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <b className="text-[14.5px] block">
+                      {m.cardName?.trim() || m.zoneName}
+                    </b>
+                    <span className="text-[12.5px] text-muted">
+                      Mails {mailMonthLabel(m.mailMonth)}
+                      {m.status === "planned"
+                        ? ""
+                        : ` · ${left} spot${left === 1 ? "" : "s"} open`}
+                      {m.artworkDeadline ? ` · artwork due ${m.artworkDeadline}` : ""}
+                    </span>
+                  </div>
+                  <Link
+                    href={
+                      m.cardId
+                        ? `/postcards/${m.zoneSlug}/checkout?card=${encodeURIComponent(m.cardId)}`
+                        : `/postcards/${m.zoneSlug}/checkout`
+                    }
+                    className="text-[13px] font-bold px-3.5 py-2 rounded-[9px] bg-navy-950 text-white shrink-0"
+                  >
+                    Reserve
+                  </Link>
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {ctx.inquiries.length > 0 && (
         <>

@@ -97,6 +97,58 @@ async function loadListings(user: SessionUser): Promise<PortalListing[]> {
   }));
 }
 
+export type BuyerPrefill = {
+  email: string;
+  /** Their listing name, or the name on their last order. May be empty. */
+  businessName: string;
+  phone: string;
+  /** Directory category slug, for the checkout picker to match against. */
+  categorySlug: string;
+};
+
+/**
+ * What checkout already knows about a signed-in buyer.
+ *
+ * Deliberately not getPortalContext, which reaches Mission Control for
+ * their cards and their deals. None of that decides what goes in a form
+ * field, and a checkout page should not wait on a third-party call to
+ * fill in a phone number.
+ *
+ * The listing comes first because it is the record the buyer maintains
+ * themselves. Their saved advertiser profile fills any gap, which is
+ * what covers somebody who buys cards and has never listed.
+ */
+export async function getBuyerPrefill(
+  user: SessionUser,
+): Promise<BuyerPrefill> {
+  const empty: BuyerPrefill = {
+    email: user.email,
+    businessName: "",
+    phone: "",
+    categorySlug: "",
+  };
+  try {
+    const listings = await loadListings(user);
+    const primary = listings[0];
+    const saved = await import("@/lib/advertiser-business")
+      .then((m) => m.getAdvertiserBusiness(user.id, user.email))
+      .catch(() => null);
+
+    return {
+      email: user.email,
+      businessName:
+        primary?.name?.trim() || saved?.business.businessName?.trim() || "",
+      phone: primary?.phone?.trim() || saved?.business.businessPhone?.trim() || "",
+      categorySlug: primary?.category?.trim() ?? "",
+    };
+  } catch (e) {
+    // A form that fails to prefill is still a form. Falling over here
+    // would take the checkout page with it.
+    console.error("[portal] buyer prefill failed:", e);
+    return empty;
+  }
+}
+
 async function loadInquiries(businessIds: number[]): Promise<PortalInquiry[]> {
   if (businessIds.length === 0) return [];
   const { db } = await import("@/lib/db");

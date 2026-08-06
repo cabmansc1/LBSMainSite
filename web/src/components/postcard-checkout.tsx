@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { CardPreview } from "@/components/card-preview";
 import { CategoryPicker } from "@/components/category-picker";
 import type { Orientation } from "@/lib/card-capacity";
@@ -62,6 +63,7 @@ export function PostcardCheckout({
   categories,
   pricing = POSTCARD_PRICING,
   listPricing,
+  account,
 }: {
   /** Spot preselected from the pricing page link. */
   initialSize?: SpotSize;
@@ -90,12 +92,38 @@ export function PostcardCheckout({
   /** Set only when this buyer is on an agreed rate, so the saving can be
    *  shown against what everybody else pays. */
   listPricing?: typeof POSTCARD_PRICING;
+  /**
+   * Who is signed in, when somebody is.
+   *
+   * Signing in used to change the price and nothing else, so an
+   * advertiser still typed their own business name and email into a form
+   * we already had both for. Typing either of them differently starts a
+   * second record: the order lands under an address their portal does
+   * not read, or the campaign arrives in Mission Control under a name
+   * that has to be matched back to their listing by guesswork.
+   *
+   * So the two that split a record are fixed to the account, and the
+   * rest are filled in and still editable.
+   */
+  account?: {
+    email: string;
+    /** From their listing or their last order. Empty when we know none. */
+    businessName: string;
+    phone: string;
+    /** Their directory category, when it is one this card offers. */
+    category: string;
+    /** Their agreed rate is being applied to these prices. */
+    hasRate: boolean;
+  };
 }) {
   const [size, setSize] = useState<SpotSize>(initialSize ?? "medium");
-  const [business, setBusiness] = useState("");
-  const [category, setCategory] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  // Prefilled from the account where there is one. A name we hold is
+  // locked; a name we do not is an ordinary empty field.
+  const lockedName = !!account?.businessName;
+  const [business, setBusiness] = useState(account?.businessName ?? "");
+  const [category, setCategory] = useState(account?.category ?? "");
+  const [email, setEmail] = useState(account?.email ?? "");
+  const [phone, setPhone] = useState(account?.phone ?? "");
   const [status, setStatus] = useState<"idle" | "sending" | "error" | "waitlisted">("idle");
 
   const priceCents = pricing[reach][size].priceCents;
@@ -223,6 +251,26 @@ export function PostcardCheckout({
 
         <div className="bg-white border border-line rounded-(--radius-card) p-6 grid gap-4">
           <h2 className="text-[16px] font-semibold tracking-tight">Your business</h2>
+
+          {account && (
+            // Said plainly, because the two fields below stop being
+            // editable and an input that ignores typing with no
+            // explanation reads as broken.
+            <p className="text-[12.5px] text-body bg-brand-tint border border-brand/25 rounded-[10px] px-3.5 py-2.5">
+              Booking as <b>{account.businessName || account.email}</b>. This card
+              joins the rest of your campaigns in your account.{" "}
+              {lockedName && (
+                <>
+                  Buying for a different business? Sign out first, or{" "}
+                  <Link href="/contact" className="text-brand-deep font-semibold hover:underline">
+                    tell us
+                  </Link>{" "}
+                  and we will set it up.
+                </>
+              )}
+            </p>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-3.5">
             <div>
               <label htmlFor="pc-biz" className="text-[12.5px] font-semibold text-body block mb-1.5">
@@ -232,10 +280,20 @@ export function PostcardCheckout({
                 id="pc-biz"
                 value={business}
                 onChange={(e) => setBusiness(e.target.value)}
+                readOnly={lockedName}
                 maxLength={128}
                 placeholder="Palmetto Plumbing Co."
-                className="w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg focus:outline-none focus:border-navy-950"
+                aria-describedby={lockedName ? "pc-biz-why" : undefined}
+                className={`w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg focus:outline-none focus:border-navy-950 ${
+                  lockedName ? "bg-surface text-muted" : ""
+                }`}
               />
+              {lockedName && (
+                <p id="pc-biz-why" className="text-[12px] text-muted mt-1.5">
+                  From your account, so this card files under the same business
+                  as your others.
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="pc-email" className="text-[12.5px] font-semibold text-body block mb-1.5">
@@ -246,9 +304,21 @@ export function PostcardCheckout({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                readOnly={!!account}
                 maxLength={255}
-                className="w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg focus:outline-none focus:border-navy-950"
+                aria-describedby={account ? "pc-email-why" : undefined}
+                className={`w-full text-[14.5px] px-3.5 py-2.5 border border-line-strong rounded-lg focus:outline-none focus:border-navy-950 ${
+                  account ? "bg-surface text-muted" : ""
+                }`}
               />
+              {account && (
+                // Not a preference. An order bought under a second
+                // address is an order their portal will never show them.
+                <p id="pc-email-why" className="text-[12px] text-muted mt-1.5">
+                  The address you signed in with, so the receipt and the proof
+                  reach the same inbox as your account.
+                </p>
+              )}
             </div>
           </div>
           <div>
@@ -380,10 +450,21 @@ export function PostcardCheckout({
               </dd>
             </div>
           </dl>
-          {discounted && (
+          {discounted ? (
             <p className="text-[12.5px] font-semibold text-ok -mt-1">
-              Your agreed rate, already applied.
+              Your agreed rate{account?.businessName ? ` for ${account.businessName}` : ""},
+              already applied.
             </p>
+          ) : (
+            // A rate that covers some sizes and not others used to say
+            // nothing at all on the sizes it misses, which reads as the
+            // rate having been forgotten. Better to say where it stands.
+            account?.hasRate && (
+              <p className="text-[12.5px] text-muted -mt-1">
+                Your agreed rate does not cover this spot size, so this one is
+                at the list price.
+              </p>
+            )
           )}
           <button
             onClick={checkout}

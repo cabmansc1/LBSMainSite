@@ -130,7 +130,15 @@ export default async function PostcardCheckoutPage({
   // charging less is a pleasant surprise; the reverse is the reason this
   // goes through one place.
   const viewer = await getSession().catch(() => null);
-  const rates = await getPricingWithList(viewer?.email);
+  const [rates, prefill] = await Promise.all([
+    getPricingWithList(viewer?.email),
+    // Signing in used to change the price and nothing else, so an
+    // advertiser retyped a business name and an email we already held,
+    // and a typo in either started a second record.
+    viewer
+      ? import("@/lib/portal").then((m) => m.getBuyerPrefill(viewer))
+      : Promise.resolve(null),
+  ]);
 
   // A zone can have several cards filling at once, so the card is chosen
   // explicitly rather than assumed from the zone.
@@ -151,6 +159,17 @@ export default async function PostcardCheckoutPage({
   // against its names, so the picker has to offer the same ones.
   const mcCategories = await getMcCategories();
   const categoryOptions = mcCategories.length > 0 ? mcCategories : CATEGORIES;
+
+  // The directory stores a slug ("home-services"); Mission Control owns
+  // the display names ("Home Services"). Matched by squashing both, so a
+  // prefilled category is one this card genuinely offers rather than a
+  // string the picker will not recognise. No match means no prefill,
+  // which is the honest outcome: they pick.
+  const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const prefillCategory =
+    (prefill?.categorySlug &&
+      categoryOptions.find((c) => squash(c) === squash(prefill.categorySlug))) ||
+    "";
   const orientation = chosen?.cardId
     ? await getCardOrientation(chosen.cardId)
     : "horizontal";
@@ -393,6 +412,17 @@ export default async function PostcardCheckoutPage({
           categories={categoryOptions}
           pricing={rates.pricing}
           listPricing={rates.hasRate ? rates.list : undefined}
+          account={
+            prefill
+              ? {
+                  email: prefill.email,
+                  businessName: prefill.businessName,
+                  phone: prefill.phone,
+                  category: prefillCategory,
+                  hasRate: rates.hasRate,
+                }
+              : undefined
+          }
         />
       </div>
     </>
