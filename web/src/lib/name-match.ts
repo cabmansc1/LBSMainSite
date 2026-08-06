@@ -23,14 +23,41 @@ const NOISE = new Set([
 /**
  * Words too common locally to identify anyone on their own. Two
  * businesses sharing only "mount pleasant" are not the same business.
+ *
+ * A shared trade is no more identity than a shared town, and leaving the
+ * trades out of this list was a real false match: "Rainbow Cleaning
+ * Services" and "Smart Cleaning Services" share two words out of three,
+ * and with "cleaning" counted as distinctive that cleared the threshold.
+ * A cleaner in Summerville got another cleaner's card on her bill.
+ *
+ * Nothing here weakens the matches this file exists for. Those turn on a
+ * name, not a trade: "Alexander" carries "Alexander Heating & Air"
+ * against "Alexander Heating & Cooling" whether or not heating and air
+ * are on this list.
  */
 const GENERIC = new Set([
+  // Places.
   "mount", "pleasant", "charleston", "summerville", "lowcountry", "island",
   "islands", "james", "johns", "daniel", "goose", "creek", "moncks", "corner",
   "isle", "palms", "sullivans", "nexton", "ladson", "hanahan", "carolina",
   "north", "south", "east", "west", "greater", "area", "local",
+  // Puffery and shape-of-business words.
   "services", "service", "group", "solutions", "professional", "quality",
   "best", "premier", "custom", "home", "homes",
+  // Trades. What a business does, not who it is.
+  "cleaning", "cleaners", "maid", "janitorial",
+  "plumbing", "plumbers", "roofing", "roofers", "roof",
+  "painting", "painters", "flooring", "windows",
+  "heating", "cooling", "air", "hvac", "electric", "electrical",
+  "landscaping", "landscape", "lawn", "pest", "control",
+  "construction", "contracting", "contractors",
+  "remodeling", "renovation", "renovations", "design", "designs",
+  "realty", "real", "estate", "insurance", "law", "legal",
+  "dental", "dentistry", "medical", "health", "wellness",
+  "auto", "automotive", "repair", "detailing",
+  "salon", "spa", "barber", "fitness", "gym",
+  "catering", "bakery", "restaurant",
+  "moving", "movers", "storage", "supply", "rental", "rentals",
 ]);
 
 export const normalizeName = (s: string) =>

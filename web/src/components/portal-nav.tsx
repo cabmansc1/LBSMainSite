@@ -99,6 +99,21 @@ export function PortalNav({
       ),
     },
     {
+      // Below Cards, because it is what you do next after looking at
+      // the ones you have. Off the mobile bar, which holds five: the
+      // dashboard carries it there instead.
+      href: "/account/book",
+      label: "Book a spot",
+      short: "Book",
+      mobile: false,
+      icon: icon(
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="2.5" />
+          <path d="M12 9v6M9 12h6" />
+        </>,
+      ),
+    },
+    {
       href: "/account/listings",
       label: "Listings",
       short: "Listings",

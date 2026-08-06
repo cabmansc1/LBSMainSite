@@ -42,11 +42,15 @@ export default async function AccountBillingPage() {
         <p className="text-[13px] text-muted">
           Featured placement comes with a postcard campaign.
         </p>
+        {/* Was /pricing, which sent an advertiser out of their own
+            account to a marketing page and made them start over as a
+            stranger. Book a spot keeps them signed in, which is what
+            puts the order on this same record. */}
         <Link
-          href="/pricing"
+          href="/account/book"
           className="text-[13px] font-semibold text-brand-deep hover:underline"
         >
-          See what a Spotlight Postcard costs
+          Book your next spot
         </Link>
       </Card>
 
