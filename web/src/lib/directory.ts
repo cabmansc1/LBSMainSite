@@ -564,6 +564,62 @@ export async function getBusinessForPreview(
   return all.find((b) => b.slug === slug);
 }
 
+export type CategoryCount = { name: string; slug: string; count: number };
+
+/**
+ * Every category with how many published listings sit in it.
+ *
+ * For the browser in the listing-page sidebar. Categories with nothing in
+ * them are dropped: a link to an empty result is a dead end, and the
+ * taxonomy table carries entries that were never used.
+ *
+ * Counted in SQL rather than by loading listings, because this runs on
+ * every listing page view and the alternative is fetching the entire
+ * directory to call .length on it.
+ */
+export async function getCategoryCounts(): Promise<CategoryCount[]> {
+  if (usingSampleData()) {
+    const counts = new Map<string, number>();
+    for (const b of SAMPLE) {
+      counts.set(b.category, (counts.get(b.category) ?? 0) + 1);
+    }
+    return [...counts].map(([name, count]) => ({
+      name,
+      slug: slugify(name),
+      count,
+    }));
+  }
+  try {
+    const { db } = await import("@/lib/db");
+    const { sql } = await import("drizzle-orm");
+    const [rows] = (await db.execute(
+      sql`SELECT b.category AS slug, COUNT(*) AS n
+          FROM directory_businesses b
+          WHERE b.is_active = 1 AND b.is_verified = 1 AND b.is_hidden = 0
+          GROUP BY b.category`,
+    )) as unknown as [{ slug: string; n: number | string }[]];
+
+    const { categories: labels } = await getFilterOptions();
+    const labelBySlug = new Map(labels.map((c) => [c.slug, c.name]));
+
+    return rows
+      .filter((r) => r.slug && Number(r.n) > 0)
+      .map((r) => ({
+        slug: String(r.slug),
+        // Legacy fallback: the taxonomy table does not always have a row
+        // for a slug that listings are stored under.
+        name:
+          labelBySlug.get(String(r.slug)) ??
+          String(r.slug).replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        count: Number(r.n),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch (e) {
+    console.error("[directory] category counts failed:", e);
+    return [];
+  }
+}
+
 export async function getFilterOptions() {
   if (usingSampleData()) {
     const uniq = <T,>(arr: T[]) => [...new Set(arr)];

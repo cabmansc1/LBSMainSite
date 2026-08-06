@@ -10,7 +10,9 @@ import {
   getBusinesses,
   getBusiness,
   getBusinessForPreview,
+  getCategoryCounts,
 } from "@/lib/directory";
+import { AdSlot, AdsenseLoader } from "@/components/ad-slot";
 import { dealsForBusiness } from "@/lib/lowco-deals";
 import { advertiserAppearances } from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
@@ -81,28 +83,29 @@ export default async function BusinessPage({
   }
   if (!b) notFound();
 
+  // The request data is read HERE and passed down, never inside an
+  // after() callback. A Server Component cannot use headers() or
+  // cookies() inside after(): Next has to know during rendering which
+  // parts of the tree touch request data, and after() runs once rendering
+  // is over. Calling them in there throws, and because after() swallows
+  // its own errors it throws silently, which is exactly how the view
+  // counter once shipped counting nothing. The ad slots record their
+  // impressions the same way and need the same value.
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  // The first hop is the real client; the rest are proxies adding
+  // themselves, and taking the last would count every visitor as the
+  // same one.
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim();
+  const userAgent = h.get("user-agent") ?? "";
+  const { getSession } = await import("@/lib/auth");
+  const viewer = await getSession().catch(() => null);
+
   // After the response, so a visitor never waits on a write they will not
   // see, and a failure to count cannot stop a listing rendering. A preview
   // is not a view: nobody has found this listing, an admin is checking it.
-  //
-  // The request data is read HERE and passed in, never inside the
-  // callback. A Server Component cannot use headers() or cookies() inside
-  // after(): Next has to know during rendering which parts of the tree
-  // touch request data, and after() runs once rendering is over. Calling
-  // them in there throws, and because after() swallows its own errors it
-  // throws silently, which is exactly how this shipped counting nothing.
   if (!preview) {
-    const { headers } = await import("next/headers");
-    const h = await headers();
-    // The first hop is the real client; the rest are proxies adding
-    // themselves, and taking the last would count every visitor as the
-    // same one.
-    const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim();
-    const userAgent = h.get("user-agent") ?? "";
-    const { getSession } = await import("@/lib/auth");
-    const viewer = await getSession().catch(() => null);
     const listingId = b.id;
-
     after(async () => {
       const { recordListingView } = await import("@/lib/listing-views");
       await recordListingView({
@@ -114,27 +117,41 @@ export default async function BusinessPage({
     });
   }
 
+  // Featured listings carry no advertising, so a paying advertiser's page
+  // never sells the same reader to a competitor. An unapproved listing
+  // being previewed carries none either: there is no audience to sell.
+  const { adsAllowed, getAdsense } = await import("@/lib/ads");
+  const [showAds, adsense] = await Promise.all([
+    preview ? Promise.resolve(false) : adsAllowed(b.id, b.isFeatured),
+    getAdsense(),
+  ]);
+
   // Cross-site and Mission Control lookups are best-effort extras; the
   // page renders fine when either source is unreachable.
-  const [related, lowcoDeals, archive, appearances] = await Promise.all([
-    // "More X Businesses" on the legacy page: internal links that keep a
-    // visitor in the directory and spread crawl depth across listings.
-    getBusinesses({ category: b.categorySlug })
-      .then((rows) => rows.filter((r) => r.slug !== b.slug).slice(0, 6))
-      .catch(() => []),
-    dealsForBusiness(b.name).catch(() => []),
-    getPastCards({ publishedOnly: true }).catch(() => []),
-    advertiserAppearances({ name: b.name }).catch(
-      () =>
-        [] as {
-          cardId: string;
-          cardName?: string;
-          zoneName: string;
-          mailMonth: string;
-          mailDateIso: string;
-        }[],
-    ),
-  ]);
+  const [related, lowcoDeals, archive, appearances, categoryCounts] =
+    await Promise.all([
+      // "More X Businesses" on the legacy page: internal links that keep a
+      // visitor in the directory and spread crawl depth across listings.
+      getBusinesses({ category: b.categorySlug })
+        .then((rows) => rows.filter((r) => r.slug !== b.slug).slice(0, 6))
+        .catch(() => []),
+      dealsForBusiness(b.name).catch(() => []),
+      getPastCards({ publishedOnly: true }).catch(() => []),
+      advertiserAppearances({ name: b.name }).catch(
+        () =>
+          [] as {
+            cardId: string;
+            cardName?: string;
+            zoneName: string;
+            mailMonth: string;
+            mailDateIso: string;
+          }[],
+      ),
+      // The sidebar browser. A listing page used to be a cul-de-sac: the
+      // only ways back into the directory were the breadcrumb and the
+      // related list, both of which stay inside one category.
+      getCategoryCounts().catch(() => []),
+    ]);
 
   const sameAs = [
     b.website,
@@ -189,6 +206,38 @@ export default async function BusinessPage({
       { "@type": "ListItem", position: 3, name: b.name, item: `${SITE_URL}/business/${b.slug}` },
     ],
   };
+
+  // Share links, as plain anchors. Every one of these is a URL the
+  // network already understands, so the rail needs no JavaScript and
+  // works on the first paint.
+  const pageUrl = `${SITE_URL}/business/${b.slug}`;
+  const enc = encodeURIComponent;
+  const SHARES: { key: string; label: string; href: string; icon: React.ReactNode }[] = [
+    {
+      key: "facebook",
+      label: "Share on Facebook",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${enc(pageUrl)}`,
+      icon: <path d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v7h3v-7h2.3l.7-3H13V9a1 1 0 0 1 1-1z" />,
+    },
+    {
+      key: "x",
+      label: "Share on X",
+      href: `https://twitter.com/intent/tweet?url=${enc(pageUrl)}&text=${enc(b.name)}`,
+      icon: <path d="M17.5 3h2.9l-6.3 7.2L21.5 21h-5.8l-4.5-5.9L5.9 21H3l6.7-7.7L2.8 3h5.9l4.1 5.4L17.5 3zm-1 16.2h1.6L8.6 4.7H6.9l9.6 14.5z" />,
+    },
+    {
+      key: "linkedin",
+      label: "Share on LinkedIn",
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc(pageUrl)}`,
+      icon: <path d="M6.9 8.5v10.6H3.6V8.5h3.3zM5.3 3.3a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8zM20.4 19.1h-3.3v-5.2c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8v5.3H10V8.5h3.1v1.4h.1c.5-.8 1.6-1.7 3.2-1.7 3.4 0 4 2.2 4 5.1v5.8z" />,
+    },
+    {
+      key: "email",
+      label: "Share by email",
+      href: `mailto:?subject=${enc(b.name)}&body=${enc(`${b.name} in the Lowcountry Business Spotlight directory: ${pageUrl}`)}`,
+      icon: <path d="M3 5.5h18c.6 0 1 .4 1 1V17c0 .8-.7 1.5-1.5 1.5h-17C2.7 18.5 2 17.8 2 17V6.5c0-.6.4-1 1-1zm9 7.1 8-4.6H4l8 4.6z" />,
+    },
+  ];
 
   const SOCIALS: { key: string; href?: string; label: string; icon: React.ReactNode }[] = [
     {
@@ -297,10 +346,40 @@ export default async function BusinessPage({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1120px] px-6 py-10 grid lg:grid-cols-[1.25fr_.75fr] gap-5 items-start">
-        <div className="grid gap-3.5">
+      {/* Three zones: the share rail, the listing, and a sidebar that is
+          part navigation and part advertising. The rail and the sidebar
+          both stick, so a long listing does not scroll either of them out
+          of existence. Below lg they stack, rail first as a plain row. */}
+      <div className="mx-auto max-w-[1120px] px-6 py-8 grid lg:grid-cols-[52px_minmax(0,1fr)_300px] gap-5 lg:gap-6 items-start">
+        <aside className="lg:sticky lg:top-4 flex lg:grid gap-2 items-center lg:justify-items-center">
+          <span className="hidden lg:block text-[10px] font-bold uppercase tracking-[0.09em] text-muted text-center leading-tight">
+            Share
+            <br />
+            this
+          </span>
+          <span className="lg:hidden text-[11px] font-bold uppercase tracking-widest text-muted">
+            Share
+          </span>
+          {SHARES.map((s) => (
+            <a
+              key={s.key}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={s.label}
+              title={s.label}
+              className="w-9 h-9 lg:w-10 lg:h-10 rounded-[8px] bg-navy-950 text-white flex items-center justify-center hover:bg-brand-deep transition-colors shrink-0"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                {s.icon}
+              </svg>
+            </a>
+          ))}
+        </aside>
+
+        <div className="grid gap-3.5 min-w-0">
           <Card className="p-6.5 grid gap-3">
-            <h2 className="text-[17px] font-semibold tracking-tight">About</h2>
+            <span className="block h-[3px] w-[54px] bg-brand rounded-full" aria-hidden />
             <RichText
               text={b.description}
               className="text-sm text-body leading-relaxed"
@@ -318,7 +397,136 @@ export default async function BusinessPage({
                 ))}
               </div>
             )}
+
+            {/* Contact as labelled rows, up here with the description
+                rather than in a sidebar box. On a phone the sidebar was
+                below everything, so the phone number was the last thing
+                on the page for the reader most likely to want to call. */}
+            <dl className="grid mt-3 border-t border-line">
+              {b.phone && (
+                <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3.5 items-baseline py-2.5 border-b border-line">
+                  <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                    Phone
+                  </dt>
+                  <dd className="m-0 text-[14.5px]">
+                    <a
+                      href={`tel:${b.phone.replace(/\D/g, "")}`}
+                      className="font-semibold text-brand-deep hover:underline"
+                    >
+                      {b.phone}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {b.address ? (
+                <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3.5 items-baseline py-2.5 border-b border-line">
+                  <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                    Address
+                  </dt>
+                  <dd className="m-0 text-[14.5px]">
+                    {b.address}{" "}
+                    <a
+                      href={`https://maps.google.com/?q=${encodeURIComponent(b.address)}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-brand-deep font-medium hover:underline whitespace-nowrap"
+                    >
+                      Map
+                    </a>
+                  </dd>
+                </div>
+              ) : (
+                // Most listings carry a city and no street. An empty
+                // Address row would read as missing data rather than as a
+                // business that does not work from a shopfront.
+                <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3.5 items-baseline py-2.5 border-b border-line">
+                  <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                    Serves
+                  </dt>
+                  <dd className="m-0 text-[14.5px]">
+                    {b.locationArea} and the surrounding Lowcountry
+                  </dd>
+                </div>
+              )}
+              {b.website && (
+                <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3.5 items-baseline py-2.5 border-b border-line">
+                  <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                    Website
+                  </dt>
+                  <dd className="m-0 text-[14.5px] min-w-0">
+                    <a
+                      href={b.website}
+                      rel="nofollow noopener"
+                      target="_blank"
+                      className="text-brand-deep hover:underline break-all"
+                    >
+                      {b.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {SOCIALS.some((s) => s.href) && (
+                <div className="grid grid-cols-[92px_minmax(0,1fr)] gap-3.5 items-baseline py-2.5 border-b border-line">
+                  <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                    Social
+                  </dt>
+                  <dd className="m-0 flex gap-2">
+                    {SOCIALS.filter((s) => s.href).map((s) => (
+                      <a
+                        key={s.key}
+                        href={s.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={s.label}
+                        title={s.label}
+                        className="w-9 h-9 rounded-[8px] bg-surface border border-line flex items-center justify-center text-brand-deep hover:bg-brand hover:text-white hover:border-brand transition-colors"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          {s.icon}
+                        </svg>
+                      </a>
+                    ))}
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            <div className="flex items-center gap-2.5 flex-wrap pt-1">
+              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                Categories:
+              </span>
+              <Link
+                href={`/directory/category/${b.categorySlug}`}
+                className="bg-navy-950 text-white text-[11.5px] font-bold uppercase tracking-[0.05em] px-3 py-1.5 rounded-[6px] hover:bg-brand-deep transition-colors"
+              >
+                {b.category}
+              </Link>
+              <Link
+                href={`/directory/location/${b.locationSlug}`}
+                className="bg-navy-950 text-white text-[11.5px] font-bold uppercase tracking-[0.05em] px-3 py-1.5 rounded-[6px] hover:bg-brand-deep transition-colors"
+              >
+                {b.locationArea}
+              </Link>
+            </div>
           </Card>
+
+          <AdSlot
+            slot="in_content"
+            allowed={showAds}
+            categorySlug={b.categorySlug}
+            locationSlug={b.locationSlug}
+            userAgent={userAgent}
+          />
+
+          {/* Photos moved up from below the hours. They are the thing a
+              reader actually stops on, and they were sitting under four
+              panels that only some listings have. */}
+          {b.photos && b.photos.length > 0 && (
+            <Card className="p-6.5 grid gap-3">
+              <h2 className="text-[17px] font-semibold tracking-tight">Photos</h2>
+              <PhotoGrid photos={b.photos.slice(0, 9)} />
+            </Card>
+          )}
 
           {appearances.length > 0 && (
             <Card className="p-6.5 grid gap-3 bg-brand-tint border-brand/25">
@@ -461,13 +669,6 @@ export default async function BusinessPage({
             </Card>
           )}
 
-          {b.photos && b.photos.length > 0 && (
-            <Card className="p-6.5 grid gap-3">
-              <h2 className="text-[17px] font-semibold tracking-tight">Photos</h2>
-              <PhotoGrid photos={b.photos.slice(0, 9)} />
-            </Card>
-          )}
-
           {b.hours && (
             <Card className="p-6.5 grid gap-3">
               <h2 className="text-[17px] font-semibold tracking-tight">Hours</h2>
@@ -485,10 +686,9 @@ export default async function BusinessPage({
           {(b.address || b.locationArea) && (
             <Card className="p-6.5 grid gap-3">
               <h2 className="text-[17px] font-semibold tracking-tight">Location</h2>
-              <p className="text-sm text-body leading-relaxed">
-                {b.name} serves {b.locationArea} and the surrounding Lowcountry.
-                {b.address ? ` You can find them at ${b.address}.` : ""}
-              </p>
+              {/* The area and the street address are stated once, in the
+                  contact rows at the top. Repeating them here read as
+                  padding. */}
               {b.lat && b.lng && (
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}`}
@@ -572,54 +772,75 @@ export default async function BusinessPage({
           )}
         </div>
 
-        <aside className="grid gap-3.5 order-first lg:order-none">
-          <Card className="p-6.5 grid gap-3.5 content-start">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted">
-              Details
-            </span>
-            {b.phone && (
-              <a href={`tel:${b.phone.replace(/\D/g, "")}`} className="text-[15px] font-semibold text-brand-deep hover:underline">
-                {b.phone}
-              </a>
-            )}
-            {b.website && (
-              <a href={b.website} rel="nofollow noopener" target="_blank" className="text-sm text-brand-deep hover:underline break-all">
-                Visit website
-              </a>
-            )}
-            {b.address && <p className="text-sm text-body">{b.address}</p>}
-            {b.address && (
-              <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(b.address)}`}
-                target="_blank"
-                rel="noopener"
-                className="text-sm font-semibold text-brand-deep hover:underline"
-              >
-                Open in Google Maps
-              </a>
-            )}
-            {b.socials && (
-              <div className="flex gap-2.5 pt-1">
-                {SOCIALS.filter((s) => s.href).map((s) => (
-                  <a
-                    key={s.key}
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.label}
-                    title={s.label}
-                    className="w-10 h-10 rounded-[10px] bg-surface border border-line flex items-center justify-center text-brand-deep hover:bg-brand hover:text-white hover:border-brand transition-colors"
+        {/* The sidebar. Navigation first, because the reason a listing
+            page needed one is that it was a dead end, and advertising
+            around it. Sticky so the tower is on screen for the whole
+            read rather than only its opening paragraph. */}
+        <aside className="grid gap-3.5 lg:sticky lg:top-4">
+          <AdSlot
+            slot="sidebar_tower"
+            allowed={showAds}
+            categorySlug={b.categorySlug}
+            locationSlug={b.locationSlug}
+            userAgent={userAgent}
+          />
+
+          {categoryCounts.length > 0 && (
+            <Card className="p-5 grid gap-3">
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted">
+                Find a business by category
+              </h2>
+              {/* Capped in height and scrolled, so eleven categories do
+                  not push the rest of the sidebar off the screen. */}
+              <div className="max-h-[260px] overflow-y-auto grid pr-1">
+                {categoryCounts.map((c) => (
+                  <Link
+                    key={c.slug}
+                    href={`/directory/category/${c.slug}`}
+                    className={`flex items-baseline gap-2 py-2 border-b border-dotted border-line-strong last:border-b-0 text-[13.5px] hover:text-brand-deep transition-colors ${
+                      c.slug === b.categorySlug
+                        ? "font-semibold text-brand-deep"
+                        : "text-body"
+                    }`}
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                      {s.icon}
-                    </svg>
-                  </a>
+                    {c.name}
+                    <span className="ml-auto text-[12px] text-faint num">
+                      {c.count}
+                    </span>
+                  </Link>
                 ))}
               </div>
-            )}
-          </Card>
+              <Link
+                href="/directory"
+                className="text-[13px] font-semibold text-brand-deep hover:underline"
+              >
+                Browse the whole directory
+              </Link>
+            </Card>
+          )}
+
+          <AdSlot
+            slot="sidebar_rect"
+            allowed={showAds}
+            categorySlug={b.categorySlug}
+            locationSlug={b.locationSlug}
+            userAgent={userAgent}
+          />
         </aside>
       </div>
+
+      <div className="mx-auto max-w-[1120px] px-6 pb-10">
+        <AdSlot
+          slot="footer_leader"
+          allowed={showAds}
+          categorySlug={b.categorySlug}
+          locationSlug={b.locationSlug}
+          userAgent={userAgent}
+        />
+      </div>
+
+      {/* One loader for the page, not one per slot. */}
+      <AdsenseLoader enabled={showAds && adsense.enabled} />
 
       <script
         type="application/ld+json"

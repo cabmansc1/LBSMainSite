@@ -15,6 +15,9 @@ const ACTIONS = [
   "toggle_hidden",
   "toggle_active",
   "toggle_featured",
+  "ads_auto",
+  "ads_on",
+  "ads_off",
   "delete",
 ] as const;
 type Action = (typeof ACTIONS)[number];

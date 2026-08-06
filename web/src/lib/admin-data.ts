@@ -159,7 +159,16 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
  */
 export async function businessAction(
   id: number,
-  action: "approve" | "deny" | "toggle_hidden" | "toggle_active" | "toggle_featured" | "delete",
+  action:
+    | "approve"
+    | "deny"
+    | "toggle_hidden"
+    | "toggle_active"
+    | "toggle_featured"
+    | "ads_auto"
+    | "ads_on"
+    | "ads_off"
+    | "delete",
   opts: { reason?: string; by?: string } = {},
 ) {
   const { db } = await import("@/lib/db");
@@ -194,6 +203,21 @@ export async function businessAction(
         sql`UPDATE directory_businesses SET is_featured = NOT is_featured WHERE id = ${id}`,
       );
       return;
+    // Advertising on this one listing, set by hand. Separate from
+    // Featured because Featured is also used editorially: a listing
+    // marked Featured to promote it should still be able to carry ads,
+    // and a listing that is not Featured should still be able to refuse
+    // them.
+    case "ads_auto":
+    case "ads_on":
+    case "ads_off": {
+      const { setAdsOverride } = await import("@/lib/ads");
+      await setAdsOverride(
+        id,
+        action === "ads_auto" ? null : action === "ads_on",
+      );
+      return;
+    }
     case "deny": {
       // Kept, not deleted. A rejection that removes the row leaves no
       // record it happened, no reason and nothing to tell the business,
