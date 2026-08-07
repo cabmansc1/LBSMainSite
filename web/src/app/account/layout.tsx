@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
 import { getPortalTodos } from "@/lib/portal-todos";
@@ -22,6 +23,18 @@ export default async function AccountLayout({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  // Somebody is here, recorded at most once an hour and after the page
+  // has gone out. Not while an admin is viewing as them: that is your
+  // visit, not theirs, and counting it would spoil the figure exactly
+  // when you are the one reading it.
+  if (!session.impersonatedBy) {
+    const email = session.email;
+    after(async () => {
+      const { touchSeen } = await import("@/lib/user-activity");
+      await touchSeen(email);
+    });
+  }
 
   const ctx = await getPortalContext(session);
   const { listings, currentCards } = ctx;

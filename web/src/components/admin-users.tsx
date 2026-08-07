@@ -14,6 +14,23 @@ function suggestPassword() {
   return `${pick()}-${pick()}-${n}`;
 }
 
+/**
+ * "3 months ago" rather than a date, because the question being asked is
+ * how long it has been, and working that out from 2026-04-12 is a
+ * subtraction the reader should not have to do. The date is underneath
+ * for anyone who wants it.
+ */
+function sinceLabel(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months === 1 ? "" : "s"} ago`;
+  const years = Math.floor(days / 365);
+  return `${years} year${years === 1 ? "" : "s"} ago`;
+}
+
 function UserRow({ u }: { u: AdminUser }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -136,6 +153,22 @@ function UserRow({ u }: { u: AdminUser }) {
         </td>
         <td className="px-4 py-3 border-b border-line text-[12.5px] text-muted">
           {u.createdAt ? u.createdAt.slice(0, 10) : "-"}
+        </td>
+        <td className="px-4 py-3 border-b border-line text-[12.5px]">
+          {u.lastLogin ? (
+            <>
+              <span className="text-ink">{sinceLabel(u.lastLogin)}</span>
+              <span className="block text-muted num">
+                {u.lastLogin.slice(0, 10)}
+                {u.loginCount > 1 ? ` · ${u.loginCount} sign-ins` : ""}
+              </span>
+            </>
+          ) : (
+            // Not an error and not necessarily an unused account: nothing
+            // was recorded before this shipped, so everyone reads as never
+            // until they come back.
+            <span className="text-muted">Not since this was tracked</span>
+          )}
         </td>
         <td className="px-4 py-3 border-b border-line">
           {/* The state and the control that changes it, rather than a
@@ -349,7 +382,12 @@ function CreateLogin() {
 
 export function AdminUsers({ users }: { users: AdminUser[] }) {
   const [query, setQuery] = useState("");
-  const visible = query.trim()
+  // Newest account first is the default the screen has always had. The
+  // other order is the one that answers a question: who has not been
+  // back, oldest first, with never at the top.
+  const [order, setOrder] = useState<"newest" | "stalest">("newest");
+
+  const matched = query.trim()
     ? users.filter((u) =>
         [u.email, u.firstName, u.lastName, u.listings.join(" ")]
           .join(" ")
@@ -357,6 +395,20 @@ export function AdminUsers({ users }: { users: AdminUser[] }) {
           .includes(query.trim().toLowerCase()),
       )
     : users;
+
+  const visible =
+    order === "newest"
+      ? matched
+      : // Never sorts before the longest absence rather than after it:
+        // an account that has never signed in is the strongest version
+        // of the thing being looked for, not a missing value.
+        [...matched].sort((a, b) => {
+          const at = a.lastLogin ? new Date(a.lastLogin).getTime() : -1;
+          const bt = b.lastLogin ? new Date(b.lastLogin).getTime() : -1;
+          return at - bt;
+        });
+
+  const neverIn = users.filter((u) => !u.lastLogin).length;
 
   return (
     <>
@@ -369,16 +421,30 @@ export function AdminUsers({ users }: { users: AdminUser[] }) {
           className="w-full max-w-[360px] text-sm px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950"
         />
         <span className="text-[13px] text-muted num">{visible.length} accounts</span>
+        <button
+          type="button"
+          onClick={() => setOrder(order === "newest" ? "stalest" : "newest")}
+          className="text-[12.5px] font-semibold px-3 py-2 rounded-[9px] border border-line-strong"
+        >
+          {order === "newest" ? "Sort by last sign-in" : "Sort by newest"}
+        </button>
+        {neverIn > 0 && (
+          <span className="text-[12.5px] text-muted num">
+            {neverIn} not seen since tracking started
+          </span>
+        )}
         <div className="ml-auto">
           <CreateLogin />
         </div>
       </div>
 
       <div className="overflow-x-auto border border-line rounded-(--radius-card) bg-white">
-        <table className="w-full border-collapse text-[13.5px] min-w-[820px]">
+        {/* Wider by a column, so the last one does not get squeezed into
+            two words per line on a laptop. */}
+        <table className="w-full border-collapse text-[13.5px] min-w-[960px]">
           <thead>
             <tr>
-              {["Account", "Linked listings", "Created", "Status", ""].map((h) => (
+              {["Account", "Linked listings", "Created", "Last sign-in", "Status", ""].map((h) => (
                 <th
                   key={h}
                   className="text-left text-[11px] uppercase tracking-wider text-muted font-semibold px-4 py-3 border-b border-line bg-surface"
