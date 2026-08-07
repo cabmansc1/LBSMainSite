@@ -5,6 +5,12 @@ import { Card } from "@/components/sections";
 import { getPosts } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
+// Left dynamic deliberately. An hour-stale post list would be harmless
+// in itself, but a page has to render somewhere to be cached, and the
+// database is unreachable from inside the Docker build: a prerender
+// there falls back to the two sample posts in lib/blog and would serve
+// those to everybody until the first revalidation. The post pages
+// beneath this one cache safely because they prebuild nothing.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {

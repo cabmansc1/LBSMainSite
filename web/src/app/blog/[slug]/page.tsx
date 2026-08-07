@@ -5,7 +5,21 @@ import { notFound } from "next/navigation";
 import { getPost, getPosts, type BlogPost } from "@/lib/blog";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+/**
+ * A published post changes when somebody edits it, which is rarely, and
+ * saving one from the admin refreshes this page outright. The hour is
+ * only the backstop for an edit that bypasses that path: the legacy PHP
+ * admin writes the same table and knows nothing about this cache.
+ *
+ * Nothing is built ahead of time on purpose. The database is unreachable
+ * from inside the Docker build, so a post prerendered there would bake
+ * the sample content lib/blog falls back to when its query fails.
+ */
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 /**
  * A handful of posts have neither a meta description nor an excerpt, so

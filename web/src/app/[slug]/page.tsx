@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -314,12 +315,18 @@ export default async function ZonePage({
                       className="block bg-white border border-line rounded-(--radius-card) overflow-hidden hover:border-faint transition-colors"
                     >
                       {img && (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        /* Card scans are stored big enough to read the
+                           small print, and the sizes hint is what stops
+                           one of those arriving in a thumbnail three to
+                           a row: without it the browser assumes the
+                           image is as wide as the window. */
+                        <Image
                           src={`/api/card-image/${img.id}`}
                           alt={img.alt}
+                          width={img.width || 800}
+                          height={img.height || 534}
+                          sizes="(min-width: 1024px) 350px, (min-width: 640px) 45vw, 90vw"
                           className="w-full h-auto"
-                          loading="lazy"
                         />
                       )}
                       <span className="block px-4 py-3">

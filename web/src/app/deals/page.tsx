@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Card, CtaBand } from "@/components/sections";
 import { LOWCODEALS_BRAND, getLowCoDeals } from "@/lib/lowco-deals";
@@ -80,10 +81,11 @@ export default async function DealsPage() {
                 className="inline-flex items-center"
                 aria-label="LowCoDeals"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src="/brand/lowcodeals.png"
                   alt="LowCoDeals"
+                  width={123}
+                  height={36}
                   className="h-9 w-auto"
                 />
               </a>
@@ -101,6 +103,12 @@ export default async function DealsPage() {
                 <a key={d.id} href={d.url} target="_blank" rel="noopener">
                   <Card className="overflow-hidden hover:border-faint transition-colors h-full grid content-start">
                     {d.imageUrl && (
+                      // Left as a plain img on purpose. Deal artwork is
+                      // hosted by LowCoDeals, which is not in the
+                      // optimizer's remote allowlist, and next/image
+                      // aimed at an unlisted host answers 400 instead
+                      // of a picture. Add the remotePatterns entry and
+                      // this can convert.
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={d.imageUrl}

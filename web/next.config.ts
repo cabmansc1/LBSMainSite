@@ -71,7 +71,38 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Legacy query-string forms
+      /**
+       * The apex host serves this same app, so every page has been reachable
+       * on two hostnames and links pointing at the bare domain never pool
+       * with the www ones. The pages already carry a canonical to www, but a
+       * canonical is a request and this is the answer.
+       *
+       * Host values in `has` are matched anchored, so www cannot satisfy its
+       * own rule and there is nothing here to loop on, and Next keeps
+       * `/_next` out of redirect sources on its own so assets never take
+       * this hop. The path is captured with `:path(.*)` rather than the
+       * repeat form `:path*`, which compiles the bare `/` away to nothing
+       * and would send the most-linked URL on the site to an origin with no
+       * path at all.
+       */
+      {
+        source: "/:path(.*)",
+        has: [{ type: "host", value: "lowcountrybusinessspotlight\\.com" }],
+        destination: "https://www.lowcountrybusinessspotlight.com/:path",
+        permanent: true,
+      },
+      /**
+       * Legacy query-string forms.
+       *
+       * These land on the clean path with the dead `?slug=` (or `?category=`,
+       * `?tag=`, `?location=`) still attached. Next merges the request's own
+       * query into every redirect destination and offers no way to drop a
+       * key, so a rule can overwrite a value but never remove one; verified
+       * against 16.2.11 across every destination shape, including absolute
+       * URLs and an explicitly emptied param. What keeps the leftover out of
+       * the index is that each destination page canonicalizes to its bare
+       * path. Removing it from the URL itself needs a proxy.ts, not a rule.
+       */
       {
         source: "/business.php",
         has: [{ type: "query", key: "slug", value: "(?<slug>.*)" }],

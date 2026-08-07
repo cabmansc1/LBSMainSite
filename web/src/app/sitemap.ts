@@ -60,6 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/directory/location/${l.slug}`,
       priority: 0.5,
     })),
+    ...options.tags.map((t) => ({
+      url: `${SITE_URL}/directory/tag/${t.slug}`,
+      priority: 0.5,
+    })),
     ...businesses.map((b) => ({
       url: `${SITE_URL}/business/${b.slug}`,
       priority: 0.5,

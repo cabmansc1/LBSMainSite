@@ -9,7 +9,23 @@ import { groupIntoEditions } from "@/lib/card-editions";
 import { zoneBySlug } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+/**
+ * A neighborhood's list of mailed cards only moves when a new card is
+ * published, and unlike /gallery and /cards/[slug] nothing in the admin
+ * refreshes this page when that happens, so the hour is the only thing
+ * that brings a new card in. It bounds the opposite case too: a zone
+ * whose first card has just gone up 404s until the window turns over.
+ *
+ * Nothing is built ahead of time. The zones are a fixed, finite list, but
+ * whether a zone has any cards is a database question, and the database
+ * is unreachable from inside the Docker build, so prebuilding the eleven
+ * would bake a 404 into every one of them.
+ */
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,
