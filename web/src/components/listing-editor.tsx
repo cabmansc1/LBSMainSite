@@ -45,7 +45,6 @@ type FormState = {
   instagramUrl: string;
   tiktokUrl: string;
   youtubeUrl: string;
-  linkedinUrl: string;
   showHours: boolean;
 };
 
@@ -122,7 +121,6 @@ export function ListingEditor({
     instagramUrl: listing.instagramUrl,
     tiktokUrl: listing.tiktokUrl,
     youtubeUrl: listing.youtubeUrl,
-    linkedinUrl: listing.linkedinUrl,
     showHours: listing.showHours,
   });
   const [week, setWeek] = useState<DayHours[]>(hours);
@@ -298,7 +296,6 @@ export function ListingEditor({
               ["instagramUrl", "Instagram"],
               ["tiktokUrl", "TikTok"],
               ["youtubeUrl", "YouTube"],
-              ["linkedinUrl", "LinkedIn"],
             ] as const
           ).map(([key, title]) => (
             <Field

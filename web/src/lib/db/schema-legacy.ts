@@ -46,10 +46,6 @@ export const businesses = mysqlTable("directory_businesses", {
   instagramUrl: varchar("instagram_url", { length: 512 }),
   tiktokUrl: varchar("tiktok_url", { length: 512 }),
   youtubeUrl: varchar("youtube_url", { length: 512 }),
-  // Collected by the old signup form and carried by the table since,
-  // but read by nothing after the migration, so every LinkedIn URL a
-  // business gave us sat in here invisible.
-  linkedinUrl: varchar("linkedin_url", { length: 512 }),
   createdAt: timestamp("created_at"),
 });
 

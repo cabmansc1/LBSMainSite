@@ -50,7 +50,6 @@ export type AdminBusiness = {
   instagramUrl: string | null;
   tiktokUrl: string | null;
   youtubeUrl: string | null;
-  linkedinUrl: string | null;
 };
 
 const bool = (v: unknown) => v === 1 || v === true || v === "1";
@@ -63,7 +62,7 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
         sql`SELECT id, slug, business_name, category, location_area, city, phone, email,
                    website, description, plan_type, is_featured, is_verified, is_hidden,
                    is_active, views_count, inquiries_count, created_at,
-                   facebook_url, instagram_url, tiktok_url, youtube_url, linkedin_url
+                   facebook_url, instagram_url, tiktok_url, youtube_url
             FROM directory_businesses
             WHERE business_name LIKE ${term} OR slug LIKE ${term} OR email LIKE ${term}
             ORDER BY business_name LIMIT 500`,
@@ -72,7 +71,7 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
         sql`SELECT id, slug, business_name, category, location_area, city, phone, email,
                    website, description, plan_type, is_featured, is_verified, is_hidden,
                    is_active, views_count, inquiries_count, created_at,
-                   facebook_url, instagram_url, tiktok_url, youtube_url, linkedin_url
+                   facebook_url, instagram_url, tiktok_url, youtube_url
             FROM directory_businesses ORDER BY business_name LIMIT 500`,
       )) as unknown as [Record<string, unknown>[]]);
 
@@ -150,7 +149,6 @@ export async function getAdminBusinesses(search = ""): Promise<AdminBusiness[]> 
     instagramUrl: (r.instagram_url as string) ?? null,
     tiktokUrl: (r.tiktok_url as string) ?? null,
     youtubeUrl: (r.youtube_url as string) ?? null,
-    linkedinUrl: (r.linkedin_url as string) ?? null,
   }));
 }
 
@@ -299,7 +297,6 @@ export type BusinessPatch = {
   facebookUrl?: string;
   instagramUrl?: string;
   tiktokUrl?: string;
-  linkedinUrl?: string;
   youtubeUrl?: string;
   showHours?: boolean;
 };
@@ -323,7 +320,6 @@ const COLUMNS: Record<keyof BusinessPatch, string> = {
   instagramUrl: "instagram_url",
   tiktokUrl: "tiktok_url",
   youtubeUrl: "youtube_url",
-  linkedinUrl: "linkedin_url",
   showHours: "show_hours",
 };
 
@@ -393,7 +389,6 @@ const URL_FIELDS = [
   "instagramUrl",
   "tiktokUrl",
   "youtubeUrl",
-  "linkedinUrl",
 ] as const satisfies readonly (keyof BusinessPatch)[];
 
 export class InvalidPatch extends Error {}
