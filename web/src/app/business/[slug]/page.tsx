@@ -160,7 +160,6 @@ export default async function BusinessPage({
     b.socials?.instagram,
     b.socials?.tiktok,
     b.socials?.youtube,
-    b.socials?.linkedin,
   ].filter(Boolean);
 
   // The legacy page typed the schema by category and carried the map
@@ -275,17 +274,6 @@ export default async function BusinessPage({
           <rect x="2.5" y="6" width="19" height="12" rx="3.5" />
           <path d="M10.5 9.5v5l4.5-2.5-4.5-2.5z" fill="#fff" />
         </>
-      ),
-    },
-    {
-      // Last, because it was missing entirely: the old signup form asked
-      // for it, the column has been carrying the answers ever since, and
-      // nothing after the migration ever read them back out.
-      key: "linkedin",
-      href: b.socials?.linkedin,
-      label: "LinkedIn",
-      icon: (
-        <path d="M6.9 8.5v10.6H3.6V8.5h3.3zM5.3 3.3a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8zM20.4 19.1h-3.3v-5.2c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8v5.3H10V8.5h3.1v1.4h.1c.5-.8 1.6-1.7 3.2-1.7 3.4 0 4 2.2 4 5.1v5.8z" />
       ),
     },
   ];

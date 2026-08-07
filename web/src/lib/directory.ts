@@ -39,7 +39,6 @@ export type DirectoryBusiness = {
     instagram?: string;
     tiktok?: string;
     youtube?: string;
-    linkedin?: string;
   };
   /** Taxonomy tags ("Locally Owned", "Licensed & Insured", ...). */
   tags?: { name: string; slug: string }[];
@@ -506,13 +505,12 @@ export async function getBusinesses(
         }
       : undefined,
     socials:
-      r.facebookUrl || r.instagramUrl || r.tiktokUrl || r.youtubeUrl || r.linkedinUrl
+      r.facebookUrl || r.instagramUrl || r.tiktokUrl || r.youtubeUrl
         ? {
             facebook: r.facebookUrl ?? undefined,
             instagram: r.instagramUrl ?? undefined,
             tiktok: r.tiktokUrl ?? undefined,
             youtube: r.youtubeUrl ?? undefined,
-            linkedin: r.linkedinUrl ?? undefined,
           }
         : undefined,
     address: r.address
