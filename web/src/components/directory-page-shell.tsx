@@ -9,17 +9,49 @@ import {
 import { getDealsByBusiness } from "@/lib/lowco-deals";
 import { SITE_URL } from "@/lib/seo";
 
+/** Eight rows of three on a wide screen, twelve rows of two on a tablet. */
+export const PAGE_SIZE = 24;
+
+/**
+ * The `page` query parameter, as a page number.
+ *
+ * Anything that is not a page past the first — a word, a negative, a
+ * repeated parameter — reads as the first page. A URL nobody meant to
+ * write should still answer with the directory.
+ */
+export function readPageParam(value: string | string[] | undefined): number {
+  const n = Number(Array.isArray(value) ? value[0] : value);
+  return Number.isFinite(n) && n > 1 ? Math.floor(n) : 1;
+}
+
+/**
+ * The address of one page of listings.
+ *
+ * The first page is the bare path. /directory and /directory?page=1
+ * would otherwise be two URLs for one set of listings, and the bare
+ * one is the one everything already links to.
+ */
+export function directoryPageUrl(basePath: string, page: number): string {
+  return page > 1 ? `${basePath}?page=${page}` : basePath;
+}
+
 /**
  * Shared server shell for /directory and its category/location/tag
  * variants, so all four routes stay identical except the filter.
  */
 export async function DirectoryPageShell({
   filters = {},
+  basePath,
+  page: requestedPage,
   heading,
   intro,
   faqs,
 }: {
   filters?: DirectoryFilters;
+  /** This route's own path, for the page links and nothing else. */
+  basePath: string;
+  /** The page asked for in the query string, before clamping. */
+  page: number;
   heading?: string;
   /** Editorial paragraph shown under the hero (category pages). */
   intro?: string;
@@ -36,12 +68,31 @@ export async function DirectoryPageShell({
     Object.entries(dealsByBiz).map(([k, v]) => [k, v.length]),
   );
 
+  // Which page you asked for is decided here rather than in the
+  // browser, because the query string is only legible on this side of
+  // the boundary during the render that produces the HTML. Deciding it
+  // there meant every page of the directory shipped the first page's
+  // listings, and the ninety-six businesses past page one had no link
+  // pointing at them from anywhere a crawler could reach.
+  //
+  // Featured listings are their own block and repeat on every page, so
+  // paging counts the rest.
+  const featured = businesses.filter((b) => b.isFeatured);
+  const rest = businesses.filter((b) => !b.isFeatured);
+  const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+  // A page past the end shows the last one rather than nothing at all.
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const pageStart = (page - 1) * PAGE_SIZE;
+  const pageRows = rest.slice(pageStart, pageStart + PAGE_SIZE);
+
   // ItemList structured data: tells search engines this page is a
   // ranked list of local businesses, each with its own indexable page.
+  // It describes the listings this page actually draws, so page two
+  // does not announce page one's businesses a second time.
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: businesses.slice(0, 25).map((b, i) => ({
+    itemListElement: [...featured, ...pageRows].slice(0, 25).map((b, i) => ({
       "@type": "ListItem",
       position: i + 1,
       url: `${SITE_URL}/business/${b.slug}`,
@@ -96,6 +147,9 @@ export async function DirectoryPageShell({
           activeLocation={filters.location}
           activeTag={filters.tag}
           lowcoDealCounts={lowcoDealCounts}
+          basePath={basePath}
+          page={page}
+          pageSize={PAGE_SIZE}
         />
         {usingSampleData() && (
           <p className="mt-6 text-[12.5px] text-muted bg-surface border border-line rounded-lg px-3.5 py-2.5 w-max">

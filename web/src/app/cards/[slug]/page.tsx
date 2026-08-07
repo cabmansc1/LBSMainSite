@@ -23,7 +23,26 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
  * site was missing.
  */
 
-export const dynamic = "force-dynamic";
+/**
+ * This card has already mailed, so its photos, the ground it covered and
+ * the businesses on it are settled history. What can still move is a
+ * linked advertiser's phone or website, which comes from the directory
+ * and which nothing here refreshes, and a day is a fair bound on that.
+ * Uploading or editing a card from the admin refreshes this page
+ * outright, so the window never holds the archive itself back.
+ *
+ * Mission Control reads cache for 60s of their own accord and the
+ * shorter window wins for the whole route, so a card that came from
+ * Mission Control is in practice far fresher than a day.
+ *
+ * Nothing is built ahead of time: neither the database nor Mission
+ * Control is reachable from inside the Docker build.
+ */
+export const revalidate = 86400;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,
@@ -212,7 +231,14 @@ export default async function PastCardPage({
             width={hero.width || 1800}
             height={hero.height || 1200}
             className="rounded-(--radius-card) border border-line w-full h-auto"
-            priority
+            // The card itself is what somebody opened this page to see, so
+            // it loads immediately rather than waiting on the viewport.
+            // Not preload: the navy header above carries the heading and
+            // the chips, so which element is the LCP depends on how tall
+            // the viewport is, and preload is the wrong tool once that is
+            // in doubt.
+            loading="eager"
+            fetchPriority="high"
           />
           {hero.caption && (
             <figcaption className="text-[13px] text-muted">{hero.caption}</figcaption>

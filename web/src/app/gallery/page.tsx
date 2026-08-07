@@ -20,6 +20,11 @@ export const metadata: Metadata = {
 };
 
 // Cards are uploaded from the admin, so never a build-time snapshot.
+// The database is unreachable from inside the Docker build and an empty
+// archive is answered with the stand-in postcards below, so a prerender
+// would put sample cards under "Real cards we mailed" until the first
+// revalidation. The index stays dynamic for that reason; the zone and
+// card pages beneath it cache, because they prebuild nothing.
 export const dynamic = "force-dynamic";
 
 /** Stand-ins, shown only until the archive has real cards in it. */

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { CONTACT_EMAIL, CONTACT_PHONE, CONTACT_PHONE_INTL, SITE_NAME, SITE_URL } from "@/lib/seo";
@@ -104,10 +105,14 @@ export function SiteFooter() {
       <div className="mx-auto max-w-[1120px] px-6 py-13 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-3 mb-3.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            {/* The same mark as the nav, a little smaller, and told the
+                size it is drawn at for the same reason. It stays lazy:
+                a footer is below the fold by definition. */}
+            <Image
               src="/brand/lb-spotlight.png"
               alt="LB Spotlight"
+              width={30}
+              height={36}
               className="h-9 w-auto"
             />
             <span className="font-bold text-white text-[15px] tracking-tight">

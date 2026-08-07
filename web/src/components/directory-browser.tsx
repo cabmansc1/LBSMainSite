@@ -1,17 +1,14 @@
 "use client";
 import { richTextToPlain } from "@/lib/rich-text";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { DirectoryMap } from "@/components/directory-map";
 import type { DirectoryBusiness } from "@/lib/directory";
 
 type Option = { name: string; slug: string };
-
-/** Eight rows of three on a wide screen, twelve rows of two on a tablet. */
-const PAGE_SIZE = 24;
 
 /**
  * Page numbers to actually draw, with gaps where there are too many.
@@ -30,6 +27,22 @@ function pageWindow(current: number, total: number): (number | "gap")[] {
   if (to < total - 1) out.push("gap");
   out.push(total);
   return out;
+}
+
+/** Shared by the Previous/Next step, whether or not it links anywhere. */
+const stepClass =
+  "text-[13px] font-semibold px-3 py-2 rounded-lg border border-line-strong bg-white text-body";
+
+/**
+ * The page a directory URL is asking for.
+ *
+ * The same reading the server does, repeated here because the server
+ * half of it lives behind `server-only` and cannot be imported into a
+ * browser bundle. Anything unreadable is the first page.
+ */
+function pageFromSearch(search: string): number {
+  const n = Number(new URLSearchParams(search).get("page"));
+  return Number.isFinite(n) && n > 1 ? Math.floor(n) : 1;
 }
 
 function SelectField({
@@ -238,6 +251,9 @@ export function DirectoryBrowser({
   activeLocation,
   activeTag,
   lowcoDealCounts = {},
+  basePath,
+  page: serverPage,
+  pageSize,
 }: {
   businesses: DirectoryBusiness[];
   categories: Option[];
@@ -248,9 +264,13 @@ export function DirectoryBrowser({
   activeTag?: string;
   /** normalized business name -> live LowCoDeals count */
   lowcoDealCounts?: Record<string, number>;
+  /** This route's own path, which the page links hang off. */
+  basePath: string;
+  /** The page the server rendered, already clamped to the last one. */
+  page: number;
+  pageSize: number;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const dealCount = (name: string) =>
     lowcoDealCounts[name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "")] ?? 0;
   const [query, setQuery] = useState("");
@@ -260,18 +280,35 @@ export function DirectoryBrowser({
   // The page lives in the URL rather than in state, so it survives a
   // refresh, can be linked to, and the Back button steps through pages
   // instead of leaving the directory. pushState keeps that from costing
-  // a server round trip; Next syncs useSearchParams with it.
-  const requestedPage = Math.max(1, Number(searchParams.get("page")) || 1);
+  // a server round trip.
+  //
+  // It cannot be read off the URL on the first render, though: that
+  // render happens on the server, where the query string reaches the
+  // page component and not this one. So the page arrives as a prop and
+  // the address bar takes over from there. The first render is the only
+  // one a crawler ever sees, and it was the render that served page
+  // one's listings whatever page had been asked for.
+  const [requestedPage, setRequestedPage] = useState(serverPage);
 
   const setUrlPage = (n: number, mode: "push" | "replace") => {
-    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    const params = new URLSearchParams(window.location.search);
     if (n <= 1) params.delete("page");
     else params.set("page", String(n));
     const qs = params.toString();
     const url = qs ? `?${qs}` : window.location.pathname;
     if (mode === "push") window.history.pushState(null, "", url);
     else window.history.replaceState(null, "", url);
+    setRequestedPage(n);
   };
+
+  // Leading the address bar is only half of it. Back and Forward move
+  // between pages of the directory, so the listings have to follow the
+  // address bar too.
+  useEffect(() => {
+    const followUrl = () => setRequestedPage(pageFromSearch(window.location.search));
+    window.addEventListener("popstate", followUrl);
+    return () => window.removeEventListener("popstate", followUrl);
+  }, []);
 
   const activeFilters = [
     activeCategory && {
@@ -302,17 +339,38 @@ export function DirectoryBrowser({
   const featured = visible.filter((b) => b.isFeatured);
   const rest = visible.filter((b) => !b.isFeatured);
 
-  // Clamped rather than stored, so a search that shrinks the results
+  // The server already clamped the page it handed down. This repeats
+  // the clamp because typing in the search box narrows the list without
+  // asking the server anything, and a search that shrinks the results
   // from nine pages to one cannot leave somebody looking at an empty
   // page seven.
-  const totalPages = Math.max(1, Math.ceil(rest.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(rest.length / pageSize));
   const page = Math.min(requestedPage, totalPages);
-  const pageStart = (page - 1) * PAGE_SIZE;
-  const pageRows = rest.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (page - 1) * pageSize;
+  const pageRows = rest.slice(pageStart, pageStart + pageSize);
 
-  const goToPage = (n: number) => {
-    const next = Math.min(Math.max(1, n), totalPages);
-    setUrlPage(next, "push");
+  /**
+   * Where a page control points.
+   *
+   * The href is the whole point of the control being an anchor: it is
+   * what a crawler follows, what a middle click opens and what a reader
+   * can copy out of the address bar. The first page is the bare path,
+   * so nothing links to a ?page=1 twin of it.
+   */
+  const pageHref = (n: number) => (n > 1 ? `${basePath}?page=${n}` : basePath);
+
+  /**
+   * Draw the page rather than letting the browser fetch it.
+   *
+   * Every listing is already here and a page is a slice of them, so
+   * following the href would trade an instant redraw for a round trip.
+   * A click carrying a modifier is left to the browser, because that is
+   * how a page gets opened in a new tab.
+   */
+  const goToPage = (e: MouseEvent<HTMLAnchorElement>, n: number) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    setUrlPage(n, "push");
     // The cards above the fold have already changed by the time this
     // runs, so without it you land mid-list on somebody else's page.
     listTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -453,7 +511,7 @@ export function DirectoryBrowser({
                 listings are their own block and repeat on every page,
                 so folding them into the total would make the numbers
                 stop adding up. */}
-            {rest.length > PAGE_SIZE
+            {rest.length > pageSize
               ? `${pageStart + 1}–${pageStart + pageRows.length} of ${rest.length}`
               : `${visible.length} listed`}
           </span>
@@ -479,14 +537,23 @@ export function DirectoryBrowser({
             aria-label="Directory pages"
             className="flex items-center justify-center gap-1.5 flex-wrap mt-8"
           >
-            <button
-              type="button"
-              onClick={() => goToPage(page - 1)}
-              disabled={page === 1}
-              className="text-[13px] font-semibold px-3 py-2 rounded-lg border border-line-strong bg-white text-body hover:border-navy-950 disabled:opacity-40 disabled:hover:border-line-strong"
-            >
-              Previous
-            </button>
+            {/* At either end there is no page to link to, so the step
+                becomes plain text wearing the disabled styling rather
+                than an anchor pointing off the end of the list. */}
+            {page === 1 ? (
+              <span className={`${stepClass} opacity-40`}>
+                Previous
+              </span>
+            ) : (
+              <a
+                href={pageHref(page - 1)}
+                onClick={(e) => goToPage(e, page - 1)}
+                rel="prev"
+                className={`${stepClass} hover:border-navy-950`}
+              >
+                Previous
+              </a>
+            )}
 
             {pageWindow(page, totalPages).map((n, i) =>
               n === "gap" ? (
@@ -494,30 +561,36 @@ export function DirectoryBrowser({
                   …
                 </span>
               ) : (
-                <button
+                <a
                   key={n}
-                  type="button"
-                  onClick={() => goToPage(n)}
+                  href={pageHref(n)}
+                  onClick={(e) => goToPage(e, n)}
                   aria-current={n === page ? "page" : undefined}
-                  className={`text-[13px] font-semibold num min-w-[36px] px-2.5 py-2 rounded-lg border ${
+                  className={`text-[13px] font-semibold num min-w-[36px] px-2.5 py-2 rounded-lg border inline-flex items-center justify-center ${
                     n === page
                       ? "bg-navy-950 text-white border-navy-950"
                       : "bg-white text-body border-line-strong hover:border-navy-950"
                   }`}
                 >
                   {n}
-                </button>
+                </a>
               ),
             )}
 
-            <button
-              type="button"
-              onClick={() => goToPage(page + 1)}
-              disabled={page === totalPages}
-              className="text-[13px] font-semibold px-3 py-2 rounded-lg border border-line-strong bg-white text-body hover:border-navy-950 disabled:opacity-40 disabled:hover:border-line-strong"
-            >
-              Next
-            </button>
+            {page === totalPages ? (
+              <span className={`${stepClass} opacity-40`}>
+                Next
+              </span>
+            ) : (
+              <a
+                href={pageHref(page + 1)}
+                onClick={(e) => goToPage(e, page + 1)}
+                rel="next"
+                className={`${stepClass} hover:border-navy-950`}
+              >
+                Next
+              </a>
+            )}
           </nav>
         )}
       </section>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
@@ -327,10 +328,19 @@ export default async function BusinessPage({
               </p>
             </div>
             {b.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              // Both shapes of logo URL optimize as things stand: the
+              // legacy uploads host is in remotePatterns, and a logo
+              // uploaded through this app is served same-origin from
+              // /api/business-image/<id>. The box is a fixed square, so
+              // saying so reserves the space and holds the srcset to
+              // the two sizes it can actually draw. Eager because this
+              // is the one image on the first screen of the page.
+              <Image
                 src={b.logoUrl}
                 alt={`${b.name} logo`}
+                width={112}
+                height={112}
+                loading="eager"
                 className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-white object-contain p-1.5 border border-white/15 shrink-0 ml-auto"
               />
             ) : (
@@ -616,10 +626,11 @@ export default async function BusinessPage({
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted">
                   Live deals on
                 </span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src="/brand/lowcodeals.png"
                   alt="LowCoDeals"
+                  width={68}
+                  height={20}
                   className="h-5 w-auto"
                 />
               </div>

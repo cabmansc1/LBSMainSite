@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 /**
@@ -59,14 +60,20 @@ export function PhotoGrid({ photos }: { photos: LightboxPhoto[] }) {
             type="button"
             onClick={() => setOpen(i)}
             aria-label={p.alt ? `View ${p.alt}` : `View photo ${i + 1}`}
-            className="group relative rounded-[10px] overflow-hidden border border-line bg-surface cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="group relative aspect-square rounded-[10px] overflow-hidden border border-line bg-surface cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            {/* Nothing on a listing photo records how big the file is,
+                but the crop makes the answer irrelevant: the square the
+                button already draws is the box, so the optimizer fills
+                it and the space is reserved before a byte arrives. The
+                square moved onto the button because a filled image no
+                longer gives its parent a height. */}
+            <Image
               src={p.url}
               alt={p.alt}
-              loading="lazy"
-              className="w-full aspect-square object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+              fill
+              sizes="(min-width: 1024px) 200px, (min-width: 640px) 30vw, 45vw"
+              className="object-cover transition-transform duration-200 group-hover:scale-[1.03]"
             />
           </button>
         ))}
@@ -80,6 +87,12 @@ export function PhotoGrid({ photos }: { photos: LightboxPhoto[] }) {
           onClick={close}
           className="fixed inset-0 z-[100] bg-navy-950/92 flex items-center justify-center p-4"
         >
+          {/* Deliberately still a plain img. With no stored size the
+              only way to take next/image here is fill, and a filled
+              image covers the whole backdrop: every click would land on
+              the photo and clicking away would stop closing. This one
+              is also opened rather than painted, so it is never the
+              largest paint and shifts nothing. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={current.url}

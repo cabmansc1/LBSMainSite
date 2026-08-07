@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -27,10 +28,17 @@ export function NavBar() {
     <nav className="bg-navy-950 text-white md:sticky md:top-0 md:z-50">
       <div className="mx-auto max-w-[1120px] px-6 py-4 flex items-center gap-6">
         <Link href="/" className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/* The file is a 58KB PNG and this draws it 34 pixels wide on
+              every page in the site, so the size given here is the size
+              it is drawn at rather than the size it was saved at. Eager
+              because the header is above the fold everywhere and there
+              is nothing to gain by deferring it. */}
+          <Image
             src="/brand/lb-spotlight.png"
             alt="LB Spotlight"
+            width={34}
+            height={40}
+            loading="eager"
             className="h-10 w-auto"
           />
           <span className="font-bold text-[15px] tracking-tight whitespace-nowrap max-[380px]:hidden">
