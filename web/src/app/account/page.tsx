@@ -41,9 +41,9 @@ export default async function AccountHomePage() {
   const gaps = await missingProfileFields(session.email).catch(() => []);
 
   const business = ctx.listings[0];
-  const nextCard = [...ctx.currentCards].sort((a, b) =>
-    a.mailDateIso.localeCompare(b.mailDateIso),
-  )[0];
+  // Already soonest first. This used to re-sort a list that arrived in
+  // the other order, which is the workaround that gave the ordering away.
+  const nextCard = ctx.currentCards[0];
 
   // The same list the To do tab renders, capped. The dashboard used to
   // hand-roll its own "send us your art" banner, which said nothing
