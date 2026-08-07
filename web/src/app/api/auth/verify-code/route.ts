@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyLoginCode } from "@/lib/login-codes";
 import { findOrCreatePortalUser, setSessionCookie } from "@/lib/auth";
+import { recordLogin } from "@/lib/user-activity";
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -50,5 +51,10 @@ export async function POST(req: Request) {
   }
 
   await setSessionCookie(user);
+  // A real sign-in, as opposed to the cookie being refreshed after a
+  // profile edit or an admin starting to view as somebody. Only these
+  // three routes count, which is why this is not inside
+  // setSessionCookie.
+  await recordLogin(user.email);
   return NextResponse.json({ ok: true });
 }

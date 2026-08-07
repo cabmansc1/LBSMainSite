@@ -833,6 +833,12 @@ export type AdminUser = {
   isActive: boolean;
   createdAt: string | null;
   listings: string[];
+  /** Null means never, which is also what it means for everybody until
+   *  they next sign in: nothing was recorded before this existed. */
+  lastLogin: string | null;
+  /** Any authenticated page view since, recorded hourly at most. */
+  lastSeen: string | null;
+  loginCount: number;
 };
 
 export async function getAdminUsers(search = ""): Promise<AdminUser[]> {
@@ -850,7 +856,7 @@ export async function getAdminUsers(search = ""): Promise<AdminUser[]> {
         LIMIT 200`,
   )) as unknown as [Record<string, unknown>[]];
 
-  return (rows[0] ?? []).map((r) => ({
+  const base = (rows[0] ?? []).map((r) => ({
     id: Number(r.id),
     email: String(r.email ?? ""),
     firstName: String(r.first_name ?? ""),
@@ -859,6 +865,22 @@ export async function getAdminUsers(search = ""): Promise<AdminUser[]> {
     createdAt: r.created_at ? String(r.created_at) : null,
     listings: r.listings ? String(r.listings).split("||").filter(Boolean) : [],
   }));
+
+  // A second query rather than a join, because the activity lives in our
+  // own table and directory_users belongs to the legacy site. Keeping
+  // the two apart is what lets this exist at all.
+  const { activityFor } = await import("@/lib/user-activity");
+  const activity = await activityFor(base.map((u) => u.email));
+
+  return base.map((u) => {
+    const a = activity.get(u.email.toLowerCase());
+    return {
+      ...u,
+      lastLogin: a?.lastLogin ?? null,
+      lastSeen: a?.lastSeen ?? null,
+      loginCount: a?.loginCount ?? 0,
+    };
+  });
 }
 
 /**
