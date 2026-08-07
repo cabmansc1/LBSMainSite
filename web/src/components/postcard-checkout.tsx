@@ -125,6 +125,7 @@ export function PostcardCheckout({
   const [email, setEmail] = useState(account?.email ?? "");
   const [phone, setPhone] = useState(account?.phone ?? "");
   const [status, setStatus] = useState<"idle" | "sending" | "error" | "waitlisted">("idle");
+  const [reason, setReason] = useState("");
 
   const priceCents = pricing[reach][size].priceCents;
   const listCents = listPricing?.[reach][size].priceCents;
@@ -163,10 +164,15 @@ export function PostcardCheckout({
           phone: phone.trim() || undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error();
+      const data = await res.json().catch(() => ({}));
+      // The server's own words when it has any. It refuses for reasons a
+      // buyer can act on — the category went while they were typing, the
+      // card closed — and "Could not start checkout" for all of them
+      // tells them to retry the one thing that will not work.
+      if (!res.ok || !data.url) throw new Error(String(data.error ?? ""));
       window.location.href = data.url;
-    } catch {
+    } catch (e) {
+      setReason(e instanceof Error ? e.message : "");
       setStatus("error");
     }
   }
@@ -474,11 +480,15 @@ export function PostcardCheckout({
             {status === "sending" ? "Starting checkout..." : "Continue to secure payment"}
           </button>
           {status === "error" && (
-            <p className="text-sm text-danger">Could not start checkout. Please try again.</p>
+            <p className="text-sm text-danger">
+              {reason || "Could not start checkout. Please try again."}
+            </p>
           )}
+          {/* True as of the claim written at checkout: the category is
+              reserved for half an hour while they pay. It says category
+              rather than spot because that is what is actually held. */}
           <p className="text-xs text-muted text-center">
-            Payments by Stripe · spot held for 30 minutes · category locks on
-            payment
+            Payments by Stripe · category held for 30 minutes · locks on payment
           </p>
         </div>
       </aside>

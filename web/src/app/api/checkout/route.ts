@@ -14,6 +14,7 @@ import {
 } from "@/lib/orders";
 import { type Reach, type SpotSize } from "@/lib/pricing";
 import { getPricingFor } from "@/lib/advertiser-rates";
+import { claimCategory, releaseHold, type HoldScope } from "@/lib/spot-holds";
 import { zoneBySlug } from "@/lib/zones";
 import { getCard } from "@/lib/cards";
 import { publicOrigin } from "@/lib/origin";
@@ -74,6 +75,9 @@ export async function POST(req: Request) {
   let name: string;
   let amountCents: number;
   let metadata: Record<string, string>;
+  // What the category is being claimed against. Exclusivity is per card,
+  // so the card is the scope wherever the buyer picked one.
+  let holdScope: HoldScope;
 
   if (kind === "postcard") {
     const zone = zoneBySlug(String(body.zoneSlug ?? ""));
@@ -168,6 +172,9 @@ export async function POST(req: Request) {
     }
     name = `Spotlight Postcard: ${zone.name}, ${spotSize} spot`;
     amountCents = tier.priceCents;
+    holdScope = cardId
+      ? { kind: "card", cardId }
+      : { kind: "zone", zoneSlug: zone.slug };
     metadata = {
       kind,
       zone: zone.slug,
@@ -196,6 +203,7 @@ export async function POST(req: Request) {
     }
     name = `${card.name} Neighborhood Card: ${spot.name} spot`;
     amountCents = spot.priceCents;
+    holdScope = { kind: "neighborhood-card", cardSlug: card.slug };
     metadata = {
       kind,
       card: card.slug,
@@ -223,6 +231,35 @@ export async function POST(req: Request) {
   }
 
   const reference = newReference();
+
+  // Reserve the category before the buyer leaves for Stripe.
+  //
+  // The check above asked Mission Control and liked the answer, but
+  // nothing wrote that answer down, so the answer stopped being true the
+  // moment it was given. Two buyers in one trade could both pass it,
+  // both pay, and both be told they had bought exclusivity on one card,
+  // with the clash surfacing after the money settled.
+  //
+  // Claimed here rather than after the order row, so the losing request
+  // never creates a pending order it cannot honour.
+  const claim = await claimCategory({
+    scope: holdScope,
+    category,
+    reference,
+    email,
+    zoneSlug: metadata.zone ?? metadata.card ?? "",
+  });
+  if (!claim.ok) {
+    return NextResponse.json(
+      {
+        error:
+          claim.reason === "held"
+            ? "Someone is buying that category on this card right now. If they finish it is gone, and if they do not it reopens within the half hour. Join the waitlist and we will tell you either way."
+            : "We could not hold that category just now. Please try again in a moment.",
+      },
+      { status: claim.reason === "held" ? 409 : 503 },
+    );
+  }
 
   // Record the intent before handing off to Stripe, so a payment always
   // has something on our side to reconcile against.
@@ -261,14 +298,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: `${origin}/postcards/success?${qs}` });
   }
 
-  const session = await createCheckoutSession({
-    name,
-    amountCents,
-    email,
-    metadata,
-    successUrl: `${origin}/postcards/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancelUrl: `${origin}/postcards/cancelled`,
-  });
+  // A claim that outlives the checkout it was made for blocks a category
+  // for half an hour on behalf of a buyer who never reached Stripe. If
+  // this falls over, give it straight back.
+  let session;
+  try {
+    session = await createCheckoutSession({
+      name,
+      amountCents,
+      email,
+      metadata,
+      successUrl: `${origin}/postcards/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${origin}/postcards/cancelled`,
+    });
+  } catch (e) {
+    await releaseHold(reference);
+    throw e;
+  }
 
   await attachSession(reference, session.id);
 
