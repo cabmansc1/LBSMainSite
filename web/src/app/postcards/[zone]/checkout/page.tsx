@@ -152,8 +152,19 @@ export default async function PostcardCheckoutPage({
     openCards.find((m) => m.cardId && m.cardId === sp.card) ??
     (openCards.length === 1 ? openCards[0] : undefined);
   const mailing = chosen;
+  // Sold, plus anything somebody is part way through paying for. Shown
+  // as taken rather than as held, because to a buyer there is no
+  // difference: either way they cannot have it, and saying "someone is
+  // buying this right now" only invites them to sit and refresh.
   const takenCategories = chosen?.cardId
-    ? await getTakenCategoriesForCard(chosen.cardId)
+    ? await (async () => {
+        const { heldCategories } = await import("@/lib/spot-holds");
+        const [sold, held] = await Promise.all([
+          getTakenCategoriesForCard(chosen.cardId!),
+          heldCategories({ kind: "card", cardId: chosen.cardId! }).catch(() => []),
+        ]);
+        return [...new Set([...sold, ...held])];
+      })()
     : [];
   // Mission Control owns the category vocabulary; exclusivity is checked
   // against its names, so the picker has to offer the same ones.
