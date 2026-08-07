@@ -34,7 +34,13 @@ export type DirectoryBusiness = {
   logoUrl?: string;
   /** Gallery photos (excludes banner type), primary first. */
   photos?: { url: string; alt: string }[];
-  socials?: { facebook?: string; instagram?: string; tiktok?: string; youtube?: string };
+  socials?: {
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+    youtube?: string;
+    linkedin?: string;
+  };
   /** Taxonomy tags ("Locally Owned", "Licensed & Insured", ...). */
   tags?: { name: string; slug: string }[];
   /** Coordinates from the legacy geocoder, for the directory map view. */
@@ -500,12 +506,13 @@ export async function getBusinesses(
         }
       : undefined,
     socials:
-      r.facebookUrl || r.instagramUrl || r.tiktokUrl || r.youtubeUrl
+      r.facebookUrl || r.instagramUrl || r.tiktokUrl || r.youtubeUrl || r.linkedinUrl
         ? {
             facebook: r.facebookUrl ?? undefined,
             instagram: r.instagramUrl ?? undefined,
             tiktok: r.tiktokUrl ?? undefined,
             youtube: r.youtubeUrl ?? undefined,
+            linkedin: r.linkedinUrl ?? undefined,
           }
         : undefined,
     address: r.address

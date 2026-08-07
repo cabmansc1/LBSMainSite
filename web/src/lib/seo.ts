@@ -38,6 +38,31 @@ export const CONTACT_PHONE_TEL = "+18549464500";
 /** For schema.org telephone fields. */
 export const CONTACT_PHONE_INTL = "+1-854-946-4500";
 
+/**
+ * Our own social profiles.
+ *
+ * The site had none anywhere, which cost twice: a reader with no way to
+ * follow us, and a search engine with nothing tying this domain to those
+ * pages. The second is why these also go in the footer's sameAs, which
+ * is the field Google reads to decide that a site and a profile are the
+ * same organisation.
+ *
+ * One list, so the links and the schema cannot disagree about where we
+ * are, which is exactly how the phone number went wrong.
+ */
+export const SOCIAL_LINKS = [
+  {
+    key: "facebook",
+    label: "Facebook",
+    href: "https://www.facebook.com/lowcountrybusinessspotlight",
+  },
+  {
+    key: "instagram",
+    label: "Instagram",
+    href: "https://www.instagram.com/lowcountrybusinessspotlight/",
+  },
+] as const;
+
 type PageSeo = {
   title: string;
   description: string;

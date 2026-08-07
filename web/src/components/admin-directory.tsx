@@ -77,6 +77,7 @@ const SOCIALS = [
   ["instagramUrl", "Instagram"],
   ["tiktokUrl", "TikTok"],
   ["youtubeUrl", "YouTube"],
+  ["linkedinUrl", "LinkedIn"],
 ] as const satisfies readonly (readonly [keyof AdminBusiness, string])[];
 
 // Typing the bare handle is what people do, and the server turns it into
@@ -87,6 +88,7 @@ const SOCIAL_HINTS: Record<(typeof SOCIALS)[number][0], string> = {
   instagramUrl: "instagram.com/theirhandle",
   tiktokUrl: "tiktok.com/@theirhandle",
   youtubeUrl: "youtube.com/@theirchannel",
+  linkedinUrl: "linkedin.com/company/theirs",
 };
 
 function EditPanel({
@@ -213,6 +215,7 @@ function EditPanel({
           instagramUrl: form.instagramUrl,
           tiktokUrl: form.tiktokUrl,
           youtubeUrl: form.youtubeUrl,
+          linkedinUrl: form.linkedinUrl,
         }),
       });
       if (!res.ok) {
