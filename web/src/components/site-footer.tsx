@@ -1,7 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { NewsletterSignup } from "@/components/newsletter-signup";
-import { CONTACT_EMAIL, CONTACT_PHONE, CONTACT_PHONE_INTL, SITE_NAME, SITE_URL } from "@/lib/seo";
+import {
+  CONTACT_EMAIL,
+  CONTACT_PHONE,
+  CONTACT_PHONE_INTL,
+  SITE_NAME,
+  SITE_URL,
+  SOCIAL_LINKS,
+} from "@/lib/seo";
 
 const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
   {
@@ -89,11 +96,29 @@ const localBusinessJsonLd = {
     },
   ],
   priceRange: "$$",
+  // What tells Google these pages and this domain are one organisation.
+  // Without it the profiles and the site are two strangers with the same
+  // name, and neither lends the other anything.
+  sameAs: SOCIAL_LINKS.map((s) => s.href),
   knowsAbout: [
     "Direct Mail Marketing",
     "Postcard Advertising",
     "Local Business Advertising",
   ],
+};
+
+/** Drawn rather than fetched, so a footer costs no extra requests. */
+const SOCIAL_ICON: Record<string, React.ReactNode> = {
+  facebook: (
+    <path d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v7h3v-7h2.3l.7-3H13V9a1 1 0 0 1 1-1z" />
+  ),
+  instagram: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17.2" cy="6.8" r="1.3" />
+    </>
+  ),
 };
 
 export function SiteFooter() {
@@ -121,6 +146,26 @@ export function SiteFooter() {
           </div>
           <p className="mb-2">Summerville, SC</p>
           <p>{CONTACT_PHONE} · {CONTACT_EMAIL}</p>
+          {/* Under the contact details, because following us is the same
+              kind of thing as ringing us and belongs beside it rather
+              than in a column of site links. */}
+          <div className="flex gap-2.5 mt-4">
+            {SOCIAL_LINKS.map((s) => (
+              <a
+                key={s.key}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${SITE_NAME} on ${s.label}`}
+                title={s.label}
+                className="w-9 h-9 rounded-[9px] bg-white/8 border border-white/12 flex items-center justify-center text-[#93A5B8] hover:bg-brand hover:text-navy-950 hover:border-brand transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  {SOCIAL_ICON[s.key]}
+                </svg>
+              </a>
+            ))}
+          </div>
         </div>
         {COLS.map((col) => (
           <div key={col.heading}>

@@ -7,6 +7,7 @@ import {
 import { ZONES } from "@/lib/zones";
 import { emailEnabled } from "@/lib/email";
 import { AdminWaitlist } from "@/components/admin-waitlist";
+import { sweepWaitlistIfDue } from "@/lib/waitlist-sweep";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -16,6 +17,14 @@ export const metadata: Metadata = {
 
 export default async function AdminWaitlistPage() {
   await requireAdmin();
+
+  // Belt and braces for the scheduler. If the cron is not wired up yet,
+  // or has been quiet, opening this page catches anything that has come
+  // free. Throttled, so refreshing does not ask Mission Control about
+  // every zone each time, and awaited so the list below reflects it
+  // rather than showing state that changed a moment ago.
+  await sweepWaitlistIfDue().catch(() => {});
+
   const [entries, legacy] = await Promise.all([
     getWaitlistEntries(),
     countLegacyWaitlistRows(),

@@ -45,6 +45,7 @@ export const INSTANT_FIELDS = [
   "instagramUrl",
   "tiktokUrl",
   "youtubeUrl",
+  "linkedinUrl",
   "showHours",
 ] as const;
 
@@ -71,6 +72,7 @@ export const FIELD_LABELS: Record<EditableField, string> = {
   instagramUrl: "Instagram",
   tiktokUrl: "TikTok",
   youtubeUrl: "YouTube",
+  linkedinUrl: "LinkedIn",
   showHours: "Show hours",
 };
 
@@ -89,6 +91,7 @@ export type AccountListing = {
   instagramUrl: string;
   tiktokUrl: string;
   youtubeUrl: string;
+  linkedinUrl: string;
   showHours: boolean;
   /** What they are entitled to. Photos and offers are paid features. */
   planType: string;
@@ -117,7 +120,8 @@ export async function getListingForAccount(
   const rows = (await db.execute(
     sql`SELECT id, slug, business_name, category, location_area, city, phone,
                email, website, description, facebook_url, instagram_url,
-               tiktok_url, youtube_url, show_hours, plan_type, user_id
+               tiktok_url, youtube_url, linkedin_url, show_hours, plan_type,
+               user_id
         FROM directory_businesses
         WHERE id = ${id}
           AND (user_id = ${user.id} OR (user_id IS NULL AND email = ${user.email}))
@@ -143,6 +147,7 @@ export async function getListingForAccount(
     instagramUrl: str(r.instagram_url),
     tiktokUrl: str(r.tiktok_url),
     youtubeUrl: str(r.youtube_url),
+    linkedinUrl: str(r.linkedin_url),
     // Null means the legacy admin never touched the toggle. Hours that
     // exist should show, so an untouched listing counts as on.
     showHours: r.show_hours === null || r.show_hours === undefined ? true : bool(r.show_hours),
@@ -268,6 +273,7 @@ async function cleanField(
     case "facebookUrl":
     case "instagramUrl":
     case "tiktokUrl":
+    case "linkedinUrl":
     case "youtubeUrl": {
       const url = normalizeUrl(value);
       return url === null ? { error: "That does not look like a web address." } : { value: url };
