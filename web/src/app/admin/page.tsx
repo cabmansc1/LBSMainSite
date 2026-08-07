@@ -6,6 +6,7 @@ import { getDashboardStats } from "@/lib/admin-stats";
 import { markSeen, recentActivity } from "@/lib/admin-activity";
 import { AdminActivityFeed } from "@/components/admin-activity-feed";
 import { AdminPushToggle } from "@/components/admin-push-toggle";
+import { findPaymentGaps } from "@/lib/payment-reconcile";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -24,9 +25,14 @@ const money = (cents: number | null) =>
 
 export default async function AdminDashboardPage() {
   const session = await requireAdmin();
-  const [s, feed] = await Promise.all([
+  const [s, feed, gaps] = await Promise.all([
     getDashboardStats(),
     recentActivity(session.email),
+    // Money taken that Mission Control never heard about. Worked out on
+    // the way in rather than stored, because the answer changes the
+    // moment somebody fixes one by hand in MC, and a stored list would
+    // keep showing it.
+    findPaymentGaps().catch(() => []),
   ]);
 
   // Marked against what this render actually contains, not against the
@@ -86,6 +92,64 @@ export default async function AdminDashboardPage() {
           A dash means that figure could not be read, which is not the same as
           zero. The reason is in the server log.
         </p>
+      )}
+
+      {/* Above the figures, because this is money already taken and the
+          figures are only ever information. */}
+      {gaps.length > 0 && (
+        <Card className="mb-5 p-5 grid gap-3 border-l-[3px] border-l-danger">
+          <div>
+            <h2 className="text-[15.5px] font-bold">
+              {gaps.length === 1
+                ? "A payment Mission Control has not got"
+                : `${gaps.length} payments Mission Control has not got`}
+            </h2>
+            <p className="text-[13px] text-body mt-1 max-w-[74ch] leading-relaxed">
+              Paid here and not settled there, which is what a Stripe webhook
+              that failed to deliver looks like. The advertiser sees the card as
+              paid, because their page falls back to our receipt. Mission
+              Control does not, so the ledger and the card are both wrong until
+              somebody puts it right there.
+            </p>
+          </div>
+          <ul className="grid gap-2">
+            {gaps.slice(0, 6).map((g) => (
+              <li
+                key={g.reference}
+                className="flex items-baseline gap-3 flex-wrap text-[13px] border-b border-line pb-2 last:border-b-0 last:pb-0"
+              >
+                <b className="font-semibold">{g.businessName || g.email}</b>
+                <span className="text-muted num">
+                  {money(g.amountCents)} · {g.paidAt?.slice(0, 10) ?? ""} ·{" "}
+                  {g.reference}
+                </span>
+                <span
+                  className={`ml-auto text-[11px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border ${
+                    g.problem === "missing"
+                      ? "bg-[#fdeeee] text-danger border-[#f5c9c9]"
+                      : "bg-cta-tint text-[#7a4a00] border-[#f3ddbb]"
+                  }`}
+                >
+                  {/* Not on the card is worse than on it and unpaid: one
+                      is a wrong number, the other is an advertiser who
+                      will not be printed. */}
+                  {g.problem === "missing" ? "Not on the card" : "Shows unpaid"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {gaps.length > 6 && (
+            <p className="text-[12.5px] text-muted">
+              and {gaps.length - 6} more.
+            </p>
+          )}
+          <Link
+            href="/admin/orders"
+            className="text-[13px] font-semibold text-brand-deep hover:underline"
+          >
+            See the orders
+          </Link>
+        </Card>
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
