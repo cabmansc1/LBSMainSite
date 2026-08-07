@@ -806,7 +806,16 @@ export type TakenCheck =
  * went to print on Wednesday.
  */
 export type CardSaleState =
-  | { ok: true; zoneSlug: string; status: UpcomingMailing["status"] }
+  | {
+      ok: true;
+      zoneSlug: string;
+      status: UpcomingMailing["status"];
+      /** Mission Control's own counts, in mediums, for the capacity check
+       *  at checkout. Carried here because this call already holds the
+       *  card and a second lookup would be a second chance to disagree. */
+      spotsTotal: number;
+      spotsTaken: number;
+    }
   | { ok: false; reason: "unreachable" | "unknown-card" | "not-bookable" };
 
 export async function checkCardForSale(cardId: string): Promise<CardSaleState> {
@@ -817,7 +826,13 @@ export async function checkCardForSale(cardId: string): Promise<CardSaleState> {
   if (card.isPast || !isBookable(card.status)) {
     return { ok: false, reason: "not-bookable" };
   }
-  return { ok: true, zoneSlug: card.zoneSlug, status: card.status };
+  return {
+    ok: true,
+    zoneSlug: card.zoneSlug,
+    status: card.status,
+    spotsTotal: card.spotsTotal,
+    spotsTaken: card.spotsTaken,
+  };
 }
 
 export async function checkTakenForCard(cardId: string): Promise<TakenCheck> {

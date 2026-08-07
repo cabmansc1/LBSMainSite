@@ -53,6 +53,28 @@ async function ensureTable() {
       INDEX (card_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+
+  // Added after the table shipped, so CREATE TABLE IF NOT EXISTS does
+  // nothing for an install that already has it. Duplicate column is the
+  // expected outcome on every run after the first.
+  //
+  // `id` is what orders two claims made at the same instant. Area is a
+  // shared budget rather than a unique key, so unlike the category it
+  // cannot be settled by the primary key alone, and something has to
+  // decide which of two simultaneous buyers got the last of the space.
+  for (const alter of [
+    sql`ALTER TABLE lbs_checkout_holds ADD COLUMN sq_in INT NOT NULL DEFAULT 0`,
+    sql`ALTER TABLE lbs_checkout_holds ADD COLUMN id INT NOT NULL AUTO_INCREMENT UNIQUE FIRST`,
+  ]) {
+    try {
+      await db.execute(alter);
+    } catch (e) {
+      const { alreadyApplied } = await import("@/lib/db-errors");
+      if (!alreadyApplied(e)) {
+        console.error("[holds] could not add column:", e);
+      }
+    }
+  }
   ready = true;
 }
 
@@ -89,6 +111,8 @@ export type ClaimResult =
   | { ok: true }
   /** Somebody else is mid-payment for this category on this card. */
   | { ok: false; reason: "held" }
+  /** The space is gone: sold, or being paid for by somebody ahead. */
+  | { ok: false; reason: "full" }
   /** The claim could not be written. Fails closed: no sale. */
   | { ok: false; reason: "unavailable" };
 
@@ -125,6 +149,15 @@ export async function claimCategory(input: {
   reference: string;
   email?: string;
   zoneSlug?: string;
+  /** Area this spot size consumes on the card. */
+  sqIn?: number;
+  /**
+   * Area still free on the card according to Mission Control, before any
+   * claim is counted. Undefined skips the capacity test, which is what a
+   * card whose numbers we could not read has to do: refusing every sale
+   * because Mission Control is quiet is worse than the race.
+   */
+  freeSqIn?: number;
 }): Promise<ClaimResult> {
   const category = input.category.trim();
   if (!category) return { ok: true };
@@ -150,17 +183,20 @@ export async function claimCategory(input: {
     // which would be them, thirty seconds ago.
     const takeover = sql`(expires_at <= NOW() OR (email <> '' AND email = ${input.email ?? ""}))`;
 
+    const sqIn = Math.max(0, Math.round(input.sqIn ?? 0));
+
     await db.execute(
       sql`INSERT INTO lbs_checkout_holds
-            (hold_key, reference, card_id, zone_slug, category, email, expires_at)
+            (hold_key, reference, card_id, zone_slug, category, email, sq_in, expires_at)
           VALUES (${key}, ${input.reference}, ${cardId}, ${input.zoneSlug ?? ""},
-                  ${category}, ${input.email ?? ""},
+                  ${category}, ${input.email ?? ""}, ${sqIn},
                   DATE_ADD(NOW(), INTERVAL ${minutes} MINUTE))
           ON DUPLICATE KEY UPDATE
             reference  = IF(${takeover}, VALUES(reference), reference),
             card_id    = IF(${takeover}, VALUES(card_id), card_id),
             zone_slug  = IF(${takeover}, VALUES(zone_slug), zone_slug),
             category   = IF(${takeover}, VALUES(category), category),
+            sq_in      = IF(${takeover}, VALUES(sq_in), sq_in),
             expires_at = IF(${takeover}, VALUES(expires_at), expires_at)`,
     );
 
@@ -168,9 +204,43 @@ export async function claimCategory(input: {
       sql`SELECT reference FROM lbs_checkout_holds WHERE hold_key = ${key} LIMIT 1`,
     )) as unknown as [{ reference: string }[]];
 
-    return String(rows[0]?.[0]?.reference ?? "") === input.reference
-      ? { ok: true }
-      : { ok: false, reason: "held" };
+    if (String(rows[0]?.[0]?.reference ?? "") !== input.reference) {
+      return { ok: false, reason: "held" };
+    }
+
+    // The category is ours. Now: is there room for it?
+    //
+    // Area cannot be settled by the primary key the way the category is,
+    // because it is a shared budget rather than a name somebody owns. So
+    // the claim is written first and judged afterwards, against every
+    // live claim on the card in the order they were made.
+    //
+    // That ordering is what makes it safe without a transaction. Two
+    // requests that miss each other's rows on the way in both see both
+    // rows on the way out, and both walk the same list in the same
+    // order, so they cannot both decide they fit. A request that inserts
+    // before another and reads before it exists still wins, because it
+    // is earlier in the order the other one reads too.
+    if (input.freeSqIn === undefined || sqIn <= 0) return { ok: true };
+
+    const ahead = (await db.execute(
+      sql`SELECT id, sq_in, reference FROM lbs_checkout_holds
+          WHERE card_id = ${cardId} AND expires_at > NOW()
+          ORDER BY id`,
+    )) as unknown as [{ id: number; sq_in: number; reference: string }[]];
+
+    let used = 0;
+    for (const row of ahead[0] ?? []) {
+      used += Number(row.sq_in ?? 0);
+      if (String(row.reference) === input.reference) break;
+    }
+    if (used <= input.freeSqIn) return { ok: true };
+
+    // Somebody ahead took the last of it. Give the category straight
+    // back rather than sitting on it for half an hour over a sale that
+    // is not happening.
+    await releaseHold(input.reference);
+    return { ok: false, reason: "full" };
   } catch (e) {
     // Fails closed. An unwritable claim means we cannot promise
     // exclusivity, and taking the money anyway is the failure this file

@@ -78,6 +78,11 @@ export async function POST(req: Request) {
   // What the category is being claimed against. Exclusivity is per card,
   // so the card is the scope wherever the buyer picked one.
   let holdScope: HoldScope;
+  // Area this spot takes, and area left on the card. Undefined where
+  // there is no card to measure against, which skips the capacity test
+  // rather than refusing the sale.
+  let wantSqIn: number | undefined;
+  let freeSqIn: number | undefined;
 
   if (kind === "postcard") {
     const zone = zoneBySlug(String(body.zoneSlug ?? ""));
@@ -128,6 +133,36 @@ export async function POST(req: Request) {
         return NextResponse.json(
           { error: "That card is not in this area." },
           { status: 422 },
+        );
+      }
+
+      // How much room is left, so the claim below can tell whether this
+      // spot fits. Read here because this call already holds the card,
+      // and a second lookup is a second chance for the two to disagree.
+      const { cardCapacity, getCardOrientation, AD_SIZES } = await import(
+        "@/lib/card-capacity"
+      );
+      const capacity = cardCapacity({
+        orientation: await getCardOrientation(cardId).catch(
+          () => "horizontal" as const,
+        ),
+        totalSpots: state.spotsTotal,
+        spotsFilled: state.spotsTaken,
+      });
+      freeSqIn = capacity.remainingSqIn;
+      wantSqIn = AD_SIZES[spotSize as keyof typeof AD_SIZES]?.sqIn ?? 0;
+
+      // The size has to fit before anybody is sent to Stripe. Until now
+      // nothing checked this at all: the page worked the availability out
+      // and the route took its word for it, so a card that filled while a
+      // tab sat open would still sell.
+      if (wantSqIn > 0 && wantSqIn > freeSqIn) {
+        return NextResponse.json(
+          {
+            error:
+              "That size no longer fits on this card. Try a smaller spot, or join the waitlist and we will put you on the next one.",
+          },
+          { status: 409 },
         );
       }
     }
@@ -248,16 +283,19 @@ export async function POST(req: Request) {
     reference,
     email,
     zoneSlug: metadata.zone ?? metadata.card ?? "",
+    sqIn: wantSqIn,
+    freeSqIn,
   });
   if (!claim.ok) {
+    const message =
+      claim.reason === "held"
+        ? "Someone is buying that category on this card right now. If they finish it is gone, and if they do not it reopens within the half hour. Join the waitlist and we will tell you either way."
+        : claim.reason === "full"
+          ? "Somebody just took the last of the room on this card. Try a smaller spot, or join the waitlist and we will get you on the next one."
+          : "We could not hold that category just now. Please try again in a moment.";
     return NextResponse.json(
-      {
-        error:
-          claim.reason === "held"
-            ? "Someone is buying that category on this card right now. If they finish it is gone, and if they do not it reopens within the half hour. Join the waitlist and we will tell you either way."
-            : "We could not hold that category just now. Please try again in a moment.",
-      },
-      { status: claim.reason === "held" ? 409 : 503 },
+      { error: message },
+      { status: claim.reason === "unavailable" ? 503 : 409 },
     );
   }
 

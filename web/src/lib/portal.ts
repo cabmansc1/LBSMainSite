@@ -218,7 +218,15 @@ export async function getPortalContext(user: SessionUser): Promise<PortalContext
     user,
     listings,
     cards,
-    currentCards: cards.filter((c) => !c.isPast),
+    // Opposite orders on purpose, because the two lists are read for
+    // opposite reasons. What is coming gets the soonest first: the next
+    // mail date is the one with a deadline attached, and burying it under
+    // a card three months out puts the urgent item at the bottom. What
+    // has already gone gets the most recent first, which is the one
+    // somebody is asking about.
+    currentCards: [...cards]
+      .filter((c) => !c.isPast)
+      .sort((a, b) => a.mailDateIso.localeCompare(b.mailDateIso)),
     pastCards: cards.filter((c) => c.isPast),
     deals,
     inquiries,
