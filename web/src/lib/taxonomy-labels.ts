@@ -27,6 +27,15 @@ type Kind = "category" | "location" | "tag";
 const cache = new Map<Kind, Map<string, string>>();
 
 /**
+ * Drops the cache for one taxonomy, so an edit in the admin shows up
+ * without waiting for a deploy. "Roughly never" above is why this is a
+ * call the writer makes rather than a time limit every reader pays for.
+ */
+export function forgetTaxonomy(kind: Kind) {
+  cache.delete(kind);
+}
+
+/**
  * Words the generic title-caser gets wrong.
  *
  * Only needed when a slug has no row behind it. The table is the real

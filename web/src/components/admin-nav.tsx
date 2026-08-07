@@ -40,6 +40,7 @@ const GROUPS: Group[] = [
     items: [
       { href: "/admin/users", label: "Accounts", hint: "Logins, view as" },
       { href: "/admin/directory", label: "Directory", hint: "Business listings" },
+      { href: "/admin/areas", label: "Directory areas", hint: "Towns a listing can be in" },
       { href: "/admin/listing-edits", label: "Listing changes", hint: "Advertiser edits to approve" },
       { href: "/admin/signups", label: "Signups", hint: "Awaiting review" },
       { href: "/admin/inquiries", label: "Inquiries", hint: "Messages to listings" },
