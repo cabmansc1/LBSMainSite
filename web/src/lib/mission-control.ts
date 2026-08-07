@@ -1089,6 +1089,37 @@ export async function pushToMissionControl(event: SignupEvent): Promise<void> {
     await ensureAccount(event);
   } catch (e) {
     console.error("Mission Control push failed (event logged for sweep):", e, event);
+
+    // A failed push on a paid order is money we have taken that Mission
+    // Control will never hear about, and the log line was the only trace.
+    // The dashboard finds these afterwards by comparing the two systems;
+    // this is the same failure caught at the moment it happens, which is
+    // the only moment anybody can still act on it before the customer
+    // does. Other event types are chatter and are not worth a phone
+    // buzzing at midnight.
+    if (event.type === "order_paid") {
+      void import("@/lib/admin-activity")
+        .then((m) =>
+          m.recordActivity({
+            kind: "payment_gap",
+            title: `Paid, but not recorded in Mission Control: ${
+              event.businessName || event.email || "an advertiser"
+            }`,
+            detail: [
+              event.reference,
+              event.cardId ?? event.zoneSlug,
+              typeof event.amountCents === "number"
+                ? `$${Math.round(event.amountCents / 100)}`
+                : "",
+              "Add them by hand in MC.",
+            ]
+              .filter(Boolean)
+              .join(" - "),
+            href: "/admin/orders",
+          }),
+        )
+        .catch(() => {});
+    }
   }
 }
 

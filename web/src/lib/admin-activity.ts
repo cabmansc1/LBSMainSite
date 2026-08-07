@@ -31,7 +31,11 @@ export type ActivityKind =
   | "listing_edit"
   | "waitlist"
   | "refund"
-  | "proof";
+  | "proof"
+  // Money taken that Mission Control never heard about. Its own kind
+  // rather than an order, because an order is good news and this is the
+  // opposite, and somebody may well want it on a different channel.
+  | "payment_gap";
 
 export type ActivityEvent = {
   kind: ActivityKind;
@@ -58,6 +62,7 @@ export const CATEGORY_KINDS: ActivityKind[] = [
   "listing_edit",
   "waitlist",
   "proof",
+  "payment_gap",
 ];
 
 export const KIND_LABEL: Record<ActivityKind, string> = {
@@ -69,6 +74,7 @@ export const KIND_LABEL: Record<ActivityKind, string> = {
   waitlist: "Waitlist",
   refund: "Refund",
   proof: "Proof",
+  payment_gap: "Payment not in MC",
 };
 
 let ready = false;

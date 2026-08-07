@@ -313,6 +313,54 @@ export async function paidCardIdsForEmail(email: string): Promise<Set<string>> {
 }
 
 /**
+ * Settled orders that name a card, for reconciling against Mission
+ * Control. Orders with no card id predate that column and cannot be
+ * compared against anything.
+ */
+export async function getPaidOrdersWithCards(days = 60): Promise<
+  {
+    reference: string;
+    businessName: string;
+    email: string;
+    cardId: string;
+    amountCents: number;
+    paidAt: string | null;
+  }[]
+> {
+  try {
+    const { db } = await import("@/lib/db");
+    const window = sql.raw(String(Math.max(1, Math.min(3650, Math.round(days)))));
+    const rows = (await db.execute(
+      sql`SELECT reference, business_name, email, card_id, amount_cents, paid_at
+          FROM lbs_orders
+          WHERE status = 'paid' AND card_id <> ''
+            AND paid_at >= DATE_SUB(NOW(), INTERVAL ${window} DAY)
+          ORDER BY paid_at DESC`,
+    )) as unknown as [
+      {
+        reference: string;
+        business_name: string;
+        email: string;
+        card_id: string;
+        amount_cents: number;
+        paid_at: string | Date | null;
+      }[],
+    ];
+    return (rows[0] ?? []).map((r) => ({
+      reference: String(r.reference ?? ""),
+      businessName: String(r.business_name ?? ""),
+      email: String(r.email ?? ""),
+      cardId: String(r.card_id ?? ""),
+      amountCents: Number(r.amount_cents ?? 0),
+      paidAt: r.paid_at ? new Date(r.paid_at).toISOString() : null,
+    }));
+  } catch (e) {
+    console.error("[orders] paid-with-card lookup failed:", e);
+    return [];
+  }
+}
+
+/**
  * Removes orders outright.
  *
  * Deliberately not exposed anywhere a customer can reach, and not part

@@ -26,6 +26,8 @@ const TONE: Record<ActivityKind, string> = {
   listing_edit: "bg-surface text-body",
   waitlist: "bg-cta-tint text-[#7a4a00]",
   proof: "bg-brand-tint text-brand-deep",
+  // Red, like a refund. Both are the money not being where the books say.
+  payment_gap: "bg-danger/10 text-danger",
 };
 
 /**
