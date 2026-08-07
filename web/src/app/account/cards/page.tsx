@@ -18,6 +18,27 @@ export const metadata: Metadata = {
 const money = (cents?: number) =>
   cents === undefined ? null : `$${(cents / 100).toLocaleString("en-US")}`;
 
+/**
+ * Where the payment stands, said whether or not anything is owed.
+ *
+ * Mission Control's strings are typed by people, so they are matched
+ * with the case and the spacing taken out, and an unrecognised one shows
+ * nothing rather than guessing: "Unpaid" against a card somebody has
+ * settled is a worse mistake than saying nothing at all.
+ */
+function paymentChip(status?: string) {
+  const s = (status ?? "").trim().toLowerCase();
+  if (!s) return null;
+  if (s === "paid") return <StatusChip tone="ok">Paid</StatusChip>;
+  if (s === "partial" || s === "part paid") {
+    return <StatusChip tone="warn">Part paid</StatusChip>;
+  }
+  if (s === "unpaid" || s === "pending" || s === "due") {
+    return <StatusChip tone="warn">Unpaid</StatusChip>;
+  }
+  return null;
+}
+
 export default async function AccountCardsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -101,16 +122,19 @@ export default async function AccountCardsPage() {
                       <h3 className="text-[16.5px] font-bold tracking-tight">
                         {c.zoneName}, {c.mailMonth}
                       </h3>
+                      {/* Blue rather than green, now that green next to
+                          it means the money is in. Two green chips side
+                          by side read as one thing said twice. */}
                       {c.status === "full" ? (
                         <StatusChip tone="info">Closed for print</StatusChip>
                       ) : (
-                        <StatusChip tone="ok">Booked</StatusChip>
+                        <StatusChip tone="info">Booked</StatusChip>
                       )}
-                      {c.paymentStatus && c.paymentStatus !== "paid" && (
-                        <StatusChip tone="warn">
-                          {c.paymentStatus === "partial" ? "Part paid" : "Unpaid"}
-                        </StatusChip>
-                      )}
+                      {/* Said either way. Showing a chip only when
+                          something is owed means a settled card looks
+                          exactly like one whose payment state we do not
+                          know, and the good news never gets told. */}
+                      {paymentChip(c.paymentStatus)}
                     </div>
                     <p className="text-[13px] text-muted mt-1">
                       {c.adSize}
