@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
 import { deadlineLabel, ownDeadlines } from "@/lib/artwork-due";
 import { artworkByteLimit, getArtworkFor } from "@/lib/artwork";
+import { paidCardIdsForEmail } from "@/lib/orders";
 import { Card, StatusChip } from "@/components/sections";
 import { ProofApproval } from "@/components/proof-approval";
 import { ArtworkUpload } from "@/components/artwork-upload";
@@ -25,13 +26,25 @@ const money = (cents?: number) =>
  * with the case and the spacing taken out, and an unrecognised one shows
  * nothing rather than guessing: "Unpaid" against a card somebody has
  * settled is a worse mistake than saying nothing at all.
+ *
+ * Which is also why our own orders get a say. Mission Control only hears
+ * that a card was paid for when the Stripe webhook tells it, so a
+ * delivery that fails leaves the money taken, our order table saying
+ * paid, and the advertiser reading "Unpaid" on a card they have settled.
+ * Where the two disagree in that direction, the receipt wins.
+ *
+ * It does not overrule "part paid". That is somebody's judgement about
+ * money — a deposit taken, a balance owed, a card bought as part of a
+ * larger deal — and one settled online payment is not evidence the rest
+ * arrived.
  */
-function paymentChip(status?: string) {
+function paymentChip(status: string | undefined, weHaveTheirMoney: boolean) {
   const s = (status ?? "").trim().toLowerCase();
-  if (!s) return null;
-  if (s === "paid") return <StatusChip tone="ok">Paid</StatusChip>;
   if (s === "partial" || s === "part paid") {
     return <StatusChip tone="warn">Part paid</StatusChip>;
+  }
+  if (s === "paid" || weHaveTheirMoney) {
+    return <StatusChip tone="ok">Paid</StatusChip>;
   }
   if (s === "unpaid" || s === "pending" || s === "due") {
     return <StatusChip tone="warn">Unpaid</StatusChip>;
@@ -43,6 +56,13 @@ export default async function AccountCardsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const { currentCards, pastCards, warnings } = await getPortalContext(session);
+
+  // Cards this account has a settled receipt for, so a payment Mission
+  // Control never heard about does not read as unpaid to the person who
+  // made it. One query for every card, not one each.
+  const paidHere = await paidCardIdsForEmail(session.email).catch(
+    () => new Set<string>(),
+  );
 
   // One query for every card rather than one per card, then grouped here.
   const artwork = await getArtworkFor(session.email);
@@ -134,7 +154,7 @@ export default async function AccountCardsPage() {
                           something is owed means a settled card looks
                           exactly like one whose payment state we do not
                           know, and the good news never gets told. */}
-                      {paymentChip(c.paymentStatus)}
+                      {paymentChip(c.paymentStatus, paidHere.has(c.cardId))}
                     </div>
                     <p className="text-[13px] text-muted mt-1">
                       {c.adSize}

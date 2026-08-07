@@ -278,6 +278,41 @@ export async function getOrdersForEmail(email: string): Promise<Order[]> {
 }
 
 /**
+ * Cards this address has a settled order against, by Mission Control id.
+ *
+ * For the payment chip an advertiser sees. That chip reads Mission
+ * Control, and Mission Control only learns a card was paid for when our
+ * Stripe webhook tells it. A delivery that fails leaves the money taken,
+ * this table saying paid, and the advertiser looking at "Unpaid" on a
+ * card they have settled — which is the one thing on their page they
+ * would ring about.
+ *
+ * Refunded is not settled, so the status test is exact rather than
+ * "anything but pending".
+ *
+ * Empty on failure. This is a second opinion on somebody else's answer,
+ * and a second opinion that cannot be reached should change nothing.
+ */
+export async function paidCardIdsForEmail(email: string): Promise<Set<string>> {
+  const out = new Set<string>();
+  if (!email.trim()) return out;
+  try {
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT DISTINCT card_id FROM lbs_orders
+          WHERE email = ${email} AND status = 'paid' AND card_id <> ''`,
+    )) as unknown as [{ card_id: string }[]];
+    for (const r of rows[0] ?? []) {
+      const id = String(r.card_id ?? "").trim();
+      if (id) out.add(id);
+    }
+  } catch (e) {
+    console.error("[orders] paid card lookup failed:", e);
+  }
+  return out;
+}
+
+/**
  * Removes orders outright.
  *
  * Deliberately not exposed anywhere a customer can reach, and not part
