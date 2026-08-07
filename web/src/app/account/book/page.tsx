@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { getPortalContext } from "@/lib/portal";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { getCardDescriptions } from "@/lib/card-details";
 import { isBookable, mailMonthLabel } from "@/lib/mailings";
@@ -13,6 +14,27 @@ export const metadata: Metadata = {
   title: "Book a spot",
   robots: { index: false, follow: false },
 };
+
+/**
+ * What they already have on a card, in a sentence.
+ *
+ * Size and category rather than a count, because "you are on this card"
+ * on its own invites the follow-up question. Mission Control leaves
+ * either field blank often enough that the sentence has to read without
+ * them.
+ */
+function alreadyOn(spots: { adSize: string; category: string }[]): string {
+  const many =
+    spots.length === 1
+      ? "You are on this card"
+      : spots.length === 2
+        ? "You are on this card twice"
+        : `You are on this card ${spots.length} times`;
+  const described = spots
+    .map((s) => [s.adSize, s.category].filter(Boolean).join(", "))
+    .filter(Boolean);
+  return described.length > 0 ? `${many} — ${described.join(" and ")}` : many;
+}
 
 /**
  * Booking the next card, from inside the account.
@@ -30,12 +52,36 @@ export default async function AccountBookPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [mailings, descriptions] = await Promise.all([
+  const [mailings, descriptions, ctx] = await Promise.all([
     getUpcomingMailings().catch(() => []),
     getCardDescriptions().catch(() => ({}) as Record<string, string>),
+    // What they are already on, so a card they have bought says so.
+    // Comes out of the same sixty-second Mission Control snapshot the
+    // mailings above do, so it costs nothing extra.
+    getPortalContext(session).catch(() => null),
   ]);
 
   const open = mailings.filter((m) => isBookable(m.status));
+
+  // Told, not blocked.
+  //
+  // Being on a card is not a reason to stop somebody buying another
+  // spot: the same business might want a large in September having taken
+  // a small in August, and one login can hold two businesses in two
+  // categories. The rule that genuinely stops a purchase — their
+  // category already gone on that card — is enforced at checkout and by
+  // the hold, and duplicating it here is how the two drift apart.
+  //
+  // So this only answers "have I already done this?", which is a real
+  // question and the reason somebody buys the same spot twice by
+  // accident.
+  const mine = new Map<string, { adSize: string; category: string }[]>();
+  for (const c of ctx?.cards ?? []) {
+    if (!c.cardId) continue;
+    const list = mine.get(c.cardId) ?? [];
+    list.push({ adSize: c.adSize, category: c.category });
+    mine.set(c.cardId, list);
+  }
 
   return (
     <>
@@ -68,6 +114,7 @@ export default async function AccountBookPage() {
           {open.map((m) => {
             const left = Math.max(0, m.spotsTotal - m.spotsTaken);
             const description = m.cardId ? descriptions[m.cardId] : undefined;
+            const onIt = (m.cardId && mine.get(m.cardId)) || [];
             const href = m.cardId
               ? `/postcards/${m.zoneSlug}/checkout?card=${encodeURIComponent(m.cardId)}`
               : `/postcards/${m.zoneSlug}/checkout`;
@@ -93,6 +140,15 @@ export default async function AccountBookPage() {
                     {m.zoneName} · mails {mailMonthLabel(m.mailMonth)}
                     {m.households ? ` · ${m.households} homes` : ""}
                   </p>
+                  {onIt.length > 0 && (
+                    // Quiet, and beside the Reserve button rather than in
+                    // front of it. Somebody with two businesses on one
+                    // card gets both spots listed, which is also the only
+                    // thing on screen that tells them apart.
+                    <p className="text-[12.5px] text-brand-deep font-semibold mt-1.5">
+                      {alreadyOn(onIt)}
+                    </p>
+                  )}
                   {description && (
                     <p className="text-[13px] text-body mt-1.5 max-w-[62ch] leading-relaxed">
                       {description}
