@@ -1419,6 +1419,83 @@ export async function getAllMcCards(): Promise<
 }
 
 /**
+ * Every zone each advertiser has ever ridden, by email address.
+ *
+ * The advertiser update needs this because Mission Control holds
+ * customers the site does not sell to. The Forest Acres cards are in the
+ * Midlands, and those advertisers have no interest in which Lowcountry
+ * categories are open; mailing them one is at best noise and at worst a
+ * spam complaint from somebody who bought in good faith.
+ *
+ * Built from every card rather than the upcoming ones, because what
+ * decides whether somebody is a Lowcountry customer is what they have
+ * bought, and most of that is history.
+ *
+ * Prospects are left out, matching everywhere else: a category parked
+ * mid-conversation is not a purchase and should not decide which region
+ * somebody belongs to.
+ */
+export async function advertiserZoneIndex(): Promise<Map<string, Set<string>>> {
+  const cards = await fetchCards();
+  const out = new Map<string, Set<string>>();
+  if (!cards) return out;
+  for (const card of cards) {
+    if (!card.zoneSlug) continue;
+    for (const a of card.advertisers) {
+      if (isProspectRow(a)) continue;
+      const email = str(a.email).trim().toLowerCase();
+      if (!email) continue;
+      const set = out.get(email) ?? new Set<string>();
+      set.add(card.zoneSlug);
+      out.set(email, set);
+    }
+  }
+  return out;
+}
+
+export type McZone = {
+  slug: string;
+  name: string;
+  /** How many cards Mission Control has in it, past and upcoming. */
+  cards: number;
+  /** Whether the site publishes this zone, i.e. it is in zones.ts. */
+  known: boolean;
+};
+
+/**
+ * Every zone Mission Control has a card in, whether or not the site
+ * sells it.
+ *
+ * The unknown ones are the point. A zone the site has never published is
+ * either somewhere we mail outside the Lowcountry, like the Midlands, or
+ * a card filed under a name that does not match anything, which is worth
+ * seeing rather than silently dropping. Both cases need a human to
+ * decide, so both are listed.
+ */
+export async function mcZoneList(): Promise<McZone[]> {
+  const cards = await fetchCards();
+  if (!cards) return [];
+  const seen = new Map<string, McZone>();
+  for (const c of cards) {
+    if (!c.zoneSlug || c.zoneName.toLowerCase() === "other") continue;
+    const found = seen.get(c.zoneSlug);
+    if (found) {
+      found.cards += 1;
+      continue;
+    }
+    seen.set(c.zoneSlug, {
+      slug: c.zoneSlug,
+      name: c.zoneName,
+      cards: 1,
+      known: ZONES.some((z) => z.slug === c.zoneSlug),
+    });
+  }
+  return [...seen.values()].sort(
+    (a, b) => Number(b.known) - Number(a.known) || a.name.localeCompare(b.name),
+  );
+}
+
+/**
  * Who is riding a card that has not printed yet, with the address we
  * would have to chase for artwork.
  *

@@ -10,6 +10,7 @@ import {
   getUpcomingMailings,
 } from "@/lib/mission-control";
 import { isBookable } from "@/lib/mailings";
+import { ZONES } from "@/lib/zones";
 import {
   buildAudience,
   optOutsReadable,
@@ -67,6 +68,12 @@ export type Issue = {
   content: IssueContent;
   groups: AudienceGroup[];
   leadsMonths: number;
+  /**
+   * Zone slugs this issue is for. An advertiser is kept when one of
+   * their cards is in one of them, which is what keeps a Lowcountry
+   * update out of a Midlands customer's inbox.
+   */
+  zones: string[];
   builtFor: string;
   sentAt?: string;
   sendCount: number;
@@ -90,6 +97,9 @@ const DEFAULT_GROUPS: AudienceGroup[] = [
   "directory",
   "leads",
 ];
+
+/** The zones the site itself publishes: the default reach of an issue. */
+const SITE_ZONE_SLUGS = ZONES.map((z) => z.slug);
 
 /** How many categories to name before saying "and N more". */
 const CATEGORY_SAMPLE = 8;
@@ -127,6 +137,19 @@ async function ensureTables() {
       UNIQUE KEY issue_email (issue_id, email)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+  // Added after the table shipped, so CREATE TABLE IF NOT EXISTS will
+  // not put it there. Tolerated rather than checked: the only reason it
+  // fails is that it is already present, and a newsletter screen must
+  // not go down because a column it already has could not be added
+  // again.
+  try {
+    await db.execute(
+      sql`ALTER TABLE lbs_newsletter_issues
+          ADD COLUMN zones TEXT NULL`,
+    );
+  } catch {
+    /* already there */
+  }
   ready = true;
 }
 
@@ -151,13 +174,21 @@ const fmtDate = (d: unknown) => {
  * checkout does, so the email can never offer a category the site would
  * then refuse to sell.
  */
-export async function assembleContent(label: string): Promise<IssueContent> {
+export async function assembleContent(
+  label: string,
+  zones: string[] = SITE_ZONE_SLUGS,
+): Promise<IssueContent> {
   // Spot counts come from the mailing list rather than the roster: the
   // roster carries who is on a card, not how many places it holds, so
   // counting advertiser rows would report a full card as having however
   // many people happened to have bought.
-  const mailings = (await getUpcomingMailings().catch(() => [])).filter((m) =>
-    isBookable(m.status),
+  // Filtered to the issue's own zones as well as to what is bookable.
+  // Mission Control holds cards outside the Lowcountry, and an update
+  // that opened with a Midlands card would be wrong for almost everyone
+  // reading it.
+  const want = new Set(zones);
+  const mailings = (await getUpcomingMailings().catch(() => [])).filter(
+    (m) => isBookable(m.status) && (want.size === 0 || want.has(m.zoneSlug)),
   );
   const vocab = await getCategoryVocabulary().catch(() => null);
   const all = (vocab?.categories ?? []).map((c) =>
@@ -207,6 +238,7 @@ type IssueRow = {
   content: string;
   audience: string;
   leads_months: number;
+  zones?: string | null;
   built_for: string;
   send_count: number;
   sent_at?: unknown;
@@ -214,6 +246,19 @@ type IssueRow = {
 };
 
 const STATUSES = new Set(["draft", "sending", "sent", "cancelled"]);
+
+/**
+ * An issue written before zones existed has none stored, and it predates
+ * anybody noticing the Midlands customers on the list. Falling back to
+ * the site's own zones gives it the answer it should have had.
+ */
+function parseZones(raw: string | null | undefined): string[] {
+  const found = String(raw ?? "")
+    .split(",")
+    .map((z) => z.trim())
+    .filter(Boolean);
+  return found.length ? found : SITE_ZONE_SLUGS;
+}
 
 function toIssue(r: IssueRow): Issue | undefined {
   let content: IssueContent;
@@ -237,6 +282,10 @@ function toIssue(r: IssueRow): Issue | undefined {
         (DEFAULT_GROUPS as string[]).includes(s),
       ),
     leadsMonths: Number(r.leads_months ?? 12),
+    // An issue written before zones existed has none stored, and it
+    // predates the Midlands problem being noticed. Defaulting it to the
+    // site's own zones is the answer it should have had.
+    zones: parseZones(r.zones),
     builtFor: String(r.built_for ?? ""),
     sendCount: Number(r.send_count ?? 0),
     sentAt: fmtDate(r.sent_at),
@@ -301,9 +350,10 @@ export async function buildDraftFor(
     const content = await assembleContent(label);
     await db.execute(
       sql`INSERT INTO lbs_newsletter_issues
-            (kind, status, content, audience, leads_months, built_for)
+            (kind, status, content, audience, leads_months, built_for, zones)
           VALUES ('advertiser', 'draft', ${JSON.stringify(content)},
-                  ${DEFAULT_GROUPS.join(",")}, 12, ${label})`,
+                  ${DEFAULT_GROUPS.join(",")}, 12, ${label},
+                  ${SITE_ZONE_SLUGS.join(",")})`,
     );
     const row = (await db.execute(
       sql`SELECT id FROM lbs_newsletter_issues
@@ -322,6 +372,7 @@ export type IssuePatch = {
   content?: Partial<IssueContent>;
   groups?: AudienceGroup[];
   leadsMonths?: number;
+  zones?: string[];
   status?: IssueStatus;
 };
 
@@ -342,6 +393,7 @@ export async function saveIssue(
              SET content = ${JSON.stringify(content)},
                  audience = ${(patch.groups ?? issue.groups).join(",")},
                  leads_months = ${patch.leadsMonths ?? issue.leadsMonths},
+                 zones = ${(patch.zones ?? issue.zones).join(",")},
                  status = ${patch.status ?? issue.status}
            WHERE id = ${id}`,
     );
@@ -590,7 +642,11 @@ export async function sendTestIssue(
   // reading even when nobody was picked.
   const personal = await personalIndex();
   const wanted = (asEmail ?? "").trim().toLowerCase();
-  const audience = await buildAudience(issue.groups, issue.leadsMonths);
+  const audience = await buildAudience(
+    issue.groups,
+    issue.leadsMonths,
+    issue.zones,
+  );
   const borrowed =
     audience.recipients.find((r) => r.email === wanted) ??
     audience.recipients.find((r) => (personal.get(r.email) ?? []).length > 0);
@@ -693,7 +749,11 @@ export async function sendIssue(id: number): Promise<SendReport> {
     };
   }
 
-  const audience = await buildAudience(issue.groups, issue.leadsMonths);
+  const audience = await buildAudience(
+    issue.groups,
+    issue.leadsMonths,
+    issue.zones,
+  );
   if (!audience.mcReadable && issue.groups.some((g) => g === "current" || g === "past")) {
     return {
       ...blank,

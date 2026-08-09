@@ -8,6 +8,7 @@ import {
   renderIssue,
 } from "@/lib/advertiser-newsletter";
 import { buildAudience } from "@/lib/newsletter-audience";
+import { mcZoneList } from "@/lib/mission-control";
 import { AdminNewsletterEditor } from "@/components/admin-newsletter-editor";
 
 export const dynamic = "force-dynamic";
@@ -39,9 +40,10 @@ export default async function AdminNewsletterIssuePage({
   const issue = await getIssue(Number(id));
   if (!issue) notFound();
 
-  const [audience, personal] = await Promise.all([
-    buildAudience(issue.groups, issue.leadsMonths),
+  const [audience, personal, mcZones] = await Promise.all([
+    buildAudience(issue.groups, issue.leadsMonths, issue.zones),
     personalIndex(),
+    mcZoneList().catch(() => []),
   ]);
 
   // Preview as whoever was asked for, else the first person who actually
@@ -90,6 +92,8 @@ export default async function AdminNewsletterIssuePage({
           suppressed={audience.suppressed}
           mcReadable={audience.mcReadable}
           previewAs={chosen?.email}
+          mcZones={mcZones}
+          outOfArea={audience.outOfArea}
         />
 
         <div className="lg:sticky lg:top-6 grid gap-2.5">

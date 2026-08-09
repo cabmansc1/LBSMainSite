@@ -12,6 +12,7 @@ export type EditorIssue = {
   sentAt?: string;
   groups: AudienceGroup[];
   leadsMonths: number;
+  zones: string[];
   content: {
     subject: string;
     preheader: string;
@@ -57,6 +58,8 @@ export function AdminNewsletterEditor({
   suppressed,
   mcReadable,
   previewAs,
+  mcZones,
+  outOfArea,
 }: {
   issue: EditorIssue;
   counts: Record<AudienceGroup, number>;
@@ -65,6 +68,9 @@ export function AdminNewsletterEditor({
   mcReadable: boolean;
   /** Whoever the preview beside this is rendering, so a test matches it. */
   previewAs?: string;
+  /** Every zone Mission Control has cards in, known to the site or not. */
+  mcZones: { slug: string; name: string; cards: number; known: boolean }[];
+  outOfArea: number;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState("");
@@ -73,6 +79,7 @@ export function AdminNewsletterEditor({
   const [form, setForm] = useState(issue.content);
   const [groups, setGroups] = useState<AudienceGroup[]>(issue.groups);
   const [months, setMonths] = useState(issue.leadsMonths);
+  const [zones, setZones] = useState<string[]>(issue.zones);
   const [confirming, setConfirming] = useState(false);
 
   const sent = issue.status === "sent";
@@ -135,13 +142,18 @@ export function AdminNewsletterEditor({
   async function sendTest() {
     if (!locked) {
       const saved = await send(
-        { action: "save", content: form, groups, leadsMonths: months },
+        { action: "save", content: form, groups, leadsMonths: months, zones },
         "test",
       );
       if (!saved) return;
     }
     await send({ action: "test", as: previewAs }, "test");
   }
+
+  const toggleZone = (slug: string) =>
+    setZones((cur) =>
+      cur.includes(slug) ? cur.filter((z) => z !== slug) : [...cur, slug],
+    );
 
   const toggle = (g: AudienceGroup) =>
     setGroups((cur) =>
@@ -358,6 +370,50 @@ export function AdminNewsletterEditor({
           </label>
         )}
 
+        {mcZones.length > 0 && (
+          <div className="grid gap-2">
+            <span className={label}>Which areas this issue is for</span>
+            <p className="text-[12px] text-muted max-w-[62ch]">
+              An advertiser is included when one of their cards is in a ticked
+              area. Directory listings and enquiries are always included, since
+              they are not tied to a card.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-1.5">
+              {mcZones.map((z) => (
+                <label
+                  key={z.slug}
+                  className={`flex items-center gap-2 text-[13px] border rounded-[9px] px-3 py-2 ${
+                    z.known ? "border-line" : "border-[#f3ddbb] bg-cta-tint"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={zones.includes(z.slug)}
+                    disabled={locked}
+                    onChange={() => toggleZone(z.slug)}
+                  />
+                  <span>
+                    {z.name}
+                    <span className="text-muted num"> · {z.cards}</span>
+                    {!z.known && (
+                      <span className="block text-[11.5px] text-[#7a4a00]">
+                        Not a zone this site sells
+                      </span>
+                    )}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {outOfArea > 0 && (
+              <p className="text-[12.5px] text-muted">
+                {outOfArea}{" "}
+                {outOfArea === 1 ? "advertiser is" : "advertisers are"} left out
+                because none of their cards are in a ticked area.
+              </p>
+            )}
+          </div>
+        )}
+
         <p className="text-[13px]">
           <b className="num">{total}</b>{" "}
           {total === 1 ? "address" : "addresses"} after folding duplicates
@@ -404,7 +460,7 @@ export function AdminNewsletterEditor({
             disabled={busy !== ""}
             onClick={() =>
               send(
-                { action: "save", content: form, groups, leadsMonths: months },
+                { action: "save", content: form, groups, leadsMonths: months, zones },
                 "save",
               )
             }

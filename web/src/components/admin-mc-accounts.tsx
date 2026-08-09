@@ -41,17 +41,22 @@ export function AdminMcAccounts({ rows }: { rows: McAccountRow[] }) {
   const [busy, setBusy] = useState<"" | "logins" | "listings">("");
   const [result, setResult] = useState<(Result & { what: string }) | null>(null);
   const [err, setErr] = useState("");
+  // Counting them was never the hard part. Reading the list was: they
+  // were mixed in with everybody else, so "who cannot be contacted"
+  // meant scrolling two hundred rows looking for a blank column.
+  const [noEmailOnly, setNoEmailOnly] = useState(false);
 
   const shown = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
+    const base = noEmailOnly ? rows.filter((r) => !r.email) : rows;
+    if (!q) return base;
+    return base.filter(
       (r) =>
         r.businessName.toLowerCase().includes(q) ||
         r.email.includes(q) ||
         r.category.toLowerCase().includes(q),
     );
-  }, [rows, filter]);
+  }, [rows, filter, noEmailOnly]);
 
   const needsLogin = rows.filter((r) => !r.blocked && !r.hasLogin);
   const needsListing = rows.filter(
@@ -184,10 +189,28 @@ export function AdminMcAccounts({ rows }: { rows: McAccountRow[] }) {
       )}
 
       {unreachable.length > 0 && (
-        <p className="text-[13px] text-[#7a4a00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-4 py-2.5">
-          {unreachable.length} customer{unreachable.length === 1 ? " has" : "s have"} no
-          email in Mission Control, so no login can be made for them. They are
-          listed below with the rest.
+        <div className="text-[13px] text-[#7a4a00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-4 py-2.5 flex items-center gap-3 flex-wrap">
+          <span>
+            {unreachable.length} customer
+            {unreachable.length === 1 ? " has" : "s have"} no email in Mission
+            Control. No login can be made for them, and the advertiser update
+            cannot reach them.
+          </span>
+          <button
+            type="button"
+            onClick={() => setNoEmailOnly((v) => !v)}
+            className="ml-auto text-[12.5px] font-semibold px-3 py-1.5 rounded-[8px] border border-[#e0c48f] bg-white"
+          >
+            {noEmailOnly ? "Show everyone" : "Show only these"}
+          </button>
+        </div>
+      )}
+
+      {noEmailOnly && (
+        <p className="text-[12.5px] text-muted">
+          Showing the {unreachable.length} with no email on file. Adding an
+          address in Mission Control is what fixes it; nothing here can invent
+          one.
         </p>
       )}
 

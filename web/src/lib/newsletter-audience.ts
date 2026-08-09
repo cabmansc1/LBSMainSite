@@ -1,7 +1,11 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { getMcCustomers, getUpcomingCardRoster } from "@/lib/mission-control";
+import {
+  advertiserZoneIndex,
+  getMcCustomers,
+  getUpcomingCardRoster,
+} from "@/lib/mission-control";
 
 /**
  * Who the advertiser update goes to.
@@ -262,6 +266,8 @@ async function leadEnquiries(months: number): Promise<Recipient[]> {
 
 export type Audience = {
   recipients: Recipient[];
+  /** Advertisers dropped because none of their cards are in a chosen zone. */
+  outOfArea: number;
   counts: Record<AudienceGroup, number>;
   suppressed: number;
   /** True when Mission Control answered. False means the advertiser
@@ -280,6 +286,17 @@ export type Audience = {
 export async function buildAudience(
   groups: AudienceGroup[],
   leadsMonths = DEFAULT_LEADS_MONTHS,
+  /**
+   * Zone slugs this issue is for. An advertiser is kept when at least
+   * one of their cards is in one of them.
+   *
+   * Undefined means every zone, which is what the first drafts did
+   * before anybody noticed the Midlands customers in the list. Empty
+   * also means every zone, deliberately: an issue saved with nothing
+   * ticked should reach the same people as before rather than silently
+   * mail nobody.
+   */
+  zones?: string[],
 ): Promise<Audience> {
   const want = new Set(groups);
   const roster = await getUpcomingCardRoster();
@@ -306,8 +323,35 @@ export async function buildAudience(
     existing.contactName ||= r.contactName;
   }
 
+  /**
+   * Zone filtering applies to advertisers only.
+   *
+   * A directory listing is filed under an area Andrew maintains, and
+   * every one of those is in the Lowcountry, so a listing owner is in
+   * area by definition. An enquiry has only free text for a location and
+   * nothing reliable to judge on. Dropping either for want of a card
+   * would quietly shrink the list to people who have already bought,
+   * which is the opposite of what it is for.
+   */
+  const wantZones = new Set(zones ?? []);
+  const zoneIndex = wantZones.size ? await advertiserZoneIndex() : null;
+  const inArea = (r: Recipient) => {
+    if (!zoneIndex) return true;
+    const advertiserOnly =
+      !r.groups.includes("directory") && !r.groups.includes("leads");
+    if (!advertiserOnly) return true;
+    const theirs = zoneIndex.get(r.email);
+    // No cards we can see is not evidence of being out of area, so they
+    // stay. Being wrongly kept costs one email; being wrongly dropped
+    // means a customer silently never hears from us again.
+    if (!theirs || theirs.size === 0) return true;
+    for (const z of theirs) if (wantZones.has(z)) return true;
+    return false;
+  };
+
   const opted = await listOptOuts();
-  const recipients = [...folded.values()].filter((r) => !opted.has(r.email));
+  const beforeArea = [...folded.values()].filter((r) => !opted.has(r.email));
+  const recipients = beforeArea.filter(inArea);
 
   const counts: Record<AudienceGroup, number> = {
     current: 0,
@@ -318,12 +362,13 @@ export async function buildAudience(
   for (const r of recipients) for (const g of r.groups) counts[g] += 1;
 
   return {
+    outOfArea: beforeArea.length - recipients.length,
     recipients: recipients.sort((a, b) =>
       a.businessName.localeCompare(b.businessName) ||
       a.email.localeCompare(b.email),
     ),
     counts,
-    suppressed: folded.size - recipients.length,
+    suppressed: folded.size - beforeArea.length,
     mcReadable,
   };
 }
