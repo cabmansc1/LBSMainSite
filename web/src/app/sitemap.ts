@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 import { ZONES } from "@/lib/zones";
 import { getBusinesses, getFilterOptions } from "@/lib/directory";
 import { getPosts } from "@/lib/blog";
+import { publishedStories } from "@/lib/stories";
+import { STORY_KINDS } from "@/lib/stories-types";
 import { getPastCards } from "@/lib/past-cards";
 
 /**
@@ -32,15 +34,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/contact", priority: 0.6 },
     { path: "/directory-signup", priority: 0.6 },
     { path: "/blog", priority: 0.6 },
+    { path: "/stories", priority: 0.8 },
     { path: "/privacy", priority: 0.2 },
     { path: "/terms", priority: 0.2 },
   ];
 
-  const [businesses, options, posts, pastCards] = await Promise.all([
+  const [businesses, options, posts, pastCards, stories] = await Promise.all([
     getBusinesses(),
     getFilterOptions(),
     getPosts(),
     getPastCards({ publishedOnly: true }).catch(() => []),
+    // Capped rather than unbounded. A sitemap is a hint, and the newest
+    // few hundred are the ones worth spending crawl budget on.
+    publishedStories({ limit: 100 }).catch(() => []),
   ]);
 
   return [
@@ -71,6 +77,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...posts.map((p) => ({
       url: `${SITE_URL}/blog/${p.slug}`,
       priority: 0.5,
+    })),
+    // The story kind filters are real pages with their own copy, so
+    // they are worth crawling rather than being treated as query noise.
+    ...STORY_KINDS.map((k) => ({
+      url: `${SITE_URL}/stories?kind=${k.value}`,
+      priority: 0.5,
+    })),
+    ...stories.map((s) => ({
+      url: `${SITE_URL}/stories/${s.slug}`,
+      priority: 0.7,
     })),
     // One index per neighborhood with cards in it.
     ...[...new Set(pastCards.map((c) => c.zoneSlug))].map((zoneSlug) => ({

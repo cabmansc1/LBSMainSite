@@ -12,6 +12,7 @@ const LINKS = [
   // The archive of mailed cards is the strongest proof the product is
   // real, so it belongs in the nav rather than buried in the footer.
   { href: "/gallery", label: "Past Cards" },
+  { href: "/stories", label: "Local Stories" },
   { href: "/directory", label: "Directory" },
   { href: "/blog", label: "Blog" },
 ];

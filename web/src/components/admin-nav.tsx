@@ -53,6 +53,7 @@ const GROUPS: Group[] = [
   {
     label: "Content",
     items: [
+      { href: "/admin/stories", label: "Stories", hint: "Spotlights, openings, guides" },
       { href: "/admin/content", label: "Page content", hint: "Headlines and copy" },
       { href: "/admin/newsletter", label: "Advertiser update", hint: "Out on the 1st and 15th" },
       { href: "/admin/places", label: "Places", hint: "Markets, zones, neighbourhoods" },
