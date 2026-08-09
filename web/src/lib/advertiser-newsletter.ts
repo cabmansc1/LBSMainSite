@@ -634,13 +634,33 @@ export function renderIssue(
      * ignores CSS sizing on images and will otherwise draw the file at
      * its natural 269 by 320.
      */
-    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px">`,
+    /*
+     * On a dark plate, because the mark is a light one.
+     *
+     * It was drawn for the navy site header: 80% luminance with a
+     * transparent ground. On the white background of an email it was
+     * pale blue on white and all but invisible, which is how it shipped
+     * and how Andrew spotted it. The bar is the same navy as the site
+     * chrome, so the email opens the way the site does.
+     *
+     * bgcolor as well as the style, because Outlook ignores background
+     * shorthand on a table and would otherwise draw a light mark on
+     * nothing at all. Rounded corners degrade to square there, which is
+     * fine.
+     */
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#0a1622" style="background-color:#0a1622;border-radius:10px;margin:0 0 22px">`,
+    `<tr>`,
+    `<td style="padding:14px 16px">`,
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0">`,
     `<tr>`,
     `<td style="padding-right:11px;vertical-align:middle">`,
     `<img src="${origin}/brand/lb-spotlight.png" width="38" height="45" alt="" style="display:block;border:0;width:38px;height:45px" />`,
     `</td>`,
     `<td style="vertical-align:middle">`,
-    `<span style="font-size:15px;font-weight:700;color:#0a1622;letter-spacing:-0.01em">${esc(SITE_NAME)}</span>`,
+    `<span style="font-size:15px;font-weight:700;color:#ffffff;letter-spacing:-0.01em">${esc(SITE_NAME)}</span>`,
+    `</td>`,
+    `</tr>`,
+    `</table>`,
     `</td>`,
     `</tr>`,
     `</table>`,
