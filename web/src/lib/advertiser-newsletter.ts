@@ -11,6 +11,7 @@ import {
 } from "@/lib/mission-control";
 import { isBookable } from "@/lib/mailings";
 import { ZONES } from "@/lib/zones";
+import { pageCopy } from "@/lib/blocks";
 import {
   buildAudience,
   optOutsReadable,
@@ -218,15 +219,20 @@ export async function assembleContent(
     });
   }
 
+  // How a new issue starts out is editable under Page content, so the
+  // wording can be changed once rather than retyped on every issue. It
+  // is copied onto the issue here and never read again, so editing it
+  // later cannot rewrite something already drafted or sent.
+  const copy = await pageCopy("newsletter");
+
   return {
-    subject: `Spotlight Advertiser Update, ${label}`,
-    preheader: "Open zones, artwork deadlines and what is still available.",
-    intro:
-      "Here is where things stand across the Lowcountry this fortnight: what is open, what is closing, and what is coming next.",
+    subject: copy.t("default.subject").replace("{date}", label),
+    preheader: copy.t("default.preheader"),
+    intro: copy.t("default.intro"),
     cards,
     story: { title: "", body: "" },
     news: "",
-    signoff: "Andrew\nLowcountry Business Spotlight",
+    signoff: copy.t("default.signoff"),
   };
 }
 
@@ -327,10 +333,10 @@ export async function getIssue(id: number): Promise<Issue | undefined> {
 }
 
 /**
- * Creates the fortnight's draft, unless one already exists.
+ * Creates the issue for this date, unless one already exists.
  *
- * built_for is the fortnight label, and a second call with the same
- * label returns the issue already there rather than making another. The
+ * built_for is the issue date, and a second call with the same label
+ * returns the issue already there rather than making another. The
  * schedule can therefore fire twice, or be nudged by hand, without
  * producing two drafts nobody can tell apart.
  */
@@ -888,7 +894,7 @@ export async function sendIssue(id: number): Promise<SendReport> {
   return report;
 }
 
-/** The fortnight label a draft is built for, e.g. "Aug 1 2026". */
+/** The date a draft is filed under, e.g. "Aug 1, 2026". Issues go out\n *  on the 1st and the 15th, so a build lands on whichever has passed. */
 export function issueLabel(d: Date): string {
   const half = d.getDate() >= 15 ? 15 : 1;
   return new Date(d.getFullYear(), d.getMonth(), half).toLocaleDateString(
