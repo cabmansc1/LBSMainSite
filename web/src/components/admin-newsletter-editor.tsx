@@ -81,6 +81,7 @@ export function AdminNewsletterEditor({
   const [months, setMonths] = useState(issue.leadsMonths);
   const [zones, setZones] = useState<string[]>(issue.zones);
   const [confirming, setConfirming] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const sent = issue.status === "sent";
   const cancelled = issue.status === "cancelled";
@@ -148,6 +149,27 @@ export function AdminNewsletterEditor({
       if (!saved) return;
     }
     await send({ action: "test", as: previewAs }, "test");
+  }
+
+  async function remove() {
+    setBusy("delete");
+    setError("");
+    try {
+      const res = await fetch("/api/admin/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: issue.id, action: "delete" }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "That did not delete.");
+      // Straight to the list: staying on the page of something that no
+      // longer exists would just 404 on the next refresh.
+      router.push("/admin/newsletter");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That did not delete.");
+      setBusy("");
+      setConfirmingDelete(false);
+    }
   }
 
   const toggleZone = (slug: string) =>
@@ -426,6 +448,48 @@ export function AdminNewsletterEditor({
         </p>
       </div>
 
+      {/* -------- delete -------- */}
+      {/* Outside the actions block, which hides once an issue is locked.
+          A cancelled issue is locked and still deletable; nothing that
+          reached an inbox ever is. */}
+      {issue.status !== "sent" && issue.status !== "sending" && (
+        <div className="grid gap-2 justify-items-start">
+        <span className="flex items-center gap-2.5 flex-wrap">
+          {confirmingDelete ? (
+            <>
+              <span className="text-[13px] font-semibold">
+                Delete this draft for good?
+              </span>
+              <button
+                type="button"
+                disabled={busy !== ""}
+                onClick={() => void remove()}
+                className="text-[13px] font-semibold px-3.5 py-2.5 rounded-[9px] bg-danger text-white disabled:opacity-50"
+              >
+                {busy === "delete" ? "Deleting" : "Yes, delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="text-[13px] px-3 py-2.5 rounded-[9px] text-muted"
+              >
+                Keep it
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              disabled={busy !== ""}
+              onClick={() => setConfirmingDelete(true)}
+              className="text-[13px] px-3 py-2.5 rounded-[9px] text-muted"
+            >
+              Delete this draft
+            </button>
+          )}
+        </span>
+        </div>
+      )}
+
       {/* -------- test -------- */}
       {/* Outside the block below, so a sent issue can still be mailed to
           yourself to see exactly what went out. */}
@@ -501,14 +565,6 @@ export function AdminNewsletterEditor({
             </button>
           )}
 
-          <button
-            type="button"
-            disabled={busy !== ""}
-            onClick={() => send({ action: "cancel" }, "cancel")}
-            className="text-[13px] px-3 py-2.5 rounded-[9px] text-muted ml-auto"
-          >
-            Cancel this issue
-          </button>
         </div>
       )}
 

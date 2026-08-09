@@ -5,6 +5,7 @@ import {
   buildDraftFor,
   issueLabel,
   saveIssue,
+  deleteIssue,
   sendIssue,
   sendTestIssue,
   type IssueContent,
@@ -72,6 +73,15 @@ export async function POST(req: Request) {
     revalidatePath("/admin/newsletter");
     revalidatePath(`/admin/newsletter/${id}`);
     return NextResponse.json({ ok: true, ...report });
+  }
+
+  if (action === "delete") {
+    const result = await deleteIssue(id);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 422 });
+    }
+    revalidatePath("/admin/newsletter");
+    return NextResponse.json({ ok: true });
   }
 
   if (action === "cancel") {

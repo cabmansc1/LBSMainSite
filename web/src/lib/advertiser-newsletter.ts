@@ -404,6 +404,55 @@ export async function saveIssue(
   }
 }
 
+/**
+ * Throws away a draft.
+ *
+ * Only ever a draft. An issue that has gone out, in whole or in part, is
+ * the record of what a hundred businesses were told, and the delivery
+ * rows underneath it are what stop somebody being mailed twice if a send
+ * is resumed. Deleting either would trade a tidy list for the ability to
+ * answer "what did we actually send them" and "have they had this
+ * already", which are the two questions worth being able to answer.
+ *
+ * A cancelled issue is fair game: cancelling is how you decide not to
+ * send something, so nothing went anywhere.
+ */
+export async function deleteIssue(
+  id: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const issue = await getIssue(id);
+  if (!issue) return { ok: false, error: "That issue is not here." };
+  if (issue.status === "sent" || issue.status === "sending") {
+    return {
+      ok: false,
+      error:
+        "That issue has gone out, so it stays as the record of what was sent.",
+    };
+  }
+  if (issue.sendCount > 0) {
+    return {
+      ok: false,
+      error: `That issue reached ${issue.sendCount} ${
+        issue.sendCount === 1 ? "address" : "addresses"
+      }, so it stays as the record of what was sent.`,
+    };
+  }
+  try {
+    const { db } = await import("@/lib/db");
+    // Nothing should be here for a draft, but a cancelled issue that was
+    // once mid-send could have rows. Cleared first so a future issue
+    // cannot inherit them by id reuse.
+    await db
+      .execute(sql`DELETE FROM lbs_newsletter_sends WHERE issue_id = ${id}`)
+      .catch(() => {});
+    await db.execute(sql`DELETE FROM lbs_newsletter_issues WHERE id = ${id}`);
+    return { ok: true };
+  } catch (e) {
+    console.error("[newsletter] delete failed:", e);
+    return { ok: false, error: "That did not delete." };
+  }
+}
+
 /* ---------- the personal block ---------- */
 
 /**
