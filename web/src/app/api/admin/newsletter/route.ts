@@ -6,6 +6,7 @@ import {
   issueLabel,
   saveIssue,
   sendIssue,
+  sendTestIssue,
   type IssueContent,
 } from "@/lib/advertiser-newsletter";
 import type { AudienceGroup } from "@/lib/newsletter-audience";
@@ -19,7 +20,7 @@ const GROUPS = new Set<AudienceGroup>([
 
 /** The advertiser update: build, edit, send. Admin only. */
 export async function POST(req: Request) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   let body: Record<string, unknown>;
   try {
@@ -43,6 +44,24 @@ export async function POST(req: Request) {
   const id = Number(body.id);
   if (!Number.isInteger(id) || id <= 0) {
     return NextResponse.json({ error: "Which issue?" }, { status: 422 });
+  }
+
+  if (action === "test") {
+    // Always the signed-in admin's own address. Accepting one from the
+    // request would turn this screen into a way to mail the whole
+    // newsletter to anybody, one address at a time, without it ever
+    // counting as a send.
+    if (!admin.email) {
+      return NextResponse.json(
+        { error: "Your account has no email address to send a test to." },
+        { status: 422 },
+      );
+    }
+    const result = await sendTestIssue(id, admin.email, String(body.as ?? ""));
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 422 });
+    }
+    return NextResponse.json({ ok: true, to: admin.email, as: result.as });
   }
 
   if (action === "send") {

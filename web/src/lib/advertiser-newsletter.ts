@@ -554,6 +554,89 @@ export function renderIssue(
   return { subject: content.subject, text: lines.join("\n"), html: h.join("") };
 }
 
+/* ---------- test sends ---------- */
+
+/**
+ * Sends one copy to whoever is reading the screen.
+ *
+ * Three things it deliberately does not do. It never writes to
+ * lbs_newsletter_sends, because a test that marked an address as
+ * delivered would make the real send skip it. It never moves the
+ * issue's status. And it never renders under the recipient's own
+ * address.
+ *
+ * That last one matters more than it sounds. The email carries a signed
+ * unsubscribe link built from whoever it is addressed to, so a test
+ * rendered as Rainbow Cleaning but delivered to Andrew would put
+ * Rainbow's unsubscribe link in Andrew's inbox, one click away from
+ * quietly removing a paying advertiser from the list. So the test
+ * borrows the chosen advertiser's name and cards, which is what makes
+ * the formatting worth checking, and keeps the reader's own address for
+ * anything a click could act on.
+ */
+export async function sendTestIssue(
+  id: number,
+  toEmail: string,
+  asEmail?: string,
+): Promise<{ ok: true; as: string } | { ok: false; error: string }> {
+  const to = toEmail.trim().toLowerCase();
+  if (!to) return { ok: false, error: "No address to send the test to." };
+
+  const issue = await getIssue(id);
+  if (!issue) return { ok: false, error: "That issue is not here." };
+
+  // Borrow a real advertiser's name and cards so the personal block is
+  // exercised. Falling back to whoever has cards means a test is worth
+  // reading even when nobody was picked.
+  const personal = await personalIndex();
+  const wanted = (asEmail ?? "").trim().toLowerCase();
+  const audience = await buildAudience(issue.groups, issue.leadsMonths);
+  const borrowed =
+    audience.recipients.find((r) => r.email === wanted) ??
+    audience.recipients.find((r) => (personal.get(r.email) ?? []).length > 0);
+
+  const asRecipient: Recipient = {
+    email: to,
+    businessName: borrowed?.businessName ?? "",
+    contactName: borrowed?.contactName ?? "",
+    groups: borrowed?.groups ?? [],
+  };
+  const cards = borrowed ? (personal.get(borrowed.email) ?? []) : [];
+
+  const mail = renderIssue(issue.content, asRecipient, cards);
+  const res = await sendEmail({
+    to,
+    // Marked, so a test can never be mistaken for the real thing sitting
+    // in the same inbox.
+    subject: `[TEST] ${mail.subject}`,
+    text:
+      `This is a test copy. Nobody else received it.\n` +
+      (borrowed
+        ? `It is rendered as ${borrowed.businessName || borrowed.email}, using their cards.\n`
+        : `No advertiser with cards was available, so there is no personal section.\n`) +
+      `\n----------------------------------------\n\n` +
+      mail.text,
+    html:
+      `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:13px;background:#FFF3E2;color:#7a4a00;padding:12px 16px;border-radius:8px;max-width:600px;margin:16px auto 0">` +
+      `<b>Test copy.</b> Nobody else received this. ` +
+      (borrowed
+        ? `Rendered as ${esc(borrowed.businessName || borrowed.email)}, using their cards.`
+        : `No advertiser with cards was available, so there is no personal section.`) +
+      `</div>` +
+      mail.html,
+  });
+
+  if (!res.sent) {
+    return {
+      ok: false,
+      error:
+        res.error ??
+        "Sending is switched off, so nothing went out. Check RESEND_API_KEY.",
+    };
+  }
+  return { ok: true, as: borrowed?.businessName || borrowed?.email || "nobody" };
+}
+
 /* ---------- sending ---------- */
 
 export type SendReport = {
