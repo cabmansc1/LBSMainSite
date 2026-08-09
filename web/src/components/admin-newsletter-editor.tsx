@@ -17,6 +17,7 @@ export type EditorIssue = {
     subject: string;
     preheader: string;
     intro: string;
+    why: string;
     news: string;
     print: string;
     signoff: string;
@@ -235,6 +236,22 @@ export function AdminNewsletterEditor({
           />
           <span className="text-[12px] text-muted">
             The grey text after the subject in an inbox.
+          </span>
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={label}>Why they are getting this</span>
+          <textarea
+            value={form.why}
+            rows={3}
+            disabled={locked}
+            onChange={(e) => setForm({ ...form, why: e.target.value })}
+            className={field}
+          />
+          <span className="text-[12px] text-muted">
+            Sits under the greeting in small grey text. Saying why, how often,
+            and where the exit is, is what keeps people pressing unsubscribe
+            rather than spam.
           </span>
         </label>
 

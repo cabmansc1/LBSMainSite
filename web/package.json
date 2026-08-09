@@ -9,6 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tiptap/extension-image": "^3.29.2",
+    "@tiptap/extension-placeholder": "^3.29.2",
+    "@tiptap/pm": "^3.29.2",
+    "@tiptap/react": "^3.29.2",
+    "@tiptap/starter-kit": "^3.29.2",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "mysql2": "^3.23.1",

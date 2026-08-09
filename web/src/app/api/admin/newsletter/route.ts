@@ -103,6 +103,7 @@ export async function POST(req: Request) {
       subject: String(raw.subject ?? ""),
       preheader: String(raw.preheader ?? ""),
       intro: String(raw.intro ?? ""),
+      why: String(raw.why ?? ""),
       news: String(raw.news ?? ""),
       print: String(raw.print ?? ""),
       signoff: String(raw.signoff ?? ""),

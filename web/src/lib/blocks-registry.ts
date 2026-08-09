@@ -319,6 +319,15 @@ export const BLOCK_REGISTRY: BlockDef[] = [
   },
   {
     page: "newsletter",
+    key: "default.why",
+    label: "Why they are getting this",
+    kind: "text",
+    fallback:
+      "You are getting this because you have advertised with us, have a listing in our directory, or asked us about advertising around Charleston. It goes out twice a month with open zones and artwork deadlines. If it is not useful, the unsubscribe link at the bottom takes you straight off.",
+    hint: "Sits under the greeting. Clear it on an issue to drop the line.",
+  },
+  {
+    page: "newsletter",
     key: "default.intro",
     label: "Opening a new issue starts with",
     kind: "text",

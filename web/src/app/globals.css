@@ -64,3 +64,28 @@ body {
     transition: none !important;
   }
 }
+
+/*
+  The story editor's empty state.
+
+  Tiptap's placeholder extension puts the text in a data attribute and
+  marks the empty node; drawing it is left to the stylesheet. Floated
+  with zero height so it sits over the caret's line without taking up
+  space and pushing the cursor down a row, and pointer-events off so
+  clicking the hint still places the caret rather than doing nothing.
+*/
+.tiptap p.is-editor-empty:first-child::before,
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-muted);
+}
+
+/* ProseMirror sets this on the editable node; the outline is on the
+   wrapper instead, so the inner one would double up. */
+.tiptap:focus,
+.ProseMirror:focus {
+  outline: none;
+}

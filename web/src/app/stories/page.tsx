@@ -1,0 +1,235 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { countPublishedStories, publishedStories } from "@/lib/stories";
+import {
+  STORY_KINDS,
+  kindEyebrow,
+  type StoryKind,
+} from "@/lib/stories-types";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
+
+const PER_PAGE = 12;
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ kind?: string; page?: string }>;
+}): Promise<Metadata> {
+  const { kind, page } = await searchParams;
+  const known = STORY_KINDS.find((k) => k.value === kind);
+  const n = Math.max(1, Number(page) || 1);
+
+  const title = known
+    ? `${known.label}: Local Stories from Around Charleston`
+    : "Local Stories: Charleston Businesses, Openings and Guides";
+  const description = known
+    ? `${known.hint}. Local stories from across the Lowcountry.`
+    : "Business spotlights, new openings, coming soon and local guides from across Greater Charleston.";
+
+  // Self-referencing, and carrying the page number, so page two is not
+  // treated as a duplicate of page one.
+  const q = new URLSearchParams();
+  if (known) q.set("kind", known.value);
+  if (n > 1) q.set("page", String(n));
+  const qs = q.toString();
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `${SITE_URL}/stories${qs ? `?${qs}` : ""}` },
+    openGraph: { title, description, siteName: SITE_NAME, type: "website" },
+  };
+}
+
+export default async function StoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ kind?: string; page?: string }>;
+}) {
+  const { kind, page } = await searchParams;
+  const known = STORY_KINDS.find((k) => k.value === kind);
+  const current = Math.max(1, Number(page) || 1);
+  const offset = (current - 1) * PER_PAGE;
+  const filter = { kind: known?.value as StoryKind | undefined };
+
+  const [stories, total] = await Promise.all([
+    publishedStories({ ...filter, limit: PER_PAGE, offset }),
+    countPublishedStories(filter),
+  ]);
+  const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+
+  const href = (k?: string, p?: number) => {
+    const q = new URLSearchParams();
+    if (k) q.set("kind", k);
+    if (p && p > 1) q.set("page", String(p));
+    const qs = q.toString();
+    return `/stories${qs ? `?${qs}` : ""}`;
+  };
+
+  const [lead, ...rest] = stories;
+
+  return (
+    <>
+      <header className="bg-navy-950 text-white">
+        <div className="mx-auto max-w-[1120px] px-6 pt-14 pb-12">
+          <p className="text-[12px] font-semibold uppercase tracking-widest text-brand">
+            Around the Lowcountry
+          </p>
+          <h1 className="mt-2.5 text-[32px] md:text-[46px] font-bold tracking-[-0.035em] leading-[1.05] text-balance">
+            Local stories worth knowing.
+          </h1>
+          <p className="mt-4 text-[16.5px] leading-relaxed text-[#AEBDCC] max-w-[58ch]">
+            Business spotlights, new openings, what is coming soon and guides to
+            getting the most out of Greater Charleston.
+          </p>
+        </div>
+      </header>
+
+      {/* Real anchors, so every filter and page is a crawlable URL rather
+          than a state a script has to be run to reach. */}
+      <nav
+        aria-label="Story kinds"
+        className="border-b border-line bg-surface"
+      >
+        <div className="mx-auto max-w-[1120px] px-6 py-3 flex gap-2 flex-wrap">
+          <Link
+            href={href()}
+            className={`text-[13px] font-semibold px-3 py-1.5 rounded-full border ${
+              !known
+                ? "bg-navy-950 text-white border-navy-950"
+                : "bg-white border-line-strong"
+            }`}
+          >
+            Everything
+          </Link>
+          {STORY_KINDS.map((k) => (
+            <Link
+              key={k.value}
+              href={href(k.value)}
+              className={`text-[13px] font-semibold px-3 py-1.5 rounded-full border ${
+                known?.value === k.value
+                  ? "bg-navy-950 text-white border-navy-950"
+                  : "bg-white border-line-strong"
+              }`}
+            >
+              {k.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+
+      <section className="mx-auto max-w-[1120px] px-6 py-12">
+        {stories.length === 0 ? (
+          <p className="text-[15px] text-muted">
+            Nothing here yet. The first stories are being written.
+          </p>
+        ) : (
+          <div className="grid gap-3.5">
+            {lead && (
+              <Link
+                href={`/stories/${lead.slug}`}
+                className="grid md:grid-cols-2 gap-0 border border-line rounded-(--radius-card) bg-white overflow-hidden hover:border-navy-950"
+              >
+                <span className="relative block bg-surface min-h-[220px] md:min-h-[300px]">
+                  {lead.heroMediaId ? (
+                    <Image
+                      src={`/api/media/${lead.heroMediaId}`}
+                      alt=""
+                      fill
+                      sizes="(max-width: 768px) 100vw, 560px"
+                      className="object-cover"
+                      loading="eager"
+                    />
+                  ) : null}
+                </span>
+                <span className="block p-6 md:p-8 self-center">
+                  <span className="text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
+                    {kindEyebrow(lead.kind)}
+                  </span>
+                  <span className="block mt-2.5 text-[22px] md:text-[26px] font-bold tracking-tight leading-snug text-balance">
+                    {lead.title}
+                  </span>
+                  {lead.dek && (
+                    <span className="block mt-3 text-[14.5px] text-body leading-relaxed">
+                      {lead.dek}
+                    </span>
+                  )}
+                  <span className="block mt-4 text-[12.5px] text-muted num">
+                    {lead.publishedLabel}
+                    {lead.sponsored && " · Sponsored"}
+                  </span>
+                </span>
+              </Link>
+            )}
+
+            {rest.length > 0 && (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {rest.map((s) => (
+                  <Link
+                    key={s.id}
+                    href={`/stories/${s.slug}`}
+                    className="border border-line rounded-(--radius-card) bg-white overflow-hidden hover:border-navy-950 grid content-start"
+                  >
+                    <span className="relative block bg-surface aspect-[16/10]">
+                      {s.heroMediaId ? (
+                        <Image
+                          src={`/api/media/${s.heroMediaId}`}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 100vw, 360px"
+                          className="object-cover"
+                        />
+                      ) : null}
+                    </span>
+                    <span className="block p-5">
+                      <span className="text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
+                        {kindEyebrow(s.kind)}
+                      </span>
+                      <span className="block mt-2 text-[16px] font-semibold leading-snug">
+                        {s.title}
+                      </span>
+                      {s.dek && (
+                        <span className="block mt-2 text-[13.5px] text-muted leading-relaxed line-clamp-3">
+                          {s.dek}
+                        </span>
+                      )}
+                      <span className="block mt-3 text-[12px] text-muted num">
+                        {s.publishedLabel}
+                        {s.sponsored && " · Sponsored"}
+                      </span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {pages > 1 && (
+          <nav
+            aria-label="Pages"
+            className="mt-8 flex items-center gap-2 flex-wrap"
+          >
+            {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+              <Link
+                key={p}
+                href={href(known?.value, p)}
+                aria-current={p === current ? "page" : undefined}
+                className={`text-[13px] font-semibold px-3 py-1.5 rounded-[9px] border num ${
+                  p === current
+                    ? "bg-navy-950 text-white border-navy-950"
+                    : "bg-white border-line-strong"
+                }`}
+              >
+                {p}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </section>
+    </>
+  );
+}
