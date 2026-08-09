@@ -89,6 +89,7 @@ export default async function AdminNewsletterIssuePage({
           total={audience.recipients.length}
           suppressed={audience.suppressed}
           mcReadable={audience.mcReadable}
+          previewAs={chosen?.email}
         />
 
         <div className="lg:sticky lg:top-6 grid gap-2.5">

@@ -56,12 +56,15 @@ export function AdminNewsletterEditor({
   total,
   suppressed,
   mcReadable,
+  previewAs,
 }: {
   issue: EditorIssue;
   counts: Record<AudienceGroup, number>;
   total: number;
   suppressed: number;
   mcReadable: boolean;
+  /** Whoever the preview beside this is rendering, so a test matches it. */
+  previewAs?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState("");
@@ -80,7 +83,10 @@ export function AdminNewsletterEditor({
     "w-full text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950";
   const label = "text-[11px] uppercase tracking-wider text-muted font-semibold";
 
-  async function send(body: Record<string, unknown>, tag: string) {
+  async function send(
+    body: Record<string, unknown>,
+    tag: string,
+  ): Promise<boolean> {
     setBusy(tag);
     setError("");
     setNote("");
@@ -92,7 +98,11 @@ export function AdminNewsletterEditor({
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error ?? "That did not work.");
-      if (body.action === "send") {
+      if (body.action === "test") {
+        setNote(
+          `Test sent to ${j.to}, rendered as ${j.as}. Nobody else got it.`,
+        );
+      } else if (body.action === "send") {
         setNote(
           j.done
             ? `Sent to ${j.sent} ${j.sent === 1 ? "address" : "addresses"}.${
@@ -105,11 +115,32 @@ export function AdminNewsletterEditor({
       }
       setConfirming(false);
       router.refresh();
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "That did not work.");
+      return false;
     } finally {
       setBusy("");
     }
+  }
+
+  /**
+   * Saves first, then sends the test.
+   *
+   * The send path reads what is stored, not what is on screen, so a
+   * test of unsaved wording would be a test of the wrong email. Saving
+   * is skipped once an issue is locked, where there is nothing to save
+   * and the attempt would fail.
+   */
+  async function sendTest() {
+    if (!locked) {
+      const saved = await send(
+        { action: "save", content: form, groups, leadsMonths: months },
+        "test",
+      );
+      if (!saved) return;
+    }
+    await send({ action: "test", as: previewAs }, "test");
   }
 
   const toggle = (g: AudienceGroup) =>
@@ -337,6 +368,32 @@ export function AdminNewsletterEditor({
             </span>
           )}
         </p>
+      </div>
+
+      {/* -------- test -------- */}
+      {/* Outside the block below, so a sent issue can still be mailed to
+          yourself to see exactly what went out. */}
+      <div className="border border-line rounded-(--radius-card) bg-white p-5 grid gap-2.5 justify-items-start">
+        <b className="text-[15px]">Check how it looks</b>
+        <p className="text-[13px] text-muted max-w-[62ch]">
+          Sends one copy to your own address, rendered with the cards of
+          whoever the preview is showing, so the personal section is real
+          rather than empty. It does not count as a send: nobody else gets it,
+          and the actual send will still include everyone.
+        </p>
+        <button
+          type="button"
+          disabled={busy !== ""}
+          onClick={() => void sendTest()}
+          className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
+        >
+          {busy === "test" ? "Sending test" : "Send a test to me"}
+        </button>
+        {!locked && (
+          <p className="text-[12px] text-muted">
+            Saves the draft first, so the test is of what you are looking at.
+          </p>
+        )}
       </div>
 
       {/* -------- actions -------- */}
