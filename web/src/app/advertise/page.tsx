@@ -6,6 +6,8 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
 import { ARTWORK_LEAD_DAYS } from "@/lib/mailings";
 import { getLivePricing } from "@/lib/pricing-store";
+import { pageCopy } from "@/lib/blocks";
+import { Copy } from "@/components/copy";
 
 export const metadata: Metadata = {
   title: "Spotlight Postcards: Shared Direct Mail Advertising",
@@ -79,6 +81,7 @@ export const dynamic = "force-dynamic";
 export default async function AdvertisePage() {
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
+  const copy = await pageCopy("advertise");
 
   return (
     <>
@@ -86,21 +89,21 @@ export default async function AdvertisePage() {
         <div className="mx-auto max-w-[1120px] px-6 pt-16 pb-16 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <span className="text-xs font-semibold uppercase tracking-widest text-brand">
-              Spotlight Postcards
+              {copy.t("hero.eyebrow")}
             </span>
             <h1 className="mt-3 text-3xl md:text-[46px] font-bold tracking-[-0.03em] text-balance">
-              The mailbox is still the best billboard in town.
+              <Copy text={copy.t("hero.headline")} markClass="text-brand" />
             </h1>
             <p className="mt-4 text-[#93A5B8] max-w-[52ch]">
-              A 9×12 postcard on 14pt stock with a high-gloss UV coating, full
-              color on both sides, shared by up to eleven exclusive local
-              businesses and mailed to 5,000+ households. From{" "}
-              <b className="text-white num">{fromPrice}</b> per mailing.
+              <Copy
+                text={copy.t("hero.sub").replace("{price}", fromPrice)}
+                markClass="text-white num font-semibold"
+              />
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button href="/pricing">See Pricing</Button>
+              <Button href="/pricing">{copy.t("hero.cta.primary")}</Button>
               <Button href="/gallery" variant="ghost">
-                See Real Cards
+                {copy.t("hero.cta.secondary")}
               </Button>
             </div>
           </div>
@@ -109,7 +112,7 @@ export default async function AdvertisePage() {
             alt="Back of a real 9x12 Spotlight Postcard showing exclusive local business ads"
             width={920}
             height={614}
-            priority
+            loading="eager"
             className="rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,.4)] rotate-[1.5deg] justify-self-center max-w-[460px] w-full h-auto"
           />
         </div>
@@ -117,8 +120,8 @@ export default async function AdvertisePage() {
 
       <section className="mx-auto max-w-[1120px] px-6 py-20">
         <SectionHeading
-          eyebrow="Why postcards"
-          title="Big, tangible, and impossible to scroll past"
+          eyebrow={copy.t("value.eyebrow")}
+          title={copy.t("value.title")}
         />
         <div className="grid md:grid-cols-3 gap-3.5">
           {VALUE.map((v) => (
@@ -132,15 +135,18 @@ export default async function AdvertisePage() {
 
       <section className="mx-auto max-w-[1120px] px-6 pb-16">
         <CtaBand
-          title="Reserve your spot on the next card."
-          sub="Pick a neighborhood and lock your category before a competitor does."
-          ctaLabel="Reserve a Spot"
+          title={copy.t("cta.title")}
+          sub={copy.t("cta.sub")}
+          ctaLabel={copy.t("cta.label")}
           ctaHref="/pricing"
         />
       </section>
       <section className="bg-surface border-t border-line">
         <div className="mx-auto max-w-[760px] px-6 py-18">
-          <SectionHeading eyebrow="Questions" title="Advertising, answered" />
+          <SectionHeading
+            eyebrow={copy.t("faq.eyebrow")}
+            title={copy.t("faq.title")}
+          />
           <div className="mt-8 bg-white border border-line rounded-(--radius-card) overflow-hidden">
             {ADVERTISE_FAQS.map((f) => (
               <details key={f.q} className="border-b border-line last:border-b-0 group">

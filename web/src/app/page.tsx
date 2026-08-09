@@ -12,6 +12,8 @@ import { hasTestimonials } from "@/lib/testimonials";
 import { TestimonialStrip } from "@/components/testimonial-strip";
 import { CONTACT_EMAIL, CONTACT_PHONE_INTL, SITE_NAME, SITE_URL, buildMetadata } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
+import { pageCopy } from "@/lib/blocks";
+import { Copy } from "@/components/copy";
 import { getLivePricing } from "@/lib/pricing-store";
 import { getSiteStats } from "@/lib/admin-data";
 import { getUpcomingMailings } from "@/lib/mission-control";
@@ -241,6 +243,11 @@ export default async function HomePage() {
   const livePricing = await getLivePricing();
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
 
+  // Page copy, overrides applied. One query for the whole page; every
+  // key falls back to the string this file used to hold inline, so an
+  // untouched database renders exactly what it rendered before.
+  const copy = await pageCopy("home");
+
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -251,24 +258,22 @@ export default async function HomePage() {
               {heroBadge}
             </span>
             <h1 className="mt-5 text-4xl md:text-[54px] font-bold tracking-[-0.035em] leading-[1.06] text-balance">
-              Your business in{" "}
-              <em className="not-italic text-brand">5,000 mailboxes.</em> Your
-              competitors in none.
+              <Copy text={copy.t("hero.headline")} markClass="text-brand" />
             </h1>
             <p className="mt-5 text-[17px] leading-relaxed text-[#AEBDCC] max-w-[50ch]">
-              Shared 9×12 postcards mailed to Charleston-area neighborhoods. One
-              exclusive spot per industry, professional design included, from{" "}
-              <b className="text-white font-semibold num">{fromPrice}</b> per
-              mailing.
+              <Copy
+                text={copy.t("hero.sub").replace("{price}", fromPrice)}
+                markClass="text-white font-semibold num"
+              />
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button href="/pricing">Reserve a Spot</Button>
+              <Button href="/pricing">{copy.t("hero.cta.primary")}</Button>
               <Button href="/coverage-map" variant="ghost">
-                View Coverage Map
+                {copy.t("hero.cta.secondary")}
               </Button>
             </div>
             <ul className="mt-7 flex flex-wrap gap-5 text-[13.5px] text-[#67768A]">
-              {["No competitors on your card", "Free ad design", "QR tracking included"].map(
+              {copy.list("hero.proof").map(
                 (item) => (
                   <li key={item} className="flex items-center gap-2">
                     <svg className="text-brand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -303,9 +308,9 @@ export default async function HomePage() {
 
       <section className="mx-auto max-w-[1120px] px-6 py-22">
         <SectionHeading
-          eyebrow="Why it works"
-          title="Billboard impact, shared cost"
-          sub="You share the card, and the cost, with local businesses you do not compete with. Everyone gets seen. Nobody pays billboard prices."
+          eyebrow={copy.t("why.eyebrow")}
+          title={copy.t("why.title")}
+          sub={copy.t("why.sub")}
         />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {BENEFITS.map((b) => (
@@ -323,9 +328,9 @@ export default async function HomePage() {
       <section className="bg-surface border-y border-line">
         <div className="mx-auto max-w-[1120px] px-6 py-22">
           <SectionHeading
-            eyebrow="The product"
-            title="Real cards, real mailboxes"
-            sub="Every card is 9×12, printed on 14pt stock with a high-gloss UV coating, full color on both sides. These are actual cards we mailed."
+            eyebrow={copy.t("product.eyebrow")}
+            title={copy.t("product.title")}
+            sub={copy.t("product.sub")}
           />
           <div className="grid sm:grid-cols-2 gap-3.5">
             <Image
@@ -345,7 +350,7 @@ export default async function HomePage() {
           </div>
           <div className="mt-5">
             <Button href="/gallery" variant="quiet" small>
-              See past cards by neighborhood
+              {copy.t("product.cta")}
             </Button>
           </div>
         </div>
@@ -354,8 +359,8 @@ export default async function HomePage() {
       {(await hasTestimonials("home")) && (
         <section className="mx-auto max-w-[1120px] px-6 py-22">
           <SectionHeading
-            eyebrow="Local businesses on LBS"
-            title="Trusted around the Lowcountry"
+            eyebrow={copy.t("testimonials.eyebrow")}
+            title={copy.t("testimonials.title")}
           />
           <TestimonialStrip placement="home" />
         </section>
@@ -363,7 +368,10 @@ export default async function HomePage() {
 
       <section className="bg-surface border-y border-line">
         <div className="mx-auto max-w-[1120px] px-6 py-22">
-          <SectionHeading eyebrow="How it works" title="On a card in three steps" />
+          <SectionHeading
+            eyebrow={copy.t("steps.eyebrow")}
+            title={copy.t("steps.title")}
+          />
           <div className="grid md:grid-cols-3 gap-3.5">
             {STEPS.map((s, i) => (
               <Card key={s.title} className="p-6.5 grid gap-2.5 content-start">
@@ -380,7 +388,10 @@ export default async function HomePage() {
 
       <section className="bg-surface border-y border-line">
         <div className="mx-auto max-w-[760px] px-6 py-18">
-          <SectionHeading eyebrow="Questions" title="Direct mail, answered" />
+          <SectionHeading
+            eyebrow={copy.t("faq.eyebrow")}
+            title={copy.t("faq.title")}
+          />
           <div className="mt-8 bg-white border border-line rounded-(--radius-card) overflow-hidden">
             {HOME_FAQS.map((f) => (
               <details
@@ -408,8 +419,8 @@ export default async function HomePage() {
       <section className="mx-auto max-w-[1120px] px-6 py-16">
         <CtaBand
           title={ctaTitle}
-          sub="Print deadline is coming. Exclusive categories go fast."
-          ctaLabel="Claim Your Category"
+          sub={copy.t("cta.sub")}
+          ctaLabel={copy.t("cta.label")}
           ctaHref="/pricing"
         />
       </section>
