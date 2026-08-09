@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * Builds this fortnight's draft by hand.
+ * Builds the next issue by hand.
  *
  * The schedule normally does this on the 1st and the 15th. The button is
- * for the first one, for a fortnight the scheduler missed, and for
- * having a look at what an issue would say right now. It cannot make a
- * duplicate: a draft already built for this fortnight is opened rather
- * than replaced.
+ * for the first one, for a date the scheduler missed, and for having a
+ * look at what an issue would say right now. It cannot make a duplicate:
+ * a draft already built for the same date is opened rather than
+ * replaced.
  */
 export function AdminNewsletterBuild() {
   const router = useRouter();
@@ -43,7 +43,7 @@ export function AdminNewsletterBuild() {
         onClick={() => void build()}
         className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
       >
-        {busy ? "Building" : "Build this fortnight's draft"}
+        {busy ? "Building" : "Build the next issue"}
       </button>
       {error && <p className="text-[13px] text-danger">{error}</p>}
     </div>

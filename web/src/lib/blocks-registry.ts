@@ -31,6 +31,11 @@ export type BlockDef = {
 export const BLOCK_PAGES: { key: string; label: string; hint: string }[] = [
   { key: "home", label: "Homepage", hint: "Hero, sections and the closing band" },
   { key: "advertise", label: "Advertise", hint: "The postcard product page" },
+  {
+    key: "newsletter",
+    label: "Advertiser update",
+    hint: "How each new issue starts out",
+  },
 ];
 
 /**
@@ -287,5 +292,45 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Questions: heading",
     kind: "text",
     fallback: "Advertising, answered",
+  },
+
+  /* ---------------- advertiser update ---------------- */
+  /*
+   * What a new issue is pre-filled with, not what any existing issue
+   * says. Every issue keeps its own copy from the moment it is built, so
+   * changing these never rewrites something already drafted or sent, and
+   * an issue on screen can still be edited freely on its own page.
+   */
+  {
+    page: "newsletter",
+    key: "default.subject",
+    label: "Subject line a new issue starts with",
+    kind: "text",
+    fallback: "Spotlight Advertiser Update, {date}",
+    hint: "{date} becomes the issue date, like Aug 15, 2026.",
+  },
+  {
+    page: "newsletter",
+    key: "default.preheader",
+    label: "Preview line a new issue starts with",
+    kind: "text",
+    fallback: "Open zones, artwork deadlines and what is still available.",
+    hint: "The grey text after the subject in an inbox.",
+  },
+  {
+    page: "newsletter",
+    key: "default.intro",
+    label: "Opening a new issue starts with",
+    kind: "text",
+    fallback:
+      "Here is where things stand across the Lowcountry right now: what is open, what is closing, and what is coming next.",
+  },
+  {
+    page: "newsletter",
+    key: "default.signoff",
+    label: "Sign-off a new issue starts with",
+    kind: "text",
+    fallback: "Andrew\nLowcountry Business Spotlight",
+    hint: "Line breaks are kept.",
   },
 ];

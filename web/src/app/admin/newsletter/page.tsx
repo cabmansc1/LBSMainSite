@@ -48,9 +48,21 @@ export default async function AdminNewsletterPage() {
         </p>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-5 flex items-center gap-3 flex-wrap">
         <AdminNewsletterBuild />
+        <Link
+          href="/admin/content?page=newsletter"
+          className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border border-line-strong bg-white"
+        >
+          Change how a new issue starts
+        </Link>
       </div>
+      <p className="text-[12.5px] text-muted mb-5 max-w-[74ch]">
+        Every issue can be reworded on its own page. Changing it there
+        affects that issue alone; changing it under{" "}
+        <b className="text-ink">Change how a new issue starts</b> affects
+        every issue built from then on and leaves existing ones as they are.
+      </p>
 
       {issues.length === 0 ? (
         <p className="text-[13.5px] text-muted">

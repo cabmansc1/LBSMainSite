@@ -10,14 +10,14 @@ import { siteOrigin } from "@/lib/origin";
 export const dynamic = "force-dynamic";
 
 /**
- * Builds the fortnight's advertiser update and says it is ready.
+ * Builds the next advertiser update and says it is ready.
  *
  * Point a scheduler at this on the 1st and the 15th. It never sends
  * anything to an advertiser: it assembles a draft from the open cards,
  * the deadlines and the categories still free, and emails Andrew a link
  * to read it. Sending is a button he presses.
  *
- * Safe to call more than once. The draft is keyed to the fortnight, so a
+ * Safe to call more than once. The draft is keyed to the date, so a
  * second call the same day returns the one already there rather than
  * making a duplicate nobody can tell apart, and the "ready" note only
  * goes out when a draft was genuinely created.
