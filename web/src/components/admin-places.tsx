@@ -4,13 +4,205 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PLACE_KINDS, type Place, type PlaceKind } from "@/lib/places-types";
 
+const field =
+  "w-full text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950";
+const labelClass =
+  "text-[11px] uppercase tracking-wider text-muted font-semibold";
+
+/**
+ * The add and edit form.
+ *
+ * Declared out here rather than inside AdminPlaces deliberately. A
+ * component created during another component's render is a different
+ * component every render, so React throws the old one away and mounts a
+ * new one: the field being typed into loses focus after every single
+ * keystroke.
+ */
+function PlaceForm({
+  value,
+  onChange,
+  onCancel,
+  onSave,
+  isNew,
+  busy,
+  places,
+  zones,
+  areas,
+}: {
+  value: Partial<Place>;
+  onChange: (next: Partial<Place>) => void;
+  onCancel: () => void;
+  onSave: () => void;
+  isNew: boolean;
+  busy: boolean;
+  places: Place[];
+  zones: { slug: string; name: string }[];
+  areas: { slug: string; name: string }[];
+}) {
+  return (
+    <div className="grid gap-3 p-4 bg-surface border border-line rounded-[10px]">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1.5">
+          <span className={labelClass}>Name</span>
+          <input
+            value={value.name ?? ""}
+            onChange={(e) => onChange({ ...value, name: e.target.value })}
+            placeholder="East Cooper"
+            className={field}
+          />
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={labelClass}>What kind of place</span>
+          <select
+            value={value.kind ?? "neighborhood"}
+            onChange={(e) =>
+              onChange({ ...value, kind: e.target.value as PlaceKind })
+            }
+            className={field}
+          >
+            {PLACE_KINDS.map((k) => (
+              <option key={k.value} value={k.value}>
+                {k.label} &mdash; {k.hint}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={labelClass}>Sits inside</span>
+          <select
+            value={value.parentSlug ?? ""}
+            onChange={(e) =>
+              onChange({ ...value, parentSlug: e.target.value || null })
+            }
+            className={field}
+          >
+            <option value="">Nothing, this is the top</option>
+            {places
+              .filter((p) => p.slug !== value.slug)
+              .map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={labelClass}>Card that reaches here</span>
+          <select
+            value={value.mailingZoneSlug ?? ""}
+            onChange={(e) =>
+              onChange({ ...value, mailingZoneSlug: e.target.value || null })
+            }
+            className={field}
+          >
+            <option value="">Nothing mails here yet</option>
+            {zones.map((z) => (
+              <option key={z.slug} value={z.slug}>
+                {z.name}
+              </option>
+            ))}
+          </select>
+          <span className="text-[12px] text-muted">
+            What Reserve a spot buys from this page.
+          </span>
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={labelClass}>Directory area</span>
+          <select
+            value={value.directorySlug ?? ""}
+            onChange={(e) =>
+              onChange({ ...value, directorySlug: e.target.value || null })
+            }
+            className={field}
+          >
+            <option value="">Not linked to one</option>
+            {areas.map((a) => (
+              <option key={a.slug} value={a.slug}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+          <span className="text-[12px] text-muted">
+            Which listings belong to this place.
+          </span>
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={labelClass}>Showing on the site</span>
+          <select
+            value={value.active === false ? "no" : "yes"}
+            onChange={(e) =>
+              onChange({ ...value, active: e.target.value === "yes" })
+            }
+            className={field}
+          >
+            <option value="yes">Showing</option>
+            <option value="no">Hidden</option>
+          </select>
+        </label>
+      </div>
+
+      <label className="grid gap-1.5">
+        <span className={labelClass}>Blurb</span>
+        <textarea
+          value={value.blurb ?? ""}
+          onChange={(e) => onChange({ ...value, blurb: e.target.value })}
+          rows={2}
+          placeholder="One line for the top of this place's page."
+          className={field}
+        />
+      </label>
+
+      <div className="flex gap-2.5">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onSave}
+          className="text-[13px] font-semibold px-4 py-2 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
+        >
+          {isNew ? "Add place" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-[13px] font-semibold px-4 py-2 rounded-[9px] border border-line-strong bg-white"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const kindChip = (kind: PlaceKind) => {
+  const tone =
+    kind === "region"
+      ? "bg-navy-950 text-white"
+      : kind === "market"
+        ? "bg-brand-tint text-brand-deep"
+        : kind === "zone"
+          ? "bg-[#E7F3EC] text-[#1F6B45]"
+          : "bg-surface text-muted";
+  return (
+    <span
+      className={`text-[10.5px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${tone}`}
+    >
+      {PLACE_KINDS.find((k) => k.value === kind)?.label ?? kind}
+    </span>
+  );
+};
+
 /**
  * The region, its markets, and everything under them.
  *
- * Rendered as an indented list rather than a real tree widget: there are
- * three levels and a few dozen rows, and a place's parent is a dropdown
- * on the row itself, so dragging would be a lot of machinery for
- * something a select box already does exactly.
+ * An indented list rather than a real tree widget: there are three
+ * levels and a few dozen rows, and a place's parent is a dropdown on the
+ * row itself, so dragging would be a lot of machinery for something a
+ * select box already does exactly.
  *
  * Slugs show but never change. Stories and events will record a place by
  * slug, so a rename that moved it would orphan every one of them.
@@ -30,11 +222,6 @@ export function AdminPlaces({
   const [editing, setEditing] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<Partial<Place>>({});
-
-  const field =
-    "w-full text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950";
-  const label =
-    "text-[11px] uppercase tracking-wider text-muted font-semibold";
 
   async function send(body: Record<string, unknown>) {
     setBusy(true);
@@ -58,23 +245,23 @@ export function AdminPlaces({
     }
   }
 
-  // How deep a row sits, walked from its parents. Cheap at this size and
-  // it means the indent always matches the parent dropdown, even for a
+  // How deep a row sits, walked from its parents. Cheap at this size, and
+  // it means the indent always matches the parent dropdown even for a
   // place whose parent was just changed.
+  const bySlug = new Map(places.map((x) => [x.slug, x]));
   const depthOf = (p: Place) => {
-    const by = new Map(places.map((x) => [x.slug, x]));
     let d = 0;
-    let cur = p.parentSlug ? by.get(p.parentSlug) : undefined;
+    let cur = p.parentSlug ? bySlug.get(p.parentSlug) : undefined;
     const seen = new Set<string>([p.slug]);
     while (cur && !seen.has(cur.slug) && d < 5) {
       seen.add(cur.slug);
       d += 1;
-      cur = cur.parentSlug ? by.get(cur.parentSlug) : undefined;
+      cur = cur.parentSlug ? bySlug.get(cur.parentSlug) : undefined;
     }
     return d;
   };
 
-  // Parent order, so children sit under the parent they belong to rather
+  // Parent order, so children sit under the place they belong to rather
   // than in one flat list ordered by number.
   const ordered: Place[] = [];
   const walk = (parentSlug: string | null) => {
@@ -91,167 +278,6 @@ export function AdminPlaces({
   // is appended rather than silently dropped off the screen.
   for (const p of places) if (!ordered.includes(p)) ordered.push(p);
 
-  const kindChip = (kind: PlaceKind) => {
-    const tone =
-      kind === "region"
-        ? "bg-navy-950 text-white"
-        : kind === "market"
-          ? "bg-brand-tint text-brand-deep"
-          : kind === "zone"
-            ? "bg-[#E7F3EC] text-[#1F6B45]"
-            : "bg-surface text-muted";
-    return (
-      <span
-        className={`text-[10.5px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded ${tone}`}
-      >
-        {PLACE_KINDS.find((k) => k.value === kind)?.label ?? kind}
-      </span>
-    );
-  };
-
-  function Form({
-    value,
-    onCancel,
-    onSave,
-    isNew,
-  }: {
-    value: Partial<Place>;
-    onCancel: () => void;
-    onSave: () => void;
-    isNew: boolean;
-  }) {
-    return (
-      <div className="grid gap-3 p-4 bg-surface border border-line rounded-[10px]">
-        <div className="grid sm:grid-cols-2 gap-3">
-          <label className="grid gap-1.5">
-            <span className={label}>Name</span>
-            <input
-              value={value.name ?? ""}
-              onChange={(e) => setDraft({ ...value, name: e.target.value })}
-              placeholder="East Cooper"
-              className={field}
-            />
-          </label>
-          <label className="grid gap-1.5">
-            <span className={label}>What kind of place</span>
-            <select
-              value={value.kind ?? "neighborhood"}
-              onChange={(e) =>
-                setDraft({ ...value, kind: e.target.value as PlaceKind })
-              }
-              className={field}
-            >
-              {PLACE_KINDS.map((k) => (
-                <option key={k.value} value={k.value}>
-                  {k.label} &mdash; {k.hint}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1.5">
-            <span className={label}>Sits inside</span>
-            <select
-              value={value.parentSlug ?? ""}
-              onChange={(e) =>
-                setDraft({ ...value, parentSlug: e.target.value || null })
-              }
-              className={field}
-            >
-              <option value="">Nothing, this is the top</option>
-              {places
-                .filter((p) => p.slug !== value.slug)
-                .map((p) => (
-                  <option key={p.slug} value={p.slug}>
-                    {p.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label className="grid gap-1.5">
-            <span className={label}>Card that reaches here</span>
-            <select
-              value={value.mailingZoneSlug ?? ""}
-              onChange={(e) =>
-                setDraft({ ...value, mailingZoneSlug: e.target.value || null })
-              }
-              className={field}
-            >
-              <option value="">Nothing mails here yet</option>
-              {zones.map((z) => (
-                <option key={z.slug} value={z.slug}>
-                  {z.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-[12px] text-muted">
-              What Reserve a spot buys from this page.
-            </span>
-          </label>
-          <label className="grid gap-1.5">
-            <span className={label}>Directory area</span>
-            <select
-              value={value.directorySlug ?? ""}
-              onChange={(e) =>
-                setDraft({ ...value, directorySlug: e.target.value || null })
-              }
-              className={field}
-            >
-              <option value="">Not linked to one</option>
-              {areas.map((a) => (
-                <option key={a.slug} value={a.slug}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-[12px] text-muted">
-              Which listings belong to this place.
-            </span>
-          </label>
-          <label className="grid gap-1.5">
-            <span className={label}>Showing on the site</span>
-            <select
-              value={value.active === false ? "no" : "yes"}
-              onChange={(e) =>
-                setDraft({ ...value, active: e.target.value === "yes" })
-              }
-              className={field}
-            >
-              <option value="yes">Showing</option>
-              <option value="no">Hidden</option>
-            </select>
-          </label>
-        </div>
-        <label className="grid gap-1.5">
-          <span className={label}>Blurb</span>
-          <textarea
-            value={value.blurb ?? ""}
-            onChange={(e) => setDraft({ ...value, blurb: e.target.value })}
-            rows={2}
-            placeholder="One line for the top of this place's page."
-            className={field}
-          />
-        </label>
-        <div className="flex gap-2.5">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onSave}
-            className="text-[13px] font-semibold px-4 py-2 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
-          >
-            {isNew ? "Add place" : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="text-[13px] font-semibold px-4 py-2 rounded-[9px] border border-line-strong bg-white"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="grid gap-5">
       {error && (
@@ -261,9 +287,14 @@ export function AdminPlaces({
       )}
 
       {adding ? (
-        <Form
+        <PlaceForm
           value={draft}
           isNew
+          busy={busy}
+          places={places}
+          zones={zones}
+          areas={areas}
+          onChange={setDraft}
           onCancel={() => {
             setAdding(false);
             setDraft({});
@@ -302,7 +333,9 @@ export function AdminPlaces({
               <span className="text-[12px] text-muted num">/{p.slug}</span>
               {p.mailingZoneSlug ? (
                 <span className="text-[12px] text-muted">
-                  mails on {zones.find((z) => z.slug === p.mailingZoneSlug)?.name ?? p.mailingZoneSlug}
+                  mails on{" "}
+                  {zones.find((z) => z.slug === p.mailingZoneSlug)?.name ??
+                    p.mailingZoneSlug}
                 </span>
               ) : (
                 <span className="text-[12px] text-muted">not mailing yet</span>
@@ -312,7 +345,9 @@ export function AdminPlaces({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => send({ action: "move", id: p.id, direction: "up" })}
+                  onClick={() =>
+                    send({ action: "move", id: p.id, direction: "up" })
+                  }
                   aria-label={`Move ${p.name} up`}
                   className="text-[13px] px-2 py-1 rounded border border-line-strong bg-white disabled:opacity-50"
                 >
@@ -321,7 +356,9 @@ export function AdminPlaces({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => send({ action: "move", id: p.id, direction: "down" })}
+                  onClick={() =>
+                    send({ action: "move", id: p.id, direction: "down" })
+                  }
                   aria-label={`Move ${p.name} down`}
                   className="text-[13px] px-2 py-1 rounded border border-line-strong bg-white disabled:opacity-50"
                 >
@@ -353,9 +390,14 @@ export function AdminPlaces({
 
             {editing === p.id && (
               <div className="px-4 pb-4">
-                <Form
+                <PlaceForm
                   value={draft}
                   isNew={false}
+                  busy={busy}
+                  places={places}
+                  zones={zones}
+                  areas={areas}
+                  onChange={setDraft}
                   onCancel={() => {
                     setEditing(null);
                     setDraft({});

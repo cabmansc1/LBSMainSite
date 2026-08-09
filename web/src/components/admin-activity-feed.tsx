@@ -28,6 +28,9 @@ const TONE: Record<ActivityKind, string> = {
   proof: "bg-brand-tint text-brand-deep",
   // Red, like a refund. Both are the money not being where the books say.
   payment_gap: "bg-danger/10 text-danger",
+  // Neutral: a draft waiting to be read is a job on the list, not a
+  // problem, and nothing has gone out until somebody presses Send.
+  newsletter: "bg-surface text-body",
 };
 
 /**

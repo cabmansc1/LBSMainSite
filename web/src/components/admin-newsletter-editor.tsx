@@ -1,0 +1,412 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { AudienceGroup } from "@/lib/newsletter-audience";
+
+export type EditorIssue = {
+  id: number;
+  status: string;
+  builtFor: string;
+  sendCount: number;
+  sentAt?: string;
+  groups: AudienceGroup[];
+  leadsMonths: number;
+  content: {
+    subject: string;
+    preheader: string;
+    intro: string;
+    news: string;
+    signoff: string;
+    story: { title: string; body: string };
+    cards: {
+      cardName: string;
+      mailMonth: string;
+      spotsLeft: number;
+      spotsTotal: number;
+      artworkDeadline?: string;
+      openCategories: string[];
+      moreCategories: number;
+    }[];
+  };
+};
+
+const GROUP_LABELS: { value: AudienceGroup; label: string; hint: string }[] = [
+  {
+    value: "current",
+    label: "Current advertisers",
+    hint: "On a card that has not mailed",
+  },
+  { value: "past", label: "Past advertisers", hint: "Bought before, nothing upcoming" },
+  { value: "directory", label: "Directory listings", hint: "Live listing, no card" },
+  { value: "leads", label: "Enquiries", hint: "Asked, never bought" },
+];
+
+/**
+ * Reading and sending one issue.
+ *
+ * The assembled cards are shown but not editable. They are the record of
+ * what was true when the issue was built, and an issue that has gone out
+ * has to keep saying what it said. Everything written by hand, the intro
+ * and the story and the sign-off, is editable right up to the send.
+ */
+export function AdminNewsletterEditor({
+  issue,
+  counts,
+  total,
+  suppressed,
+  mcReadable,
+}: {
+  issue: EditorIssue;
+  counts: Record<AudienceGroup, number>;
+  total: number;
+  suppressed: number;
+  mcReadable: boolean;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const [note, setNote] = useState("");
+  const [form, setForm] = useState(issue.content);
+  const [groups, setGroups] = useState<AudienceGroup[]>(issue.groups);
+  const [months, setMonths] = useState(issue.leadsMonths);
+  const [confirming, setConfirming] = useState(false);
+
+  const sent = issue.status === "sent";
+  const cancelled = issue.status === "cancelled";
+  const locked = sent || cancelled;
+
+  const field =
+    "w-full text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950";
+  const label = "text-[11px] uppercase tracking-wider text-muted font-semibold";
+
+  async function send(body: Record<string, unknown>, tag: string) {
+    setBusy(tag);
+    setError("");
+    setNote("");
+    try {
+      const res = await fetch("/api/admin/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: issue.id, ...body }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "That did not work.");
+      if (body.action === "send") {
+        setNote(
+          j.done
+            ? `Sent to ${j.sent} ${j.sent === 1 ? "address" : "addresses"}.${
+                j.failed ? ` ${j.failed} did not go through.` : ""
+              }`
+            : `Sent ${j.sent} so far. Press Send again to carry on with the rest.`,
+        );
+      } else if (body.action === "save") {
+        setNote("Saved.");
+      }
+      setConfirming(false);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That did not work.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  const toggle = (g: AudienceGroup) =>
+    setGroups((cur) =>
+      cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g],
+    );
+
+  return (
+    <div className="grid gap-5">
+      {error && (
+        <p className="text-[13px] text-danger bg-[#fdeeee] border border-[#f5c9c9] rounded-lg px-4 py-2.5">
+          {error}
+        </p>
+      )}
+      {note && (
+        <p className="text-[13px] text-brand-deep bg-brand-tint border border-line rounded-lg px-4 py-2.5">
+          {note}
+        </p>
+      )}
+
+      {sent && (
+        <p className="text-[13px] bg-[#E7F3EC] border border-[#c9e3d3] text-[#1F6B45] rounded-lg px-4 py-2.5">
+          Sent to {issue.sendCount}{" "}
+          {issue.sendCount === 1 ? "address" : "addresses"}
+          {issue.sentAt ? ` on ${issue.sentAt}` : ""}. Nothing here can be
+          changed now.
+        </p>
+      )}
+      {!mcReadable && !locked && (
+        <p className="text-[13px] bg-[#fdeeee] border border-[#f5c9c9] text-danger rounded-lg px-4 py-2.5">
+          Mission Control cannot be reached, so advertiser details are missing
+          rather than empty. Sending is blocked until it answers again.
+        </p>
+      )}
+
+      {/* -------- written by hand -------- */}
+      <div className="border border-line rounded-(--radius-card) bg-white p-5 grid gap-3.5">
+        <b className="text-[15px]">What you write</b>
+
+        <label className="grid gap-1.5">
+          <span className={label}>Subject line</span>
+          <input
+            value={form.subject}
+            disabled={locked}
+            onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            className={field}
+          />
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={label}>Preview line</span>
+          <input
+            value={form.preheader}
+            disabled={locked}
+            onChange={(e) => setForm({ ...form, preheader: e.target.value })}
+            className={field}
+          />
+          <span className="text-[12px] text-muted">
+            The grey text after the subject in an inbox.
+          </span>
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={label}>Opening</span>
+          <textarea
+            value={form.intro}
+            rows={3}
+            disabled={locked}
+            onChange={(e) => setForm({ ...form, intro: e.target.value })}
+            className={field}
+          />
+        </label>
+
+        <div className="grid sm:grid-cols-2 gap-3.5">
+          <label className="grid gap-1.5">
+            <span className={label}>Story heading</span>
+            <input
+              value={form.story.title}
+              disabled={locked}
+              placeholder="How Cane Bay Roofing books from mail"
+              onChange={(e) =>
+                setForm({ ...form, story: { ...form.story, title: e.target.value } })
+              }
+              className={field}
+            />
+          </label>
+          <label className="grid gap-1.5">
+            <span className={label}>What&rsquo;s new</span>
+            <input
+              value={form.news}
+              disabled={locked}
+              placeholder="Directory profiles got photo galleries"
+              onChange={(e) => setForm({ ...form, news: e.target.value })}
+              className={field}
+            />
+          </label>
+        </div>
+
+        <label className="grid gap-1.5">
+          <span className={label}>Story</span>
+          <textarea
+            value={form.story.body}
+            rows={4}
+            disabled={locked}
+            onChange={(e) =>
+              setForm({ ...form, story: { ...form.story, body: e.target.value } })
+            }
+            className={field}
+          />
+          <span className="text-[12px] text-muted">
+            Leave both story boxes empty to drop the section entirely.
+          </span>
+        </label>
+
+        <label className="grid gap-1.5">
+          <span className={label}>Sign-off</span>
+          <textarea
+            value={form.signoff}
+            rows={2}
+            disabled={locked}
+            onChange={(e) => setForm({ ...form, signoff: e.target.value })}
+            className={field}
+          />
+        </label>
+      </div>
+
+      {/* -------- assembled -------- */}
+      <div className="border border-line rounded-(--radius-card) bg-white p-5 grid gap-3">
+        <div>
+          <b className="text-[15px]">What the site filled in</b>
+          <p className="text-[12.5px] text-muted mt-0.5">
+            Taken from Mission Control when this issue was built. Fixed now, so
+            what went out stays what went out.
+          </p>
+        </div>
+        {issue.content.cards.length === 0 ? (
+          <p className="text-[13px] text-muted">
+            No open cards were found when this was built, so the email has no
+            availability section.
+          </p>
+        ) : (
+          <div className="grid gap-2">
+            {issue.content.cards.map((c, i) => (
+              <div
+                key={i}
+                className="border border-line rounded-[10px] px-3.5 py-3 text-[13.5px]"
+              >
+                <b>{c.cardName}</b>
+                <span className="text-muted">
+                  {" "}
+                  &middot; mails {c.mailMonth}
+                  {c.spotsTotal > 0
+                    ? ` · ${c.spotsLeft} of ${c.spotsTotal} spots left`
+                    : ""}
+                  {c.artworkDeadline ? ` · artwork ${c.artworkDeadline}` : ""}
+                </span>
+                {c.openCategories.length > 0 && (
+                  <p className="text-[12.5px] text-muted mt-1">
+                    Open: {c.openCategories.join(", ")}
+                    {c.moreCategories ? ` and ${c.moreCategories} more` : ""}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* -------- audience -------- */}
+      <div className="border border-line rounded-(--radius-card) bg-white p-5 grid gap-3.5">
+        <b className="text-[15px]">Who gets it</b>
+        <div className="grid sm:grid-cols-2 gap-2.5">
+          {GROUP_LABELS.map((g) => (
+            <label
+              key={g.value}
+              className="flex items-start gap-2.5 border border-line rounded-[10px] px-3.5 py-3"
+            >
+              <input
+                type="checkbox"
+                checked={groups.includes(g.value)}
+                disabled={locked}
+                onChange={() => toggle(g.value)}
+                className="mt-1"
+              />
+              <span>
+                <b className="text-[13.5px]">{g.label}</b>
+                <span className="block text-[12px] text-muted">{g.hint}</span>
+                <span className="block text-[12px] text-muted num">
+                  {counts[g.value]} on the list
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+
+        {groups.includes("leads") && (
+          <label className="grid gap-1.5 max-w-[280px]">
+            <span className={label}>How far back for enquiries</span>
+            <select
+              value={months}
+              disabled={locked}
+              onChange={(e) => setMonths(Number(e.target.value))}
+              className={field}
+            >
+              {[3, 6, 12, 24, 36].map((m) => (
+                <option key={m} value={m}>
+                  {m} months
+                </option>
+              ))}
+            </select>
+            <span className="text-[12px] text-muted">
+              Somebody who asked once, years ago, is where spam complaints come
+              from.
+            </span>
+          </label>
+        )}
+
+        <p className="text-[13px]">
+          <b className="num">{total}</b>{" "}
+          {total === 1 ? "address" : "addresses"} after folding duplicates
+          {suppressed > 0 && (
+            <span className="text-muted num">
+              {" "}
+              &middot; {suppressed} unsubscribed and skipped
+            </span>
+          )}
+        </p>
+      </div>
+
+      {/* -------- actions -------- */}
+      {!locked && (
+        <div className="flex gap-2.5 flex-wrap items-center">
+          <button
+            type="button"
+            disabled={busy !== ""}
+            onClick={() =>
+              send(
+                { action: "save", content: form, groups, leadsMonths: months },
+                "save",
+              )
+            }
+            className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border border-line-strong bg-white disabled:opacity-50"
+          >
+            {busy === "save" ? "Saving" : "Save draft"}
+          </button>
+
+          {confirming ? (
+            <>
+              <span className="text-[13px] font-semibold">
+                Send to {total} {total === 1 ? "address" : "addresses"}?
+              </span>
+              <button
+                type="button"
+                disabled={busy !== "" || total === 0 || !mcReadable}
+                onClick={() => send({ action: "send" }, "send")}
+                className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-cta text-white disabled:opacity-50"
+              >
+                {busy === "send" ? "Sending" : "Yes, send it"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="text-[13px] px-3 py-2.5 rounded-[9px] text-muted"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              disabled={busy !== "" || total === 0 || !mcReadable}
+              onClick={() => setConfirming(true)}
+              className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
+            >
+              Send
+            </button>
+          )}
+
+          <button
+            type="button"
+            disabled={busy !== ""}
+            onClick={() => send({ action: "cancel" }, "cancel")}
+            className="text-[13px] px-3 py-2.5 rounded-[9px] text-muted ml-auto"
+          >
+            Cancel this issue
+          </button>
+        </div>
+      )}
+
+      {!locked && (
+        <p className="text-[12.5px] text-muted max-w-[74ch]">
+          Save before sending if you have changed anything: the send uses what
+          is stored, not what is on screen. If a send stops part way through,
+          press Send again and it carries on from where it stopped rather than
+          mailing anyone twice.
+        </p>
+      )}
+    </div>
+  );
+}
