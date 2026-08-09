@@ -60,6 +60,8 @@ export type IssueContent = {
   cards: IssueCard[];
   story: { title: string; body: string };
   news: string;
+  /** Standing offer of print work. Empty drops the section entirely. */
+  print: string;
   signoff: string;
 };
 
@@ -232,6 +234,7 @@ export async function assembleContent(
     cards,
     story: { title: "", body: "" },
     news: "",
+    print: copy.t("default.print"),
     signoff: copy.t("default.signoff"),
   };
 }
@@ -266,10 +269,35 @@ function parseZones(raw: string | null | undefined): string[] {
   return found.length ? found : SITE_ZONE_SLUGS;
 }
 
+/**
+ * Fills in anything a stored issue predates.
+ *
+ * An issue is written once and read for ever, so every field added after
+ * the first one was saved is missing from the rows already there.
+ * Reading those straight back would put undefined where the renderer
+ * expects a string and take the screen down over a section that simply
+ * did not exist yet.
+ */
+function normalizeContent(raw: Partial<IssueContent>): IssueContent {
+  return {
+    subject: raw.subject ?? "",
+    preheader: raw.preheader ?? "",
+    intro: raw.intro ?? "",
+    cards: Array.isArray(raw.cards) ? raw.cards : [],
+    story: {
+      title: raw.story?.title ?? "",
+      body: raw.story?.body ?? "",
+    },
+    news: raw.news ?? "",
+    print: raw.print ?? "",
+    signoff: raw.signoff ?? "",
+  };
+}
+
 function toIssue(r: IssueRow): Issue | undefined {
   let content: IssueContent;
   try {
-    content = JSON.parse(r.content) as IssueContent;
+    content = normalizeContent(JSON.parse(r.content) as Partial<IssueContent>);
   } catch {
     // An issue whose body will not parse cannot be rendered or sent, and
     // returning a half-built object would put a broken row on the screen
@@ -572,6 +600,7 @@ export function renderIssue(
     lines.push(content.story.title.toUpperCase(), "", content.story.body, "");
   }
   if (content.news.trim()) lines.push("WHAT'S NEW", "", content.news, "");
+  if (content.print.trim()) lines.push("PRINTING", "", content.print, "");
 
   lines.push(
     content.signoff,
@@ -647,6 +676,13 @@ export function renderIssue(
     h.push(heading("What's new"));
     h.push(
       `<p style="margin:0 0 16px;white-space:pre-wrap">${esc(content.news)}</p>`,
+    );
+  }
+
+  if (content.print.trim()) {
+    h.push(heading("Printing"));
+    h.push(
+      `<p style="margin:0 0 16px;white-space:pre-wrap">${esc(content.print)}</p>`,
     );
   }
 

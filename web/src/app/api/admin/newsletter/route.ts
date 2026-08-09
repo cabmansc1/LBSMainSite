@@ -104,6 +104,7 @@ export async function POST(req: Request) {
       preheader: String(raw.preheader ?? ""),
       intro: String(raw.intro ?? ""),
       news: String(raw.news ?? ""),
+      print: String(raw.print ?? ""),
       signoff: String(raw.signoff ?? ""),
       story: {
         title: String(raw.story?.title ?? ""),

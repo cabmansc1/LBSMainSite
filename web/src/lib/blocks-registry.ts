@@ -327,6 +327,15 @@ export const BLOCK_REGISTRY: BlockDef[] = [
   },
   {
     page: "newsletter",
+    key: "default.print",
+    label: "Print products line",
+    kind: "text",
+    fallback:
+      "Need anything printed? Alongside the postcards we do business cards, flyers, brochures, yard signs, banners, magnets and more. Just reply to this email and tell us what you are after.",
+    hint: "Appears in every issue. Clear it on an issue to drop the section.",
+  },
+  {
+    page: "newsletter",
     key: "default.signoff",
     label: "Sign-off a new issue starts with",
     kind: "text",
