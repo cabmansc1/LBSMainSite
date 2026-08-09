@@ -1,0 +1,80 @@
+# The site's scheduled jobs, which have nothing to run them otherwise.
+#
+# Both endpoints are ordinary GETs guarded by CRON_SECRET, so anything
+# that can make an HTTP request will do. This is here rather than a
+# hosted pinger so the secret never leaves GitHub and Railway, and so a
+# failing job is visible in the Actions tab beside everything else.
+#
+# What each one is for:
+#
+#   waitlist    Somebody asked for a category that was taken. When it
+#               frees up they should hear, and nobody is watching for
+#               that by hand. Hourly is plenty: a category coming free
+#               is measured in days, and the only cost of being slow is
+#               that they hear an hour later than they might have.
+#
+#   newsletter  Builds the fortnight's advertiser update and emails
+#               Andrew a link. It never sends anything to an
+#               advertiser; sending is a button on /admin/newsletter.
+#
+# Both are safe to run twice. The waitlist sweep only considers rows it
+# has not notified, and the newsletter draft is keyed to the fortnight,
+# so a second call returns the draft already there.
+name: Scheduled jobs
+
+on:
+  schedule:
+    # Times are UTC and do not shift with daylight saving.
+    - cron: "0 * * * *" # waitlist, hourly
+    - cron: "0 13 1,15 * *" # advertiser update, 1st and 15th, 9am ET
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Which job to run now
+        type: choice
+        default: waitlist
+        options: [waitlist, newsletter]
+
+# One at a time. A slow sweep must not have the next hour's run start
+# on top of it.
+concurrency:
+  group: scheduled-jobs
+  cancel-in-progress: false
+
+env:
+  SITE: https://www.lowcountrybusinessspotlight.com
+
+jobs:
+  waitlist:
+    if: github.event.schedule == '0 * * * *' || inputs.job == 'waitlist'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tell the waitlist what has opened up
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's secrets."
+            exit 1
+          fi
+          # Bearer rather than ?key=, so the secret stays out of access logs.
+          # --fail-with-body so a 4xx fails the run AND prints why.
+          curl --fail-with-body -sS \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$SITE/api/cron/waitlist"
+
+  newsletter:
+    if: github.event.schedule == '0 13 1,15 * *' || inputs.job == 'newsletter'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build the advertiser update draft
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET is not set in this repository's secrets."
+            exit 1
+          fi
+          curl --fail-with-body -sS \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$SITE/api/cron/newsletter"
