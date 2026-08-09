@@ -18,6 +18,7 @@ export type EditorIssue = {
     preheader: string;
     intro: string;
     news: string;
+    print: string;
     signoff: string;
     story: { title: string; body: string };
     cards: {
@@ -290,6 +291,20 @@ export function AdminNewsletterEditor({
         </label>
 
         <label className="grid gap-1.5">
+          <span className={label}>Printing</span>
+          <textarea
+            value={form.print}
+            rows={3}
+            disabled={locked}
+            onChange={(e) => setForm({ ...form, print: e.target.value })}
+            className={field}
+          />
+          <span className="text-[12px] text-muted">
+            Appears in every issue. Clear it to drop the section from this one.
+          </span>
+        </label>
+
+        <label className="grid gap-1.5">
           <span className={label}>Sign-off</span>
           <textarea
             value={form.signoff}
@@ -453,20 +468,25 @@ export function AdminNewsletterEditor({
           A cancelled issue is locked and still deletable; nothing that
           reached an inbox ever is. */}
       {issue.status !== "sent" && issue.status !== "sending" && (
-        <div className="grid gap-2 justify-items-start">
-        <span className="flex items-center gap-2.5 flex-wrap">
+        <div className="border border-line rounded-(--radius-card) bg-white p-5 grid gap-2.5 justify-items-start">
+          <b className="text-[15px]">Throw this draft away</b>
+          <p className="text-[13px] text-muted max-w-[62ch]">
+            Removes it completely. Only ever possible while nobody has
+            received it: once an issue has gone out it stays, as the record
+            of what was sent.
+          </p>
           {confirmingDelete ? (
-            <>
+            <span className="flex items-center gap-2.5 flex-wrap">
               <span className="text-[13px] font-semibold">
-                Delete this draft for good?
+                Delete it for good?
               </span>
               <button
                 type="button"
                 disabled={busy !== ""}
                 onClick={() => void remove()}
-                className="text-[13px] font-semibold px-3.5 py-2.5 rounded-[9px] bg-danger text-white disabled:opacity-50"
+                className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-danger text-white disabled:opacity-50"
               >
-                {busy === "delete" ? "Deleting" : "Yes, delete"}
+                {busy === "delete" ? "Deleting" : "Yes, delete it"}
               </button>
               <button
                 type="button"
@@ -475,18 +495,17 @@ export function AdminNewsletterEditor({
               >
                 Keep it
               </button>
-            </>
+            </span>
           ) : (
             <button
               type="button"
               disabled={busy !== ""}
               onClick={() => setConfirmingDelete(true)}
-              className="text-[13px] px-3 py-2.5 rounded-[9px] text-muted"
+              className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border border-danger text-danger bg-white disabled:opacity-50"
             >
               Delete this draft
             </button>
           )}
-        </span>
         </div>
       )}
 
