@@ -57,6 +57,8 @@ export type IssueContent = {
   subject: string;
   preheader: string;
   intro: string;
+  /** One quiet line saying why this landed in their inbox. */
+  why: string;
   cards: IssueCard[];
   story: { title: string; body: string };
   news: string;
@@ -231,6 +233,7 @@ export async function assembleContent(
     subject: copy.t("default.subject").replace("{date}", label),
     preheader: copy.t("default.preheader"),
     intro: copy.t("default.intro"),
+    why: copy.t("default.why"),
     cards,
     story: { title: "", body: "" },
     news: "",
@@ -283,6 +286,7 @@ function normalizeContent(raw: Partial<IssueContent>): IssueContent {
     subject: raw.subject ?? "",
     preheader: raw.preheader ?? "",
     intro: raw.intro ?? "",
+    why: raw.why ?? "",
     cards: Array.isArray(raw.cards) ? raw.cards : [],
     story: {
       title: raw.story?.title ?? "",
@@ -559,7 +563,9 @@ export function renderIssue(
       : "Hi,";
 
   /* ---- plain text ---- */
-  const lines: string[] = [greeting, "", content.intro, ""];
+  const lines: string[] = [greeting, ""];
+  if (content.why.trim()) lines.push(content.why, "");
+  lines.push(content.intro, "");
 
   if (personal.length) {
     lines.push("YOUR CARDS", "");
@@ -614,9 +620,38 @@ export function renderIssue(
   h.push(
     `<div style="display:none;max-height:0;overflow:hidden">${esc(content.preheader)}</div>`,
     `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#22323f;max-width:600px;margin:0 auto;padding:24px">`,
+    /*
+     * A table, not a flex row. Email clients are a decade behind on
+     * layout and Outlook in particular ignores flexbox entirely, so two
+     * cells side by side is the only arrangement that holds everywhere.
+     *
+     * The name is text beside the mark rather than part of an image,
+     * because most clients block remote images until the reader allows
+     * them. With images off this still reads as being from us; a
+     * wordmark graphic would leave a blank box and an alt attribute.
+     *
+     * Width and height are set as attributes as well as styles. Outlook
+     * ignores CSS sizing on images and will otherwise draw the file at
+     * its natural 269 by 320.
+     */
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px">`,
+    `<tr>`,
+    `<td style="padding-right:11px;vertical-align:middle">`,
+    `<img src="${origin}/brand/lb-spotlight.png" width="38" height="45" alt="" style="display:block;border:0;width:38px;height:45px" />`,
+    `</td>`,
+    `<td style="vertical-align:middle">`,
+    `<span style="font-size:15px;font-weight:700;color:#0a1622;letter-spacing:-0.01em">${esc(SITE_NAME)}</span>`,
+    `</td>`,
+    `</tr>`,
+    `</table>`,
     `<p style="margin:0 0 14px">${esc(greeting)}</p>`,
-    `<p style="margin:0 0 20px">${esc(content.intro)}</p>`,
   );
+  if (content.why.trim()) {
+    h.push(
+      `<p style="margin:0 0 16px;font-size:13px;line-height:1.55;color:#5e7183">${esc(content.why)}</p>`,
+    );
+  }
+  h.push(`<p style="margin:0 0 20px">${esc(content.intro)}</p>`);
 
   const heading = (t: string) =>
     `<p style="margin:26px 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5e7183;font-weight:600">${esc(t)}</p>`;
