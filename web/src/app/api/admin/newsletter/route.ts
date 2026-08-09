@@ -106,6 +106,9 @@ export async function POST(req: Request) {
           .filter((g): g is AudienceGroup => GROUPS.has(g as AudienceGroup))
       : undefined;
     const months = Number(body.leadsMonths);
+    const zones = Array.isArray(body.zones)
+      ? (body.zones as unknown[]).map((z) => String(z).trim()).filter(Boolean)
+      : undefined;
 
     const result = await saveIssue(id, {
       content,
@@ -114,6 +117,7 @@ export async function POST(req: Request) {
         Number.isFinite(months) && months >= 1 && months <= 120
           ? Math.round(months)
           : undefined,
+      zones,
     });
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 422 });
