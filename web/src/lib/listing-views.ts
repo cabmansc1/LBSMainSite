@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
+import { SITE_TZ } from "@/lib/time";
 
 /**
  * How many people actually looked at a listing.
@@ -67,7 +68,7 @@ function visitorHash(ip: string, userAgent: string, day: string): string {
 
 /** Today where the business is, not where the server is. */
 const today = () =>
-  new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  new Date().toLocaleDateString("en-CA", { timeZone: SITE_TZ });
 
 /**
  * Records a view. Never throws, never blocks the page.

@@ -54,7 +54,10 @@ export default async function NeighborhoodCardPage({
     <>
       <header className="bg-navy-950 text-white">
         <div className="mx-auto max-w-[1120px] px-6 pt-11 pb-12">
-          <nav className="text-[12.5px] text-[#67768A] flex gap-2" aria-label="Breadcrumb">
+          <nav
+            className="text-[12.5px] text-[#67768A] flex gap-2"
+            aria-label="Breadcrumb"
+          >
             <Link href="/neighborhood-cards" className="hover:text-white">
               Neighborhood Cards
             </Link>
@@ -71,6 +74,8 @@ export default async function NeighborhoodCardPage({
                 {new Date(card.printDeadline).toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
+                  // Date-only, so it stays on the day it says.
+                  timeZone: "UTC",
                 })}
               </p>
             </div>

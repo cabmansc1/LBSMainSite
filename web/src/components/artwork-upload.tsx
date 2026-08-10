@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Artwork } from "@/lib/artwork";
+import { SITE_TZ } from "@/lib/time";
 
 /**
  * Sending artwork for a card.
@@ -27,7 +28,11 @@ const when = (iso: string | null) => {
   const d = new Date(iso.replace(" ", "T"));
   return Number.isNaN(d.getTime())
     ? ""
-    : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    : d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: SITE_TZ,
+      });
 };
 
 export function ArtworkUpload({

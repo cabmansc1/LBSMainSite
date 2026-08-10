@@ -768,6 +768,8 @@ export default async function BusinessPage({
                       month: "long",
                       day: "numeric",
                       year: "numeric",
+                      // A mail date is a day, not a moment. See lib/time.ts.
+                      timeZone: "UTC",
                     });
                   const label =
                     sameMonth.length > 1 && exactDate

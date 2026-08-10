@@ -71,7 +71,7 @@ export default async function NeighborhoodCardsPage() {
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-muted">Print deadline</dt>
-                    <dd className="font-semibold">{new Date(c.printDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</dd>
+                    <dd className="font-semibold">{new Date(c.printDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-muted">From</dt>
