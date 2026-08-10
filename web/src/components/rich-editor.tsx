@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { PROSE_CLASS } from "@/lib/prose";
+import { MediaPicker } from "@/components/media-picker";
 
 /**
  * Writing a story.
@@ -75,8 +76,6 @@ export function RichEditor({
   disabled?: boolean;
   placeholder?: string;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const editor = useEditor({
@@ -128,32 +127,15 @@ export function RichEditor({
    * data, so every one of them gets an id, gets resized once, and has
    * somewhere for its alt text to live.
    */
-  const upload = useCallback(
-    async (file: File) => {
-      if (!editor) return;
-      setBusy(true);
-      setError("");
-      try {
-        const body = new FormData();
-        body.append("file", file);
-        const res = await fetch("/api/admin/media", { method: "POST", body });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(j.error ?? "That did not upload.");
-        editor
-          .chain()
-          .focus()
-          .setImage({ src: String(j.url), alt: "" })
-          .run();
-        setError("");
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "That did not upload.");
-      } finally {
-        setBusy(false);
-        if (fileRef.current) fileRef.current.value = "";
-      }
-    },
-    [editor],
-  );
+  /**
+   * Pictures go through the picker now.
+   *
+   * The old path uploaded straight from a file input and inserted the
+   * result with `alt=""`, so every picture in every article was
+   * undescribed and nothing ever asked. The picker returns the
+   * description with the id, and it is set on the node here.
+   */
+  const [picking, setPicking] = useState(false);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -243,19 +225,8 @@ export function RichEditor({
         <Btn
           disabled={disabled}
           wide
-          label={busy ? "Uploading" : "Picture"}
-          onClick={() => fileRef.current?.click()}
-        />
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          aria-label="Add a picture to the story"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void upload(f);
-          }}
+          label="Picture"
+          onClick={() => setPicking(true)}
         />
 
         <span className="ml-auto flex items-center gap-1.5">
@@ -277,6 +248,20 @@ export function RichEditor({
       <div className="border border-line-strong rounded-b-[10px] bg-white">
         <EditorContent editor={editor} />
       </div>
+
+      <MediaPicker
+        open={picking}
+        onClose={() => setPicking(false)}
+        heading="Add a picture to this piece"
+        onPick={({ id, alt }) => {
+          setError("");
+          editor
+            .chain()
+            .focus()
+            .setImage({ src: `/api/media/${id}`, alt })
+            .run();
+        }}
+      />
 
       {error && (
         <p className="text-[13px] text-danger mt-2">{error}</p>

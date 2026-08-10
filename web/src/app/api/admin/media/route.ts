@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { mediaPath, saveMedia, updateMediaText } from "@/lib/media";
+import { listMedia, mediaPath, saveMedia, updateMediaText } from "@/lib/media";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * The library, for the picker.
+ *
+ * Never returns bytes — listMedia selects every column except the blob,
+ * so browsing eighty pictures costs eighty rows rather than eighty
+ * full-size images pulled into memory to draw thumbnails.
+ */
+export async function GET(req: Request) {
+  await requireAdmin();
+  const limit = Math.min(
+    Math.max(Number(new URL(req.url).searchParams.get("limit")) || 120, 1),
+    200,
+  );
+  return NextResponse.json({ items: await listMedia(limit) });
+}
 
 /** Capped before anything is decoded, so a huge file is refused on sight. */
 const MAX_BYTES = 15 * 1024 * 1024;
