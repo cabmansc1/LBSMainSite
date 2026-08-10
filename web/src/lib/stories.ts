@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { SITE_TZ } from "@/lib/events-types";
 import {
   readMinutes,
   slugifyStory,
@@ -165,6 +166,9 @@ const prettyDate = (d: unknown) => {
         month: "long",
         day: "numeric",
         year: "numeric",
+        // Same reason as events: publishing after 8pm here would
+        // otherwise be dated tomorrow, because the server is in UTC.
+        timeZone: SITE_TZ,
       });
 };
 

@@ -14,7 +14,7 @@ import {
  * whole argument for building this before anything else was that it
  * needs nothing new. Current advertisers come from the Mission Control
  * roster, past advertisers from the customer list behind it, directory
- * owners from directory_businesses, and older enquiries from the leads
+ * owners from directory_businesses, and older inquiries from the leads
  * table.
  *
  * Somebody can legitimately be in several at once: a current advertiser
@@ -30,7 +30,7 @@ export const AUDIENCE_LABELS: Record<AudienceGroup, string> = {
   current: "Current advertiser",
   past: "Past advertiser",
   directory: "Directory listing",
-  leads: "Enquiry",
+  leads: "Inquiry",
 };
 
 export type Recipient = {
@@ -42,7 +42,7 @@ export type Recipient = {
 };
 
 /**
- * How far back to reach for enquiries that never became customers.
+ * How far back to reach for inquiries that never became customers.
  *
  * A setting rather than a constant because it is the one number here
  * with a judgement in it. Somebody who asked about a card two years ago
@@ -238,7 +238,7 @@ async function directoryOwners(): Promise<Recipient[]> {
  * newsletter rather than one page. Reading fields off the row gives
  * undefined for anything missing, which the filters below drop.
  */
-async function leadEnquiries(months: number): Promise<Recipient[]> {
+async function leadInquiries(months: number): Promise<Recipient[]> {
   const out = new Map<string, Recipient>();
   try {
     const { db } = await import("@/lib/db");
@@ -306,7 +306,7 @@ export async function buildAudience(
   const currentEmails = new Set(current.map((r) => r.email));
   const past = want.has("past") ? await pastAdvertisers(currentEmails) : [];
   const directory = want.has("directory") ? await directoryOwners() : [];
-  const leads = want.has("leads") ? await leadEnquiries(leadsMonths) : [];
+  const leads = want.has("leads") ? await leadInquiries(leadsMonths) : [];
 
   const folded = new Map<string, Recipient>();
   for (const r of [...current, ...past, ...directory, ...leads]) {
@@ -328,7 +328,7 @@ export async function buildAudience(
    *
    * A directory listing is filed under an area Andrew maintains, and
    * every one of those is in the Lowcountry, so a listing owner is in
-   * area by definition. An enquiry has only free text for a location and
+   * area by definition. An inquiry has only free text for a location and
    * nothing reliable to judge on. Dropping either for want of a card
    * would quietly shrink the list to people who have already bought,
    * which is the opposite of what it is for.

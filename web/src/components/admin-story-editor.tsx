@@ -360,7 +360,7 @@ export function AdminStoryEditor({
               <span>
                 Somebody paid for this
                 <span className="block text-[12px] text-muted">
-                  Labelled Sponsored on the page. Saying so is what makes the
+                  Labeled Sponsored on the page. Saying so is what makes the
                   free coverage worth anything.
                 </span>
               </span>

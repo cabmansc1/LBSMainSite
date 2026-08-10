@@ -106,6 +106,17 @@ export type LocalEvent = {
 };
 
 /**
+ * The clock the Lowcountry actually runs on.
+ *
+ * Servers run in UTC, and a date formatted without a zone is formatted
+ * in theirs. That is invisible for most of the day and wrong every
+ * evening: an 8pm Friday concert becomes midnight Saturday, which puts
+ * it under the wrong heading, on the wrong card, and sends somebody out
+ * a day late. Every label built from an event's time passes this.
+ */
+export const SITE_TZ = "America/New_York";
+
+/**
  * Puts a dollar sign in front of an amount that has not got one.
  *
  * People type "10" or "20 adults, 10 kids" into a price box, and a

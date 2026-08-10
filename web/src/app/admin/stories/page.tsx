@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { listStories } from "@/lib/stories";
 import { kindLabel } from "@/lib/stories-types";
+import { RoundupButton } from "@/components/roundup-button";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -49,6 +50,8 @@ export default async function AdminStoriesPage() {
           Write a story
         </Link>
       </div>
+
+      <RoundupButton />
 
       {stories.length === 0 ? (
         <div className="border border-line rounded-(--radius-card) bg-white p-8 text-center">

@@ -95,7 +95,7 @@ export default async function AccountHomePage() {
         ? `${unanswered} waiting on a reply`
         : ctx.inquiries.length
           ? "All answered"
-          : "No enquiries yet",
+          : "No inquiries yet",
     },
     {
       label: "Cards run",

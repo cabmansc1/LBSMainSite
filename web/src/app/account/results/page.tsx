@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 /**
  * Honest results: what we can actually count today is cards mailed,
- * homes reached, and enquiries. Scan tracking is reported per QR page,
+ * homes reached, and inquiries. Scan tracking is reported per QR page,
  * so it is named as coming rather than faked.
  */
 export default async function AccountResultsPage() {
@@ -43,7 +43,7 @@ export default async function AccountResultsPage() {
     ...(listings.length > 0
       ? [{ label: "Listing views (30d)", value: views30.toLocaleString("en-US") }]
       : []),
-    { label: "Enquiries", value: String(inquiries.length) },
+    { label: "Inquiries", value: String(inquiries.length) },
     { label: "Running now", value: String(currentCards.length) },
   ];
 

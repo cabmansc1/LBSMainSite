@@ -34,7 +34,7 @@ export default async function AdminPlacesPage() {
         <h1 className="text-[21px] font-bold tracking-[-0.02em]">Places</h1>
         <p className="text-sm text-muted mt-1">
           How Greater Charleston is divided up: the markets you sell, the cards
-          that mail, and the neighbourhoods people search for. Stories, events
+          that mail, and the neighborhoods people search for. Stories, events
           and market pages all hang off this.
         </p>
       </div>
@@ -49,7 +49,7 @@ export default async function AdminPlacesPage() {
         <p className="text-[12.5px] text-muted">
           <b className="text-ink">A market</b> is how you sell an area. A{" "}
           <b className="text-ink">zone</b> is a card that actually mails. A{" "}
-          <b className="text-ink">neighbourhood</b> is somewhere people look
+          <b className="text-ink">neighborhood</b> is somewhere people look
           for, like West Ashley or Ladson, that is not sold on its own; it
           points at whichever card reaches it, so Reserve a spot still works
           from its page.

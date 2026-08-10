@@ -42,7 +42,7 @@ const GROUP_LABELS: { value: AudienceGroup; label: string; hint: string }[] = [
   },
   { value: "past", label: "Past advertisers", hint: "Bought before, nothing upcoming" },
   { value: "directory", label: "Directory listings", hint: "Live listing, no card" },
-  { value: "leads", label: "Enquiries", hint: "Asked, never bought" },
+  { value: "leads", label: "Inquiries", hint: "Asked, never bought" },
 ];
 
 /**
@@ -404,7 +404,7 @@ export function AdminNewsletterEditor({
 
         {groups.includes("leads") && (
           <label className="grid gap-1.5 max-w-[280px]">
-            <span className={label}>How far back for enquiries</span>
+            <span className={label}>How far back for inquiries</span>
             <select
               value={months}
               disabled={locked}
@@ -429,7 +429,7 @@ export function AdminNewsletterEditor({
             <span className={label}>Which areas this issue is for</span>
             <p className="text-[12px] text-muted max-w-[62ch]">
               An advertiser is included when one of their cards is in a ticked
-              area. Directory listings and enquiries are always included, since
+              area. Directory listings and inquiries are always included, since
               they are not tied to a card.
             </p>
             <div className="grid sm:grid-cols-2 gap-1.5">

@@ -111,7 +111,7 @@ export function CoverageMap({
                 }}
               >
                 {/* The card's own marker first, then any island it
-                    shares the card with and any neighbourhood inside it
+                    shares the card with and any neighborhood inside it
                     the base map names separately. They light up
                     together because they sell together.
 
