@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { RichEditor } from "@/components/rich-editor";
 import {
   EVENT_CATEGORIES,
+  formatPrice,
   type EventCategory,
   type EventStatus,
   type LocalEvent,
@@ -56,6 +58,33 @@ export function AdminEventEditor({
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const heroRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * Uploading here rather than picking from the library.
+   *
+   * A submitted event often arrives with its own poster attached, so
+   * the common job on this screen is looking at the one that came in
+   * and deciding whether to keep it, not going hunting for another.
+   */
+  async function uploadHero(file: File) {
+    setBusy("hero");
+    setError("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/admin/media", { method: "POST", body });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "That did not upload.");
+      setForm((f) => ({ ...f, heroMediaId: Number(j.id) }));
+      setNote("Picture added. Give it alt text under Pictures.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "That did not upload.");
+    } finally {
+      setBusy("");
+      if (heroRef.current) heroRef.current.value = "";
+    }
+  }
 
   const field =
     "w-full text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950";
@@ -275,9 +304,55 @@ export function AdminEventEditor({
                 onChange={(e) =>
                   setForm({ ...form, priceText: e.target.value })
                 }
-                placeholder="Free, or $15"
+                placeholder="Free, or 15"
                 className={field}
               />
+              <span className="text-[12px] text-muted">
+                {formatPrice(form.priceText) &&
+                formatPrice(form.priceText) !== form.priceText.trim() ? (
+                  <>
+                    Shows as <b>{formatPrice(form.priceText)}</b>
+                  </>
+                ) : (
+                  "A dollar sign is added for you."
+                )}
+              </span>
+            </label>
+
+            <label className="grid gap-1.5">
+              <span className={label}>Picture</span>
+              <input
+                ref={heroRef}
+                type="file"
+                accept="image/*"
+                aria-label="Event picture"
+                disabled={busy !== ""}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void uploadHero(f);
+                }}
+                className="text-[12.5px]"
+              />
+              {form.heroMediaId && (
+                <span className="grid gap-1.5">
+                  <span className="relative block w-full aspect-[16/9] bg-surface rounded-[8px] overflow-hidden border border-line">
+                    <Image
+                      src={`/api/media/${form.heroMediaId}`}
+                      alt="Picture for this event"
+                      fill
+                      sizes="320px"
+                      className="object-cover"
+                    />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, heroMediaId: null })}
+                    className="justify-self-start text-[12.5px] text-muted"
+                  >
+                    Remove picture
+                  </button>
+                </span>
+              )}
             </label>
             <label className="grid gap-1.5">
               <span className={label}>More details link</span>

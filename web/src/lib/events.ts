@@ -179,7 +179,12 @@ const iso = (d: unknown) => asDate(d)?.toISOString() ?? "";
 
 const toEvent = (r: Row): LocalEvent => {
   const start = asDate(r.starts_at);
+  const end = asDate(r.ends_at);
   const allDay = Number(r.all_day) === 1;
+  // Compared by calendar day rather than by elapsed hours, so a thing
+  // running 8pm to 1am is one night out and not a two-day event.
+  const multiDay =
+    !!start && !!end && start.toDateString() !== end.toDateString();
   return {
     id: Number(r.id),
     slug: String(r.slug),
@@ -224,6 +229,18 @@ const toEvent = (r: Row): LocalEvent => {
     timeLabel: allDay
       ? "All day"
       : start?.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+    multiDay,
+    endDayLabel: end?.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    }),
+    endTimeLabel: allDay
+      ? undefined
+      : end?.toLocaleTimeString("en-US", {
           hour: "numeric",
           minute: "2-digit",
         }),
@@ -615,6 +632,16 @@ export type SubmissionInput = {
   summary: string;
   url: string;
   email: string;
+  priceText: string;
+  /**
+   * A picture, already through the media library.
+   *
+   * Nothing it is attached to is public until somebody approves it, so
+   * an unwanted image is a row in a queue rather than something on the
+   * site. The bytes have been re-encoded by then, which is most of why
+   * accepting one from a stranger is reasonable at all.
+   */
+  heroMediaId: number | null;
 };
 
 /**
@@ -635,7 +662,7 @@ export async function submitEvent(
     // our pages is a different question from a line of plain text, and
     // it is not one a submission box needs to open.
     bodyHtml: "",
-    heroMediaId: null,
+    heroMediaId: input.heroMediaId,
     startsAt: input.startsAt,
     endsAt: input.endsAt,
     allDay: input.allDay,
@@ -646,7 +673,7 @@ export async function submitEvent(
     category: input.category,
     url: input.url,
     ticketUrl: "",
-    priceText: "",
+    priceText: input.priceText,
     status: "pending",
     featured: false,
     source: "submitted",

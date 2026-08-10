@@ -5,6 +5,7 @@ import { countPublishedEvents, publishedEvents } from "@/lib/events";
 import {
   EVENT_CATEGORIES,
   categoryLabel,
+  formatPrice,
   type EventCategory,
 } from "@/lib/events-types";
 import { listActivePlaces } from "@/lib/places";
@@ -179,12 +180,19 @@ export default async function EventsPage({
                         {e.title}
                       </span>
                       <span className="block mt-1.5 text-[12.5px] text-muted">
-                        {e.timeLabel}
+                        {e.multiDay && e.endDayLabel
+                          ? `Through ${e.endDayLabel}`
+                          : e.timeLabel}
                         {e.venueName && ` · ${e.venueName}`}
                       </span>
                       {e.placeSlug && (
                         <span className="block text-[12.5px] text-muted">
                           {placeName(e.placeSlug)}
+                        </span>
+                      )}
+                      {formatPrice(e.priceText) && (
+                        <span className="block mt-1 text-[12.5px] font-semibold num">
+                          {formatPrice(e.priceText)}
                         </span>
                       )}
                     </span>
@@ -198,6 +206,36 @@ export default async function EventsPage({
               </Link>
             ))}
           </div>
+        )}
+
+        {/*
+          The calendar as a list Google can read.
+
+          An index page of links is invisible to an events crawler on its
+          own; ItemList is what tells it these are dated things and in
+          what order, and it costs nothing beyond what is already on the
+          page. The per-event detail lives on each event's own page.
+        */}
+        {events.length > 0 && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                name: known
+                  ? `${known.label} events in the Lowcountry`
+                  : "Events in Greater Charleston",
+                numberOfItems: events.length,
+                itemListElement: events.map((e, i) => ({
+                  "@type": "ListItem",
+                  position: offset + i + 1,
+                  url: `${SITE_URL}/events/${e.slug}`,
+                  name: e.title,
+                })),
+              }),
+            }}
+          />
         )}
 
         {pages > 1 && (

@@ -93,7 +93,71 @@ export type LocalEvent = {
   timeLabel?: string;
   monthLabel?: string;
   dayOfMonth?: string;
+  /**
+   * The other end, for anything that does not finish the day it starts.
+   *
+   * A three-day festival showing only its opening date reads as a
+   * one-day event, which is the single most common way a calendar
+   * misleads somebody into turning up on the wrong day.
+   */
+  endDayLabel?: string;
+  endTimeLabel?: string;
+  multiDay?: boolean;
 };
+
+/**
+ * Puts a dollar sign in front of an amount that has not got one.
+ *
+ * People type "10" or "20 adults, 10 kids" into a price box, and a
+ * calendar full of bare numbers reads as a mistake. Done on display
+ * rather than on save so the stored text stays exactly what was typed
+ * and can be corrected without a migration.
+ *
+ * Two things are deliberately left alone. An amount already carrying a
+ * sign is never touched, and a number that is plainly an age or a
+ * percentage — "18+", "21 and over" — is not money. Everything else is
+ * assumed to be a price, because it is a price field.
+ *
+ * No lookbehind: Safari only learned it in 16.4, and an unsupported
+ * regex literal is a parse error that takes the whole bundle with it,
+ * not a quiet failure on one line.
+ */
+export function formatPrice(raw: string): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  if (/^(?:free|no charge|free admission|free entry|\$?0(?:\.00)?)$/i.test(s)) {
+    return "Free";
+  }
+  return s.replace(
+    /(^|[^$\d.])(\d{1,4}(?:\.\d{2})?)/g,
+    (match, before: string, amount: string, offset: number, whole: string) => {
+      const after = whole.slice(offset + match.length);
+      if (/^(?:\+|%|\s*(?:and|&)\s*(?:over|up|older)\b)/i.test(after)) {
+        return match;
+      }
+      return `${before}$${amount}`;
+    },
+  );
+}
+
+/**
+ * The lowest number in a price, for schema.org `offers`.
+ *
+ * Google wants a numeric price to show a range in an event result, and
+ * "from" is the honest reading of the first figure in "$10 in advance,
+ * $15 on the door". Anything with no figure at all is left out rather
+ * than guessed at; an event marked up as costing 0 when it does not is
+ * worse than one with no offer at all.
+ */
+export function priceNumber(raw: string): number | undefined {
+  const s = String(raw ?? "").trim();
+  if (!s) return undefined;
+  if (/^(?:free|no charge|free admission|free entry)/i.test(s)) return 0;
+  const m = s.match(/(\d{1,5}(?:\.\d{1,2})?)/);
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : undefined;
+}
 
 export const slugifyEvent = (s: string) =>
   s

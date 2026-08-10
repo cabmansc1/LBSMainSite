@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { listEvents } from "@/lib/events";
 import { categoryLabel } from "@/lib/events-types";
+import { EVENT_SOURCES } from "@/lib/event-import";
+import { EventImportButton } from "@/components/event-import-button";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -46,6 +48,14 @@ export default async function AdminEventsPage() {
           Add an event
         </Link>
       </div>
+
+      <EventImportButton
+        sources={EVENT_SOURCES.map(({ key, label, hint }) => ({
+          key,
+          label,
+          hint,
+        }))}
+      />
 
       {pending.length > 0 && (
         <p className="text-[13px] text-[#7a4a00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-4 py-2.5 mb-4">
