@@ -6,6 +6,12 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { formatPrice } from "@/lib/pricing";
 import { ARTWORK_LEAD_DAYS } from "@/lib/mailings";
 import { getLivePricing } from "@/lib/pricing-store";
+import { getSiteStats } from "@/lib/admin-data";
+import { getLiveZones } from "@/lib/zone-store";
+import { getUpcomingMailings } from "@/lib/mission-control";
+import { hasTestimonials } from "@/lib/testimonials";
+import { TestimonialStrip } from "@/components/testimonial-strip";
+import Link from "next/link";
 import { pageCopy } from "@/lib/blocks";
 import { Copy } from "@/components/copy";
 
@@ -42,6 +48,39 @@ const VALUE = [
  * The areas answer is updated: the site now mails more zones than the
  * four the old copy listed.
  */
+/**
+ * The three steps, which used to live only on the homepage.
+ *
+ * They belong here. The homepage is going consumer, and somebody
+ * weighing up a card should not have to find their way back to a page
+ * about local events to learn how buying one works.
+ */
+const STEPS = [
+  {
+    title: "Pick your zone and spot",
+    body: "Choose a neighborhood and an ad size. Live availability shows what is open. Reserve and pay online in minutes.",
+  },
+  {
+    title: "We design your ad",
+    body: "Our team writes and lays out your ad free, with your offer and a trackable QR code. You approve before print.",
+  },
+  {
+    title: "We mail. You answer the phone.",
+    body: "Your card lands in 5,000+ mailboxes. Scans show up in your advertiser dashboard as they come in.",
+  },
+];
+
+/**
+ * Shown if the stats table cannot be read, so the bar is never blank.
+ * Mirrors what /admin/stats holds; the live figures win.
+ */
+const STATS_FALLBACK = [
+  { value: "155,000+", label: "Postcards Mailed" },
+  { value: "100+", label: "Local Businesses Served" },
+  { value: "2,500 - 10,000", label: "Households Per Mailing" },
+  { value: "30+", label: "Campaigns Completed" },
+];
+
 const ADVERTISE_FAQS = [
   {
     q: "What areas do you currently serve?",
@@ -83,6 +122,26 @@ export default async function AdvertisePage() {
   const fromPrice = formatPrice(livePricing["5k"].small.priceCents);
   const copy = await pageCopy("advertise");
 
+  const [savedStats, zones, upcoming, showTestimonials] = await Promise.all([
+    getSiteStats().catch(() => []),
+    getLiveZones().catch(() => []),
+    getUpcomingMailings().catch(() => []),
+    hasTestimonials("home").catch(() => false),
+  ]);
+  const stats = (() => {
+    const live = savedStats
+      .filter((x) => x.active && x.value.trim() && x.label.trim())
+      .map((x) => ({ value: x.value, label: x.label }));
+    return live.length > 0 ? live : STATS_FALLBACK;
+  })();
+
+  // The soonest card per zone, so the coverage list can say when a
+  // neighborhood next goes out rather than only that it exists.
+  const nextByZone = new Map<string, string>();
+  for (const m of upcoming) {
+    if (!nextByZone.has(m.zoneSlug)) nextByZone.set(m.zoneSlug, m.mailMonth);
+  }
+
   return (
     <>
       <header className="bg-navy-950 text-white">
@@ -116,6 +175,21 @@ export default async function AdvertisePage() {
             className="rounded-[10px] shadow-[0_20px_50px_rgba(0,0,0,.4)] rotate-[1.5deg] justify-self-center max-w-[460px] w-full h-auto"
           />
         </div>
+        <div className="border-t border-white/10">
+          <div className="mx-auto max-w-[1120px] px-6 py-7 grid grid-cols-2 md:grid-cols-4 gap-5">
+            {stats.map((x, i) => (
+              <div
+                key={x.label}
+                className={i > 0 ? "md:border-l md:border-white/10 md:pl-5" : ""}
+              >
+                <b className="block text-2xl md:text-[28px] font-bold tracking-tight num">
+                  {x.value}
+                </b>
+                <span className="text-[12.5px] text-[#67768A]">{x.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </header>
 
       <section className="mx-auto max-w-[1120px] px-6 py-20">
@@ -132,6 +206,115 @@ export default async function AdvertisePage() {
           ))}
         </div>
       </section>
+
+      <section className="bg-surface border-y border-line">
+        <div className="mx-auto max-w-[1120px] px-6 py-20">
+          <SectionHeading
+            eyebrow={copy.t("steps.eyebrow")}
+            title={copy.t("steps.title")}
+          />
+          <div className="grid md:grid-cols-3 gap-3.5">
+            {STEPS.map((step, i) => (
+              <Card key={step.title} className="p-6.5 grid gap-2.5 content-start">
+                <span className="w-[30px] h-[30px] rounded-lg bg-brand-tint text-brand-deep text-[13px] font-bold flex items-center justify-center num">
+                  {i + 1}
+                </span>
+                <h3 className="text-[17px] font-semibold tracking-tight">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-body leading-relaxed">{step.body}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1120px] px-6 py-20">
+        <SectionHeading
+          eyebrow={copy.t("cards.eyebrow")}
+          title={copy.t("cards.title")}
+          sub={copy.t("cards.sub")}
+        />
+        <div className="grid sm:grid-cols-2 gap-3.5">
+          <Image
+            src="/cards/card-nmp-front.webp"
+            alt="Front of a mailed Spotlight Postcard"
+            width={800}
+            height={534}
+            className="rounded-(--radius-card) border border-line"
+          />
+          <Image
+            src="/cards/card-nmp-back.webp"
+            alt="Back of a mailed Spotlight Postcard with local business ads"
+            width={800}
+            height={534}
+            className="rounded-(--radius-card) border border-line"
+          />
+        </div>
+        <div className="mt-5">
+          <Button href="/gallery" variant="quiet" small>
+            {copy.t("cards.cta")}
+          </Button>
+        </div>
+      </section>
+
+      {/*
+        The coverage list, and the reason this page matters.
+
+        Every zone page is linked from here by name. When the homepage
+        stops selling postcards those eleven pages lose their strongest
+        internal link, and they carry most of the search traffic; this is
+        where that link goes instead.
+      */}
+      <section className="bg-surface border-y border-line">
+        <div className="mx-auto max-w-[1120px] px-6 py-20">
+          <SectionHeading
+            eyebrow={copy.t("coverage.eyebrow")}
+            title={copy.t("coverage.title")}
+            sub={copy.t("coverage.sub")}
+          />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {zones.map((z) => (
+              <Link
+                key={z.slug}
+                href={`/${z.slug}-direct-mail-marketing`}
+                className="border border-line rounded-(--radius-card) bg-white px-4 py-3.5 hover:border-navy-950"
+              >
+                <span className="block text-[15px] font-semibold tracking-tight">
+                  {z.name}
+                </span>
+                <span className="block text-[12.5px] text-muted num mt-0.5">
+                  {z.zipCodes.slice(0, 4).join(", ")}
+                  {z.zipCodes.length > 4 && "…"}
+                </span>
+                {nextByZone.get(z.slug) && (
+                  <span className="block text-[12.5px] text-brand-deep font-semibold mt-1">
+                    Next card mails {nextByZone.get(z.slug)}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button href="/coverage-map" variant="quiet" small>
+              See the coverage map
+            </Button>
+            <Button href="/mailing-calendar" variant="quiet" small>
+              See every upcoming date
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {showTestimonials && (
+        <section className="mx-auto max-w-[1120px] px-6 py-20">
+          <SectionHeading
+            eyebrow={copy.t("testimonials.eyebrow")}
+            title={copy.t("testimonials.title")}
+          />
+          <TestimonialStrip placement="home" />
+        </section>
+      )}
 
       <section className="mx-auto max-w-[1120px] px-6 pb-16">
         <CtaBand

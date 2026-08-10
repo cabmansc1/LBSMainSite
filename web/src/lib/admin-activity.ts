@@ -38,7 +38,10 @@ export type ActivityKind =
   | "payment_gap"
   // The fortnight's advertiser update has been assembled and is waiting
   // to be read. Never a send; the send is a button somebody presses.
-  | "newsletter";
+  | "newsletter"
+  // Somebody outside the business has put an event forward. Nothing is
+  // public until it is read, so this is a queue notice, not an alarm.
+  | "event_submission";
 
 export type ActivityEvent = {
   kind: ActivityKind;
@@ -67,6 +70,7 @@ export const CATEGORY_KINDS: ActivityKind[] = [
   "proof",
   "payment_gap",
   "newsletter",
+  "event_submission",
 ];
 
 export const KIND_LABEL: Record<ActivityKind, string> = {
@@ -80,6 +84,7 @@ export const KIND_LABEL: Record<ActivityKind, string> = {
   proof: "Proof",
   payment_gap: "Payment not in MC",
   newsletter: "Newsletter ready",
+  event_submission: "Event submitted",
 };
 
 let ready = false;
