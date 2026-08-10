@@ -36,9 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/contact", priority: 0.6 },
     { path: "/directory-signup", priority: 0.6 },
     { path: "/blog", priority: 0.6 },
-    { path: "/stories", priority: 0.8 },
-    { path: "/events", priority: 0.8 },
-    { path: "/events/submit", priority: 0.5 },
     { path: "/privacy", priority: 0.2 },
     { path: "/terms", priority: 0.2 },
   ];
@@ -55,8 +52,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     publishedEvents({ limit: 200 }).catch(() => []),
   ]);
 
+  /*
+   * The story and event indexes are listed only once there is something
+   * on them.
+   *
+   * Submitting an empty page to Google is asking it to index a page
+   * that says "nothing here yet", and a thin page indexed early is
+   * harder to shift than one crawled for the first time when it is
+   * worth reading. Both appear on their own the moment the first thing
+   * is published, along with their filters and their entries.
+   */
+  const sections = [
+    ...(stories.length ? [{ path: "/stories", priority: 0.8 }] : []),
+    ...(events.length
+      ? [
+          { path: "/events", priority: 0.8 },
+          { path: "/events/submit", priority: 0.5 },
+        ]
+      : []),
+  ];
+
   return [
-    ...staticPaths.map((p) => ({
+    ...[...staticPaths, ...sections].map((p) => ({
       url: `${SITE_URL}${p.path}`,
       priority: p.priority,
     })),
@@ -86,18 +103,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     // The story kind filters are real pages with their own copy, so
     // they are worth crawling rather than being treated as query noise.
-    ...STORY_KINDS.map((k) => ({
-      url: `${SITE_URL}/stories?kind=${k.value}`,
-      priority: 0.5,
-    })),
+    ...(stories.length
+      ? STORY_KINDS.map((k) => ({
+          url: `${SITE_URL}/stories?kind=${k.value}`,
+          priority: 0.5,
+        }))
+      : []),
     ...stories.map((s) => ({
       url: `${SITE_URL}/stories/${s.slug}`,
       priority: 0.7,
     })),
-    ...EVENT_CATEGORIES.map((c) => ({
-      url: `${SITE_URL}/events?category=${c.value}`,
-      priority: 0.5,
-    })),
+    ...(events.length
+      ? EVENT_CATEGORIES.map((c) => ({
+          url: `${SITE_URL}/events?category=${c.value}`,
+          priority: 0.5,
+        }))
+      : []),
     // Only upcoming ones. A crawler spending its budget on last
     // spring's farmers market helps nobody.
     ...events.map((e) => ({

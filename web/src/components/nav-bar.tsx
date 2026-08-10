@@ -12,8 +12,11 @@ const LINKS = [
   // The archive of mailed cards is the strongest proof the product is
   // real, so it belongs in the nav rather than buried in the footer.
   { href: "/gallery", label: "Past Cards" },
-  { href: "/stories", label: "Local Stories" },
-  { href: "/events", label: "Events" },
+  /* Local Stories and Events are built and reachable, and deliberately
+     not linked from here yet. A nav item pointing at an empty page
+     advertises that a section was started and abandoned, which is worse
+     than not having it at all. Both go back the moment there is a first
+     story and a first event to land on. */
   { href: "/directory", label: "Directory" },
   { href: "/blog", label: "Blog" },
 ];
