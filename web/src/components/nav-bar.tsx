@@ -13,6 +13,7 @@ const LINKS = [
   // real, so it belongs in the nav rather than buried in the footer.
   { href: "/gallery", label: "Past Cards" },
   { href: "/stories", label: "Local Stories" },
+  { href: "/events", label: "Events" },
   { href: "/directory", label: "Directory" },
   { href: "/blog", label: "Blog" },
 ];

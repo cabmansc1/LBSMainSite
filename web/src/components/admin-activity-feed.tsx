@@ -31,6 +31,7 @@ const TONE: Record<ActivityKind, string> = {
   // Neutral: a draft waiting to be read is a job on the list, not a
   // problem, and nothing has gone out until somebody presses Send.
   newsletter: "bg-surface text-body",
+  event_submission: "bg-surface text-body",
 };
 
 /**

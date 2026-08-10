@@ -8,6 +8,8 @@ import { ZONES } from "@/lib/zones";
 import { getBusinesses, getFilterOptions } from "@/lib/directory";
 import { getPosts } from "@/lib/blog";
 import { publishedStories } from "@/lib/stories";
+import { publishedEvents } from "@/lib/events";
+import { EVENT_CATEGORIES } from "@/lib/events-types";
 import { STORY_KINDS } from "@/lib/stories-types";
 import { getPastCards } from "@/lib/past-cards";
 
@@ -35,11 +37,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/directory-signup", priority: 0.6 },
     { path: "/blog", priority: 0.6 },
     { path: "/stories", priority: 0.8 },
+    { path: "/events", priority: 0.8 },
+    { path: "/events/submit", priority: 0.5 },
     { path: "/privacy", priority: 0.2 },
     { path: "/terms", priority: 0.2 },
   ];
 
-  const [businesses, options, posts, pastCards, stories] = await Promise.all([
+  const [businesses, options, posts, pastCards, stories, events] =
+    await Promise.all([
     getBusinesses(),
     getFilterOptions(),
     getPosts(),
@@ -47,6 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Capped rather than unbounded. A sitemap is a hint, and the newest
     // few hundred are the ones worth spending crawl budget on.
     publishedStories({ limit: 100 }).catch(() => []),
+    publishedEvents({ limit: 200 }).catch(() => []),
   ]);
 
   return [
@@ -87,6 +93,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...stories.map((s) => ({
       url: `${SITE_URL}/stories/${s.slug}`,
       priority: 0.7,
+    })),
+    ...EVENT_CATEGORIES.map((c) => ({
+      url: `${SITE_URL}/events?category=${c.value}`,
+      priority: 0.5,
+    })),
+    // Only upcoming ones. A crawler spending its budget on last
+    // spring's farmers market helps nobody.
+    ...events.map((e) => ({
+      url: `${SITE_URL}/events/${e.slug}`,
+      priority: 0.6,
     })),
     // One index per neighborhood with cards in it.
     ...[...new Set(pastCards.map((c) => c.zoneSlug))].map((zoneSlug) => ({
