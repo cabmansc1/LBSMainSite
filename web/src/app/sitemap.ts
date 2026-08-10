@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 import { ZONES } from "@/lib/zones";
 import { getBusinesses, getFilterOptions } from "@/lib/directory";
 import { getPosts } from "@/lib/blog";
+import { listActivePlaces } from "@/lib/places";
 import { publishedStories } from "@/lib/stories";
 import { publishedEvents } from "@/lib/events";
 import { EVENT_CATEGORIES } from "@/lib/events-types";
@@ -40,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/terms", priority: 0.2 },
   ];
 
-  const [businesses, options, posts, pastCards, stories, events] =
+  const [businesses, options, posts, pastCards, stories, events, places] =
     await Promise.all([
     getBusinesses(),
     getFilterOptions(),
@@ -50,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // few hundred are the ones worth spending crawl budget on.
     publishedStories({ limit: 100 }).catch(() => []),
     publishedEvents({ limit: 200 }).catch(() => []),
+    listActivePlaces().catch(() => []),
   ]);
 
   /*
@@ -63,6 +65,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
    * is published, along with their filters and their entries.
    */
   const sections = [
+    // The place pages carry whatever is tagged to them, so they are
+    // worth listing once there is anything at all to find — the index
+    // itself is a real page of links either way.
+    ...(places.length ? [{ path: "/local", priority: 0.7 }] : []),
     ...(stories.length ? [{ path: "/stories", priority: 0.8 }] : []),
     ...(events.length
       ? [
@@ -76,6 +82,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...[...staticPaths, ...sections].map((p) => ({
       url: `${SITE_URL}${p.path}`,
       priority: p.priority,
+    })),
+    // A market carries more than a neighbourhood, and says so.
+    ...places.map((pl) => ({
+      url: `${SITE_URL}/local/${pl.slug}`,
+      priority: pl.kind === "market" ? 0.7 : 0.6,
     })),
     ...ZONES.map((z) => ({
       url: `${SITE_URL}/${z.slug}-direct-mail-marketing`,
