@@ -5,6 +5,7 @@ import {
   CHANNELS,
   deleteRecipient,
   saveRecipient,
+  setMuted,
   type AlertChannel,
 } from "@/lib/alert-routing";
 
@@ -38,6 +39,9 @@ export async function POST(req: Request) {
   await requireAdmin();
 
   let body: {
+    action?: unknown;
+    kind?: unknown;
+    muted?: unknown;
     id?: unknown;
     name?: unknown;
     email?: unknown;
@@ -49,6 +53,17 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  // Muting a kind is a different question from who wants it, so it is
+  // its own action rather than a field smuggled onto a recipient.
+  if (body.action === "mute") {
+    const kind = String(body.kind ?? "");
+    if (!new Set<string>(CATEGORY_KINDS).has(kind)) {
+      return NextResponse.json({ error: "Unknown alert kind" }, { status: 422 });
+    }
+    await setMuted(kind as ActivityKind, body.muted === true);
+    return NextResponse.json({ ok: true });
   }
 
   const result = await saveRecipient({

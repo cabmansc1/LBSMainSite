@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/admin";
 import { alertsTo } from "@/lib/email";
 import { CATEGORY_KINDS, KIND_LABEL } from "@/lib/admin-activity";
-import { CHANNELS, CHANNEL_LABEL, getRecipients } from "@/lib/alert-routing";
+import {
+  CHANNELS,
+  CHANNEL_LABEL,
+  getRecipients,
+  mutedKinds,
+} from "@/lib/alert-routing";
 import { AdminAlertRecipients } from "@/components/admin-alert-recipients";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +25,10 @@ export const metadata: Metadata = {
  */
 export default async function AdminAlertsPage() {
   await requireAdmin();
-  const recipients = await getRecipients();
+  const [recipients, muted] = await Promise.all([
+    getRecipients(),
+    mutedKinds(),
+  ]);
 
   return (
     <div className="mx-auto max-w-[1120px] px-6 py-8">
@@ -38,6 +46,7 @@ export default async function AdminAlertsPage() {
         recipients={recipients}
         kinds={CATEGORY_KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))}
         channels={CHANNELS.map((c) => ({ value: c, label: CHANNEL_LABEL[c] }))}
+        muted={muted}
         fallbackEmail={alertsTo()}
       />
 

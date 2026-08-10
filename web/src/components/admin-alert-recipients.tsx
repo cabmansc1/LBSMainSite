@@ -21,6 +21,8 @@ type Props = {
   recipients: AlertRecipient[];
   kinds: { value: ActivityKind; label: string }[];
   channels: { value: AlertChannel; label: string }[];
+  /** Kinds deliberately sent to nobody. */
+  muted: ActivityKind[];
   /** Where alerts go when nobody here is set up. */
   fallbackEmail: string;
 };
@@ -44,11 +46,43 @@ export function AdminAlertRecipients({
   kinds,
   channels,
   fallbackEmail,
+  muted,
 }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<AlertRecipient | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [silent, setSilent] = useState<ActivityKind[]>(muted);
+  const [muting, setMuting] = useState<string>("");
+
+  /**
+   * Turning a kind off entirely.
+   *
+   * Separate from the grid because unticking everybody does not mean
+   * this: routing falls back to the default address when a kind would
+   * otherwise reach nobody, so that a half-filled screen cannot swallow
+   * a customer's artwork. Silence has to be asked for.
+   */
+  async function toggleMute(kind: ActivityKind, next: boolean) {
+    setMuting(kind);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/alert-recipients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mute", kind, muted: next }),
+      });
+      if (!res.ok) throw new Error("That did not save.");
+      setSilent((cur) =>
+        next ? [...cur, kind] : cur.filter((k) => k !== kind),
+      );
+      router.refresh();
+    } catch {
+      setError("That did not save.");
+    } finally {
+      setMuting("");
+    }
+  }
 
   async function save() {
     if (!editing) return;
@@ -309,6 +343,59 @@ export function AdminAlertRecipients({
           </div>
         </div>
       )}
+
+      {/*
+        Deliberate silence, stated rather than implied.
+
+        Everything else on this screen answers "who wants this". This
+        answers "is this worth telling anybody about", which is why it
+        survives the fallback: an unticked box is treated as a gap and
+        routed to the default address, and a ticked box here is not.
+      */}
+      <div className="mt-8 border border-line rounded-(--radius-card) bg-white p-5">
+        <b className="text-[14.5px]">Send to nobody</b>
+        <p className="text-[13px] text-muted mt-1 max-w-[70ch]">
+          Anything ticked here goes nowhere at all &mdash; no email, no text,
+          no notification. Everything else falls back to{" "}
+          <b className="text-ink">{fallbackEmail}</b> when nobody above is set
+          up for it, so an alert can never be lost by accident. This is how you
+          lose one on purpose.
+        </p>
+
+        <div className="mt-3.5 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1.5">
+          {kinds.map((k) => {
+            const off = silent.includes(k.value);
+            return (
+              <label
+                key={k.value}
+                className="flex items-center gap-2.5 text-[13.5px] py-1"
+              >
+                <input
+                  type="checkbox"
+                  checked={off}
+                  disabled={muting === k.value}
+                  onChange={(e) => void toggleMute(k.value, e.target.checked)}
+                />
+                <span className={off ? "text-muted line-through" : ""}>
+                  {k.label}
+                </span>
+                {muting === k.value && (
+                  <span className="text-[11.5px] text-muted">saving</span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+
+        {silent.length > 0 && (
+          <p className="mt-3.5 text-[12.5px] text-[#7a4a00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-3.5 py-2">
+            {silent.length === 1
+              ? "One kind of alert is going nowhere."
+              : `${silent.length} kinds of alert are going nowhere.`}{" "}
+            The activity feed on the Dashboard still records them.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
