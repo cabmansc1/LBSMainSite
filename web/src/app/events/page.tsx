@@ -89,12 +89,24 @@ export default async function EventsPage({
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
   const placeName = (s: string) => places.find((p) => p.slug === s)?.name ?? s;
 
-  const href = (c?: string, p?: number, v: View = mode) => {
+  const href = (c?: string, p?: number, choose?: View) => {
     const q = new URLSearchParams();
     if (c) q.set("category", c);
     if (p && p > 1) q.set("page", String(p));
-    // Only when it is not the default, so the plain URL stays plain.
-    if (v === "list") q.set("view", "list");
+    /*
+     * A deliberate choice is always written down.
+     *
+     * Leaving it off when it matched the default seemed tidy and broke
+     * the toggle: pressing Cards from the list built a plain /events,
+     * which then read the cookie — set to list a moment earlier — and
+     * came back as a list. The switch could not escape its own memory.
+     *
+     * With no choice passed, the current view rides along so filters and
+     * page numbers keep it, and the plain URL stays plain for everybody
+     * arriving without an opinion.
+     */
+    if (choose) q.set("view", choose);
+    else if (mode === "list") q.set("view", "list");
     const qs = q.toString();
     return `/events${qs ? `?${qs}` : ""}`;
   };
