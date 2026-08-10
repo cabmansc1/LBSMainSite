@@ -5,8 +5,10 @@ import { countPublishedStories, publishedStories } from "@/lib/stories";
 import {
   STORY_KINDS,
   kindEyebrow,
+  readMinutes,
   type StoryKind,
 } from "@/lib/stories-types";
+import { listActivePlaces } from "@/lib/places";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -16,23 +18,32 @@ const PER_PAGE = 12;
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; page?: string }>;
+  searchParams: Promise<{ kind?: string; place?: string; page?: string }>;
 }): Promise<Metadata> {
-  const { kind, page } = await searchParams;
+  const { kind, place, page } = await searchParams;
   const known = STORY_KINDS.find((k) => k.value === kind);
   const n = Math.max(1, Number(page) || 1);
+  const placeName = place
+    ? (await listActivePlaces().catch(() => [])).find((p) => p.slug === place)
+        ?.name
+    : undefined;
 
-  const title = known
-    ? `${known.label}: Local Stories from Around Charleston`
-    : "Local Stories: Charleston Businesses, Openings and Guides";
-  const description = known
-    ? `${known.hint}. Local stories from across the Lowcountry.`
-    : "Business spotlights, new openings, coming soon and local guides from across Greater Charleston.";
+  const title = placeName
+    ? `Local Stories from ${placeName}`
+    : known
+      ? `${known.label}: Local Stories from Around Charleston`
+      : "Local Stories: Charleston Businesses, Openings and Guides";
+  const description = placeName
+    ? `Business spotlights, openings and guides from ${placeName} and the surrounding Lowcountry.`
+    : known
+      ? `${known.hint}. Local stories from across the Lowcountry.`
+      : "Business spotlights, new openings, coming soon and local guides from across Greater Charleston.";
 
   // Self-referencing, and carrying the page number, so page two is not
   // treated as a duplicate of page one.
   const q = new URLSearchParams();
   if (known) q.set("kind", known.value);
+  if (placeName && place) q.set("place", place);
   if (n > 1) q.set("page", String(n));
   const qs = q.toString();
 
@@ -47,13 +58,22 @@ export async function generateMetadata({
 export default async function StoriesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kind?: string; page?: string }>;
+  searchParams: Promise<{ kind?: string; place?: string; page?: string }>;
 }) {
-  const { kind, page } = await searchParams;
+  const { kind, place, page } = await searchParams;
   const known = STORY_KINDS.find((k) => k.value === kind);
   const current = Math.max(1, Number(page) || 1);
   const offset = (current - 1) * PER_PAGE;
-  const filter = { kind: known?.value as StoryKind | undefined };
+
+  const places = await listActivePlaces().catch(() => []);
+  // Only a place that exists becomes a filter. An unknown slug shows
+  // everything rather than an empty page, which is the friendlier
+  // answer to a mistyped or retired URL.
+  const knownPlace = place ? places.find((p) => p.slug === place) : undefined;
+  const filter = {
+    kind: known?.value as StoryKind | undefined,
+    placeSlug: knownPlace?.slug,
+  };
 
   const [stories, total] = await Promise.all([
     publishedStories({ ...filter, limit: PER_PAGE, offset }),
@@ -64,6 +84,7 @@ export default async function StoriesPage({
   const href = (k?: string, p?: number) => {
     const q = new URLSearchParams();
     if (k) q.set("kind", k);
+    if (knownPlace) q.set("place", knownPlace.slug);
     if (p && p > 1) q.set("page", String(p));
     const qs = q.toString();
     return `/stories${qs ? `?${qs}` : ""}`;
@@ -85,6 +106,21 @@ export default async function StoriesPage({
             Business spotlights, new openings, what is coming soon and guides to
             getting the most out of Greater Charleston.
           </p>
+
+          {knownPlace && (
+            <p className="mt-5 inline-flex items-center gap-2.5 text-[13.5px] bg-white/10 border border-white/15 rounded-full pl-3.5 pr-2 py-1.5">
+              <span>
+                Showing <b>{knownPlace.name}</b>
+              </span>
+              <Link
+                href={`/stories${known ? `?kind=${known.value}` : ""}`}
+                className="text-[12px] font-semibold px-2 py-0.5 rounded-full bg-white/15 hover:bg-white/25"
+                aria-label="Clear the place filter"
+              >
+                Clear
+              </Link>
+            </p>
+          )}
         </div>
       </header>
 
@@ -123,9 +159,26 @@ export default async function StoriesPage({
 
       <section className="mx-auto max-w-[1120px] px-6 py-12">
         {stories.length === 0 ? (
-          <p className="text-[15px] text-muted">
-            Nothing here yet. The first stories are being written.
-          </p>
+          <div className="border border-line rounded-(--radius-card) bg-white p-8 text-center">
+            <p className="text-[15px] font-semibold">
+              {knownPlace || known
+                ? "Nothing here yet under that filter."
+                : "Nothing here yet."}
+            </p>
+            <p className="text-[13.5px] text-muted mt-1.5 max-w-[46ch] mx-auto">
+              {knownPlace || known
+                ? "Try everything instead — there may be something from nearby."
+                : "The first stories are being written."}
+            </p>
+            {(knownPlace || known) && (
+              <Link
+                href="/stories"
+                className="inline-block mt-4 text-[13.5px] font-semibold px-4 py-2.5 rounded-[10px] bg-navy-950 text-white"
+              >
+                See everything
+              </Link>
+            )}
+          </div>
         ) : (
           <div className="grid gap-3.5">
             {lead && (
@@ -133,8 +186,11 @@ export default async function StoriesPage({
                 href={`/stories/${lead.slug}`}
                 className="grid md:grid-cols-2 gap-0 border border-line rounded-(--radius-card) bg-white overflow-hidden hover:border-navy-950"
               >
-                <span className="relative block bg-surface min-h-[220px] md:min-h-[300px]">
-                  {lead.heroMediaId ? (
+                {/* Nothing rather than an empty grey panel. A card with
+                    no picture reads better full width than beside a
+                    hole where one should be. */}
+                {lead.heroMediaId ? (
+                  <span className="relative block bg-surface min-h-[220px] md:min-h-[300px]">
                     <Image
                       src={`/api/media/${lead.heroMediaId}`}
                       alt=""
@@ -143,8 +199,8 @@ export default async function StoriesPage({
                       className="object-cover"
                       loading="eager"
                     />
-                  ) : null}
-                </span>
+                  </span>
+                ) : null}
                 <span className="block p-6 md:p-8 self-center">
                   <span className="text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
                     {kindEyebrow(lead.kind)}
@@ -159,6 +215,8 @@ export default async function StoriesPage({
                   )}
                   <span className="block mt-4 text-[12.5px] text-muted num">
                     {lead.publishedLabel}
+                    {" · "}
+                    {readMinutes(lead.bodyHtml)} min read
                     {lead.sponsored && " · Sponsored"}
                   </span>
                 </span>
@@ -173,8 +231,8 @@ export default async function StoriesPage({
                     href={`/stories/${s.slug}`}
                     className="border border-line rounded-(--radius-card) bg-white overflow-hidden hover:border-navy-950 grid content-start"
                   >
-                    <span className="relative block bg-surface aspect-[16/10]">
-                      {s.heroMediaId ? (
+                    {s.heroMediaId ? (
+                      <span className="relative block bg-surface aspect-[16/10]">
                         <Image
                           src={`/api/media/${s.heroMediaId}`}
                           alt=""
@@ -182,8 +240,8 @@ export default async function StoriesPage({
                           sizes="(max-width: 640px) 100vw, 360px"
                           className="object-cover"
                         />
-                      ) : null}
-                    </span>
+                      </span>
+                    ) : null}
                     <span className="block p-5">
                       <span className="text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
                         {kindEyebrow(s.kind)}
@@ -198,6 +256,8 @@ export default async function StoriesPage({
                       )}
                       <span className="block mt-3 text-[12px] text-muted num">
                         {s.publishedLabel}
+                        {" · "}
+                        {readMinutes(s.bodyHtml)} min read
                         {s.sponsored && " · Sponsored"}
                       </span>
                     </span>
@@ -206,6 +266,32 @@ export default async function StoriesPage({
               </div>
             )}
           </div>
+        )}
+
+        {/* Tells a crawler these are ordered articles, not a page of
+            links that happens to have headings. */}
+        {stories.length > 0 && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                name: knownPlace
+                  ? `Local stories from ${knownPlace.name}`
+                  : known
+                    ? `${known.label} from around Charleston`
+                    : "Local stories from around Charleston",
+                numberOfItems: stories.length,
+                itemListElement: stories.map((s, i) => ({
+                  "@type": "ListItem",
+                  position: offset + i + 1,
+                  url: `${SITE_URL}/stories/${s.slug}`,
+                  name: s.title,
+                })),
+              }),
+            }}
+          />
         )}
 
         {pages > 1 && (
