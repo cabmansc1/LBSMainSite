@@ -50,8 +50,27 @@ export type IssueCard = {
   spotsTotal: number;
   artworkDeadline?: string;
   /** A sample; the full list is usually too long for an email. */
-  openCategories: string[];
-  moreCategories: number;
+  /**
+   * What is gone on this card, not what is left.
+   *
+   * Listing what is open reads as noise: the vocabulary runs to nearly
+   * two hundred categories, almost none of any card is sold, so every
+   * card printed the same opening eight in alphabetical order followed
+   * by "and 180 more". Identical on every line, and it told a reader
+   * nothing about the card in front of them.
+   *
+   * What is taken is short, differs card to card, and answers the
+   * question an advertiser actually has — is my trade still going, and
+   * how fast is this filling.
+   */
+  takenCategories?: string[];
+  /**
+   * Kept only so an issue drafted before this change still opens. Old
+   * rows carry these and no taken list, and both renderers skip the
+   * line rather than printing a stale one.
+   */
+  openCategories?: string[];
+  moreCategories?: number;
 };
 
 export type IssueContent = {
@@ -106,9 +125,6 @@ const DEFAULT_GROUPS: AudienceGroup[] = [
 
 /** The zones the site itself publishes: the default reach of an issue. */
 const SITE_ZONE_SLUGS = ZONES.map((z) => z.slug);
-
-/** How many categories to name before saying "and N more". */
-const CATEGORY_SAMPLE = 8;
 
 let ready = false;
 
@@ -210,7 +226,6 @@ export async function assembleContent(
       ? await getTakenCategoriesForCard(m.cardId).catch(() => [])
       : [];
     const takenSet = new Set(taken.map((t) => t.toLowerCase()));
-    const open = all.filter((c) => c && !takenSet.has(c.toLowerCase()));
     cards.push({
       cardId: m.cardId ?? "",
       cardName: m.cardName || `${m.zoneName}, ${m.mailMonth}`,
@@ -220,8 +235,9 @@ export async function assembleContent(
       spotsTotal: m.spotsTotal,
       spotsLeft: Math.max(0, m.spotsTotal - m.spotsTaken),
       artworkDeadline: m.artworkDeadline,
-      openCategories: open.slice(0, CATEGORY_SAMPLE),
-      moreCategories: Math.max(0, open.length - CATEGORY_SAMPLE),
+      // Named as the vocabulary spells them rather than as they came
+      // back, so "hvac" does not sit beside "Roofing" in the same line.
+      takenCategories: all.filter((c) => c && takenSet.has(c.toLowerCase())),
     });
   }
 
@@ -596,9 +612,8 @@ export function renderIssue(
             : ""),
       );
       if (c.artworkDeadline) lines.push(`  Artwork deadline ${c.artworkDeadline}`);
-      if (c.openCategories.length) {
-        const more = c.moreCategories ? ` and ${c.moreCategories} more` : "";
-        lines.push(`  Categories open: ${c.openCategories.join(", ")}${more}`);
+      if (c.takenCategories?.length) {
+        lines.push(`  Already taken: ${c.takenCategories.join(", ")}`);
       }
       lines.push("");
     }
@@ -711,11 +726,10 @@ export function renderIssue(
           : "",
         `</span>`,
       );
-      if (c.openCategories.length) {
-        const more = c.moreCategories ? ` and ${c.moreCategories} more` : "";
+      if (c.takenCategories?.length) {
         h.push(
-          `<br><span style="color:#5e7183">Categories open: ${esc(
-            c.openCategories.join(", ") + more,
+          `<br><span style="color:#5e7183">Already taken: ${esc(
+            c.takenCategories.join(", "),
           )}</span>`,
         );
       }

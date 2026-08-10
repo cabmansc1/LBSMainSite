@@ -110,6 +110,70 @@ async function ensureTable() {
   ready = true;
 }
 
+/**
+ * Kinds deliberately sent nowhere.
+ *
+ * Separate from the recipient grid because it answers a different
+ * question. The grid says who wants a thing; this says the thing is not
+ * worth telling anybody about, which is not the same as everybody
+ * happening to have unticked it — and it has to survive the fallback
+ * that exists so a half-configured screen never swallows an alert.
+ *
+ * Its own table rather than a column, because it is a property of the
+ * kind and not of any person.
+ */
+async function ensureMuteTable() {
+  if (muteReady) return;
+  const { db } = await import("@/lib/db");
+  await db.execute(
+    sql`CREATE TABLE IF NOT EXISTS lbs_alert_muted (
+      kind VARCHAR(40) NOT NULL PRIMARY KEY,
+      muted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  );
+  muteReady = true;
+}
+
+let muteReady = false;
+
+export async function mutedKinds(): Promise<ActivityKind[]> {
+  try {
+    await ensureMuteTable();
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT kind FROM lbs_alert_muted`,
+    )) as unknown as [{ kind: string }[]];
+    const known = new Set<string>(CATEGORY_KINDS);
+    return (rows[0] ?? [])
+      .map((r) => String(r.kind))
+      .filter((k) => known.has(k)) as ActivityKind[];
+  } catch (e) {
+    // Unreadable means nothing is muted, which errs towards telling
+    // somebody rather than towards silence.
+    console.error("[alert-routing] muted read failed:", e);
+    return [];
+  }
+}
+
+export async function setMuted(
+  kind: ActivityKind,
+  muted: boolean,
+): Promise<void> {
+  try {
+    await ensureMuteTable();
+    const { db } = await import("@/lib/db");
+    if (muted) {
+      await db.execute(
+        sql`INSERT IGNORE INTO lbs_alert_muted (kind) VALUES (${kind})`,
+      );
+    } else {
+      await db.execute(sql`DELETE FROM lbs_alert_muted WHERE kind = ${kind}`);
+    }
+  } catch (e) {
+    console.error("[alert-routing] mute save failed:", e);
+  }
+}
+
 /** A stored list of kinds, with anything no longer real dropped. */
 function parseKinds(raw: unknown, fallback: ActivityKind[]): ActivityKind[] {
   try {
@@ -244,6 +308,10 @@ export async function routeFor(
   kind: ActivityKind,
   channel: AlertChannel,
 ): Promise<AlertRecipient[] | null> {
+  // Muted means nobody, deliberately, and it is checked before
+  // anything else so no fallback can talk over it.
+  if ((await mutedKinds()).includes(kind)) return [];
+
   const all = await getRecipients();
   const usable = all.filter(
     (r) => r.active && (channel === "sms" ? r.phone : r.email),

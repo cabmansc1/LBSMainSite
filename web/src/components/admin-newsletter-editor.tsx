@@ -28,8 +28,7 @@ export type EditorIssue = {
       spotsLeft: number;
       spotsTotal: number;
       artworkDeadline?: string;
-      openCategories: string[];
-      moreCategories: number;
+      takenCategories?: string[];
     }[];
   };
 };
@@ -363,10 +362,9 @@ export function AdminNewsletterEditor({
                     : ""}
                   {c.artworkDeadline ? ` · artwork ${c.artworkDeadline}` : ""}
                 </span>
-                {c.openCategories.length > 0 && (
+                {(c.takenCategories?.length ?? 0) > 0 && (
                   <p className="text-[12.5px] text-muted mt-1">
-                    Open: {c.openCategories.join(", ")}
-                    {c.moreCategories ? ` and ${c.moreCategories} more` : ""}
+                    Already taken: {c.takenCategories?.join(", ")}
                   </p>
                 )}
               </div>
