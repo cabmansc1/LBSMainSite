@@ -491,15 +491,22 @@ export function AdminEventEditor({
                 <option value="archived">Archived</option>
               </select>
             </label>
-            <label className="flex items-center gap-2.5 text-[13px]">
-              <input
-                type="checkbox"
-                checked={form.featured}
-                onChange={(e) =>
-                  setForm({ ...form, featured: e.target.checked })
-                }
-              />
-              Feature it
+            <label className="grid gap-1.5">
+              <span className="flex items-center gap-2.5 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={form.featured}
+                  onChange={(e) =>
+                    setForm({ ...form, featured: e.target.checked })
+                  }
+                />
+                Make this a pick
+              </span>
+              <span className="text-[12px] text-muted">
+                Marks it on the calendar and puts it first anywhere only a
+                few events fit — a town page, the weekend roundup. The
+                calendar itself stays in date order.
+              </span>
             </label>
           </div>
 

@@ -276,6 +276,15 @@ export type EventQuery = {
   offset?: number;
   /** Include events that have already happened. */
   includePast?: boolean;
+  /**
+   * Put the featured ones first, still in date order among themselves.
+   *
+   * Only for somewhere showing a handful out of many — a market page,
+   * the roundup. The calendar itself stays strictly chronological,
+   * because an event jumping the queue on a page people read as a
+   * timeline reads as a bug rather than as emphasis.
+   */
+  featuredFirst?: boolean;
 };
 
 /**
@@ -311,7 +320,8 @@ export async function publishedEvents(q: EventQuery = {}): Promise<LocalEvent[]>
     if (q.businessId) where.push(sql`e.business_id = ${q.businessId}`);
     const rows = (await db.execute(
       sql`${SELECT} WHERE ${sql.join(where, sql` AND `)}
-           ORDER BY e.starts_at ${q.includePast ? sql`DESC` : sql`ASC`}
+           ORDER BY ${q.featuredFirst ? sql`e.featured DESC,` : sql``}
+                    e.starts_at ${q.includePast ? sql`DESC` : sql`ASC`}
            LIMIT ${limit} OFFSET ${offset}`,
     )) as unknown as [Row[]];
     return (rows[0] ?? []).map(toEvent);

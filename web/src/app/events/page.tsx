@@ -224,6 +224,14 @@ export default async function EventsPage({
                     <span className="block">
                       <span className="text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
                         {categoryLabel(e.category)}
+                        {/* Marked rather than moved: the calendar stays
+                            in date order, and this is the one worth
+                            looking at on a crowded Saturday. */}
+                        {e.featured && (
+                          <span className="ml-1.5 text-navy-950 bg-cta px-1.5 py-0.5 rounded">
+                            Pick
+                          </span>
+                        )}
                       </span>
                       <span className="block mt-1 text-[16px] font-semibold leading-snug">
                         {e.title}
@@ -286,6 +294,11 @@ export default async function EventsPage({
                         {e.title}
                       </span>
                       <span className="block mt-0.5 text-[12.5px] text-muted">
+                        {e.featured && (
+                          <span className="text-navy-950 bg-cta px-1.5 py-0.5 rounded text-[10.5px] uppercase tracking-wider font-semibold mr-1.5">
+                            Pick
+                          </span>
+                        )}
                         {categoryLabel(e.category)}
                         {e.venueName && ` · ${e.venueName}`}
                         {e.placeSlug && ` · ${placeName(e.placeSlug)}`}

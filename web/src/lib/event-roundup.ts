@@ -174,7 +174,14 @@ export async function buildRoundup(
   const parts: string[] = [];
   for (const g of ordered) {
     parts.push(`<h2>${esc(g.name)}</h2>`);
-    for (const e of g.events.sort((a, b) => a.startsAt.localeCompare(b.startsAt))) {
+    // Picks lead their section, everything else in time order. A
+    // roundup is read from the top, so the order is the recommendation.
+    const byPick = g.events.sort(
+      (a, b) =>
+        Number(b.featured) - Number(a.featured) ||
+        a.startsAt.localeCompare(b.startsAt),
+    );
+    for (const e of byPick) {
       const facts = [
         e.multiDay && e.endDayLabel
           ? `${e.dayLabel} through ${e.endDayLabel}`

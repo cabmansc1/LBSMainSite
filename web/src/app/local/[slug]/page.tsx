@@ -42,7 +42,9 @@ async function load(slug: string) {
 
   const [stories, events, businesses] = await Promise.all([
     publishedStories({ placeSlugs: family, limit: 6 }).catch(() => []),
-    publishedEvents({ placeSlugs: family, limit: 6 }).catch(() => []),
+    publishedEvents({ placeSlugs: family, limit: 6, featuredFirst: true }).catch(
+      () => [],
+    ),
     // The directory is keyed by its own location slugs, so only a place
     // carrying that bridge can show listings. Everywhere else simply
     // has no business section rather than a broken one.
