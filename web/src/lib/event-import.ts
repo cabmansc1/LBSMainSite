@@ -171,7 +171,7 @@ const unescapeIcal = (s: string) =>
     .replace(/\\;/g, ";")
     .replace(/\\\\/g, "\\");
 
-function icalDate(value: string, params: string): Date | null {
+function icalDate(value: string): Date | null {
   const v = value.trim();
   // 20270402 — a date with no time.
   if (/^\d{8}$/.test(v)) {
@@ -185,15 +185,37 @@ function icalDate(value: string, params: string): Date | null {
   }
   const m = v.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/);
   if (!m) return null;
-  if (m[7]) return new Date(`${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 11)}:${v.slice(11, 13)}:${v.slice(13, 15)}Z`);
-  const tz = params.match(/TZID=([^;:]+)/)?.[1] ?? "America/New_York";
+  // A Z is a real instant and is honoured as one.
+  if (m[7]) {
+    return new Date(
+      `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 11)}:${v.slice(
+        11,
+        13,
+      )}:${v.slice(13, 15)}Z`,
+    );
+  }
+  /*
+   * The declared zone is ignored, and the wall clock is read as ours.
+   *
+   * Moncks Corner's calendar announces TZID=America/Halifax for a town
+   * in South Carolina — a misconfigured WordPress, and a common one.
+   * Honouring that label faithfully put their farmers market at 2pm
+   * when their own description, their own website and their own REST
+   * API all say three.
+   *
+   * Everything imported here happens within an hour of Charleston, so
+   * "15:00" in a local feed means three in the afternoon here whatever
+   * the file claims. A feed that labels itself correctly gets the same
+   * answer either way, so this only ever changes the broken ones — and
+   * an hour wrong is worse than most ways of being wrong, because it
+   * looks right enough to turn up on.
+   */
   return fromZoned(
     Number(m[1]),
     Number(m[2]),
     Number(m[3]),
     Number(m[4]),
     Number(m[5]),
-    tz,
   );
 }
 
@@ -218,11 +240,11 @@ export function parseIcal(text: string): Candidate[] {
     const title = cleanTitle(unescapeIcal(props.get("SUMMARY")?.value ?? ""));
     const uid = (props.get("UID")?.value ?? "").trim();
     if (!start || !title || !uid) continue;
-    const startsAt = icalDate(start.value, start.params);
+    const startsAt = icalDate(start.value);
     if (!startsAt || isNaN(startsAt.getTime())) continue;
 
     const end = props.get("DTEND");
-    const endsAt = end ? icalDate(end.value, end.params) : null;
+    const endsAt = end ? icalDate(end.value) : null;
 
     // "<p>Short Central Pavilion</p> -   Summerville SC 29483" — a venue
     // and an address run together with a dash, and the venue arrives as
@@ -464,4 +486,243 @@ export async function importAll(keys?: string[]): Promise<ImportReport[]> {
   // job that runs unattended.
   for (const s of wanted) out.push(await importSource(s));
   return out;
+}
+
+/* ---------- trying a URL ---------- */
+
+/**
+ * Working out what a site publishes, from a page address.
+ *
+ * The useful question when standing in front of a venue's website is
+ * "does this have anything I can read", and the honest answer is
+ * usually yes but not at the address a person would paste. A visitor
+ * pastes the events page; the machine-readable version is an iCal link
+ * in the head, or a REST endpoint one directory up.
+ *
+ * So this tries the obvious candidates in order and reports which one
+ * answered, which turns discovering a feed from a job for me into
+ * something answerable in ten seconds by anybody with the URL.
+ */
+export type ProbeResult = {
+  /** The address that actually answered with events. */
+  resolvedUrl: string;
+  kind: FeedKind;
+  /** How it was found, in words, so the next site is easier to guess. */
+  how: string;
+  found: number;
+  upcoming: number;
+  meetings: number;
+  sample: {
+    title: string;
+    when: string;
+    venue: string;
+    externalId: string;
+  }[];
+};
+
+const PRIVATE_HOST =
+  /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|::1$|\[?::1\]?$|172\.(1[6-9]|2\d|3[01])\.)/i;
+
+async function tryFetch(
+  url: string,
+  accept: string,
+): Promise<{ text: string; type: string } | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "LowcountryBusinessSpotlight/1.0 (+https://www.lowcountrybusinessspotlight.com)",
+        Accept: accept,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return null;
+    return {
+      text: await res.text(),
+      type: res.headers.get("content-type") ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+const asCandidates = (
+  body: string,
+  type: string,
+): { kind: FeedKind; list: Candidate[] } | null => {
+  const looksIcal = /text\/calendar/i.test(type) || body.startsWith("BEGIN:VCALENDAR");
+  if (looksIcal) {
+    const list = parseIcal(body);
+    return list.length ? { kind: "ical", list } : null;
+  }
+  if (/json/i.test(type) || body.trimStart().startsWith("{")) {
+    try {
+      const list = parseTribe(JSON.parse(body));
+      return list.length ? { kind: "tribe", list } : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+export async function probeUrl(
+  raw: string,
+): Promise<ProbeResult | { error: string }> {
+  let url: URL;
+  try {
+    url = new URL(raw.trim());
+  } catch {
+    return { error: "That is not a web address." };
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return { error: "Only http and https addresses." };
+  }
+  // An admin pasting a URL should not be a way to make the server fetch
+  // something on its own network.
+  if (PRIVATE_HOST.test(url.hostname)) {
+    return { error: "That address is on a private network." };
+  }
+
+  const origin = url.origin;
+  const attempts: { url: string; accept: string; how: string }[] = [
+    {
+      url: url.toString(),
+      accept: "text/calendar, application/json;q=0.9, text/html;q=0.8, */*;q=0.5",
+      how: "the address you gave, read directly",
+    },
+  ];
+
+  const first = await tryFetch(attempts[0].url, attempts[0].accept);
+  if (!first) {
+    return {
+      error:
+        "Nothing answered. Either the address is wrong, or their firewall is refusing our server — which is not something this end can fix.",
+    };
+  }
+
+  const direct = asCandidates(first.text, first.type);
+  if (direct) {
+    return summarise(url.toString(), direct.kind, attempts[0].how, direct.list);
+  }
+
+  // An HTML page. Look for what it advertises, then guess the usual
+  // places, cheapest and most likely first.
+  const icalLink =
+    first.text.match(
+      /<link[^>]+type=["']text\/calendar["'][^>]+href=["']([^"']+)["']/i,
+    )?.[1] ??
+    first.text.match(
+      /<link[^>]+href=["']([^"']+)["'][^>]+type=["']text\/calendar["']/i,
+    )?.[1] ??
+    first.text.match(/href=["']([^"']+\.ics)["']/i)?.[1];
+
+  const wpRoot = first.text.match(
+    /<link[^>]+rel=["']https:\/\/api\.w\.org\/["'][^>]+href=["']([^"']+)["']/i,
+  )?.[1];
+
+  const guesses: { url: string; accept: string; how: string }[] = [];
+  if (icalLink) {
+    guesses.push({
+      url: new URL(icalLink, url).toString(),
+      accept: "text/calendar, */*;q=0.5",
+      how: "a calendar link the page advertises in its head",
+    });
+  }
+  if (wpRoot) {
+    guesses.push({
+      url: new URL("tribe/events/v1/events?per_page=50", wpRoot).toString(),
+      accept: "application/json, */*;q=0.5",
+      how: "the WordPress events API the page points at",
+    });
+  }
+  guesses.push(
+    {
+      url: `${origin}/wp-json/tribe/events/v1/events?per_page=50`,
+      accept: "application/json, */*;q=0.5",
+      how: "the usual WordPress events API address",
+    },
+    {
+      url: `${url.toString()}${url.search ? "&" : "?"}ical=1`,
+      accept: "text/calendar, */*;q=0.5",
+      how: "the same page asked for as a calendar",
+    },
+  );
+
+  for (const g of guesses) {
+    const got = await tryFetch(g.url, g.accept);
+    if (!got) continue;
+    const parsed = asCandidates(got.text, got.type);
+    if (parsed) return summarise(g.url, parsed.kind, g.how, parsed.list);
+  }
+
+  return {
+    error:
+      "That page answered, but nothing on it is machine-readable. Look for an "
+      + "iCal or Subscribe link on their calendar and try that address instead.",
+  };
+}
+
+function summarise(
+  resolvedUrl: string,
+  kind: FeedKind,
+  how: string,
+  list: Candidate[],
+): ProbeResult {
+  const now = Date.now();
+  const dated = list.filter((c) => (c.endsAt ?? c.startsAt).getTime() >= now);
+  const keep = dated.filter((c) => !looksLikeMeeting(c.title));
+  return {
+    resolvedUrl,
+    kind,
+    how,
+    found: list.length,
+    upcoming: dated.length,
+    meetings: dated.length - keep.length,
+    sample: keep.slice(0, 6).map((c) => ({
+      title: c.title,
+      when: c.startsAt.toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+      venue: c.venueName,
+      externalId: c.externalId,
+    })),
+  };
+}
+
+/**
+ * Bringing in what a probe found, without making it a standing source.
+ *
+ * The key is derived from the host so a second run against the same
+ * site updates rather than duplicates, and so the rows can be told
+ * apart later from the ones the built-in feeds brought in.
+ */
+export async function importFromUrl(
+  resolvedUrl: string,
+  kind: FeedKind,
+  placeSlug: string,
+  category: EventCategory,
+): Promise<ImportReport> {
+  const host = (() => {
+    try {
+      return new URL(resolvedUrl).hostname.replace(/^www\./, "");
+    } catch {
+      return "url";
+    }
+  })();
+  return importSource({
+    key: host.slice(0, 40),
+    label: host,
+    kind,
+    url: resolvedUrl,
+    placeSlug,
+    category,
+    hint: "",
+  });
 }

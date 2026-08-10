@@ -5,6 +5,8 @@ import { listEvents } from "@/lib/events";
 import { categoryLabel } from "@/lib/events-types";
 import { EVENT_SOURCES } from "@/lib/event-import";
 import { EventImportButton } from "@/components/event-import-button";
+import { EventFeedProbe } from "@/components/event-feed-probe";
+import { listActivePlaces } from "@/lib/places";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -28,7 +30,10 @@ const TONE: Record<string, string> = {
  */
 export default async function AdminEventsPage() {
   await requireAdmin();
-  const events = await listEvents();
+  const [events, places] = await Promise.all([
+    listEvents(),
+    listActivePlaces().catch(() => []),
+  ]);
   const pending = events.filter((e) => e.status === "pending");
 
   return (
@@ -54,6 +59,18 @@ export default async function AdminEventsPage() {
           key,
           label,
           hint,
+        }))}
+      />
+
+      <EventFeedProbe
+        places={places.map((p) => ({
+          value: p.slug,
+          label:
+            p.kind === "region"
+              ? p.name
+              : p.kind === "market"
+                ? `— ${p.name}`
+                : `—— ${p.name}`,
         }))}
       />
 
