@@ -77,6 +77,17 @@ export type LocalEvent = {
    * are where calendar projects go to die.
    */
   seriesId: number | null;
+  /**
+   * Where an imported event came from, empty for everything typed in.
+   *
+   * The provider and their identifier together are what an importer
+   * would match on to decide between an update and an insert; the URL
+   * is the page it was read from, for checking a detail against the
+   * source later. Nothing writes these yet.
+   */
+  externalSource?: string;
+  externalId?: string;
+  sourceUrl?: string;
   /** Pretty forms, worked out once on read. */
   dayLabel?: string;
   timeLabel?: string;

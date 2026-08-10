@@ -7,6 +7,7 @@ import { Card } from "@/components/sections";
 import { PhotoGrid } from "@/components/photo-lightbox";
 import { InquiryForm } from "@/components/inquiry-form";
 import { getPastCards } from "@/lib/past-cards";
+import { kindEyebrow } from "@/lib/stories-types";
 import {
   getBusinesses,
   getBusiness,
@@ -129,30 +130,48 @@ export default async function BusinessPage({
 
   // Cross-site and Mission Control lookups are best-effort extras; the
   // page renders fine when either source is unreachable.
-  const [related, lowcoDeals, archive, appearances, categoryCounts] =
-    await Promise.all([
-      // "More X Businesses" on the legacy page: internal links that keep a
-      // visitor in the directory and spread crawl depth across listings.
-      getBusinesses({ category: b.categorySlug })
-        .then((rows) => rows.filter((r) => r.slug !== b.slug).slice(0, 6))
-        .catch(() => []),
-      dealsForBusiness(b.name).catch(() => []),
-      getPastCards({ publishedOnly: true }).catch(() => []),
-      advertiserAppearances({ name: b.name }).catch(
-        () =>
-          [] as {
-            cardId: string;
-            cardName?: string;
-            zoneName: string;
-            mailMonth: string;
-            mailDateIso: string;
-          }[],
-      ),
-      // The sidebar browser. A listing page used to be a cul-de-sac: the
-      // only ways back into the directory were the breadcrumb and the
-      // related list, both of which stay inside one category.
-      getCategoryCounts().catch(() => []),
-    ]);
+  const [
+    related,
+    lowcoDeals,
+    archive,
+    appearances,
+    theirStories,
+    theirEvents,
+    categoryCounts,
+  ] = await Promise.all([
+    // "More X Businesses" on the legacy page: internal links that keep a
+    // visitor in the directory and spread crawl depth across listings.
+    getBusinesses({ category: b.categorySlug })
+      .then((rows) => rows.filter((r) => r.slug !== b.slug).slice(0, 6))
+      .catch(() => []),
+    dealsForBusiness(b.name).catch(() => []),
+    getPastCards({ publishedOnly: true }).catch(() => []),
+    advertiserAppearances({ name: b.name }).catch(
+      () =>
+        [] as {
+          cardId: string;
+          cardName?: string;
+          zoneName: string;
+          mailMonth: string;
+          mailDateIso: string;
+        }[],
+    ),
+    // Anything written about them, and anything they are putting on.
+    // This is what makes filing a story against a business worth the
+    // thirty seconds it takes: it turns up here on its own.
+    (async () => {
+      const { publishedStories } = await import("@/lib/stories");
+      return publishedStories({ businessId: b.id, limit: 3 });
+    })().catch(() => []),
+    (async () => {
+      const { publishedEvents } = await import("@/lib/events");
+      return publishedEvents({ businessId: b.id, limit: 3 });
+    })().catch(() => []),
+    // The sidebar browser. A listing page used to be a cul-de-sac: the
+    // only ways back into the directory were the breadcrumb and the
+    // related list, both of which stay inside one category.
+    getCategoryCounts().catch(() => []),
+  ]);
 
   const sameAs = [
     b.website,
@@ -182,7 +201,11 @@ export default async function BusinessPage({
           addressLocality: b.locationArea,
           addressRegion: "SC",
         }
-      : { "@type": "PostalAddress", addressLocality: b.locationArea, addressRegion: "SC" },
+      : {
+          "@type": "PostalAddress",
+          addressLocality: b.locationArea,
+          addressRegion: "SC",
+        },
     geo:
       b.lat && b.lng
         ? { "@type": "GeoCoordinates", latitude: b.lat, longitude: b.lng }
@@ -202,9 +225,24 @@ export default async function BusinessPage({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Directory", item: `${SITE_URL}/directory` },
-      { "@type": "ListItem", position: 2, name: b.category, item: `${SITE_URL}/directory/category/${b.categorySlug}` },
-      { "@type": "ListItem", position: 3, name: b.name, item: `${SITE_URL}/business/${b.slug}` },
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Directory",
+        item: `${SITE_URL}/directory`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: b.category,
+        item: `${SITE_URL}/directory/category/${b.categorySlug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: b.name,
+        item: `${SITE_URL}/business/${b.slug}`,
+      },
     ],
   };
 
@@ -213,39 +251,59 @@ export default async function BusinessPage({
   // works on the first paint.
   const pageUrl = `${SITE_URL}/business/${b.slug}`;
   const enc = encodeURIComponent;
-  const SHARES: { key: string; label: string; href: string; icon: React.ReactNode }[] = [
+  const SHARES: {
+    key: string;
+    label: string;
+    href: string;
+    icon: React.ReactNode;
+  }[] = [
     {
       key: "facebook",
       label: "Share on Facebook",
       href: `https://www.facebook.com/sharer/sharer.php?u=${enc(pageUrl)}`,
-      icon: <path d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v7h3v-7h2.3l.7-3H13V9a1 1 0 0 1 1-1z" />,
+      icon: (
+        <path d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v7h3v-7h2.3l.7-3H13V9a1 1 0 0 1 1-1z" />
+      ),
     },
     {
       key: "x",
       label: "Share on X",
       href: `https://twitter.com/intent/tweet?url=${enc(pageUrl)}&text=${enc(b.name)}`,
-      icon: <path d="M17.5 3h2.9l-6.3 7.2L21.5 21h-5.8l-4.5-5.9L5.9 21H3l6.7-7.7L2.8 3h5.9l4.1 5.4L17.5 3zm-1 16.2h1.6L8.6 4.7H6.9l9.6 14.5z" />,
+      icon: (
+        <path d="M17.5 3h2.9l-6.3 7.2L21.5 21h-5.8l-4.5-5.9L5.9 21H3l6.7-7.7L2.8 3h5.9l4.1 5.4L17.5 3zm-1 16.2h1.6L8.6 4.7H6.9l9.6 14.5z" />
+      ),
     },
     {
       key: "linkedin",
       label: "Share on LinkedIn",
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc(pageUrl)}`,
-      icon: <path d="M6.9 8.5v10.6H3.6V8.5h3.3zM5.3 3.3a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8zM20.4 19.1h-3.3v-5.2c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8v5.3H10V8.5h3.1v1.4h.1c.5-.8 1.6-1.7 3.2-1.7 3.4 0 4 2.2 4 5.1v5.8z" />,
+      icon: (
+        <path d="M6.9 8.5v10.6H3.6V8.5h3.3zM5.3 3.3a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8zM20.4 19.1h-3.3v-5.2c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8v5.3H10V8.5h3.1v1.4h.1c.5-.8 1.6-1.7 3.2-1.7 3.4 0 4 2.2 4 5.1v5.8z" />
+      ),
     },
     {
       key: "email",
       label: "Share by email",
       href: `mailto:?subject=${enc(b.name)}&body=${enc(`${b.name} in the Lowcountry Business Spotlight directory: ${pageUrl}`)}`,
-      icon: <path d="M3 5.5h18c.6 0 1 .4 1 1V17c0 .8-.7 1.5-1.5 1.5h-17C2.7 18.5 2 17.8 2 17V6.5c0-.6.4-1 1-1zm9 7.1 8-4.6H4l8 4.6z" />,
+      icon: (
+        <path d="M3 5.5h18c.6 0 1 .4 1 1V17c0 .8-.7 1.5-1.5 1.5h-17C2.7 18.5 2 17.8 2 17V6.5c0-.6.4-1 1-1zm9 7.1 8-4.6H4l8 4.6z" />
+      ),
     },
   ];
 
-  const SOCIALS: { key: string; href?: string; label: string; icon: React.ReactNode }[] = [
+  const SOCIALS: {
+    key: string;
+    href?: string;
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
     {
       key: "facebook",
       href: b.socials?.facebook,
       label: "Facebook",
-      icon: <path d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v7h3v-7h2.3l.7-3H13V9a1 1 0 0 1 1-1z" />,
+      icon: (
+        <path d="M14 8h2V5h-2.5A3.5 3.5 0 0 0 10 8.5V11H8v3h2v7h3v-7h2.3l.7-3H13V9a1 1 0 0 1 1-1z" />
+      ),
     },
     {
       key: "instagram",
@@ -253,8 +311,24 @@ export default async function BusinessPage({
       label: "Instagram",
       icon: (
         <>
-          <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" />
-          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
+          <rect
+            x="3"
+            y="3"
+            width="18"
+            height="18"
+            rx="5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+          <circle
+            cx="12"
+            cy="12"
+            r="4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
           <circle cx="17.2" cy="6.8" r="1.3" />
         </>
       ),
@@ -263,7 +337,9 @@ export default async function BusinessPage({
       key: "tiktok",
       href: b.socials?.tiktok,
       label: "TikTok",
-      icon: <path d="M15 4a5 5 0 0 0 5 4v3a8 8 0 0 1-5-1.7V15a6 6 0 1 1-6-6v3a3 3 0 1 0 3 3V4h3z" />,
+      icon: (
+        <path d="M15 4a5 5 0 0 0 5 4v3a8 8 0 0 1-5-1.7V15a6 6 0 1 1-6-6v3a3 3 0 1 0 3 3V4h3z" />
+      ),
     },
     {
       key: "youtube",
@@ -293,10 +369,18 @@ export default async function BusinessPage({
       )}
       <header className="bg-navy-950 text-white">
         <div className="mx-auto max-w-[1120px] px-6 pt-11 pb-13">
-          <nav className="text-[12.5px] text-[#67768A] flex gap-2" aria-label="Breadcrumb">
-            <Link href="/directory" className="hover:text-white">Directory</Link>
+          <nav
+            className="text-[12.5px] text-[#67768A] flex gap-2"
+            aria-label="Breadcrumb"
+          >
+            <Link href="/directory" className="hover:text-white">
+              Directory
+            </Link>
             <span>/</span>
-            <Link href={`/directory/category/${b.categorySlug}`} className="hover:text-white">
+            <Link
+              href={`/directory/category/${b.categorySlug}`}
+              className="hover:text-white"
+            >
               {b.category}
             </Link>
             <span>/</span>
@@ -311,7 +395,12 @@ export default async function BusinessPage({
                 {b.category} · {b.locationArea}, SC
                 {b.isFeatured && (
                   <span className="inline-flex items-center gap-1 ml-3 text-xs font-bold text-navy-950 bg-cta rounded-full px-2.5 py-0.5 uppercase tracking-wider">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
                       <path d="M12 2l2.9 6.3 6.6.6-5 4.5 1.5 6.6L12 16.9 6 20l1.5-6.6-5-4.5 6.6-.6z" />
                     </svg>
                     Featured
@@ -319,7 +408,17 @@ export default async function BusinessPage({
                 )}
                 {b.isVerified && (
                   <span className="inline-flex items-center gap-1 ml-3 text-xs font-semibold text-white bg-white/8 border border-white/16 rounded-full px-2.5 py-0.5">
-                    <svg className="text-brand" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      className="text-brand"
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
                     Verified
@@ -380,7 +479,12 @@ export default async function BusinessPage({
               title={s.label}
               className="w-9 h-9 lg:w-10 lg:h-10 rounded-[8px] bg-navy-950 text-white flex items-center justify-center hover:bg-brand-deep transition-colors shrink-0"
             >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
                 {s.icon}
               </svg>
             </a>
@@ -389,7 +493,10 @@ export default async function BusinessPage({
 
         <div className="grid gap-3.5 min-w-0">
           <Card className="p-6.5 grid gap-3">
-            <span className="block h-[3px] w-[54px] bg-brand rounded-full" aria-hidden />
+            <span
+              className="block h-[3px] w-[54px] bg-brand rounded-full"
+              aria-hidden
+            />
             <RichText
               text={b.description}
               className="text-sm text-body leading-relaxed"
@@ -491,7 +598,12 @@ export default async function BusinessPage({
                         title={s.label}
                         className="w-9 h-9 rounded-[8px] bg-surface border border-line flex items-center justify-center text-brand-deep hover:bg-brand hover:text-white hover:border-brand transition-colors"
                       >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
                           {s.icon}
                         </svg>
                       </a>
@@ -528,12 +640,87 @@ export default async function BusinessPage({
             userAgent={userAgent}
           />
 
+          {/*
+            Anything we have written about them, and anything they are
+            putting on. Both come from the joins set when a story or an
+            event is filed, which is what makes that thirty seconds
+            worth spending: nobody links this by hand.
+          */}
+          {(theirStories.length > 0 || theirEvents.length > 0) && (
+            <Card className="p-6.5 grid gap-4">
+              {theirStories.length > 0 && (
+                <div className="grid gap-2.5">
+                  <h2 className="text-[17px] font-semibold tracking-tight">
+                    {theirStories.length === 1
+                      ? "We wrote about them"
+                      : "We have written about them"}
+                  </h2>
+                  {theirStories.map((st) => (
+                    <Link
+                      key={st.id}
+                      href={`/stories/${st.slug}`}
+                      className="block border border-line rounded-[10px] px-4 py-3 hover:border-navy-950"
+                    >
+                      <span className="block text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
+                        {kindEyebrow(st.kind)}
+                        {st.sponsored && " · Sponsored"}
+                      </span>
+                      <span className="block mt-1 text-[15px] font-semibold leading-snug">
+                        {st.title}
+                      </span>
+                      {st.publishedLabel && (
+                        <span className="block mt-1 text-[12.5px] text-muted num">
+                          {st.publishedLabel}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {theirEvents.length > 0 && (
+                <div className="grid gap-2.5">
+                  <h2 className="text-[17px] font-semibold tracking-tight">
+                    Coming up
+                  </h2>
+                  {theirEvents.map((ev) => (
+                    <Link
+                      key={ev.id}
+                      href={`/events/${ev.slug}`}
+                      className="flex items-start gap-3.5 border border-line rounded-[10px] px-4 py-3 hover:border-navy-950"
+                    >
+                      <span className="shrink-0 w-[48px] rounded-[9px] bg-navy-950 text-white text-center py-1.5">
+                        <b className="block text-[17px] leading-none num">
+                          {ev.dayOfMonth}
+                        </b>
+                        <span className="text-[10px] uppercase tracking-widest">
+                          {ev.monthLabel}
+                        </span>
+                      </span>
+                      <span className="block">
+                        <span className="block text-[15px] font-semibold leading-snug">
+                          {ev.title}
+                        </span>
+                        <span className="block mt-0.5 text-[12.5px] text-muted">
+                          {ev.timeLabel}
+                          {ev.venueName && ` · ${ev.venueName}`}
+                        </span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
+
           {/* Photos moved up from below the hours. They are the thing a
               reader actually stops on, and they were sitting under four
               panels that only some listings have. */}
           {b.photos && b.photos.length > 0 && (
             <Card className="p-6.5 grid gap-3">
-              <h2 className="text-[17px] font-semibold tracking-tight">Photos</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight">
+                Photos
+              </h2>
               <PhotoGrid photos={b.photos.slice(0, 9)} />
             </Card>
           )}
@@ -546,7 +733,9 @@ export default async function BusinessPage({
                 </span>
                 <p className="text-sm text-body leading-relaxed mt-1">
                   {b.name} has appeared on {appearances.length}{" "}
-                  {appearances.length === 1 ? "Spotlight card" : "Spotlight cards"}{" "}
+                  {appearances.length === 1
+                    ? "Spotlight card"
+                    : "Spotlight cards"}{" "}
                   mailed to local homes.
                 </p>
               </div>
@@ -561,7 +750,8 @@ export default async function BusinessPage({
                   const inArchive = archive.find(
                     (c) =>
                       c.mcCardId === a.cardId ||
-                      (c.zoneName === a.zoneName && c.mailMonth === a.mailMonth),
+                      (c.zoneName === a.zoneName &&
+                        c.mailMonth === a.mailMonth),
                   );
                   // Two cards can share a zone and a month. Tell them
                   // apart by mail date rather than card name: Mission
@@ -569,7 +759,8 @@ export default async function BusinessPage({
                   // on April 30 is called "May 2026" and printing that
                   // beside "April 2026" reads like a mistake.
                   const sameMonth = appearances.filter(
-                    (x) => x.zoneName === a.zoneName && x.mailMonth === a.mailMonth,
+                    (x) =>
+                      x.zoneName === a.zoneName && x.mailMonth === a.mailMonth,
                   );
                   const exactDate =
                     a.mailDateIso &&
@@ -682,7 +873,9 @@ export default async function BusinessPage({
 
           {b.hours && (
             <Card className="p-6.5 grid gap-3">
-              <h2 className="text-[17px] font-semibold tracking-tight">Hours</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight">
+                Hours
+              </h2>
               <dl className="grid gap-1.5 text-sm max-w-[320px]">
                 {b.hours.map((h) => (
                   <div key={h.day} className="flex justify-between gap-6">
@@ -696,7 +889,9 @@ export default async function BusinessPage({
 
           {(b.address || b.locationArea) && (
             <Card className="p-6.5 grid gap-3">
-              <h2 className="text-[17px] font-semibold tracking-tight">Location</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight">
+                Location
+              </h2>
               {/* The area and the street address are stated once, in the
                   contact rows at the top. Repeating them here read as
                   padding. */}
@@ -743,7 +938,9 @@ export default async function BusinessPage({
                       href={`/business/${r.slug}`}
                       className="block border border-line rounded-[10px] px-4 py-3 hover:border-faint transition-colors"
                     >
-                      <b className="block text-[14px] font-semibold">{r.name}</b>
+                      <b className="block text-[14px] font-semibold">
+                        {r.name}
+                      </b>
                       <span className="text-[12.5px] text-muted">
                         {r.locationArea}, SC
                       </span>
@@ -768,7 +965,9 @@ export default async function BusinessPage({
               which is the thing that actually helps them. */}
           {!b.claimed && (
             <Card className="p-6.5 grid gap-2.5 bg-surface">
-              <h3 className="text-[15px] font-semibold">Is this your business?</h3>
+              <h3 className="text-[15px] font-semibold">
+                Is this your business?
+              </h3>
               <p className="text-[13px] text-body leading-relaxed">
                 Claim this listing to update your details, add photos and
                 offers, and see how many people view your page.
