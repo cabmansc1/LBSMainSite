@@ -437,10 +437,11 @@ async function freeSlug(base: string, exceptId: number | null): Promise<string> 
  */
 const slugFor = (title: string, startsAt: string) => {
   const d = asDate(startsAt);
+  // en-CA gives "2026-08-14", and the zone matters for the same reason
+  // it does everywhere else: read in UTC, an 8pm concert here carries
+  // tomorrow's date in its own address.
   const stamp = d
-    ? `-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-        d.getDate(),
-      ).padStart(2, "0")}`
+    ? `-${d.toLocaleDateString("en-CA", { timeZone: SITE_TZ })}`
     : "";
   return `${slugifyEvent(title)}${stamp}`;
 };
