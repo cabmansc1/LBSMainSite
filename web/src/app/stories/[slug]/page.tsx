@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedStory, publishedStories } from "@/lib/stories";
 import { kindEyebrow, kindLabel, readMinutes } from "@/lib/stories-types";
+import { getMedia } from "@/lib/media";
 import { listActivePlaces } from "@/lib/places";
 import { PROSE_CLASS } from "@/lib/prose";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
@@ -62,9 +63,15 @@ export default async function StoryPage({
   const story = await getPublishedStory(slug);
   if (!story) notFound();
 
-  const [places, more] = await Promise.all([
+  const [places, more, hero] = await Promise.all([
     listActivePlaces().catch(() => []),
     publishedStories({ kind: story.kind, limit: 4 }),
+    // The alt text written in the library, rather than an empty string.
+    // A photograph of somebody's business described as nothing is the
+    // exact gap the library exists to close.
+    story.heroMediaId
+      ? getMedia(story.heroMediaId).catch(() => undefined)
+      : Promise.resolve(undefined),
   ]);
 
   const placeName = (s: string) =>
@@ -72,28 +79,74 @@ export default async function StoryPage({
 
   const subject = story.businesses.find((b) => b.role === "subject");
   const related = more.filter((s) => s.id !== story.id).slice(0, 3);
+  const canonical = `${SITE_URL}/stories/${story.slug}`;
+  const minutes = readMinutes(story.bodyHtml);
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: story.title,
-    description: story.dek || undefined,
-    datePublished: story.publishedAt || undefined,
-    image: story.heroMediaId
-      ? `${SITE_URL}/api/media/${story.heroMediaId}`
-      : undefined,
-    mainEntityOfPage: `${SITE_URL}/stories/${story.slug}`,
-    publisher: {
-      "@type": "Organization",
-      name: SITE_NAME,
-      logo: `${SITE_URL}/brand/lb-spotlight.png`,
-    },
-    /*
-     * Declared on the story itself rather than only shown as a chip.
-     * Google asks paid placement to be machine readable, and a label a
-     * reader can see while a crawler cannot is only half a disclosure.
-     */
-    ...(story.sponsored ? { isAccessibleForFree: true, sponsor: SITE_NAME } : {}),
+    "@graph": [
+      {
+        "@type": "Article",
+        headline: story.title,
+        description: story.dek || undefined,
+        datePublished: story.publishedAt || undefined,
+        dateModified: story.updatedAt || story.publishedAt || undefined,
+        articleSection: kindLabel(story.kind),
+        image: story.heroMediaId
+          ? `${SITE_URL}/api/media/${story.heroMediaId}`
+          : undefined,
+        mainEntityOfPage: canonical,
+        author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+        publisher: {
+          "@type": "Organization",
+          name: SITE_NAME,
+          logo: `${SITE_URL}/brand/lb-spotlight.png`,
+        },
+        // The business the piece is about, so a crawler sees the two
+        // connected the same way a reader does.
+        ...(subject?.slug
+          ? {
+              about: {
+                "@type": "LocalBusiness",
+                name: subject.name,
+                url: `${SITE_URL}/business/${subject.slug}`,
+              },
+            }
+          : {}),
+        /*
+         * Declared on the story itself rather than only shown as a chip.
+         * Google asks paid placement to be machine readable, and a label
+         * a reader can see while a crawler cannot is only half a
+         * disclosure.
+         */
+        ...(story.sponsored
+          ? { isAccessibleForFree: true, sponsor: SITE_NAME }
+          : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Local stories",
+            item: `${SITE_URL}/stories`,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: kindLabel(story.kind),
+            item: `${SITE_URL}/stories?kind=${story.kind}`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: story.title,
+            item: canonical,
+          },
+        ],
+      },
+    ],
   };
 
   return (
@@ -124,9 +177,7 @@ export default async function StoryPage({
 
           <div className="mt-5 flex items-center gap-3 flex-wrap text-[13px] text-[#93A5B8]">
             {story.publishedLabel && <span>{story.publishedLabel}</span>}
-            <span className="num">
-              {readMinutes(story.bodyHtml)} min read
-            </span>
+            <span className="num">{minutes} min read</span>
             {story.sponsored && (
               <span className="text-[10.5px] uppercase tracking-widest font-bold px-2 py-1 rounded bg-cta text-navy-950">
                 Sponsored
@@ -136,13 +187,17 @@ export default async function StoryPage({
 
           {story.places.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
+              {/* Links rather than decoration. Each one is a real URL a
+                  reader can follow and a crawler can index, which is
+                  most of what tagging a place was for. */}
               {story.places.map((p) => (
-                <span
+                <Link
                   key={p}
-                  className="text-[12px] px-2.5 py-1 rounded-full bg-white/8 border border-white/12 text-[#C6D3E0]"
+                  href={`/stories?place=${p}`}
+                  className="text-[12px] px-2.5 py-1 rounded-full bg-white/8 border border-white/12 text-[#C6D3E0] hover:bg-white/14 hover:text-white"
                 >
                   {placeName(p)}
-                </span>
+                </Link>
               ))}
             </div>
           )}
@@ -151,20 +206,64 @@ export default async function StoryPage({
 
       <article className="mx-auto max-w-[760px] px-6 py-10">
         {story.heroMediaId && (
-          <Image
-            src={`/api/media/${story.heroMediaId}`}
-            alt=""
-            width={1400}
-            height={788}
-            loading="eager"
-            className="w-full h-auto rounded-(--radius-card) border border-line mb-8"
-          />
+          <figure className="mb-8">
+            <Image
+              src={`/api/media/${story.heroMediaId}`}
+              alt={hero?.alt ?? ""}
+              width={1400}
+              height={788}
+              loading="eager"
+              className="w-full h-auto rounded-(--radius-card) border border-line"
+            />
+            {(hero?.caption || hero?.credit) && (
+              <figcaption className="mt-2 text-[12.5px] text-muted">
+                {hero.caption}
+                {hero.caption && hero.credit && " · "}
+                {hero.credit && <span className="italic">{hero.credit}</span>}
+              </figcaption>
+            )}
+          </figure>
+        )}
+
+        {/*
+          The disclosure a reader actually sees.
+
+          A chip up in the masthead is easy to scroll past, and the
+          guidance on paid placement is that it should sit with the
+          content it applies to rather than beside the title.
+        */}
+        {story.sponsored && (
+          <p className="mb-6 text-[13px] text-[#7a4a00] bg-cta-tint border border-[#f3ddbb] rounded-lg px-4 py-2.5">
+            <b>Paid placement.</b> This business paid to be featured. We
+            still wrote it, and we would not run it if it were not true.
+          </p>
         )}
 
         <div
           className={PROSE_CLASS}
           dangerouslySetInnerHTML={{ __html: story.bodyHtml }}
         />
+
+        {/* Where a local piece actually travels. */}
+        <div className="mt-10 flex items-center gap-3 flex-wrap border-t border-line pt-5">
+          <span className="text-[12px] uppercase tracking-widest font-semibold text-muted">
+            Share this
+          </span>
+          <a
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonical)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[13px] font-semibold px-3.5 py-2 rounded-[9px] border border-line-strong hover:border-navy-950"
+          >
+            Facebook
+          </a>
+          <a
+            href={`mailto:?subject=${encodeURIComponent(story.title)}&body=${encodeURIComponent(canonical)}`}
+            className="text-[13px] font-semibold px-3.5 py-2 rounded-[9px] border border-line-strong hover:border-navy-950"
+          >
+            Email
+          </a>
+        </div>
 
         {subject?.slug && (
           <div className="mt-10 border border-line rounded-(--radius-card) bg-surface p-5">

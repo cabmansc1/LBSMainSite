@@ -222,57 +222,18 @@ export default async function EventPage({
         </div>
       </header>
 
+      {/*
+        The facts panel comes first in the markup on purpose.
+
+        Most of the traffic to an event page is a phone, and stacked in
+        source order the reader had to scroll past the whole article to
+        find out when it was or to reach the ticket link. On a wide
+        screen `order` puts the article back on the left, but on a
+        phone — and for anybody reading this aloud — when, where and how
+        much arrive before the prose about it.
+      */}
       <div className="mx-auto max-w-[1080px] px-6 py-10 grid lg:grid-cols-[1fr_320px] gap-10 items-start">
-        <article className="min-w-0">
-          {e.heroMediaId && (
-            <Image
-              src={`/api/media/${e.heroMediaId}`}
-              alt=""
-              width={1400}
-              height={788}
-              loading="eager"
-              className="w-full h-auto rounded-(--radius-card) border border-line mb-8"
-            />
-          )}
-
-          {e.bodyHtml ? (
-            <div
-              className={PROSE_CLASS}
-              dangerouslySetInnerHTML={{ __html: e.bodyHtml }}
-            />
-          ) : (
-            !e.heroMediaId && (
-              <p className="text-[15px] text-muted leading-relaxed max-w-[62ch]">
-                {e.summary ||
-                  `${categoryLabel(e.category)} in ${
-                    placeName(e.placeSlug) || "the Lowcountry"
-                  }.`}{" "}
-                {e.url
-                  ? "There is more detail on the organizer's own page."
-                  : ""}
-              </p>
-            )
-          )}
-
-          {e.businessSlug && (
-            <div className="mt-10 border border-line rounded-(--radius-card) bg-surface p-5">
-              <p className={rowLabel}>Hosted by</p>
-              <p className="mt-1.5 text-[17px] font-semibold">
-                {e.businessName}
-              </p>
-              <Link
-                href={`/business/${e.businessSlug}`}
-                className="mt-2 inline-block text-[14px] font-semibold text-brand-deep"
-              >
-                See their listing &rarr;
-              </Link>
-            </div>
-          )}
-        </article>
-
-        {/* Everything needed to actually go, in one block that stays put
-            while the page is read. */}
-        <aside className="lg:sticky lg:top-6 border border-line rounded-(--radius-card) bg-white overflow-hidden">
+        <aside className="lg:order-2 lg:sticky lg:top-6 border border-line rounded-(--radius-card) bg-white overflow-hidden">
           <dl className="grid gap-0">
             <div className="px-5 py-4 border-b border-line">
               <dt className={rowLabel}>When</dt>
@@ -372,6 +333,56 @@ export default async function EventPage({
             </a>
           </div>
         </aside>
+
+        <article className="min-w-0 lg:order-1">
+          {e.heroMediaId && (
+            <Image
+              src={`/api/media/${e.heroMediaId}`}
+              alt=""
+              width={1400}
+              height={788}
+              loading="eager"
+              className="w-full h-auto rounded-(--radius-card) border border-line mb-8"
+            />
+          )}
+
+          {e.bodyHtml ? (
+            <div
+              className={PROSE_CLASS}
+              dangerouslySetInnerHTML={{ __html: e.bodyHtml }}
+            />
+          ) : (
+            !e.heroMediaId && (
+              <p className="text-[15px] text-muted leading-relaxed max-w-[62ch]">
+                {e.summary ||
+                  `${categoryLabel(e.category)} in ${
+                    placeName(e.placeSlug) || "the Lowcountry"
+                  }.`}{" "}
+                {e.url
+                  ? "There is more detail on the organizer's own page."
+                  : ""}
+              </p>
+            )
+          )}
+
+          {e.businessSlug && (
+            <div className="mt-10 border border-line rounded-(--radius-card) bg-surface p-5">
+              <p className={rowLabel}>Hosted by</p>
+              <p className="mt-1.5 text-[17px] font-semibold">
+                {e.businessName}
+              </p>
+              <Link
+                href={`/business/${e.businessSlug}`}
+                className="mt-2 inline-block text-[14px] font-semibold text-brand-deep"
+              >
+                See their listing &rarr;
+              </Link>
+            </div>
+          )}
+        </article>
+
+        {/* Everything needed to actually go, in one block that stays put
+            while the page is read. */}
       </div>
 
       {related.length > 0 && (
