@@ -88,7 +88,7 @@ export async function sendEmail(opts: {
    * A lead notification is the case that needs it: the PHP set Reply-To
    * to the lead's own address, so hitting reply in the inbox answers the
    * customer rather than writing back to ourselves. Losing that would
-   * turn every enquiry into a copy and paste.
+   * turn every inquiry into a copy and paste.
    */
   replyTo?: string;
 }): Promise<SendResult> {

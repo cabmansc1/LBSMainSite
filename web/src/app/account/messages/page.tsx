@@ -30,7 +30,7 @@ export default async function AccountMessagesPage() {
       {inquiries.length === 0 ? (
         <Card className="p-6 grid gap-2">
           <p className="text-sm text-body">
-            No messages yet. Enquiries sent from your listing page land here and
+            No messages yet. Inquiries sent from your listing page land here and
             in your email.
           </p>
           {listings[0] && (
@@ -71,7 +71,7 @@ export default async function AccountMessagesPage() {
               </p>
               <span className="flex items-center justify-between gap-3 flex-wrap">
                 <a
-                  href={`mailto:${q.email}?subject=Re: your enquiry`}
+                  href={`mailto:${q.email}?subject=Re: your inquiry`}
                   className="text-[13px] font-semibold text-brand-deep hover:underline"
                 >
                   Reply by email

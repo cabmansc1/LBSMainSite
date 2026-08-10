@@ -2,6 +2,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { cleanStoryHtml } from "@/lib/stories";
 import {
+  SITE_TZ,
   slugifyEvent,
   type EventCategory,
   type EventSource,
@@ -183,8 +184,9 @@ const toEvent = (r: Row): LocalEvent => {
   const allDay = Number(r.all_day) === 1;
   // Compared by calendar day rather than by elapsed hours, so a thing
   // running 8pm to 1am is one night out and not a two-day event.
-  const multiDay =
-    !!start && !!end && start.toDateString() !== end.toDateString();
+  const onDay = (d: Date) =>
+    d.toLocaleDateString("en-CA", { timeZone: SITE_TZ });
+  const multiDay = !!start && !!end && onDay(start) !== onDay(end);
   return {
     id: Number(r.id),
     slug: String(r.slug),
@@ -221,9 +223,17 @@ const toEvent = (r: Row): LocalEvent => {
       weekday: "long",
       month: "long",
       day: "numeric",
+      timeZone: SITE_TZ,
     }),
-    monthLabel: start?.toLocaleDateString("en-US", { month: "short" }),
-    dayOfMonth: start ? String(start.getDate()) : undefined,
+    monthLabel: start?.toLocaleDateString("en-US", {
+      month: "short",
+      timeZone: SITE_TZ,
+    }),
+    // Not getDate(): that reads the server's day, which after 8pm here
+    // is already tomorrow.
+    dayOfMonth: start
+      ? start.toLocaleDateString("en-US", { day: "numeric", timeZone: SITE_TZ })
+      : undefined,
     // An all-day thing has no useful clock time, and printing 12:00 AM
     // beside it reads as a mistake rather than as "all day".
     timeLabel: allDay
@@ -231,18 +241,21 @@ const toEvent = (r: Row): LocalEvent => {
       : start?.toLocaleTimeString("en-US", {
           hour: "numeric",
           minute: "2-digit",
+          timeZone: SITE_TZ,
         }),
     multiDay,
     endDayLabel: end?.toLocaleDateString("en-US", {
       weekday: "long",
       month: "long",
       day: "numeric",
+      timeZone: SITE_TZ,
     }),
     endTimeLabel: allDay
       ? undefined
       : end?.toLocaleTimeString("en-US", {
           hour: "numeric",
           minute: "2-digit",
+          timeZone: SITE_TZ,
         }),
   };
 };

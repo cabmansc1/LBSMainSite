@@ -248,7 +248,7 @@ export default async function EventPage({
                     placeName(e.placeSlug) || "the Lowcountry"
                   }.`}{" "}
                 {e.url
-                  ? "There is more detail on the organiser's own page."
+                  ? "There is more detail on the organizer's own page."
                   : ""}
               </p>
             )
@@ -357,7 +357,7 @@ export default async function EventPage({
                 rel="noopener noreferrer nofollow"
                 className="text-[13.5px] font-semibold text-center px-4 py-2.5 rounded-[10px] border border-line-strong"
               >
-                Organiser&rsquo;s page
+                Organizer&rsquo;s page
               </a>
             )}
             <a

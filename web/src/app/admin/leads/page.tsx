@@ -19,7 +19,7 @@ export default async function AdminLeadsPage() {
       <div className="mb-5">
         <h1 className="text-[21px] font-bold tracking-[-0.02em]">Leads</h1>
         <p className="text-sm text-muted mt-1">
-          Advertising enquiries from the quiz and lead forms. {leads.length} on
+          Advertising inquiries from the quiz and lead forms. {leads.length} on
           file. Every one was also sent to GoHighLevel when it came in, so
           deleting here does not lose the contact.
         </p>

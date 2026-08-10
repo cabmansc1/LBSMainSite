@@ -58,7 +58,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Hero headline",
     kind: "text",
     fallback: "Your business in *5,000 mailboxes.* Your competitors in none.",
-    hint: "Wrap one phrase in *asterisks* to colour it.",
+    hint: "Wrap one phrase in *asterisks* to color it.",
   },
   {
     page: "home",
@@ -218,7 +218,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     label: "Hero headline",
     kind: "text",
     fallback: "The mailbox is still the best billboard in town.",
-    hint: "Wrap one phrase in *asterisks* to colour it.",
+    hint: "Wrap one phrase in *asterisks* to color it.",
   },
   {
     page: "advertise",
