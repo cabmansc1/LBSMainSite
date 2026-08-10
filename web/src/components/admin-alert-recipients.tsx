@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CATEGORY_KINDS, type ActivityKind } from "@/lib/admin-activity";
+import type { ActivityKind } from "@/lib/admin-activity";
 import type { AlertChannel, AlertRecipient } from "@/lib/alert-routing";
 
 /**
@@ -30,9 +30,11 @@ const blank = (): AlertRecipient => ({
   name: "",
   email: "",
   phone: "",
-  // A new person is being shown every kind there is, so saving them
-  // records exactly that and an untick reads as a decision.
-  seenKinds: CATEGORY_KINDS,
+  // Left empty here on purpose. The server stamps the real list of
+  // kinds on save — it is the only side that knows them, and importing
+  // the list would pull "server-only" across into this component and
+  // fail the build.
+  seenKinds: [],
   active: true,
   prefs: { email: [], sms: [], push: [] },
 });
