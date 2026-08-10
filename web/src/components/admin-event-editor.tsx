@@ -152,6 +152,63 @@ export function AdminEventEditor({
     }
   }
 
+
+  /*
+   * The review buttons, defined once and shown twice.
+   *
+   * Everything needed to judge a submission — the title, the date, the
+   * venue, the summary — sits at the top of this screen, and the
+   * buttons were only at the bottom, so every decision cost a scroll
+   * past a form nobody was going to touch. The same buttons appear in
+   * both places rather than a second set with its own behaviour.
+   */
+  const reviewActions = (
+    <>
+      <button
+        type="button"
+        disabled={busy !== ""}
+        onClick={() =>
+          send({ action: "save", status: "published" }, "publish", "list")
+        }
+        className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-cta text-white disabled:opacity-50"
+      >
+        {busy === "publish" ? "Publishing" : "Publish"}
+      </button>
+
+      {/* Only worth showing while there is somewhere to go. */}
+      {nextPendingId !== null && (
+        <button
+          type="button"
+          disabled={busy !== ""}
+          onClick={() =>
+            send({ action: "save", status: "published" }, "publishNext", "next")
+          }
+          title={nextPendingTitle ? `Next: ${nextPendingTitle}` : undefined}
+          className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
+        >
+          {busy === "publishNext" ? "Publishing" : "Publish & next"}
+        </button>
+      )}
+
+      {/* Leaving it for later, which is a real answer when the date is
+          unclear or somebody needs asking first. */}
+      {nextPendingId !== null && (
+        <button
+          type="button"
+          disabled={busy !== ""}
+          onClick={skip}
+          className={`text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border disabled:opacity-50 ${
+            confirmSkip
+              ? "border-danger text-danger"
+              : "border-line-strong bg-white"
+          }`}
+        >
+          {confirmSkip ? "Skip and lose your changes?" : "Next, decide later"}
+        </button>
+      )}
+    </>
+  );
+
   return (
     <div className="grid gap-5">
       <MediaPicker
@@ -176,6 +233,20 @@ export function AdminEventEditor({
           Sent in by {event.submittedEmail || "somebody"} through the public
           form. Read it, tidy it up, then publish.
         </p>
+      )}
+
+      {/*
+        The same decisions, up here where the reading happens.
+
+        The form below is mostly for the rare event that needs fixing;
+        judging a submission takes the title, the date and the venue,
+        all of which are above the fold. Having to scroll past the form
+        to reach Publish made the common case pay for the uncommon one.
+      */}
+      {event && form.status !== "published" && (
+        <div className="flex items-center gap-2.5 flex-wrap border border-line rounded-(--radius-card) bg-surface px-4 py-3">
+          {reviewActions}
+        </div>
       )}
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
@@ -474,56 +545,7 @@ export function AdminEventEditor({
           {busy === "save" ? "Saving" : "Save"}
         </button>
 
-        {event && form.status !== "published" && (
-          <>
-            <button
-              type="button"
-              disabled={busy !== ""}
-              onClick={() =>
-                send({ action: "save", status: "published" }, "publish", "list")
-              }
-              className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-cta text-white disabled:opacity-50"
-            >
-              {busy === "publish" ? "Publishing" : "Publish"}
-            </button>
-
-            {/* Leaving it for later, which is a real answer when the
-                date is unclear or somebody needs asking first. */}
-            {nextPendingId !== null && (
-              <button
-                type="button"
-                disabled={busy !== ""}
-                onClick={skip}
-                className={`text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border disabled:opacity-50 ${
-                  confirmSkip
-                    ? "border-danger text-danger"
-                    : "border-line-strong bg-white"
-                }`}
-              >
-                {confirmSkip ? "Skip and lose your changes?" : "Next, decide later"}
-              </button>
-            )}
-
-            {/* Only worth showing while there is somewhere to go. */}
-            {nextPendingId !== null && (
-              <button
-                type="button"
-                disabled={busy !== ""}
-                onClick={() =>
-                  send(
-                    { action: "save", status: "published" },
-                    "publishNext",
-                    "next",
-                  )
-                }
-                title={nextPendingTitle ? `Next: ${nextPendingTitle}` : undefined}
-                className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
-              >
-                {busy === "publishNext" ? "Publishing" : "Publish & next"}
-              </button>
-            )}
-          </>
-        )}
+        {event && form.status !== "published" && reviewActions}
 
         {event && event.status === "published" && (
           <a
