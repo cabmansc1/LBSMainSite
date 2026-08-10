@@ -41,7 +41,38 @@ export type AlertRecipient = {
   active: boolean;
   /** Kinds this person wants, per channel. */
   prefs: Record<AlertChannel, ActivityKind[]>;
+  /**
+   * The kinds that existed the last time this row was saved.
+   *
+   * Without it, adding a new kind silently routes it to nobody: a row
+   * cannot list a kind that did not exist when somebody ticked their
+   * boxes, so it filters out of every recipient and the alert reaches
+   * no one. Recording what was on offer is what separates "they said
+   * no" from "they were never asked".
+   */
+  seenKinds: ActivityKind[];
 };
+
+/**
+ * What was on offer before this was recorded.
+ *
+ * Rows saved before the column existed were offered exactly these, so
+ * treating them as seen keeps a real opt-out an opt-out. The two kinds
+ * missing from it — the advertiser update and event submissions — are
+ * the ones added afterwards, and are exactly the ones that were going
+ * nowhere.
+ */
+const BASELINE_SEEN: ActivityKind[] = [
+  "artwork",
+  "order",
+  "refund",
+  "inquiry",
+  "signup",
+  "listing_edit",
+  "waitlist",
+  "proof",
+  "payment_gap",
+];
 
 const emptyPrefs = (): Record<AlertChannel, ActivityKind[]> => ({
   email: [],
@@ -62,10 +93,33 @@ async function ensureTable() {
       phone VARCHAR(32) NOT NULL DEFAULT '',
       active TINYINT NOT NULL DEFAULT 1,
       prefs TEXT NOT NULL,
+      seen_kinds TEXT NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+  // Added after the table shipped. Tolerated for the usual reason: the
+  // only way it fails is that it is already there, and the alert path
+  // must not break over a column it already has.
+  try {
+    await db.execute(
+      sql`ALTER TABLE lbs_alert_recipients ADD COLUMN seen_kinds TEXT NULL`,
+    );
+  } catch {
+    /* already there */
+  }
   ready = true;
+}
+
+/** A stored list of kinds, with anything no longer real dropped. */
+function parseKinds(raw: unknown, fallback: ActivityKind[]): ActivityKind[] {
+  try {
+    const parsed = JSON.parse(String(raw ?? ""));
+    if (!Array.isArray(parsed)) return fallback;
+    const known = new Set<string>(CATEGORY_KINDS);
+    return parsed.map(String).filter((k) => known.has(k)) as ActivityKind[];
+  } catch {
+    return fallback;
+  }
 }
 
 /** Anything stored that is no longer a real kind is dropped on read. */
@@ -94,7 +148,7 @@ export async function getRecipients(): Promise<AlertRecipient[]> {
     await ensureTable();
     const { db } = await import("@/lib/db");
     const rows = (await db.execute(
-      sql`SELECT id, name, email, phone, active, prefs
+      sql`SELECT id, name, email, phone, active, prefs, seen_kinds
           FROM lbs_alert_recipients ORDER BY id`,
     )) as unknown as [Record<string, unknown>[]];
     return (rows[0] ?? []).map((r) => ({
@@ -104,6 +158,7 @@ export async function getRecipients(): Promise<AlertRecipient[]> {
       phone: String(r.phone ?? ""),
       active: Number(r.active ?? 0) === 1,
       prefs: parsePrefs(r.prefs),
+      seenKinds: parseKinds(r.seen_kinds, BASELINE_SEEN),
     }));
   } catch (e) {
     console.error("[alert-routing] read failed:", e);
@@ -140,19 +195,23 @@ export async function saveRecipient(input: {
     await ensureTable();
     const { db } = await import("@/lib/db");
     const prefs = JSON.stringify(input.prefs);
+    // Everything the screen could have shown them, so an untick is
+    // recorded as a decision and a kind invented next month is not.
+    const seen = JSON.stringify(CATEGORY_KINDS);
     if (input.id) {
       await db.execute(
         sql`UPDATE lbs_alert_recipients
             SET name = ${input.name.trim().slice(0, 120)}, email = ${email},
                 phone = ${phone}, active = ${input.active ? 1 : 0},
-                prefs = ${prefs}
+                prefs = ${prefs}, seen_kinds = ${seen}
             WHERE id = ${input.id}`,
       );
     } else {
       await db.execute(
-        sql`INSERT INTO lbs_alert_recipients (name, email, phone, active, prefs)
+        sql`INSERT INTO lbs_alert_recipients
+              (name, email, phone, active, prefs, seen_kinds)
             VALUES (${input.name.trim().slice(0, 120)}, ${email}, ${phone},
-                    ${input.active ? 1 : 0}, ${prefs})`,
+                    ${input.active ? 1 : 0}, ${prefs}, ${seen})`,
       );
     }
     return { ok: true };
@@ -190,7 +249,33 @@ export async function routeFor(
     (r) => r.active && (channel === "sms" ? r.phone : r.email),
   );
   if (usable.length === 0) return null;
-  return usable.filter((r) => r.prefs[channel].includes(kind));
+
+  const wants = usable.filter(
+    (r) =>
+      r.prefs[channel].includes(kind) ||
+      // Never offered this kind, so they have not turned it down. New
+      // kinds reach the people already listening until somebody opens
+      // the screen and decides otherwise.
+      !r.seenKinds.includes(kind),
+  );
+
+  /*
+   * Nobody at all is treated as nothing to say, not as silence.
+   *
+   * This is the file's own rule applied one level down. It used to hold
+   * only for an empty table, so a configured table that happened to
+   * cover none of a particular kind routed that kind into a hole — which
+   * is how event submissions reached no one from the day they shipped.
+   * A stray copy of an alert costs a deleted email; a missed one costs
+   * somebody's event.
+   */
+  if (wants.length === 0) {
+    console.warn(
+      `[alert-routing] nobody is set up for ${kind} on ${channel}; using the default`,
+    );
+    return null;
+  }
+  return wants;
 }
 
 /** Addresses for an alert email, or null to fall back to LEAD_ALERT_EMAIL. */

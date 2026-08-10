@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ActivityKind } from "@/lib/admin-activity";
+import { CATEGORY_KINDS, type ActivityKind } from "@/lib/admin-activity";
 import type { AlertChannel, AlertRecipient } from "@/lib/alert-routing";
 
 /**
@@ -30,6 +30,9 @@ const blank = (): AlertRecipient => ({
   name: "",
   email: "",
   phone: "",
+  // A new person is being shown every kind there is, so saving them
+  // records exactly that and an untick reads as a decision.
+  seenKinds: CATEGORY_KINDS,
   active: true,
   prefs: { email: [], sms: [], push: [] },
 });
