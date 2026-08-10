@@ -23,6 +23,44 @@ import { usePathname } from "next/navigation";
 
 const WIDGET_ID = "69d532d03d6e16133a207508";
 
+/**
+ * Where a sales chat belongs.
+ *
+ * It used to run everywhere except a suppression list, which made sense
+ * when every page was about postcards. It is now also a directory, a
+ * calendar and a place people read stories, and a "talk to us about
+ * advertising" bubble following somebody around an article about a
+ * bakery is an interruption rather than an offer.
+ *
+ * An allow list rather than a deny list, so a page added next month
+ * gets no widget until somebody decides it should have one. That is the
+ * safer direction for the same reason the suppression list was: the
+ * cost of a missing widget is a conversation that happens by phone
+ * instead, and the cost of an unwanted one is a compliance problem.
+ */
+function sellsPostcards(pathname: string): boolean {
+  if (pathname === "/") return true;
+  const exact = [
+    "/advertise",
+    "/pricing",
+    "/compare",
+    "/coverage-map",
+    "/mailing-calendar",
+    "/neighborhood-cards",
+    "/roi-calculator",
+    "/find-your-ad",
+    "/gallery",
+    "/coming-soon-service-areas",
+  ];
+  if (exact.includes(pathname)) return true;
+  return (
+    pathname.startsWith("/postcards/") ||
+    pathname.startsWith("/neighborhood-card/") ||
+    pathname.startsWith("/cards/") ||
+    pathname.startsWith("/gallery/")
+  );
+}
+
 /** Routes with a phone input, found by grepping src for tel inputs. */
 function collectsPhoneNumber(pathname: string): boolean {
   // contact-form.tsx
@@ -61,7 +99,10 @@ chat-widget,
 export function ChatWidget() {
   const pathname = usePathname();
 
-  if (suppressed(pathname)) {
+  // Suppression still wins. The 10DLC rule is not a preference, so a
+  // postcard page that collects a phone number gets no widget however
+  // commercial it is — /postcards/x/checkout is both.
+  if (suppressed(pathname) || !sellsPostcards(pathname)) {
     return <style dangerouslySetInnerHTML={{ __html: HIDE_WIDGET_CSS }} />;
   }
 

@@ -660,3 +660,32 @@ export async function movePlace(
     return { ok: false, error: "That did not save." };
   }
 }
+
+/**
+ * A place and everything under it.
+ *
+ * A market page has to answer "what is happening around here", and a
+ * story filed against West Ashley is happening around Charleston. The
+ * caller gets a flat list of slugs to hand to a query rather than
+ * having to know the shape of the tree, and the place itself is always
+ * first so a zone page still works through the same call.
+ *
+ * Depth is bounded rather than trusted. The tree is three deep by
+ * design, but a row edited into its own ancestor would otherwise spin
+ * here for ever.
+ */
+export async function placeAndDescendants(slug: string): Promise<string[]> {
+  const all = await listActivePlaces().catch(() => []);
+  const out = new Set<string>([slug]);
+  for (let depth = 0; depth < 4; depth += 1) {
+    let grew = false;
+    for (const p of all) {
+      if (p.parentSlug && out.has(p.parentSlug) && !out.has(p.slug)) {
+        out.add(p.slug);
+        grew = true;
+      }
+    }
+    if (!grew) break;
+  }
+  return [...out];
+}

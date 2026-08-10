@@ -269,6 +269,8 @@ const SELECT = sql`SELECT e.*, b.business_name, b.slug AS business_slug
 export type EventQuery = {
   category?: EventCategory;
   placeSlug?: string;
+  /** Several at once, so a market page covers everything under it. */
+  placeSlugs?: string[];
   businessId?: number;
   limit?: number;
   offset?: number;
@@ -293,7 +295,19 @@ export async function publishedEvents(q: EventQuery = {}): Promise<LocalEvent[]>
       where.push(sql`COALESCE(e.ends_at, e.starts_at) >= NOW()`);
     }
     if (q.category) where.push(sql`e.category = ${q.category}`);
-    if (q.placeSlug) where.push(sql`e.place_slug = ${q.placeSlug}`);
+    const wantPlaces = q.placeSlugs?.length
+      ? q.placeSlugs
+      : q.placeSlug
+        ? [q.placeSlug]
+        : [];
+    if (wantPlaces.length) {
+      where.push(
+        sql`e.place_slug IN (${sql.join(
+          wantPlaces.map((p) => sql`${p}`),
+          sql`, `,
+        )})`,
+      );
+    }
     if (q.businessId) where.push(sql`e.business_id = ${q.businessId}`);
     const rows = (await db.execute(
       sql`${SELECT} WHERE ${sql.join(where, sql` AND `)}
@@ -315,7 +329,19 @@ export async function countPublishedEvents(q: EventQuery = {}): Promise<number> 
       where.push(sql`COALESCE(ends_at, starts_at) >= NOW()`);
     }
     if (q.category) where.push(sql`category = ${q.category}`);
-    if (q.placeSlug) where.push(sql`place_slug = ${q.placeSlug}`);
+    const wantPlaces = q.placeSlugs?.length
+      ? q.placeSlugs
+      : q.placeSlug
+        ? [q.placeSlug]
+        : [];
+    if (wantPlaces.length) {
+      where.push(
+        sql`place_slug IN (${sql.join(
+          wantPlaces.map((p) => sql`${p}`),
+          sql`, `,
+        )})`,
+      );
+    }
     const rows = (await db.execute(
       sql`SELECT COUNT(*) AS n FROM lbs_events WHERE ${sql.join(where, sql` AND `)}`,
     )) as unknown as [{ n: number | string }[]];

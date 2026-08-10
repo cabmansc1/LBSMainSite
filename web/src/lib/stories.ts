@@ -311,6 +311,14 @@ export async function getPublishedStory(
 export type StoryQuery = {
   kind?: StoryKind;
   placeSlug?: string;
+  /**
+   * Several places at once, for a market page.
+   *
+   * A story tagged West Ashley belongs on the Charleston page, so the
+   * caller passes the market and everything under it rather than this
+   * having to know the shape of the place tree.
+   */
+  placeSlugs?: string[];
   businessId?: number;
   limit?: number;
   offset?: number;
@@ -323,9 +331,18 @@ export async function publishedStories(q: StoryQuery = {}): Promise<Story[]> {
     const { db } = await import("@/lib/db");
     const where = [LIVE];
     if (q.kind) where.push(sql`kind = ${q.kind}`);
-    if (q.placeSlug) {
+    const places = q.placeSlugs?.length
+      ? q.placeSlugs
+      : q.placeSlug
+        ? [q.placeSlug]
+        : [];
+    if (places.length) {
       where.push(
-        sql`id IN (SELECT story_id FROM lbs_story_places WHERE place_slug = ${q.placeSlug})`,
+        sql`id IN (SELECT story_id FROM lbs_story_places
+                    WHERE place_slug IN (${sql.join(
+                      places.map((p) => sql`${p}`),
+                      sql`, `,
+                    )}))`,
       );
     }
     if (q.businessId) {
@@ -350,9 +367,18 @@ export async function countPublishedStories(q: StoryQuery = {}): Promise<number>
     const { db } = await import("@/lib/db");
     const where = [LIVE];
     if (q.kind) where.push(sql`kind = ${q.kind}`);
-    if (q.placeSlug) {
+    const places = q.placeSlugs?.length
+      ? q.placeSlugs
+      : q.placeSlug
+        ? [q.placeSlug]
+        : [];
+    if (places.length) {
       where.push(
-        sql`id IN (SELECT story_id FROM lbs_story_places WHERE place_slug = ${q.placeSlug})`,
+        sql`id IN (SELECT story_id FROM lbs_story_places
+                    WHERE place_slug IN (${sql.join(
+                      places.map((p) => sql`${p}`),
+                      sql`, `,
+                    )}))`,
       );
     }
     if (q.businessId) {
