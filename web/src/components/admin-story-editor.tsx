@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RichEditor } from "@/components/rich-editor";
+import { MediaPicker } from "@/components/media-picker";
 import {
   STORY_KINDS,
   slugifyStory,
@@ -39,7 +40,6 @@ export function AdminStoryEditor({
   businesses: PickList;
 }) {
   const router = useRouter();
-  const heroRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     title: story?.title ?? "",
@@ -106,24 +106,7 @@ export function AdminStoryEditor({
     }
   }
 
-  async function uploadHero(file: File) {
-    setBusy("hero");
-    setError("");
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      const res = await fetch("/api/admin/media", { method: "POST", body });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? "That did not upload.");
-      setForm((f) => ({ ...f, heroMediaId: Number(j.id) }));
-      setNote("Picture added. Give it alt text under Pictures.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "That did not upload.");
-    } finally {
-      setBusy("");
-      if (heroRef.current) heroRef.current.value = "";
-    }
-  }
+  const [pickingHero, setPickingHero] = useState(false);
 
   const togglePlace = (slug: string) =>
     setPlaceSlugs((cur) =>
@@ -140,6 +123,13 @@ export function AdminStoryEditor({
 
   return (
     <div className="grid gap-5">
+      <MediaPicker
+        open={pickingHero}
+        onClose={() => setPickingHero(false)}
+        heading="Lead picture for this story"
+        onPick={({ id }) => setForm((f) => ({ ...f, heroMediaId: id }))}
+      />
+
       {error && (
         <p className="text-[13px] text-danger bg-[#fdeeee] border border-[#f5c9c9] rounded-lg px-4 py-2.5">
           {error}
@@ -219,17 +209,13 @@ export function AdminStoryEditor({
 
             <label className="grid gap-1.5">
               <span className={label}>Lead picture</span>
-              <input
-                ref={heroRef}
-                type="file"
-                accept="image/*"
-                aria-label="Lead picture"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadHero(f);
-                }}
-                className="text-[12.5px]"
-              />
+              <button
+                type="button"
+                onClick={() => setPickingHero(true)}
+                className="justify-self-start text-[13px] font-semibold px-3.5 py-2 rounded-[9px] border border-line-strong bg-white hover:border-navy-950"
+              >
+                {form.heroMediaId ? "Change picture" : "Choose a picture"}
+              </button>
               {form.heroMediaId && (
                 <span className="grid gap-1.5">
                   <span className="relative block w-full aspect-[16/9] bg-surface rounded-[8px] overflow-hidden border border-line">

@@ -30,6 +30,11 @@ const blank = (): AlertRecipient => ({
   name: "",
   email: "",
   phone: "",
+  // Left empty here on purpose. The server stamps the real list of
+  // kinds on save — it is the only side that knows them, and importing
+  // the list would pull "server-only" across into this component and
+  // fail the build.
+  seenKinds: [],
   active: true,
   prefs: { email: [], sms: [], push: [] },
 });

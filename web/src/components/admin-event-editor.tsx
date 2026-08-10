@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { RichEditor } from "@/components/rich-editor";
+import { MediaPicker } from "@/components/media-picker";
 import {
   EVENT_CATEGORIES,
   formatPrice,
@@ -17,24 +18,9 @@ type PickList = { value: string; label: string }[];
 /** Datetime-local wants "YYYY-MM-DDTHH:mm" and nothing else. */
 const forInput = (iso: string) => (iso ? iso.slice(0, 16) : "");
 
-/**
- * One event.
- *
- * A submitted one arrives here pending, with whoever sent it named at
- * the top, so approving is reading it and pressing Publish rather than
- * retyping it.
- */
-export function AdminEventEditor({
-  event,
-  places,
-  businesses,
-}: {
-  event: LocalEvent | null;
-  places: PickList;
-  businesses: PickList;
-}) {
-  const router = useRouter();
-  const [form, setForm] = useState({
+/** The form as it arrives, so a skip can tell whether anything changed. */
+function initialForm(event: LocalEvent | null) {
+  return {
     title: event?.title ?? "",
     summary: event?.summary ?? "",
     bodyHtml: event?.bodyHtml ?? "",
@@ -52,45 +38,70 @@ export function AdminEventEditor({
     priceText: event?.priceText ?? "",
     status: (event?.status ?? "pending") as EventStatus,
     featured: event?.featured ?? false,
-  });
+  };
+}
+
+/**
+ * One event.
+ *
+ * A submitted one arrives here pending, with whoever sent it named at
+ * the top, so approving is reading it and pressing Publish rather than
+ * retyping it.
+ */
+export function AdminEventEditor({
+  event,
+  places,
+  businesses,
+  nextPendingId = null,
+  nextPendingTitle = "",
+}: {
+  event: LocalEvent | null;
+  places: PickList;
+  businesses: PickList;
+  /** The next one waiting to be read, so reviewing is a run. */
+  nextPendingId?: number | null;
+  nextPendingTitle?: string;
+}) {
+  const router = useRouter();
+  const [form, setForm] = useState(() => initialForm(event));
   const [weeks, setWeeks] = useState(4);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const heroRef = useRef<HTMLInputElement>(null);
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   /**
-   * Uploading here rather than picking from the library.
+   * Whether anything has been touched.
    *
-   * A submitted event often arrives with its own poster attached, so
-   * the common job on this screen is looking at the one that came in
-   * and deciding whether to keep it, not going hunting for another.
+   * Skipping is meant to cost nothing, so it must not quietly throw
+   * away a corrected venue on the way past. Compared against the form
+   * as it arrived rather than tracked with a flag per field.
    */
-  async function uploadHero(file: File) {
-    setBusy("hero");
-    setError("");
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      const res = await fetch("/api/admin/media", { method: "POST", body });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? "That did not upload.");
-      setForm((f) => ({ ...f, heroMediaId: Number(j.id) }));
-      setNote("Picture added. Give it alt text under Pictures.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "That did not upload.");
-    } finally {
-      setBusy("");
-      if (heroRef.current) heroRef.current.value = "";
+  const dirty =
+    JSON.stringify(form) !== JSON.stringify(initialForm(event));
+
+  function skip() {
+    if (dirty && !confirmSkip) {
+      setConfirmSkip(true);
+      return;
     }
+    router.push(
+      nextPendingId ? `/admin/events/${nextPendingId}` : "/admin/events",
+    );
   }
+
+  const [pickingHero, setPickingHero] = useState(false);
 
   const field =
     "w-full text-[13.5px] px-3.5 py-2.5 border border-line-strong rounded-[10px] bg-white focus:outline-none focus:border-navy-950";
   const label = "text-[11px] uppercase tracking-wider text-muted font-semibold";
 
-  async function send(extra: Record<string, unknown>, tag: string) {
+  async function send(
+    extra: Record<string, unknown>,
+    tag: string,
+    then?: "list" | "next",
+  ) {
     setBusy(tag);
     setError("");
     setNote("");
@@ -118,6 +129,19 @@ export function AdminEventEditor({
         router.refresh();
         return;
       }
+      if (then === "list") {
+        router.push("/admin/events");
+        return;
+      }
+      if (then === "next") {
+        // Back to the list when the queue runs out, which is the honest
+        // end of a review run rather than a dead "next" that does
+        // nothing.
+        router.push(
+          nextPendingId ? `/admin/events/${nextPendingId}` : "/admin/events",
+        );
+        return;
+      }
       setNote("Saved.");
       if (!event && j.id) router.replace(`/admin/events/${j.id}`);
       else router.refresh();
@@ -130,6 +154,13 @@ export function AdminEventEditor({
 
   return (
     <div className="grid gap-5">
+      <MediaPicker
+        open={pickingHero}
+        onClose={() => setPickingHero(false)}
+        heading="Picture for this event"
+        onPick={({ id }) => setForm((f) => ({ ...f, heroMediaId: id }))}
+      />
+
       {error && (
         <p className="text-[13px] text-danger bg-[#fdeeee] border border-[#f5c9c9] rounded-lg px-4 py-2.5">
           {error}
@@ -321,18 +352,14 @@ export function AdminEventEditor({
 
             <label className="grid gap-1.5">
               <span className={label}>Picture</span>
-              <input
-                ref={heroRef}
-                type="file"
-                accept="image/*"
-                aria-label="Event picture"
+              <button
+                type="button"
+                onClick={() => setPickingHero(true)}
                 disabled={busy !== ""}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadHero(f);
-                }}
-                className="text-[12.5px]"
-              />
+                className="justify-self-start text-[13px] font-semibold px-3.5 py-2 rounded-[9px] border border-line-strong bg-white hover:border-navy-950 disabled:opacity-50"
+              >
+                {form.heroMediaId ? "Change picture" : "Choose a picture"}
+              </button>
               {form.heroMediaId && (
                 <span className="grid gap-1.5">
                   <span className="relative block w-full aspect-[16/9] bg-surface rounded-[8px] overflow-hidden border border-line">
@@ -448,14 +475,54 @@ export function AdminEventEditor({
         </button>
 
         {event && form.status !== "published" && (
-          <button
-            type="button"
-            disabled={busy !== ""}
-            onClick={() => send({ action: "save", status: "published" }, "publish")}
-            className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-cta text-white disabled:opacity-50"
-          >
-            {busy === "publish" ? "Publishing" : "Publish it"}
-          </button>
+          <>
+            <button
+              type="button"
+              disabled={busy !== ""}
+              onClick={() =>
+                send({ action: "save", status: "published" }, "publish", "list")
+              }
+              className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-cta text-white disabled:opacity-50"
+            >
+              {busy === "publish" ? "Publishing" : "Publish"}
+            </button>
+
+            {/* Leaving it for later, which is a real answer when the
+                date is unclear or somebody needs asking first. */}
+            {nextPendingId !== null && (
+              <button
+                type="button"
+                disabled={busy !== ""}
+                onClick={skip}
+                className={`text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border disabled:opacity-50 ${
+                  confirmSkip
+                    ? "border-danger text-danger"
+                    : "border-line-strong bg-white"
+                }`}
+              >
+                {confirmSkip ? "Skip and lose your changes?" : "Next, decide later"}
+              </button>
+            )}
+
+            {/* Only worth showing while there is somewhere to go. */}
+            {nextPendingId !== null && (
+              <button
+                type="button"
+                disabled={busy !== ""}
+                onClick={() =>
+                  send(
+                    { action: "save", status: "published" },
+                    "publishNext",
+                    "next",
+                  )
+                }
+                title={nextPendingTitle ? `Next: ${nextPendingTitle}` : undefined}
+                className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] bg-navy-950 text-white disabled:opacity-50"
+              >
+                {busy === "publishNext" ? "Publishing" : "Publish & next"}
+              </button>
+            )}
+          </>
         )}
 
         {event && event.status === "published" && (
