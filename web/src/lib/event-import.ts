@@ -354,11 +354,33 @@ export async function importSource(source: FeedSource): Promise<ImportReport> {
   let candidates: Candidate[] = [];
   try {
     const res = await fetch(source.url, {
-      headers: { "User-Agent": "LowcountryBusinessSpotlight/1.0 (+events)" },
+      headers: {
+        // Says who we are and what we want. Some feeds answer 403 to a
+        // request with no Accept at all, and identifying ourselves
+        // honestly is the only version of this worth doing — a site
+        // that does not want to be read by a server is entitled to say
+        // so, and dressing up as a browser to get past that is not a
+        // thing this will do.
+        "User-Agent":
+          "LowcountryBusinessSpotlight/1.0 (+https://www.lowcountrybusinessspotlight.com)",
+        Accept:
+          source.kind === "ical"
+            ? "text/calendar, text/plain;q=0.9, */*;q=0.5"
+            : "application/json, */*;q=0.5",
+      },
       cache: "no-store",
       signal: AbortSignal.timeout(25_000),
     });
-    if (!res.ok) throw new Error(`${res.status} from the feed`);
+    if (!res.ok) {
+      // 403 from these is almost always a firewall judging the server's
+      // address rather than anything about the request, and it reads as
+      // "broken importer" unless it says otherwise.
+      throw new Error(
+        res.status === 403 || res.status === 429
+          ? `refused (${res.status}). Their firewall is blocking our server, not the other way round — ask them to allow it, or add these by hand.`
+          : `${res.status} from the feed`,
+      );
+    }
     candidates =
       source.kind === "ical"
         ? parseIcal(await res.text())

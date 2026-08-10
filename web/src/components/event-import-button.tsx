@@ -10,6 +10,7 @@ type Report = {
   added: number;
   updated: number;
   skipped: number;
+  ignored: number;
   error?: string;
 };
 
@@ -29,22 +30,58 @@ export function EventImportButton({
   const [busy, setBusy] = useState(false);
   const [reports, setReports] = useState<Report[] | null>(null);
   const [error, setError] = useState("");
+  const [running, setRunning] = useState("");
 
+  /**
+   * One request per feed, not one request for all of them.
+   *
+   * Doing the lot in a single call meant a run of three fetches — one
+   * of which takes the better part of ten seconds — plus a few hundred
+   * sequential writes, all inside one HTTP request. Whatever sits in
+   * front of the app cut it off partway, and since the feeds ran in
+   * order the result was the first one landing and the rest silently
+   * not. Splitting it bounds each request to a single feed, and means
+   * a slow or broken source can no longer take the others with it.
+   *
+   * It also reports as it goes, which is the difference between
+   * watching something work and waiting to find out.
+   */
   async function run() {
     setBusy(true);
     setError("");
-    setReports(null);
-    try {
-      const res = await fetch("/api/admin/events/import", { method: "POST" });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? "That did not run.");
-      setReports(j.reports ?? []);
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "That did not run.");
-    } finally {
-      setBusy(false);
+    setReports([]);
+    for (const s of sources) {
+      setRunning(s.label);
+      try {
+        const res = await fetch("/api/admin/events/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sources: [s.key] }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(j.error ?? "That did not run.");
+        setReports((cur) => [...(cur ?? []), ...(j.reports ?? [])]);
+      } catch (e) {
+        // Reported in the list rather than thrown away, so a feed that
+        // fails is visible beside the ones that worked.
+        setReports((cur) => [
+          ...(cur ?? []),
+          {
+            source: s.key,
+            label: s.label,
+            found: 0,
+            added: 0,
+            updated: 0,
+            skipped: 0,
+            ignored: 0,
+            error: e instanceof Error ? e.message : "That did not run.",
+          },
+        ]);
+      }
     }
+    setRunning("");
+    setBusy(false);
+    router.refresh();
   }
 
   return (
@@ -76,6 +113,10 @@ export function EventImportButton({
         ))}
       </ul>
 
+      {running && (
+        <p className="mt-3 text-[12.5px] text-muted">Reading {running}…</p>
+      )}
+
       {error && (
         <p className="mt-3 text-[13px] text-danger bg-[#fdeeee] border border-[#f5c9c9] rounded-lg px-3.5 py-2">
           {error}
@@ -91,8 +132,9 @@ export function EventImportButton({
                 <span className="text-danger">{r.error}</span>
               ) : (
                 <span className="text-muted num">
-                  {r.found} upcoming · {r.added} new · {r.updated} refreshed ·{" "}
-                  {r.skipped} left alone
+                  {r.added} new · {r.updated} refreshed · {r.skipped} left alone
+                  {r.ignored > 0 && ` · ${r.ignored} council business ignored`}
+                  {r.found === 0 && r.ignored === 0 && " · nothing upcoming"}
                 </span>
               )}
             </p>
