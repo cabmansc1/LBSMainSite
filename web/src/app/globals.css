@@ -89,3 +89,70 @@ body {
 .ProseMirror:focus {
   outline: none;
 }
+
+/*
+  How a picture sits inside an article.
+
+  Size and placement are stored on the image as data attributes rather
+  than as inline styles, so the stored HTML stays readable, a class name
+  cannot be lost to a sanitiser, and the look can be changed later
+  without rewriting every article that used it.
+
+  Applied to the editor and the published page from one place, because
+  a picture that is half width while you are writing and full width once
+  it is live is the sort of thing that gets noticed by a reader first.
+*/
+.prose-lbs img[data-size="small"],
+.tiptap img[data-size="small"] {
+  width: 38%;
+}
+.prose-lbs img[data-size="medium"],
+.tiptap img[data-size="medium"] {
+  width: 62%;
+}
+.prose-lbs img[data-size="full"],
+.tiptap img[data-size="full"] {
+  width: 100%;
+}
+
+.prose-lbs img[data-align="center"],
+.tiptap img[data-align="center"] {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+.prose-lbs img[data-align="left"],
+.tiptap img[data-align="left"] {
+  float: left;
+  margin: 0.4rem 1.4rem 1rem 0;
+}
+.prose-lbs img[data-align="right"],
+.tiptap img[data-align="right"] {
+  float: right;
+  margin: 0.4rem 0 1rem 1.4rem;
+}
+
+/* A heading should never start halfway up a floated picture. */
+.prose-lbs h2,
+.prose-lbs h3,
+.tiptap h2,
+.tiptap h3 {
+  clear: both;
+}
+
+/*
+  A float in a phone-width column leaves a two-word measure beside it,
+  which is unreadable. Below the width where that starts to happen every
+  picture goes full width and stops floating, whatever it was set to.
+*/
+@media (max-width: 640px) {
+  .prose-lbs img[data-align],
+  .tiptap img[data-align],
+  .prose-lbs img[data-size],
+  .tiptap img[data-size] {
+    float: none;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}

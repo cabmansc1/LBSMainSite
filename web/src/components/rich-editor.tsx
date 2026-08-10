@@ -25,6 +25,19 @@ import { MediaPicker } from "@/components/media-picker";
  * Emits plain HTML, which is what the existing migrated posts are
  * already stored as, so nothing needs converting either way.
  */
+/** What a picture can be set to. Short on purpose. */
+const SIZES = [
+  { value: "small", label: "Small" },
+  { value: "medium", label: "Medium" },
+  { value: "full", label: "Full" },
+];
+
+const ALIGNS = [
+  { value: "left", label: "Left" },
+  { value: "center", label: "Centre" },
+  { value: "right", label: "Right" },
+];
+
 /**
  * One toolbar button.
  *
@@ -105,7 +118,33 @@ export function RichEditor({
         codeBlock: false,
         horizontalRule: false,
       }),
-      Image.configure({
+      /*
+       * Pictures carry how big they are and where they sit.
+       *
+       * Tiptap's Image node knows about src and alt and nothing else,
+       * so the two attributes are added here. Stored as data-size and
+       * data-align rather than as inline styles: the HTML stays
+       * readable, the sanitiser has no reason to touch it, and how a
+       * "medium" picture actually looks stays a decision the stylesheet
+       * makes rather than one baked into every article ever written.
+       */
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            size: {
+              default: "full",
+              parseHTML: (el) => el.getAttribute("data-size") ?? "full",
+              renderHTML: (attrs) => ({ "data-size": attrs.size }),
+            },
+            align: {
+              default: "center",
+              parseHTML: (el) => el.getAttribute("data-align") ?? "center",
+              renderHTML: (attrs) => ({ "data-align": attrs.align }),
+            },
+          };
+        },
+      }).configure({
         HTMLAttributes: { class: "rounded-(--radius-card) border border-line" },
       }),
       Placeholder.configure({ placeholder }),
@@ -137,6 +176,12 @@ export function RichEditor({
    */
   const [picking, setPicking] = useState(false);
 
+  // Read every render rather than tracked in state: the editor already
+  // re-renders on selection change, and a second copy of "what is
+  // selected" is a second thing that can be wrong.
+  const imageSelected = editor?.isActive("image") ?? false;
+  const imageAttrs = editor?.getAttributes("image") ?? {};
+
   const setLink = useCallback(() => {
     if (!editor) return;
     const current = editor.getAttributes("link").href as string | undefined;
@@ -162,7 +207,53 @@ export function RichEditor({
 
   return (
     <div className="grid gap-0">
-      <div className="flex flex-wrap items-center gap-1.5 border border-line-strong border-b-0 rounded-t-[10px] bg-surface px-3 py-2">
+      {/*
+        Size and placement, shown only with a picture selected.
+
+        A second row rather than more buttons on the first: they apply
+        to one kind of thing, they are meaningless the rest of the time,
+        and a toolbar that grows for every case is how a short one stops
+        being short. Click the picture and the row appears.
+      */}
+      {imageSelected && (
+        <div className="flex flex-wrap items-center gap-1.5 border border-line-strong border-b-0 rounded-t-[10px] bg-brand-tint px-3 py-2">
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-brand-deep mr-1">
+            Picture
+          </span>
+          {SIZES.map((o) => (
+            <Btn
+              key={o.value}
+              disabled={disabled}
+              wide
+              label={o.label}
+              on={imageAttrs.size === o.value}
+              onClick={() =>
+                editor.chain().focus().updateAttributes("image", { size: o.value }).run()
+              }
+            />
+          ))}
+          <span className="w-px h-5 bg-line mx-0.5" />
+          {ALIGNS.map((o) => (
+            <Btn
+              key={o.value}
+              disabled={disabled}
+              wide
+              label={o.label}
+              on={imageAttrs.align === o.value}
+              onClick={() =>
+                editor.chain().focus().updateAttributes("image", { align: o.value }).run()
+              }
+            />
+          ))}
+          <span className="ml-auto text-[11.5px] text-muted">
+            Full width on a phone whatever you pick.
+          </span>
+        </div>
+      )}
+
+      <div className={`flex flex-wrap items-center gap-1.5 border border-line-strong border-b-0 bg-surface px-3 py-2 ${
+        imageSelected ? "" : "rounded-t-[10px]"
+      }`}>
         <Btn
           disabled={disabled}
           label="H2"
