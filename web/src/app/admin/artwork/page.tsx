@@ -5,6 +5,7 @@ import { getUpcomingCardRoster } from "@/lib/mission-control";
 import { getLatestProofs } from "@/lib/proofs";
 import { AdminProofRow, type ProofTarget } from "@/components/admin-proofs";
 import { AdminArtworkDelete } from "@/components/admin-artwork-delete";
+import { SITE_TZ } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ const when = (iso: string | null) => {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone: SITE_TZ,
       });
 };
 

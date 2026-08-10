@@ -10,6 +10,7 @@ import {
   type AdWithStats,
   type AdsenseConfig,
 } from "@/lib/ads-types";
+import { SITE_TZ } from "@/lib/time";
 
 /**
  * Advertising on directory listing pages.
@@ -80,7 +81,7 @@ async function ensureTables() {
 
 /** Today where the advertiser is, so a campaign ends when they expect. */
 const today = () =>
-  new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  new Date().toLocaleDateString("en-CA", { timeZone: SITE_TZ });
 
 const csv = (v: string): string[] =>
   String(v ?? "")

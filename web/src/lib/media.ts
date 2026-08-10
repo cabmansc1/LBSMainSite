@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
+import { SITE_TZ } from "@/lib/time";
 
 /**
  * One picture library, for everything written from here on.
@@ -83,6 +84,7 @@ const fmtDate = (d: unknown) => {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone: SITE_TZ,
       });
 };
 

@@ -12,6 +12,7 @@ import {
 import { isBookable } from "@/lib/mailings";
 import { ZONES } from "@/lib/zones";
 import { pageCopy } from "@/lib/blocks";
+import { SITE_TZ } from "@/lib/time";
 import {
   buildAudience,
   optOutsReadable,
@@ -166,6 +167,7 @@ const fmtDate = (d: unknown) => {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone: SITE_TZ,
       });
 };
 

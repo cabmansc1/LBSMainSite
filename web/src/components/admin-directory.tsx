@@ -5,6 +5,7 @@ import { DescriptionEditor } from "@/components/description-editor";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { AdminBusiness } from "@/lib/admin-data";
+import { SITE_TZ } from "@/lib/time";
 
 const PLANS = ["basic", "featured", "elite"];
 
@@ -1402,6 +1403,7 @@ export function AdminDirectory({
                   <td className="px-4 py-3.5 border-b border-line text-muted whitespace-nowrap num">
                     {b.createdAt
                       ? new Date(b.createdAt).toLocaleDateString("en-US", {
+                          timeZone: SITE_TZ,
                           month: "short",
                           day: "numeric",
                           year: "numeric",

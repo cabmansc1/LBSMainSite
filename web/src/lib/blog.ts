@@ -1,5 +1,6 @@
 import "server-only";
 import { resolveBlogImageUrl } from "@/lib/blog-images";
+import { SITE_TZ } from "@/lib/time";
 
 /**
  * Blog reads from directory_blog_posts (published only, ordered like
@@ -46,7 +47,12 @@ const fmtDate = (d: unknown) => {
   const dt = d instanceof Date ? d : new Date(String(d ?? ""));
   return isNaN(dt.getTime())
     ? undefined
-    : dt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    : dt.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: SITE_TZ,
+      });
 };
 
 export async function getPosts(): Promise<BlogPost[]> {

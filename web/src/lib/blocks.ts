@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { BLOCK_REGISTRY, type BlockDef } from "@/lib/blocks-registry";
+import { SITE_TZ } from "@/lib/time";
 
 /**
  * Editable page copy.
@@ -160,6 +161,7 @@ const fmtDate = (d: unknown) => {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone: SITE_TZ,
       });
 };
 
