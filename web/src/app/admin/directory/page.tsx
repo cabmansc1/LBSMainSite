@@ -51,15 +51,39 @@ export default async function AdminDirectoryPage() {
 
   return (
     <div className="mx-auto max-w-[1120px] px-6 py-8">
-      <div className="mb-5">
-        <h1 className="text-[21px] font-bold tracking-[-0.02em]">
-          Directory listings
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          Edit any listing, change its plan, and toggle featured, verified, or
-          hidden. Changes write to the same tables the live site reads, so they
-          appear immediately on both sites.
-        </p>
+      <div className="mb-5 flex items-end justify-between gap-4 flex-wrap">
+        <div className="max-w-[64ch]">
+          <h1 className="text-[21px] font-bold tracking-[-0.02em]">
+            Directory listings
+          </h1>
+          <p className="text-sm text-muted mt-1">
+            Edit any listing, change its plan, and toggle featured, verified, or
+            hidden. Changes write to the same tables the live site reads, so
+            they appear immediately on both sites.
+          </p>
+        </div>
+        {/*
+          Plain anchors, not Link: these are downloads, not navigation.
+          Link would soft-navigate and the browser would never see the
+          Content-Disposition that names the file.
+        */}
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/admin/directory/export"
+            download
+            className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border border-line-strong bg-white"
+          >
+            Export CSV
+          </a>
+          <a
+            href="/api/admin/directory/export?all=1"
+            download
+            className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border border-line-strong bg-white"
+            title="Includes unverified, inactive and hidden listings"
+          >
+            Export everything
+          </a>
+        </div>
       </div>
       <AdminDirectory
         businesses={businesses}
