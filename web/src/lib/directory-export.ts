@@ -17,9 +17,21 @@ import { richTextToPlain } from "@/lib/rich-text";
  * string ("123 Main St, Summerville, SC 29483") and never surfaces
  * email, so an export built on it could not fill address_line1,
  * postal_code or email — the four columns most worth having.
+ *
+ * Images come out as URLs rather than bytes, since a CSV cell cannot
+ * hold a picture. Whatever imports this has to fetch them while this
+ * app and the legacy host are both still up, which is the one part of
+ * the export with an expiry date on it.
  */
 
-/** Fixed by the destination's template. Order is part of the contract. */
+/**
+ * Fixed by the destination's template. Order is part of the contract.
+ *
+ * logo_url and photo_urls are not in that template. They are appended
+ * last, where an importer matching on header names will ignore them if
+ * it does not want them and a spreadsheet can drop two columns off the
+ * end without disturbing anything before them.
+ */
 export const EXPORT_COLUMNS = [
   "name",
   "category",
@@ -35,6 +47,8 @@ export const EXPORT_COLUMNS = [
   "website_url",
   "tags",
   "locally_owned",
+  "logo_url",
+  "photo_urls",
 ] as const;
 
 export type ExportRow = Record<(typeof EXPORT_COLUMNS)[number], string>;
@@ -92,13 +106,22 @@ export type ExportOptions = {
    * been published anywhere yet.
    */
   includeHidden?: boolean;
+  /**
+   * Absolute origin for images this app serves out of the database.
+   *
+   * Whatever reads this CSV is on another machine, so a relative
+   * "/api/business-image/12" resolves against *their* host and 404s.
+   * The caller passes the origin the request arrived on, which is by
+   * definition a hostname that reaches this app.
+   */
+  origin?: string;
 };
 
 /** Everything the CSV needs, in the destination's shape. */
 export async function exportRows(
   opts: ExportOptions = {},
 ): Promise<ExportRow[]> {
-  if (usingSampleData()) return sampleRows();
+  if (usingSampleData()) return sampleRows(opts.origin);
 
   const { db } = await import("@/lib/db");
   const gate = opts.includeHidden
@@ -153,6 +176,11 @@ export async function exportRows(
     tagsByBiz.set(id, list);
   }
 
+  const imagesByBiz = await imageUrls(
+    list.map((r) => Number(r.id)),
+    opts.origin,
+  );
+
   return list.map((r) => {
     const tags = tagsByBiz.get(Number(r.id)) ?? [];
     const locallyOwned = tags.some(
@@ -196,8 +224,94 @@ export async function exportRows(
         .map((t) => t.name)
         .join(";"),
       locally_owned: locallyOwned ? "true" : "false",
+      logo_url: imagesByBiz.get(Number(r.id))?.logo ?? "",
+      photo_urls: (imagesByBiz.get(Number(r.id))?.photos ?? []).join(";"),
     };
   });
+}
+
+/**
+ * Every image a listing has, as URLs something else can fetch.
+ *
+ * Two stores, because the move to this app split them. The legacy site
+ * keeps files on the PHP host's disk and records the filename; this app
+ * cannot write there, so anything uploaded since is a row in
+ * lbs_business_images served by /api/business-image. A listing can have
+ * both, and the public page already merges them — this matches that
+ * merge so the export carries what a visitor sees.
+ *
+ * Ordering follows the listing page: the uploaded logo wins if there is
+ * one, then legacy photos in their own order, then uploaded gallery
+ * shots. Banners are skipped; they are page furniture, not pictures of
+ * the business.
+ */
+async function imageUrls(
+  ids: number[],
+  origin?: string,
+): Promise<Map<number, { logo: string; photos: string[] }>> {
+  const out = new Map<number, { logo: string; photos: string[] }>();
+  if (ids.length === 0) return out;
+
+  const { db } = await import("@/lib/db");
+  const base = (origin ?? "").replace(/\/+$/, "");
+  // Database-backed images are served by this app; legacy filenames are
+  // already absolute on the PHP host, so only these need the prefix.
+  const served = (id: number) => `${base}/api/business-image/${id}`;
+
+  const legacy = new Map<number, string[]>();
+  try {
+    const [photoRows] = (await db.execute(
+      sql`SELECT business_id, filename, photo_type
+          FROM directory_business_photos
+          WHERE business_id IN (${sql.join(
+            ids.map((id) => sql`${id}`),
+            sql`, `,
+          )})
+          ORDER BY is_primary DESC, sort_order ASC, uploaded_at ASC, id ASC`,
+    )) as unknown as [Record<string, unknown>[]];
+
+    const uploads =
+      (
+        process.env.UPLOADS_BASE_URL ??
+        "https://www.lowcountrybusinessspotlight.com/uploads"
+      ).replace(/\/$/, "") + "/business_photos/";
+
+    for (const p of photoRows ?? []) {
+      if (!p.filename) continue;
+      if (String(p.photo_type ?? "") === "banner") continue;
+      const id = Number(p.business_id);
+      const urls = legacy.get(id) ?? [];
+      urls.push(uploads + String(p.filename).replace(/^\//, ""));
+      legacy.set(id, urls);
+    }
+  } catch (e) {
+    // A migration missing a photo is recoverable; a migration that
+    // never ran because of one is not.
+    console.error("[directory-export] legacy photo read failed:", e);
+  }
+
+  const { getBusinessImageIds, getGalleryImages } = await import(
+    "@/lib/business-images"
+  );
+  const [logos, gallery] = await Promise.all([
+    getBusinessImageIds(ids),
+    getGalleryImages(ids),
+  ]);
+
+  for (const id of ids) {
+    const legacyUrls = legacy.get(id) ?? [];
+    const uploadedLogo = logos.get(id);
+    const uploadedGallery = (gallery.get(id) ?? []).map((g) => served(g.id));
+
+    // An uploaded logo displaces the legacy primary as the logo, but
+    // that primary is still a real photo of the business, so it moves
+    // into the gallery rather than being dropped.
+    const logo = uploadedLogo ? served(uploadedLogo) : (legacyUrls[0] ?? "");
+    const rest = uploadedLogo ? legacyUrls : legacyUrls.slice(1);
+
+    out.set(id, { logo, photos: [...rest, ...uploadedGallery] });
+  }
+  return out;
 }
 
 /**
@@ -209,8 +323,13 @@ export async function exportRows(
  * back out and email comes out blank — accurate for sample data, and
  * never reached once DB_HOST is set.
  */
-async function sampleRows(): Promise<ExportRow[]> {
+async function sampleRows(origin?: string): Promise<ExportRow[]> {
   const businesses = await getBusinesses();
+  const base = (origin ?? "").replace(/\/+$/, "");
+  // getBusinesses already merged both image stores, so the only thing
+  // left is making the app-served ones absolute.
+  const absolute = (u: string) => (u.startsWith("/") ? base + u : u);
+
   return businesses.map((b) => {
     const parts = (b.address ?? "").split(",").map((p) => p.trim());
     const zip = parts[2]?.match(/(\d{5}(?:-\d{4})?)/)?.[1] ?? "";
@@ -236,6 +355,11 @@ async function sampleRows(): Promise<ExportRow[]> {
         .map((t) => t.name)
         .join(";"),
       locally_owned: locallyOwned ? "true" : "false",
+      logo_url: b.logoUrl ? absolute(b.logoUrl) : "",
+      photo_urls: (b.photos ?? [])
+        .map((p) => absolute(p.url))
+        .filter((u) => u !== (b.logoUrl ? absolute(b.logoUrl) : ""))
+        .join(";"),
     };
   });
 }

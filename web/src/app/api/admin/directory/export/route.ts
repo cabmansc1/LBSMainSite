@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/admin";
 import { exportRows, toCsv } from "@/lib/directory-export";
+import { publicOrigin } from "@/lib/origin";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,10 @@ export async function GET(req: Request) {
   await requireAdmin();
 
   const includeHidden = new URL(req.url).searchParams.get("all") === "1";
-  const rows = await exportRows({ includeHidden });
+  // Taken from the request rather than SITE_URL, which is still the
+  // legacy PHP domain: it has no /api/business-image, so every
+  // database-backed logo would export as a URL that 404s.
+  const rows = await exportRows({ includeHidden, origin: publicOrigin(req) });
 
   // Dated, because this is a snapshot and the next one will not match.
   // Sortable order so a folder of them reads chronologically.
