@@ -27,9 +27,9 @@ export async function POST(req: Request) {
   const rawId = Number(body.id);
   const id = Number.isInteger(rawId) && rawId > 0 ? rawId : null;
 
-  const bust = (slug?: string) => {
-    for (const p of ["/events", "/sitemap.xml"]) revalidatePath(p);
-    if (slug) revalidatePath(`/events/${slug}`);
+  // Nothing public renders an event any more, so the admin list is the
+  // only thing left to refresh.
+  const bust = () => {
     revalidatePath("/admin/events");
   };
 
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 422 });
     }
-    bust(typeof body.slug === "string" ? body.slug : undefined);
+    bust();
     return NextResponse.json({ ok: true });
   }
 
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 422 });
     }
-    bust(typeof body.slug === "string" ? body.slug : undefined);
+    bust();
     return NextResponse.json({ ok: true });
   }
 
@@ -96,6 +96,6 @@ export async function POST(req: Request) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 422 });
   }
-  bust(result.slug);
+  bust();
   return NextResponse.json({ ok: true, id: result.id, slug: result.slug });
 }

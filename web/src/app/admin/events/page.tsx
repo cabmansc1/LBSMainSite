@@ -42,8 +42,9 @@ export default async function AdminEventsPage() {
         <div className="max-w-[64ch]">
           <h1 className="text-[21px] font-bold tracking-[-0.02em]">Events</h1>
           <p className="text-sm text-muted mt-1">
-            What&rsquo;s Happening across the Lowcountry. Anybody can put one
-            forward at /events/submit; nothing is public until you say so.
+            What&rsquo;s Happening across the Lowcountry. The calendar has no
+            public pages on this site: this is where it is kept and imported
+            until it has a home of its own.
           </p>
         </div>
         <Link

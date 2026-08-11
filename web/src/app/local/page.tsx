@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "The Lowcountry, Town by Town",
   description:
-    "Local stories, events and businesses across Mount Pleasant, Charleston, Summerville, the North Area and Moncks Corner.",
+    "Local stories and businesses across Mount Pleasant, Charleston, Summerville, the North Area and Moncks Corner.",
   alternates: { canonical: `${SITE_URL}/local` },
   openGraph: {
     title: "The Lowcountry, Town by Town",
     description:
-      "Local stories, events and businesses from across Greater Charleston.",
+      "Local stories and businesses from across Greater Charleston.",
     url: `${SITE_URL}/local`,
     siteName: SITE_NAME,
     type: "website",

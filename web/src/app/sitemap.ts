@@ -9,8 +9,6 @@ import { getBusinesses, getFilterOptions } from "@/lib/directory";
 import { getPosts } from "@/lib/blog";
 import { listActivePlaces } from "@/lib/places";
 import { publishedStories } from "@/lib/stories";
-import { publishedEvents } from "@/lib/events";
-import { EVENT_CATEGORIES } from "@/lib/events-types";
 import { STORY_KINDS } from "@/lib/stories-types";
 import { getPastCards } from "@/lib/past-cards";
 
@@ -41,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/terms", priority: 0.2 },
   ];
 
-  const [businesses, options, posts, pastCards, stories, events, places] =
+  const [businesses, options, posts, pastCards, stories, places] =
     await Promise.all([
     getBusinesses(),
     getFilterOptions(),
@@ -50,19 +48,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Capped rather than unbounded. A sitemap is a hint, and the newest
     // few hundred are the ones worth spending crawl budget on.
     publishedStories({ limit: 100 }).catch(() => []),
-    publishedEvents({ limit: 200 }).catch(() => []),
     listActivePlaces().catch(() => []),
   ]);
 
   /*
-   * The story and event indexes are listed only once there is something
-   * on them.
+   * The story index is listed only once there is something on it.
    *
    * Submitting an empty page to Google is asking it to index a page
    * that says "nothing here yet", and a thin page indexed early is
    * harder to shift than one crawled for the first time when it is
-   * worth reading. Both appear on their own the moment the first thing
-   * is published, along with their filters and their entries.
+   * worth reading. It appears on its own the moment the first story is
+   * published, along with its filters and its entries.
    */
   const sections = [
     // The place pages carry whatever is tagged to them, so they are
@@ -70,12 +66,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // itself is a real page of links either way.
     ...(places.length ? [{ path: "/local", priority: 0.7 }] : []),
     ...(stories.length ? [{ path: "/stories", priority: 0.8 }] : []),
-    ...(events.length
-      ? [
-          { path: "/events", priority: 0.8 },
-          { path: "/events/submit", priority: 0.5 },
-        ]
-      : []),
   ];
 
   return [
@@ -123,18 +113,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...stories.map((s) => ({
       url: `${SITE_URL}/stories/${s.slug}`,
       priority: 0.7,
-    })),
-    ...(events.length
-      ? EVENT_CATEGORIES.map((c) => ({
-          url: `${SITE_URL}/events?category=${c.value}`,
-          priority: 0.5,
-        }))
-      : []),
-    // Only upcoming ones. A crawler spending its budget on last
-    // spring's farmers market helps nobody.
-    ...events.map((e) => ({
-      url: `${SITE_URL}/events/${e.slug}`,
-      priority: 0.6,
     })),
     // One index per neighborhood with cards in it.
     ...[...new Set(pastCards.map((c) => c.zoneSlug))].map((zoneSlug) => ({
