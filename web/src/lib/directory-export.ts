@@ -27,10 +27,9 @@ import { richTextToPlain } from "@/lib/rich-text";
 /**
  * Fixed by the destination's template. Order is part of the contract.
  *
- * logo_url and photo_urls are not in that template. They are appended
- * last, where an importer matching on header names will ignore them if
- * it does not want them and a spreadsheet can drop two columns off the
- * end without disturbing anything before them.
+ * The order follows the destination's own documentation. Nothing reads
+ * a CSV by position when it has a header row, so this is for whoever
+ * opens the file in a spreadsheet before uploading it.
  */
 export const EXPORT_COLUMNS = [
   "name",
@@ -45,9 +44,20 @@ export const EXPORT_COLUMNS = [
   "phone",
   "email",
   "website_url",
+  "image_url",
+  "logo_url",
+  // The destination documents the bare names as canonical and treats
+  // facebook_url / facebook_link / facebook_page as variants of them.
+  // No reason to rely on the alias matching when the real name is known.
+  "facebook",
+  "instagram",
+  "tiktok",
+  "youtube",
   "tags",
   "locally_owned",
-  "logo_url",
+  // Not one of theirs. Last, so an importer reading by header name
+  // ignores it and a spreadsheet can drop it off the end without
+  // disturbing a column before it.
   "photo_urls",
 ] as const;
 
@@ -76,6 +86,49 @@ function shorten(text: string, limit = 200): string {
   if (sentence >= 60) return window.slice(0, sentence + 1);
   const word = window.lastIndexOf(" ");
   return `${window.slice(0, word > 60 ? word : limit).trimEnd()}…`;
+}
+
+/** Where a bare handle lives, per platform. */
+const SOCIAL_HOSTS = {
+  facebook: (h: string) => `https://www.facebook.com/${h}`,
+  instagram: (h: string) => `https://www.instagram.com/${h}`,
+  tiktok: (h: string) => `https://www.tiktok.com/@${h}`,
+  youtube: (h: string) => `https://www.youtube.com/@${h}`,
+} as const;
+
+/**
+ * A social field as something that can actually be opened.
+ *
+ * These columns have been filled in by hand through the legacy admin
+ * for years and hold whatever was pasted: full URLs, bare domains, and
+ * handles with or without an @. The listing page uses the value
+ * directly as an href, so anything that is not already a URL has been
+ * a broken link there too — this does not make the export worse, it
+ * just stops carrying the breakage into the next database.
+ *
+ * Only two guesses are made, both conservative: a scheme-less domain
+ * gets https://, and a bare handle gets the platform's canonical
+ * profile URL. Anything already absolute passes through untouched.
+ */
+function socialUrl(
+  platform: keyof typeof SOCIAL_HOSTS,
+  raw: unknown,
+): string {
+  const v = String(raw ?? "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  // Protocol-relative, which browsers accept and importers usually do not.
+  if (v.startsWith("//")) return `https:${v}`;
+  // Looks like a host: has a dot, no spaces, and nothing that would
+  // make it a sentence someone typed into the wrong box.
+  if (/^[^\s@]+\.[^\s]+$/.test(v)) return `https://${v}`;
+  // A handle. Strip the @ the platform adds back itself.
+  const handle = v.replace(/^@+/, "");
+  if (/^[A-Za-z0-9._-]+$/.test(handle)) return SOCIAL_HOSTS[platform](handle);
+  // Something else entirely — a note, a phone number, a sentence.
+  // Passed through rather than mangled into a URL that resolves
+  // somewhere real and wrong.
+  return v;
 }
 
 /**
@@ -131,7 +184,8 @@ export async function exportRows(
   const [rows] = (await db.execute(
     sql`SELECT b.id, b.business_name, b.category, b.location_area, b.address,
                b.city, b.state, b.zip_code, b.phone, b.email, b.website,
-               b.description, b.extended_description
+               b.description, b.extended_description,
+               b.facebook_url, b.instagram_url, b.tiktok_url, b.youtube_url
         FROM directory_businesses b
         WHERE ${gate}
         ORDER BY b.business_name`,
@@ -224,10 +278,36 @@ export async function exportRows(
         .map((t) => t.name)
         .join(";"),
       locally_owned: locallyOwned ? "true" : "false",
-      logo_url: imagesByBiz.get(Number(r.id))?.logo ?? "",
-      photo_urls: (imagesByBiz.get(Number(r.id))?.photos ?? []).join(";"),
+      ...pictures(imagesByBiz.get(Number(r.id))),
+      facebook: socialUrl("facebook", r.facebook_url),
+      instagram: socialUrl("instagram", r.instagram_url),
+      tiktok: socialUrl("tiktok", r.tiktok_url),
+      youtube: socialUrl("youtube", r.youtube_url),
     };
   });
+}
+
+/**
+ * Split what a listing has into the destination's two picture slots.
+ *
+ * image_url is the big photo on the card and the profile; logo_url is
+ * the mark. They are different things over there, and here the first
+ * real photograph is the former and the uploaded logo is the latter.
+ *
+ * A listing with a logo and no photographs still needs something on
+ * its card, so the logo stands in. That is better than a blank card,
+ * and it is what our own listing pages already do.
+ */
+function pictures(
+  imgs: { logo: string; photos: string[] } | undefined,
+): { image_url: string; logo_url: string; photo_urls: string } {
+  const logo = imgs?.logo ?? "";
+  const photos = imgs?.photos ?? [];
+  return {
+    image_url: photos[0] ?? logo,
+    logo_url: logo,
+    photo_urls: photos.slice(1).join(";"),
+  };
 }
 
 /**
@@ -355,11 +435,16 @@ async function sampleRows(origin?: string): Promise<ExportRow[]> {
         .map((t) => t.name)
         .join(";"),
       locally_owned: locallyOwned ? "true" : "false",
-      logo_url: b.logoUrl ? absolute(b.logoUrl) : "",
-      photo_urls: (b.photos ?? [])
-        .map((p) => absolute(p.url))
-        .filter((u) => u !== (b.logoUrl ? absolute(b.logoUrl) : ""))
-        .join(";"),
+      ...pictures({
+        logo: b.logoUrl ? absolute(b.logoUrl) : "",
+        photos: (b.photos ?? [])
+          .map((p) => absolute(p.url))
+          .filter((u) => u !== (b.logoUrl ? absolute(b.logoUrl) : "")),
+      }),
+      facebook: socialUrl("facebook", b.socials?.facebook),
+      instagram: socialUrl("instagram", b.socials?.instagram),
+      tiktok: socialUrl("tiktok", b.socials?.tiktok),
+      youtube: socialUrl("youtube", b.socials?.youtube),
     };
   });
 }
