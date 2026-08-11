@@ -136,7 +136,6 @@ export default async function BusinessPage({
     archive,
     appearances,
     theirStories,
-    theirEvents,
     categoryCounts,
   ] = await Promise.all([
     // "More X Businesses" on the legacy page: internal links that keep a
@@ -156,16 +155,12 @@ export default async function BusinessPage({
           mailDateIso: string;
         }[],
     ),
-    // Anything written about them, and anything they are putting on.
-    // This is what makes filing a story against a business worth the
-    // thirty seconds it takes: it turns up here on its own.
+    // Anything written about them. This is what makes filing a story
+    // against a business worth the thirty seconds it takes: it turns up
+    // here on its own.
     (async () => {
       const { publishedStories } = await import("@/lib/stories");
       return publishedStories({ businessId: b.id, limit: 3 });
-    })().catch(() => []),
-    (async () => {
-      const { publishedEvents } = await import("@/lib/events");
-      return publishedEvents({ businessId: b.id, limit: 3 });
     })().catch(() => []),
     // The sidebar browser. A listing page used to be a cul-de-sac: the
     // only ways back into the directory were the breadcrumb and the
@@ -641,75 +636,37 @@ export default async function BusinessPage({
           />
 
           {/*
-            Anything we have written about them, and anything they are
-            putting on. Both come from the joins set when a story or an
-            event is filed, which is what makes that thirty seconds
-            worth spending: nobody links this by hand.
+            Anything we have written about them. It comes from the join
+            set when a story is filed, which is what makes that thirty
+            seconds worth spending: nobody links this by hand.
           */}
-          {(theirStories.length > 0 || theirEvents.length > 0) && (
-            <Card className="p-6.5 grid gap-4">
-              {theirStories.length > 0 && (
-                <div className="grid gap-2.5">
-                  <h2 className="text-[17px] font-semibold tracking-tight">
-                    {theirStories.length === 1
-                      ? "We wrote about them"
-                      : "We have written about them"}
-                  </h2>
-                  {theirStories.map((st) => (
-                    <Link
-                      key={st.id}
-                      href={`/stories/${st.slug}`}
-                      className="block border border-line rounded-[10px] px-4 py-3 hover:border-navy-950"
-                    >
-                      <span className="block text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
-                        {kindEyebrow(st.kind)}
-                        {st.sponsored && " · Sponsored"}
-                      </span>
-                      <span className="block mt-1 text-[15px] font-semibold leading-snug">
-                        {st.title}
-                      </span>
-                      {st.publishedLabel && (
-                        <span className="block mt-1 text-[12.5px] text-muted num">
-                          {st.publishedLabel}
-                        </span>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-              {theirEvents.length > 0 && (
-                <div className="grid gap-2.5">
-                  <h2 className="text-[17px] font-semibold tracking-tight">
-                    Coming up
-                  </h2>
-                  {theirEvents.map((ev) => (
-                    <Link
-                      key={ev.id}
-                      href={`/events/${ev.slug}`}
-                      className="flex items-start gap-3.5 border border-line rounded-[10px] px-4 py-3 hover:border-navy-950"
-                    >
-                      <span className="shrink-0 w-[48px] rounded-[9px] bg-navy-950 text-white text-center py-1.5">
-                        <b className="block text-[17px] leading-none num">
-                          {ev.dayOfMonth}
-                        </b>
-                        <span className="text-[10px] uppercase tracking-widest">
-                          {ev.monthLabel}
-                        </span>
-                      </span>
-                      <span className="block">
-                        <span className="block text-[15px] font-semibold leading-snug">
-                          {ev.title}
-                        </span>
-                        <span className="block mt-0.5 text-[12.5px] text-muted">
-                          {ev.timeLabel}
-                          {ev.venueName && ` · ${ev.venueName}`}
-                        </span>
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
+          {theirStories.length > 0 && (
+            <Card className="p-6.5 grid gap-2.5">
+              <h2 className="text-[17px] font-semibold tracking-tight">
+                {theirStories.length === 1
+                  ? "We wrote about them"
+                  : "We have written about them"}
+              </h2>
+              {theirStories.map((st) => (
+                <Link
+                  key={st.id}
+                  href={`/stories/${st.slug}`}
+                  className="block border border-line rounded-[10px] px-4 py-3 hover:border-navy-950"
+                >
+                  <span className="block text-[11px] uppercase tracking-widest font-semibold text-brand-deep">
+                    {kindEyebrow(st.kind)}
+                    {st.sponsored && " · Sponsored"}
+                  </span>
+                  <span className="block mt-1 text-[15px] font-semibold leading-snug">
+                    {st.title}
+                  </span>
+                  {st.publishedLabel && (
+                    <span className="block mt-1 text-[12.5px] text-muted num">
+                      {st.publishedLabel}
+                    </span>
+                  )}
+                </Link>
+              ))}
             </Card>
           )}
 

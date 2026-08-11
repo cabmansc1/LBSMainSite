@@ -192,8 +192,11 @@ export async function buildRoundup(
         .filter(Boolean)
         .join(" · ");
 
+      // A plain heading rather than a link. The calendar has no public
+      // pages on this site, so linking each event would fill a published
+      // story with 404s. Restore the link when it has somewhere to go.
       parts.push(
-        `<h3><a href="/events/${esc(e.slug)}">${esc(e.title)}</a></h3>` +
+        `<h3>${esc(e.title)}</h3>` +
           `<p><em>${esc(facts)}</em></p>` +
           (e.summary ? `<p>${esc(e.summary)}</p>` : ""),
       );

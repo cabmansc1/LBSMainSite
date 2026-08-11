@@ -554,17 +554,6 @@ export function AdminEventEditor({
 
         {event && form.status !== "published" && reviewActions}
 
-        {event && event.status === "published" && (
-          <a
-            href={`/events/${event.slug}`}
-            target="_blank"
-            rel="noopener"
-            className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border border-line-strong bg-white"
-          >
-            View it
-          </a>
-        )}
-
         {event && (
           <span className="ml-auto flex items-center gap-2.5">
             {confirmDelete ? (

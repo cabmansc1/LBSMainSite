@@ -4,8 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { publishedStories } from "@/lib/stories";
 import { kindEyebrow } from "@/lib/stories-types";
-import { publishedEvents } from "@/lib/events";
-import { formatPrice } from "@/lib/events-types";
 import { getBusinesses } from "@/lib/directory";
 import {
   listActivePlaces,
@@ -19,15 +17,15 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
  * Everything about one part of the Lowcountry.
  *
  * The page the place tags have been quietly accumulating for. A story
- * filed against West Ashley, an event at a Summerville park and a
- * roofer listed in Mount Pleasant were each reachable from their own
- * page and nowhere else; this is where they meet.
+ * filed against West Ashley and a roofer listed in Mount Pleasant were
+ * each reachable from their own page and nowhere else; this is where
+ * they meet.
  *
  * Any active place, not only markets. A market gathers everything under
  * it, a zone or a neighbourhood shows just itself, and both are real
- * URLs — which is the whole point, because "things to do in Summerville"
- * is a search somebody actually makes and "things to do in Greater
- * Charleston" is not.
+ * URLs — which is the whole point, because "Summerville businesses" is
+ * a search somebody actually makes and "Greater Charleston businesses"
+ * is not.
  */
 export const dynamic = "force-dynamic";
 
@@ -40,11 +38,8 @@ async function load(slug: string) {
     placeAndDescendants(slug),
   ]);
 
-  const [stories, events, businesses] = await Promise.all([
+  const [stories, businesses] = await Promise.all([
     publishedStories({ placeSlugs: family, limit: 6 }).catch(() => []),
-    publishedEvents({ placeSlugs: family, limit: 6, featuredFirst: true }).catch(
-      () => [],
-    ),
     // The directory is keyed by its own location slugs, so only a place
     // carrying that bridge can show listings. Everywhere else simply
     // has no business section rather than a broken one.
@@ -63,7 +58,6 @@ async function load(slug: string) {
       : undefined,
     zoneSlug: mailingZoneFor(slug, places),
     stories,
-    events,
     businesses,
   };
 }
@@ -77,10 +71,10 @@ export async function generateMetadata({
   const place = await placeBySlug(slug);
   if (!place) return { title: "Not found" };
 
-  const title = `${place.name}: Local News, Events and Businesses`;
+  const title = `${place.name}: Local News and Businesses`;
   const description =
     place.blurb.trim() ||
-    `What is happening in ${place.name} — local stories, upcoming events and the businesses worth knowing about.`;
+    `What is happening in ${place.name} — local stories and the businesses worth knowing about.`;
 
   return {
     title,
@@ -104,8 +98,7 @@ export default async function PlacePage({
   const { slug } = await params;
   const data = await load(slug);
   if (!data) notFound();
-  const { place, children, parent, zoneSlug, stories, events, businesses } =
-    data;
+  const { place, children, parent, zoneSlug, stories, businesses } = data;
 
   const sectionTitle = "text-[20px] font-bold tracking-tight";
   const empty = "text-[14px] text-muted";
@@ -157,60 +150,6 @@ export default async function PlacePage({
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6 py-12 grid gap-12">
-        {/* What is on. First because it is the thing with a deadline. */}
-        <section>
-          <div className="flex items-end justify-between gap-4 mb-4 flex-wrap">
-            <h2 className={sectionTitle}>What&rsquo;s on in {place.name}</h2>
-            <Link
-              href="/events"
-              className="text-[13px] font-semibold text-brand-deep"
-            >
-              The whole calendar &rarr;
-            </Link>
-          </div>
-          {events.length === 0 ? (
-            <p className={empty}>
-              Nothing on the calendar here yet.{" "}
-              <Link href="/events/submit" className="text-brand-deep font-semibold">
-                Putting something on?
-              </Link>
-            </p>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {events.map((e) => (
-                <Link
-                  key={e.id}
-                  href={`/events/${e.slug}`}
-                  className="border border-line rounded-(--radius-card) bg-white p-5 hover:border-navy-950 flex items-start gap-3.5"
-                >
-                  <span className="shrink-0 w-[48px] rounded-[9px] bg-navy-950 text-white text-center py-1.5">
-                    <b className="block text-[17px] leading-none num">
-                      {e.dayOfMonth}
-                    </b>
-                    <span className="text-[10px] uppercase tracking-widest">
-                      {e.monthLabel}
-                    </span>
-                  </span>
-                  <span className="block min-w-0">
-                    <span className="block text-[15px] font-semibold leading-snug">
-                      {e.title}
-                    </span>
-                    <span className="block mt-1 text-[12.5px] text-muted">
-                      {e.timeLabel}
-                      {e.venueName && ` · ${e.venueName}`}
-                    </span>
-                    {formatPrice(e.priceText) && (
-                      <span className="block mt-0.5 text-[12.5px] font-semibold num">
-                        {formatPrice(e.priceText)}
-                      </span>
-                    )}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
         <section>
           <div className="flex items-end justify-between gap-4 mb-4 flex-wrap">
             <h2 className={sectionTitle}>Stories from {place.name}</h2>
