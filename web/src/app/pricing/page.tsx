@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PricingCards } from "@/components/pricing-cards";
+import { activeSpecials } from "@/lib/specials";
 import { getLivePricing } from "@/lib/pricing-store";
 import { getUpcomingMailings } from "@/lib/mission-control";
 import { cardCoverage } from "@/lib/card-coverage";
@@ -56,6 +58,7 @@ export default async function PricingPage({
   searchParams: Promise<{ card?: string; reach?: string }>;
 }) {
   const sp = await searchParams;
+  const hasSpecials = activeSpecials().length > 0;
   const [pricing, mailings, descriptions] = await Promise.all([
     getLivePricing(),
     getUpcomingMailings(),
@@ -97,6 +100,19 @@ export default async function PricingPage({
             Pick a size, pick a reach. Design, print, postage, and category
             exclusivity are always included. No hidden fees.
           </p>
+          {/* Only while something is actually on. A standing "see our
+              offers" link that leads to an empty page is worse than no
+              link, and this page is the one a buyer is already on when
+              the price is the thing they are weighing. */}
+          {hasSpecials && (
+            <Link
+              href="/specials"
+              className="mt-5 inline-flex items-center gap-2 text-[14px] font-semibold bg-white/10 border border-white/15 rounded-full pl-4 pr-3.5 py-2 hover:bg-white/16 transition-colors"
+            >
+              Book three mailings, pay for two
+              <span aria-hidden>&rarr;</span>
+            </Link>
+          )}
         </div>
       </header>
 
