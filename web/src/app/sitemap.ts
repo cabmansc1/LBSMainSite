@@ -9,6 +9,7 @@ import { getBusinesses, getFilterOptions } from "@/lib/directory";
 import { getPosts } from "@/lib/blog";
 import { listActivePlaces } from "@/lib/places";
 import { publishedStories } from "@/lib/stories";
+import { activeSpecials } from "@/lib/specials";
 import { STORY_KINDS } from "@/lib/stories-types";
 import { getPastCards } from "@/lib/past-cards";
 
@@ -66,6 +67,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // itself is a real page of links either way.
     ...(places.length ? [{ path: "/local", priority: 0.7 }] : []),
     ...(stories.length ? [{ path: "/stories", priority: 0.8 }] : []),
+    // Only while something is on offer. Out of season the page says so
+    // honestly, which is the right thing for a visitor who followed an
+    // old link and the wrong thing to spend crawl budget on.
+    ...(activeSpecials().length ? [{ path: "/specials", priority: 0.7 }] : []),
   ];
 
   return [

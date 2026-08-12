@@ -19,8 +19,20 @@ import { CONTACT_PHONE } from "@/lib/seo";
  * Everything optional is marked optional. The one thing this form has to
  * do is get a real person's email into the CRM, and a required field
  * somebody cannot answer is a lead that never arrives.
+ *
+ * The defaults exist for pages that already know part of the answer —
+ * the specials page knows which offer is being claimed. They are
+ * defaults rather than fixed values on purpose: a visitor who wants to
+ * say something else can type over them.
  */
-export function ContactForm() {
+export function ContactForm({
+  defaultMessage = "",
+  /** Must be a zone *name*, since that is what the select's options carry. */
+  defaultLocation = "",
+}: {
+  defaultMessage?: string;
+  defaultLocation?: string;
+} = {}) {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState("");
 
@@ -134,7 +146,7 @@ export function ContactForm() {
           <select
             id="lead-location"
             name="location"
-            defaultValue=""
+            defaultValue={defaultLocation}
             className={`${FIELD_CLASS} cursor-pointer`}
           >
             <option value="">Not sure yet</option>
@@ -156,6 +168,7 @@ export function ContactForm() {
           name="message"
           rows={4}
           maxLength={4000}
+          defaultValue={defaultMessage}
           placeholder="Which mailing you are asking about, what you sell, or anything else."
           className={FIELD_CLASS}
         />
