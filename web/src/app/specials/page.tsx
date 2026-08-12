@@ -13,9 +13,9 @@ import {
   activeSpecials,
   freeMonths,
   leadMessage,
+  areasFor,
   monthsSentence,
   sellUntilLabel,
-  zonesFor,
   type Special,
 } from "@/lib/specials";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
@@ -102,13 +102,16 @@ export default async function SpecialsPage() {
                 Claim it
               </h2>
               <p className="text-[14.5px] text-muted mt-1.5">
-                Tell us the zone and the size you want and we will confirm
+                Tell us the area and the size you want and we will confirm
                 there is room on all the cards, then send one invoice. No
                 payment now, and nothing is booked until you say yes to
                 what we send back.
               </p>
             </div>
-            <ContactForm defaultMessage={leadMessage(specials[0])} />
+            <ContactForm
+              defaultMessage={leadMessage(specials[0])}
+              locations={areasFor(specials[0])}
+            />
           </section>
         )}
       </div>
@@ -123,7 +126,7 @@ function SpecialCard({
   special: Special;
   pricing: Awaited<ReturnType<typeof getLivePricing>>;
 }) {
-  const zones = zonesFor(s);
+  const areas = areasFor(s);
   const free = freeMonths(s);
   // The flagship card. Quoting every reach here turns an offer into a
   // rate table, and the pricing page already is one.
@@ -218,16 +221,22 @@ function SpecialCard({
           <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted">
             Where
           </h3>
-          {s.zoneSlugs.length === 0 ? (
+          {s.areas.length === 0 ? (
             <p className="text-[14.5px] text-body">
-              Every zone we mail — {zones.length} of them, from{" "}
-              {zones[0]?.name} to {zones[zones.length - 1]?.name}. Pick yours
-              on the form below.
+              Every area we mail — {areas.length} of them, from {areas[0]} to{" "}
+              {areas[areas.length - 1]}. Pick yours on the form below.
             </p>
           ) : (
-            <p className="text-[14.5px] text-body">
-              {zones.map((z) => z.name).join(", ")}.
-            </p>
+            <ul className="grid gap-1.5">
+              {areas.map((a) => (
+                <li
+                  key={a}
+                  className="text-[14.5px] text-body leading-snug pl-4 relative before:absolute before:left-0 before:top-[0.6em] before:w-1.5 before:h-1.5 before:rounded-full before:bg-brand"
+                >
+                  {a}
+                </li>
+              ))}
+            </ul>
           )}
           <p className="text-[13px] text-muted">
             Covers the {monthsSentence(s)} {s.year} mailings.
