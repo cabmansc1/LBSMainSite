@@ -27,12 +27,23 @@ import { CONTACT_PHONE } from "@/lib/seo";
  */
 export function ContactForm({
   defaultMessage = "",
-  /** Must be a zone *name*, since that is what the select's options carry. */
+  /** Must be one of the options below, or the select falls back to blank. */
   defaultLocation = "",
+  /**
+   * The areas to offer instead of every zone.
+   *
+   * A limited-run offer is not good everywhere, and a dropdown listing
+   * places it cannot be claimed for invites a lead that has to be
+   * turned down. Given labels rather than slugs because the areas worth
+   * promoting are not always whole zones.
+   */
+  locations,
 }: {
   defaultMessage?: string;
   defaultLocation?: string;
+  locations?: string[];
 } = {}) {
+  const areas = locations ?? ZONES.map((z) => z.name);
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState("");
 
@@ -150,9 +161,9 @@ export function ContactForm({
             className={`${FIELD_CLASS} cursor-pointer`}
           >
             <option value="">Not sure yet</option>
-            {ZONES.map((z) => (
-              <option key={z.slug} value={z.name}>
-                {z.name}
+            {areas.map((name) => (
+              <option key={name} value={name}>
+                {name}
               </option>
             ))}
           </select>

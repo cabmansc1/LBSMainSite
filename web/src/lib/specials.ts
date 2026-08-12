@@ -1,4 +1,4 @@
-import { ZONES, type Zone } from "@/lib/zones";
+import { ZONES } from "@/lib/zones";
 
 /**
  * Limited-run offers on postcard advertising.
@@ -30,11 +30,18 @@ export type Special = {
   /** How many of those months are actually paid for. */
   monthsPaid: number;
   /**
-   * Zone slugs this is good in. Empty means everywhere we mail, which
-   * is the usual case — an offer limited to one zone is the exception
-   * and should say so.
+   * Where the offer is good, as the labels a buyer picks from.
+   *
+   * Plain labels rather than zone slugs, because the areas worth
+   * promoting are not always the areas we mail. West Ashley sits inside
+   * the Charleston zone and Nexton and Cane Bay inside Summerville;
+   * both are what somebody buying there would call the place, and
+   * neither has a slug to point at. The field is only ever a label on a
+   * lead, so a name is the honest type for it.
+   *
+   * Empty means everywhere we mail, and the zone names are used.
    */
-  zoneSlugs: string[];
+  areas: string[];
   blurb: string;
   /** The small print, each line a bullet. */
   terms: string[];
@@ -50,17 +57,23 @@ export const SPECIALS: Special[] = [
     months: ["October", "November", "December"],
     year: 2026,
     monthsPaid: 2,
-    // Every zone. The point of the offer is the run of three, not the
-    // place, and a business in Hanahan has the same reason to want the
-    // holiday quarter as one in Summerville.
-    zoneSlugs: [],
+    // The four growth areas this is being pitched into, not every zone.
+    // Two of them are not zones at all — West Ashley is part of the
+    // Charleston card and Nexton and Cane Bay part of Summerville's —
+    // which is exactly why this list is labels rather than slugs.
+    areas: [
+      "Nexton/Cane Bay (Summerville)",
+      "Mount Pleasant",
+      "Daniel Island",
+      "West Ashley",
+    ],
     blurb:
       "The three months your customers are already spending. Book the " +
       "October, November and December mailings together and the third " +
       "one is on us — same spot, same zone, same card, three times in " +
       "front of the same homes.",
     terms: [
-      "All three mailings in the same zone, in the same spot size.",
+      "All three mailings in the same area, in the same spot size.",
       "The free month is December, and it is the third of the three.",
       "Artwork can change between mailings at no charge.",
       "Invoiced once, up front, for the two paid months.",
@@ -73,11 +86,15 @@ export const SPECIALS: Special[] = [
 /** How many months come free. */
 export const freeMonths = (s: Special) => s.months.length - s.monthsPaid;
 
-/** Zones a special is good in; every zone when it names none. */
-export const zonesFor = (s: Special): Zone[] =>
-  s.zoneSlugs.length === 0
-    ? ZONES
-    : ZONES.filter((z) => s.zoneSlugs.includes(z.slug));
+/**
+ * The areas a special is good in, as labels.
+ *
+ * These are what the claim form offers, so an offer that only runs in
+ * four places cannot be claimed for a fifth by picking it off a list
+ * of everywhere we mail.
+ */
+export const areasFor = (s: Special): string[] =>
+  s.areas.length === 0 ? ZONES.map((z) => z.name) : s.areas;
 
 /** "October, November and December" — the run, said out loud. */
 export function monthsSentence(s: Special): string {
