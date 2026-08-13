@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const FAQS: GuideFaq[] = [
   {
     q: "What is a typical direct mail cost per household?",
-    a: "In the Charleston area it ranges from about five cents a home on a shared oversized postcard to around 46 to 67 cents for a solo EDDM campaign, and 75 cents to well over a dollar for addressed mail to a purchased list. The spread is mostly about how much of the card you own and who else is splitting the postage.",
+    a: "In the Charleston area it ranges from about five cents a home on a shared oversized postcard to around 52 cents to just over a dollar for a solo EDDM campaign, and 75 cents to well over a dollar for addressed mail to a purchased list. The spread is mostly about how much of the card you own and who else is splitting the postage.",
   },
   {
     q: "Why is shared mail so much cheaper per home?",
@@ -56,7 +56,7 @@ export default function Page() {
           postage included. Several non-competing businesses split the card.
         </li>
         <li>
-          <strong>Solo EDDM, 46&cent; to 67&cent; a home.</strong> Your own card
+          <strong>Solo EDDM, 52&cent; to $1.05 a home.</strong> Your own card
           to whole postal routes. Postage is cheap; print, design and the
           bundling and drop-off are not.{" "}
           <Link href="/guides/eddm-cost-charleston">
@@ -138,13 +138,13 @@ export default function Page() {
       </p>
       <ul>
         <li>
-          <strong>Option A — one solo EDDM drop.</strong> About 1,500 homes
-          once, at roughly 50&cent; each. You own the whole card. You also
+          <strong>Option A — one solo EDDM drop.</strong> About 1,400 homes
+          once, at roughly 52&cent; each. You own the whole card. You also
           bundle, drive and file the paperwork.
         </li>
         <li>
           <strong>Option B — one shared mailing, larger spot.</strong> 5,000
-          homes once, with a 4x6 spot. Three times the reach, a quarter of the
+          homes once, with a 4x6 spot. Three and a half times the reach, a quarter of the
           card.
         </li>
         <li>

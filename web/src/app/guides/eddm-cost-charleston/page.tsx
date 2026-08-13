@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const FAQS: GuideFaq[] = [
   {
     q: "How much does EDDM cost per piece?",
-    a: "The USPS retail EDDM rate is about 26 cents a piece as of 2026, but that is postage only. Once printing, design and your own time are counted, a realistic all-in figure for a 5,000-piece run is closer to 46 to 67 cents a home for a mid-size card.",
+    a: "The USPS retail EDDM rate is about 26 cents a piece as of 2026, but that is postage only. Once print, design, banding, processing and the trip to the post office are counted, a 5,000-piece run works out at 52 to 80 cents a home for a mid-size card and 72 cents to just over a dollar for a 9x12.",
   },
   {
     q: "Is EDDM cheaper than a shared postcard?",
@@ -52,8 +52,8 @@ export default function Page() {
       <p>
         EDDM Retail postage runs about 26 cents a piece as of 2026. That is
         still a real saving against a first-class stamp and it is what makes the
-        programme attractive. It is also only about half of what the campaign
-        actually costs.
+        programme attractive. It is also, once everything else is counted,
+        somewhere between a quarter and a half of what the campaign costs.
       </p>
       <p>
         Two constraints come attached. You buy whole carrier routes, so your
@@ -96,6 +96,12 @@ export default function Page() {
       </p>
 
       <h2>The parts nobody costs at all</h2>
+      <p>
+        These are the lines that turn a tidy quote into a real bill. They are
+        priced in the table below rather than waved at, because a guide that
+        lists them and then leaves them out of its own total is doing the same
+        thing it is complaining about.
+      </p>
       <ul>
         <li>
           <strong>Bundling.</strong> EDDM pieces go in bundles of 50 to 100 with
@@ -121,16 +127,83 @@ export default function Page() {
 
       <h2>What it comes to</h2>
       <p>
-        Adding it up for 5,000 pieces of a mid-size card: roughly $1,300 of
-        postage, $750 to $1,250 of print delivered, and $250 to $800 of design
-        if you are not doing it yourself. Call it{" "}
-        <strong>$2,300 to $3,350 all in</strong>, which is{" "}
-        <strong>46 to 67 cents a household</strong> — plus a day of
-        somebody&rsquo;s time bundling and driving.
+        Everything above, for one 5,000-piece drop. Banding and processing
+        assume you pay somebody; do it yourself and you trade the money for a
+        day you do not get back.
+      </p>
+
+      {/* Styled here rather than in PROSE_CLASS: that string is shared with
+          the blog editor and the story template, and this is the only table
+          on the site. Scrolls on a phone instead of squashing the columns. */}
+      <div className="overflow-x-auto my-6">
+        <table className="w-full min-w-[440px] border-collapse text-[14.5px]">
+          <thead>
+            <tr>
+              <th className="text-left font-semibold text-ink pb-2 pr-4 border-b border-line-strong">
+                5,000 pieces
+              </th>
+              <th className="text-right font-semibold text-ink pb-2 pl-4 border-b border-line-strong whitespace-nowrap">
+                6.5x9 card
+              </th>
+              <th className="text-right font-semibold text-ink pb-2 pl-4 border-b border-line-strong whitespace-nowrap">
+                9x12 card
+              </th>
+            </tr>
+          </thead>
+          <tbody className="num">
+            {[
+              ["Postage, at 26&cent; each", "$1,300", "$1,300"],
+              ["Print, delivered", "$750 – $1,250", "$1,750 – $2,500"],
+              ["Design", "$250 – $800", "$250 – $800"],
+              ["Banding, facing slips, processing", "$250 – $500", "$250 – $500"],
+              ["Getting it to the post office", "$50 – $150", "$50 – $150"],
+            ].map(([label, a, b]) => (
+              <tr key={label}>
+                <td
+                  className="py-2 pr-4 border-b border-line"
+                  dangerouslySetInnerHTML={{ __html: label }}
+                />
+                <td className="py-2 pl-4 text-right border-b border-line whitespace-nowrap">
+                  {a}
+                </td>
+                <td className="py-2 pl-4 text-right border-b border-line whitespace-nowrap">
+                  {b}
+                </td>
+              </tr>
+            ))}
+            <tr className="font-bold text-ink">
+              <td className="py-2.5 pr-4 border-b-2 border-navy-950">All in</td>
+              <td className="py-2.5 pl-4 text-right border-b-2 border-navy-950 whitespace-nowrap">
+                $2,600 – $4,000
+              </td>
+              <td className="py-2.5 pl-4 text-right border-b-2 border-navy-950 whitespace-nowrap">
+                $3,600 – $5,250
+              </td>
+            </tr>
+            <tr className="font-semibold text-ink">
+              <td className="py-2.5 pr-4">Per household</td>
+              <td className="py-2.5 pl-4 text-right whitespace-nowrap">
+                52&cent; – 80&cent;
+              </td>
+              <td className="py-2.5 pl-4 text-right whitespace-nowrap">
+                72&cent; – $1.05
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        So a mid-size card lands around{" "}
+        <strong>52 to 80 cents a household</strong>, and the 9x12 that actually
+        gets noticed runs <strong>72 cents to just over a dollar</strong> — and
+        can reach <strong>$5,000</strong> for a single drop before anybody has
+        answered a phone.
       </p>
       <p>
-        For a 9x12 card of the kind that actually gets noticed, the print side
-        alone pushes the total past $3,300.
+        None of that is a criticism of EDDM. It is the honest price of owning
+        the whole card, and the postage line — the one everybody quotes — is a
+        quarter to a half of it.
       </p>
 
       <h2>When EDDM is the right answer</h2>
@@ -152,7 +225,7 @@ export default function Page() {
           card mails. Solo mail goes when you want it to.
         </li>
         <li>
-          <strong>Your budget is comfortable at $3,000 a drop</strong> and you
+          <strong>Your budget is comfortable at $4,000 a drop</strong> and you
           would rather own every inch of the card than share it.
         </li>
       </ul>
