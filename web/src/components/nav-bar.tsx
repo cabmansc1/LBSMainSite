@@ -5,10 +5,24 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
+/* The two things we sell come first, because there are two of them now.
+   Everything here used to serve the mailing business, which left print
+   reachable only from inside the direct mail hub — invisible to anyone
+   who came to the site for it.
+
+   No "Home" item: the logo to the left is a link home on every page and
+   is the convention everywhere, so the slot buys back the width Printing
+   needs rather than spending it twice.
+
+   Advertise points at the hub, not /pricing. The Reserve a Spot button
+   already goes to /pricing, and two nav elements aimed at one URL is a
+   wasted slot — so the link browses and the button buys. It also gives
+   the pillar page a sitewide internal link, which is the thing a pillar
+   page most needs and the one it did not have. */
 const LINKS = [
-  { href: "/", label: "Home" },
+  { href: "/direct-mail-marketing", label: "Advertise" },
+  { href: "/printing", label: "Printing" },
   { href: "/coverage-map", label: "Service Areas" },
-  { href: "/pricing", label: "Advertise" },
   // The archive of mailed cards is the strongest proof the product is
   // real, so it belongs in the nav rather than buried in the footer.
   { href: "/gallery", label: "Past Cards" },
