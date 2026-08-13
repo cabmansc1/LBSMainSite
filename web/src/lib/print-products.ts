@@ -12,6 +12,23 @@
  * them the moment they are filled in.
  */
 
+/**
+ * Whether /printing is advertised.
+ *
+ * False while the page is being reworked. The route still renders at
+ * its URL, so it can be opened and previewed — what this turns off is
+ * every link into it and the sitemap entry, and it asks search engines
+ * not to index it in the meantime.
+ *
+ * Unlinking without the noindex would be the worse half of the job:
+ * Google keeps serving a page it has already seen, so the version being
+ * rewritten stays in results while nobody on the site can reach it.
+ *
+ * One flag rather than four deletions, so putting it back is this line
+ * rather than remembering every place a link used to be.
+ */
+export const PRINTING_LIVE = false;
+
 export type PrintProduct = {
   slug: string;
   name: string;

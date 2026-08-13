@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ContactForm } from "@/components/contact-form";
 import { Card, SectionHeading } from "@/components/sections";
 import { pageCopy } from "@/lib/blocks";
-import { PRINT_PRODUCTS } from "@/lib/print-products";
+import { PRINT_PRODUCTS, PRINTING_LIVE } from "@/lib/print-products";
 import { formatPrice } from "@/lib/pricing";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -25,6 +25,12 @@ export const metadata: Metadata = {
   description:
     "Printing for Lowcountry businesses — business cards, flyers, postcards, magnets and brochures. Design included when we already have your artwork, and quotes back the same day.",
   alternates: { canonical: `${SITE_URL}/printing` },
+  /* Hidden while PRINTING_LIVE is false. Unlinking on its own is the
+     worse half: Google keeps serving a page it has already crawled, so
+     the version being rewritten would stay in results while nobody on
+     the site could reach it. follow stays true so the links out of the
+     page still count. */
+  ...(PRINTING_LIVE ? {} : { robots: { index: false, follow: true } }),
   openGraph: {
     title: `Printing for Lowcountry Businesses | ${SITE_NAME}`,
     description:

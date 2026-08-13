@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GUIDES } from "@/lib/guides";
+import { PRINTING_LIVE } from "@/lib/print-products";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-static";
@@ -189,11 +190,17 @@ export default function ResourcesPage() {
           >
             Start here
           </Link>
-          , or see{" "}
-          <Link href="/printing" className="text-brand-deep font-semibold">
-            what we print
-          </Link>
-          .
+          {PRINTING_LIVE ? (
+            <>
+              , or see{" "}
+              <Link href="/printing" className="text-brand-deep font-semibold">
+                what we print
+              </Link>
+              .
+            </>
+          ) : (
+            "."
+          )}
         </p>
       </div>
     </>
