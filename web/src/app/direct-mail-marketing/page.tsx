@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PRINTING_LIVE } from "@/lib/print-products";
 import { Card, CtaBand, SectionHeading } from "@/components/sections";
 import { GUIDES } from "@/lib/guides";
 import { CORE_SIZES, FLAGSHIP_REACH, formatPrice, isOffered } from "@/lib/pricing";
@@ -400,7 +401,9 @@ export default async function DirectMailMarketingPage() {
         </section>
 
         {/* Print is a different job from mailing, but it is the same
-            customer asking — so it belongs here rather than hidden. */}
+            customer asking — so it belongs here rather than hidden,
+            whenever the page is ready to be seen. */}
+        {PRINTING_LIVE && (
         <section>
           <Card className="p-7 grid gap-2.5">
             <h2 className="text-[20px] font-bold tracking-[-0.02em]">
@@ -420,6 +423,7 @@ export default async function DirectMailMarketingPage() {
             </Link>
           </Card>
         </section>
+        )}
 
         <CtaBand
           title="See which zones still have room"

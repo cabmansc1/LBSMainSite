@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { PRINTING_LIVE } from "@/lib/print-products";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import {
   CONTACT_EMAIL,
@@ -27,7 +28,9 @@ const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
       { href: "/coverage-map", label: "Coverage Map" },
       { href: "/mailing-calendar", label: "Mailing Calendar" },
       { href: "/gallery", label: "Card Gallery" },
-      { href: "/printing", label: "Print Services" },
+      ...(PRINTING_LIVE
+        ? [{ href: "/printing", label: "Print Services" }]
+        : []),
       // Resources is the index over this calculator and the guides. The
       // calculator keeps its own line because it is the one people come
       // looking for by name, and a footer is where you go when you
