@@ -29,7 +29,7 @@ const FAQS: GuideFaq[] = [
   },
   {
     q: "How many homes are on a postal route in Charleston?",
-    a: "Most residential carrier routes in the Charleston area run somewhere between 300 and 600 deliverable addresses. You buy whole routes with EDDM, so your reach comes in those increments rather than a round number you choose.",
+    a: "Most residential carrier routes in the Charleston area run somewhere between 400 and 1,200 deliverable addresses. You buy whole routes with EDDM, so your reach comes in those increments rather than a round number you choose.",
   },
 ];
 
@@ -57,9 +57,10 @@ export default function Page() {
       </p>
       <p>
         Two constraints come attached. You buy whole carrier routes, so your
-        reach arrives in lumps of roughly 300 to 600 homes rather than a number
-        you choose — asking for 5,000 homes really means picking routes until
-        you land somewhere near it. And there is a 5,000-piece daily cap per zip
+        reach arrives in lumps of roughly 400 to 1,200 homes rather than a
+        number you choose — asking for 5,000 homes can mean as few as four
+        routes, and overshooting by a few hundred homes is normal rather than
+        something you can trim. And there is a 5,000-piece daily cap per zip
         code on EDDM Retail, which matters if you were hoping to blanket
         Summerville in one go.
       </p>
