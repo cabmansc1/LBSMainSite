@@ -9,7 +9,7 @@ import {
   getUpcomingCardRoster,
   getUpcomingMailings,
 } from "@/lib/mission-control";
-import { isBookable } from "@/lib/mailings";
+import { hasMailDate, isBookable } from "@/lib/mailings";
 import { ZONES } from "@/lib/zones";
 import { pageCopy } from "@/lib/blocks";
 import { SITE_TZ } from "@/lib/time";
@@ -72,6 +72,38 @@ export type IssueCard = {
   openCategories?: string[];
   moreCategories?: number;
 };
+
+/**
+ * Open cards grouped by the month they mail in.
+ *
+ * Insertion order, deliberately not sorted: the month is a display
+ * string like "September 2026" or "Winter 2026", so sorting puts
+ * December before September and cannot place a season at all. The
+ * roster arrives chronologically.
+ */
+const cardsByMonth = (cards: IssueCard[]): [string, IssueCard[]][] => {
+  const byMonth = new Map<string, IssueCard[]>();
+  for (const c of cards) {
+    const key = hasMailDate(c.mailMonth) ? c.mailMonth : "Date to be confirmed";
+    const list = byMonth.get(key);
+    if (list) list.push(c);
+    else byMonth.set(key, [c]);
+  }
+  return [...byMonth.entries()];
+};
+
+/**
+ * The card's name with the month taken off.
+ *
+ * cardName falls back to "{zone}, {month}" when Mission Control has not
+ * named the card, which under a month heading reads "Summerville,
+ * September 2026" directly beneath "September 2026".
+ */
+const nameUnderMonth = (c: IssueCard) =>
+  c.cardName.endsWith(`, ${c.mailMonth}`)
+    ? c.cardName.slice(0, -(c.mailMonth.length + 2))
+    : c.cardName;
+
 
 export type IssueContent = {
   subject: string;
@@ -604,16 +636,18 @@ export function renderIssue(
 
   if (content.cards.length) {
     lines.push("OPEN NOW", "");
-    for (const c of content.cards) {
-      lines.push(
-        `  ${c.cardName} - mails ${c.mailMonth}` +
-          (c.spotsTotal > 0
-            ? ` - ${c.spotsLeft} of ${c.spotsTotal} spots left`
-            : ""),
-      );
-      if (c.artworkDeadline) lines.push(`  Artwork deadline ${c.artworkDeadline}`);
-      if (c.takenCategories?.length) {
-        lines.push(`  Already taken: ${c.takenCategories.join(", ")}`);
+    for (const [month, group] of cardsByMonth(content.cards)) {
+      lines.push(`  ${month}`);
+      for (const c of group) {
+        lines.push(
+          `    ${nameUnderMonth(c)}` +
+            (c.spotsTotal > 0
+              ? ` - ${c.spotsLeft} of ${c.spotsTotal} spots left`
+              : ""),
+        );
+        if (c.takenCategories?.length) {
+          lines.push(`      Already taken: ${c.takenCategories.join(", ")}`);
+        }
       }
       lines.push("");
     }
@@ -713,27 +747,34 @@ export function renderIssue(
 
   if (content.cards.length) {
     h.push(heading("Open now"));
-    for (const c of content.cards) {
+    /* Grouped by month, with the month as the line above rather than
+       repeated on every card, and no artwork deadline: this section is
+       what is still available, and a deadline belongs to a card
+       somebody has already bought. That is the "Your cards" block
+       above, where it is still the most useful line in the email. */
+    for (const [month, group] of cardsByMonth(content.cards)) {
       h.push(
-        `<div style="border:1px solid #dbe4ec;border-radius:8px;padding:12px 14px;margin:0 0 10px">`,
-        `<b>${esc(c.cardName)}</b><br>`,
-        `<span style="color:#5e7183">Mails ${esc(c.mailMonth)}`,
-        c.spotsTotal > 0
-          ? ` &middot; ${c.spotsLeft} of ${c.spotsTotal} spots left`
-          : "",
-        c.artworkDeadline
-          ? ` &middot; artwork deadline ${esc(c.artworkDeadline)}`
-          : "",
-        `</span>`,
+        `<p style="margin:18px 0 8px;font-size:15px;font-weight:700;color:#22323f">${esc(
+          month,
+        )}</p>`,
       );
-      if (c.takenCategories?.length) {
+      for (const c of group) {
         h.push(
-          `<br><span style="color:#5e7183">Already taken: ${esc(
-            c.takenCategories.join(", "),
-          )}</span>`,
+          `<div style="border:1px solid #dbe4ec;border-radius:8px;padding:12px 14px;margin:0 0 8px">`,
+          `<b>${esc(nameUnderMonth(c))}</b>`,
+          c.spotsTotal > 0
+            ? `<br><span style="color:#5e7183">${c.spotsLeft} of ${c.spotsTotal} spots left</span>`
+            : "",
         );
+        if (c.takenCategories?.length) {
+          h.push(
+            `<br><span style="color:#5e7183">Already taken: ${esc(
+              c.takenCategories.join(", "),
+            )}</span>`,
+          );
+        }
+        h.push(`</div>`);
       }
-      h.push(`</div>`);
     }
   }
 
