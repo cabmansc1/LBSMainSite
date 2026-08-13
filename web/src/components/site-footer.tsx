@@ -12,13 +12,27 @@ import {
 
 const COLS: { heading: string; links: { href: string; label: string }[] }[] = [
   {
-    heading: "Advertise",
+    /* "Services" rather than "Advertise" because print is in here now
+       and it is not advertising. The nav separates the two deliberately;
+       filing Printing under a heading that says Advertise would undo
+       that in the one place every page shows.
+
+       No fourth column instead: the grid below is md:grid-cols-4 and
+       already holds the brand block plus three, so a fourth would wrap
+       one orphan onto its own row. */
+    heading: "Services",
     links: [
       { href: "/advertise", label: "Spotlight Postcards" },
       { href: "/pricing", label: "Pricing" },
       { href: "/coverage-map", label: "Coverage Map" },
       { href: "/mailing-calendar", label: "Mailing Calendar" },
       { href: "/gallery", label: "Card Gallery" },
+      { href: "/printing", label: "Print Services" },
+      // Resources is the index over this calculator and the guides. The
+      // calculator keeps its own line because it is the one people come
+      // looking for by name, and a footer is where you go when you
+      // already know what you want.
+      { href: "/resources", label: "Resources" },
       { href: "/roi-calculator", label: "ROI Calculator" },
     ],
   },
