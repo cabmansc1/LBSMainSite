@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { MailingFacets, useMailingFilter } from "@/components/mailing-facets";
+import {
+  MailingFacets,
+  useMailingFilter,
+  useUrlChoice,
+} from "@/components/mailing-facets";
 import { MailingMonthGrid } from "@/components/mailing-month-grid";
 import { StatusChip, FillMeter } from "@/components/sections";
 import { cardCoverage } from "@/lib/card-coverage";
@@ -39,8 +42,12 @@ export function MailingFilter({ mailings, descriptions }: Props) {
   /* Table first. It is the view that answers "when is my deadline" in
      one glance down a column, and it is what the page has always been.
      The month grid answers a different question — which areas mail in
-     October — and is the better one to browse. */
-  const [view, setView] = useState<"table" | "months">("table");
+     October — and is the better one to browse.
+
+     In the URL alongside the filters, so a link carries the whole view
+     somebody meant to send rather than the right rows in the wrong
+     layout. */
+  const [view, setView] = useUrlChoice("view", ["table", "months"] as const, "table");
 
   return (
     <>
