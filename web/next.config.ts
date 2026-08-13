@@ -224,6 +224,15 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        /* The guides index moved under /resources, which now also
+           carries the ROI calculator. Only the index moved — the guides
+           themselves are still /guides/{slug}, so this must not be a
+           wildcard or it would swallow all four of them. */
+        source: "/guides",
+        destination: "/resources",
+        permanent: true,
+      },
+      {
         /**
          * The old category page, deleted in favour of
          * /directory/category/{slug}.

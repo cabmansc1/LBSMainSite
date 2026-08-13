@@ -22,9 +22,12 @@ import { usePathname } from "next/navigation";
 
    Blog is not here on purpose. The footer already carries it, and a nav
    item costs more than a footer one: it spends width on every page and
-   competes with the two things being sold. Resources is the item this
-   slot is being held for — the ROI calculator and the guides under
-   /guides, once there is enough there to be worth a click. */
+   competes with the two things being sold.
+
+   Resources took that slot. It sits after the mailing run and before
+   Printing because it is what somebody reads while deciding, not what
+   they buy — and until now the calculator and the guides were reachable
+   only from the footer and one link on the hub page. */
 const LINKS = [
   { href: "/direct-mail-marketing", label: "Advertise" },
   { href: "/coverage-map", label: "Service Areas" },
@@ -37,6 +40,7 @@ const LINKS = [
      than not having it at all. Both go back the moment there is a first
      story and a first event to land on. */
   { href: "/directory", label: "Directory" },
+  { href: "/resources", label: "Resources" },
   { href: "/printing", label: "Printing" },
 ];
 

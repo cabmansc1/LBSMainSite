@@ -68,7 +68,18 @@ export function GuidePage({
             name: "Direct Mail Marketing",
             item: `${SITE_URL}/direct-mail-marketing`,
           },
-          { "@type": "ListItem", position: 3, name: guide.title, item: url },
+          // Resources sits here because the visible breadcrumb above
+          // leads there. The two disagreed before — the trail showed an
+          // index the markup never mentioned — and a breadcrumb rich
+          // result is built from this, so it should describe the same
+          // route a reader can see.
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: "Resources",
+            item: `${SITE_URL}/resources`,
+          },
+          { "@type": "ListItem", position: 4, name: guide.title, item: url },
         ],
       },
     ],
@@ -88,8 +99,12 @@ export function GuidePage({
               Direct mail
             </Link>
             <span className="mx-1.5">/</span>
-            <Link href="/guides" className="hover:text-white">
-              Guides
+            {/* Points at /resources, not /guides. The guide URLs stay
+                under /guides/{slug} but their index lives at /resources
+                now, and a breadcrumb should lead where the reader can
+                actually go rather than mirror the path. */}
+            <Link href="/resources" className="hover:text-white">
+              Resources
             </Link>
           </nav>
           <h1 className="mt-4 text-[28px] md:text-[40px] font-bold tracking-[-0.032em] leading-[1.06] text-balance">
