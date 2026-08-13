@@ -68,7 +68,7 @@ export default function Page() {
           is still working.
         </li>
         <li>
-          <strong>You have nothing to say.</strong> &ldquo;We do plumbing&rdquo;
+          <strong>You have nothing to say.</strong>{" "}&ldquo;We do plumbing&rdquo;
           is not a reason to call. Without an offer, a reason to act, or something
           genuinely distinctive, the card is a business card mailed to
           strangers.

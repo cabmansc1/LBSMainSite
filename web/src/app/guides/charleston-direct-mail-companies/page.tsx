@@ -90,7 +90,7 @@ export default function Page() {
         and postage included.
       </p>
       <p>
-        <strong>The trade:</strong> you get a portion of the card, not all of
+        <strong>The trade:</strong>{" "}you get a portion of the card, not all of
         it, and it mails on that zone&rsquo;s schedule rather than yours. If you
         need the whole card or an exact date, this is the wrong product and
         solo mail is the right one.
@@ -141,7 +141,7 @@ export default function Page() {
         homes they want and have artwork ready.
       </p>
       <p>
-        <strong>The trade:</strong> no local knowledge. Nobody at a national
+        <strong>The trade:</strong>{" "}no local knowledge. Nobody at a national
         printer knows which Summerville routes are worth mailing, that
         Sullivan&rsquo;s Island and Isle of Palms only make sense together, or
         that your competitor bought the same zip last month. You are buying

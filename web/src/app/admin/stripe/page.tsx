@@ -109,7 +109,7 @@ export default async function AdminStripePage() {
         </p>
         <p>
           Set <b className="font-semibold">STRIPE_SECRET_KEY</b> to the live key
-          and <b className="font-semibold">STRIPE_WEBHOOK_SECRET</b> to that new
+          and <b className="font-semibold">STRIPE_WEBHOOK_SECRET</b>{" "}to that new
           endpoint&rsquo;s signing secret. They must be from the same mode: a
           test secret against a live key rejects every event as an invalid
           signature, which looks exactly like a working checkout.

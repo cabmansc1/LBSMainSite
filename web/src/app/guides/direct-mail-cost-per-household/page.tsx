@@ -138,7 +138,7 @@ export default function Page() {
       </p>
       <ul>
         <li>
-          <strong>Option A — one solo EDDM drop.</strong> About 1,400 homes
+          <strong>Option A — one solo EDDM drop.</strong>{" "}About 1,400 homes
           once, at roughly 52&cent; each. You own the whole card. You also
           bundle, drive and file the paperwork.
         </li>
