@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const FAQS: GuideFaq[] = [
   {
     q: "How much does EDDM cost per piece?",
-    a: "The USPS retail EDDM rate is about 26 cents a piece as of 2026, but that is postage only. Once printing, design and your own time are counted, a realistic all-in figure for a 5,000-piece run is closer to 43 to 62 cents a home for a mid-size card.",
+    a: "The USPS retail EDDM rate is about 26 cents a piece as of 2026, but that is postage only. Once printing, design and your own time are counted, a realistic all-in figure for a 5,000-piece run is closer to 46 to 67 cents a home for a mid-size card.",
   },
   {
     q: "Is EDDM cheaper than a shared postcard?",
@@ -66,12 +66,17 @@ export default function Page() {
 
       <h2>Printing, which is the part that surprises people</h2>
       <p>
-        A 6.5x9 card — around the smallest that qualifies for EDDM — costs
-        something like 12 to 20 cents a piece at 5,000 copies from a national
-        printer, on decent stock, printed both sides. Go up to a 9x12 and you
-        are closer to 30 to 40 cents. Shipping the finished cards to you adds
-        another line, and printers quote it separately often enough that it is
-        worth asking before you compare two quotes.
+        A 6.5x9 card — around the smallest that qualifies for EDDM — runs
+        something like 15 to 25 cents a piece at 5,000 copies, on decent stock,
+        printed both sides and delivered to you. Go up to a 9x12 and you are
+        closer to 35 to 50 cents.
+      </p>
+      <p>
+        The cheaper sticker prices you will find online are quoted to people who
+        already have a print-ready file, order on the printer&rsquo;s schedule
+        rather than their own, and pay shipping as a separate line. A business
+        ordering one run, once, usually lands at the top of these ranges rather
+        than the bottom — and a reprint for a file problem lands above them.
       </p>
       <p>
         Order fewer than 5,000 and the per-piece price climbs steeply. Print is
@@ -116,14 +121,15 @@ export default function Page() {
       <h2>What it comes to</h2>
       <p>
         Adding it up for 5,000 pieces of a mid-size card: roughly $1,300 of
-        postage, $600 to $1,000 of print, and $250 to $800 of design if you are
-        not doing it yourself. Call it <strong>$2,150 to $3,100 all in</strong>,
-        which is <strong>43 to 62 cents a household</strong> — plus a day of
+        postage, $750 to $1,250 of print delivered, and $250 to $800 of design
+        if you are not doing it yourself. Call it{" "}
+        <strong>$2,300 to $3,350 all in</strong>, which is{" "}
+        <strong>46 to 67 cents a household</strong> — plus a day of
         somebody&rsquo;s time bundling and driving.
       </p>
       <p>
         For a 9x12 card of the kind that actually gets noticed, the print side
-        alone pushes the total past $3,000.
+        alone pushes the total past $3,300.
       </p>
 
       <h2>When EDDM is the right answer</h2>

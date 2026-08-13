@@ -109,9 +109,9 @@ export default function Page() {
       <p>
         <strong>The trade:</strong> the postage looks cheap and the campaign is
         not. All in, expect{" "}
-        <Link href="/guides/eddm-cost-charleston">43 to 62 cents a home</Link>{" "}
+        <Link href="/guides/eddm-cost-charleston">46 to 67 cents a home</Link>{" "}
         once print, design, bundling and the drive to the post office are
-        counted — roughly eight times a shared spot.
+        counted — roughly ten times a shared spot.
       </p>
 
       <h2>5. Addressed mail to a purchased list</h2>
