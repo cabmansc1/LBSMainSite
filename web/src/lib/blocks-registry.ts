@@ -433,8 +433,19 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     key: "default.print",
     label: "Print products line",
     kind: "text",
+    /*
+     * The list here has to match what /printing says, because the same
+     * person reads both. It used to offer yard signs and banners
+     * outright, which the print page is careful not to do: large format
+     * goes through a sign shop, and promising it in an email is how you
+     * end up owning a torn banner you did not make.
+     *
+     * Rendered escaped into the email, so this is prose with no markup
+     * — a link would arrive as visible angle brackets. "Just reply" is
+     * the right ask in a newsletter anyway.
+     */
     fallback:
-      "Need anything printed? Alongside the postcards we do business cards, flyers, brochures, yard signs, banners, magnets and more. Just reply to this email and tell us what you are after.",
+      "Need anything printed? Alongside the postcards we do business cards, flyers, brochures, postcards and magnets, with the design included when we already have your artwork. Signs and banners we arrange through a local partner. Just reply to this email and tell us what you are after.",
     hint: "Appears in every issue. Clear it on an issue to drop the section.",
   },
   {

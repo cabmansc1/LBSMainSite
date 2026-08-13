@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
-/* The two things we sell come first, because there are two of them now.
-   Everything here used to serve the mailing business, which left print
-   reachable only from inside the direct mail hub — invisible to anyone
-   who came to the site for it.
+/* Ordered so the mailing business reads as one run — advertise it, see
+   where it goes, see what it looked like, browse who is on it — with
+   Printing after that as the separate thing it is, rather than wedged
+   into the middle of a sequence it has nothing to do with.
 
    No "Home" item: the logo to the left is a link home on every page and
    is the convention everywhere, so the slot buys back the width Printing
@@ -18,10 +18,15 @@ import { usePathname } from "next/navigation";
    already goes to /pricing, and two nav elements aimed at one URL is a
    wasted slot — so the link browses and the button buys. It also gives
    the pillar page a sitewide internal link, which is the thing a pillar
-   page most needs and the one it did not have. */
+   page most needs and the one it did not have.
+
+   Blog is not here on purpose. The footer already carries it, and a nav
+   item costs more than a footer one: it spends width on every page and
+   competes with the two things being sold. Resources is the item this
+   slot is being held for — the ROI calculator and the guides under
+   /guides, once there is enough there to be worth a click. */
 const LINKS = [
   { href: "/direct-mail-marketing", label: "Advertise" },
-  { href: "/printing", label: "Printing" },
   { href: "/coverage-map", label: "Service Areas" },
   // The archive of mailed cards is the strongest proof the product is
   // real, so it belongs in the nav rather than buried in the footer.
@@ -32,7 +37,7 @@ const LINKS = [
      than not having it at all. Both go back the moment there is a first
      story and a first event to land on. */
   { href: "/directory", label: "Directory" },
-  { href: "/blog", label: "Blog" },
+  { href: "/printing", label: "Printing" },
 ];
 
 export function NavBar() {
