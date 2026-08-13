@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { MailingFacets, useMailingFilter } from "@/components/mailing-facets";
+import { MailingMonthGrid } from "@/components/mailing-month-grid";
 import { StatusChip, FillMeter } from "@/components/sections";
 import { cardCoverage } from "@/lib/card-coverage";
 import type { UpcomingMailing } from "@/lib/mailings";
@@ -34,10 +36,42 @@ const chipFor = (status: string, left: number) => {
 export function MailingFilter({ mailings, descriptions }: Props) {
   const filter = useMailingFilter(mailings);
   const { visible, clearAll } = filter;
+  /* Table first. It is the view that answers "when is my deadline" in
+     one glance down a column, and it is what the page has always been.
+     The month grid answers a different question — which areas mail in
+     October — and is the better one to browse. */
+  const [view, setView] = useState<"table" | "months">("table");
 
   return (
     <>
       <MailingFacets filter={filter} total={mailings.length} tone="light" />
+
+      <div
+        className="flex items-center gap-1.5 mb-4"
+        role="group"
+        aria-label="View"
+      >
+        {(
+          [
+            ["table", "Table"],
+            ["months", "By month"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setView(key)}
+            aria-pressed={view === key}
+            className={`text-[13px] rounded-full border px-3.5 py-1.5 transition-colors ${
+              view === key
+                ? "bg-navy-950 border-navy-950 text-white font-semibold"
+                : "bg-white border-line text-body hover:border-navy-950"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {visible.length === 0 ? (
         <div className="border border-line rounded-(--radius-card) bg-white p-8 text-center">
@@ -57,6 +91,8 @@ export function MailingFilter({ mailings, descriptions }: Props) {
             Clear all filters
           </button>
         </div>
+      ) : view === "months" ? (
+        <MailingMonthGrid mailings={visible} />
       ) : (
         <div className="border border-line rounded-(--radius-card) bg-white overflow-x-auto">
           <table className="w-full border-collapse text-[13.5px] min-w-[720px]">
