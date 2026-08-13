@@ -399,6 +399,28 @@ export default async function DirectMailMarketingPage() {
           </div>
         </section>
 
+        {/* Print is a different job from mailing, but it is the same
+            customer asking — so it belongs here rather than hidden. */}
+        <section>
+          <Card className="p-7 grid gap-2.5">
+            <h2 className="text-[20px] font-bold tracking-[-0.02em]">
+              Need it printed rather than mailed?
+            </h2>
+            <p className="text-[15.5px] leading-relaxed text-body max-w-[68ch]">
+              Business cards, flyers, postcards and magnets for Charleston-area
+              businesses, with the design handled rather than left to you. If we
+              have made anything for you before, there is nothing to send and no
+              design charge.
+            </p>
+            <Link
+              href="/printing"
+              className="text-[14px] font-semibold text-brand-deep justify-self-start"
+            >
+              Printing and quotes &rarr;
+            </Link>
+          </Card>
+        </section>
+
         <CtaBand
           title="See which zones still have room"
           sub="Live availability by card, with the categories already taken."

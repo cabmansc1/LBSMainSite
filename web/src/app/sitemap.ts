@@ -42,6 +42,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // it is the page we most want treated as the subject authority.
     { path: "/direct-mail-marketing", priority: 0.9 },
     { path: "/guides", priority: 0.6 },
+    // A commercial page with local intent behind it, so priority sits
+    // with the money pages rather than the supporting ones.
+    { path: "/printing", priority: 0.8 },
     { path: "/privacy", priority: 0.2 },
     { path: "/terms", priority: 0.2 },
   ];
