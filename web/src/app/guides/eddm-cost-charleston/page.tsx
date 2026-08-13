@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const FAQS: GuideFaq[] = [
   {
     q: "How much does EDDM cost per piece?",
-    a: "The USPS retail EDDM rate is about 22 to 24 cents a piece, but that is postage only. Once printing, design and your own time are counted, a realistic all-in figure for a 5,000-piece run is closer to 40 to 55 cents a home for a large format card.",
+    a: "The USPS retail EDDM rate is about 26 cents a piece as of 2026, but that is postage only. Once printing, design and your own time are counted, a realistic all-in figure for a 5,000-piece run is closer to 43 to 62 cents a home for a mid-size card.",
   },
   {
     q: "Is EDDM cheaper than a shared postcard?",
@@ -50,10 +50,10 @@ export default function Page() {
 
       <h2>The postage, which is the part everyone quotes</h2>
       <p>
-        EDDM Retail postage runs roughly 22 to 24 cents a piece. That is a real
-        saving against a first-class stamp and it is what makes the programme
-        attractive. It is also about a third of what the campaign actually
-        costs.
+        EDDM Retail postage runs about 26 cents a piece as of 2026. That is
+        still a real saving against a first-class stamp and it is what makes the
+        programme attractive. It is also only about half of what the campaign
+        actually costs.
       </p>
       <p>
         Two constraints come attached. You buy whole carrier routes, so your
@@ -115,10 +115,10 @@ export default function Page() {
 
       <h2>What it comes to</h2>
       <p>
-        Adding it up for 5,000 pieces of a mid-size card: roughly $1,150 of
+        Adding it up for 5,000 pieces of a mid-size card: roughly $1,300 of
         postage, $600 to $1,000 of print, and $250 to $800 of design if you are
-        not doing it yourself. Call it <strong>$2,000 to $2,900 all in</strong>,
-        which is <strong>40 to 58 cents a household</strong> — plus a day of
+        not doing it yourself. Call it <strong>$2,150 to $3,100 all in</strong>,
+        which is <strong>43 to 62 cents a household</strong> — plus a day of
         somebody&rsquo;s time bundling and driving.
       </p>
       <p>

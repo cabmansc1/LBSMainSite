@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const FAQS: GuideFaq[] = [
   {
     q: "What is a typical direct mail cost per household?",
-    a: "In the Charleston area it ranges from about five cents a home on a shared oversized postcard to around 40 to 60 cents for a solo EDDM campaign, and 75 cents to well over a dollar for addressed mail to a purchased list. The spread is mostly about how much of the card you own and who else is splitting the postage.",
+    a: "In the Charleston area it ranges from about five cents a home on a shared oversized postcard to around 43 to 62 cents for a solo EDDM campaign, and 75 cents to well over a dollar for addressed mail to a purchased list. The spread is mostly about how much of the card you own and who else is splitting the postage.",
   },
   {
     q: "Why is shared mail so much cheaper per home?",
@@ -56,7 +56,7 @@ export default function Page() {
           postage included. Several non-competing businesses split the card.
         </li>
         <li>
-          <strong>Solo EDDM, 40&cent; to 58&cent; a home.</strong> Your own card
+          <strong>Solo EDDM, 43&cent; to 62&cent; a home.</strong> Your own card
           to whole postal routes. Postage is cheap; print, design and the
           bundling and drop-off are not.{" "}
           <Link href="/guides/eddm-cost-charleston">
