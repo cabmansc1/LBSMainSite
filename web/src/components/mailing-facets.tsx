@@ -163,6 +163,48 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
   };
 }
 
+/**
+ * One extra choice mirrored to the URL, for things that are not facets.
+ *
+ * Separate from useMailingFilter because the coverage map has no view
+ * toggle and should not carry the concept. Both effects read
+ * window.location.search at the moment they run and touch only their
+ * own keys, so they compose rather than clobbering each other.
+ *
+ * The default is omitted from the query string rather than written out,
+ * so an unfiltered page keeps a clean address and only a deliberate
+ * choice shows up in a link.
+ *
+ * The value is validated against the allowed list: a URL is something
+ * anybody can type, and ?view=nonsense should land on the default
+ * rather than render neither view.
+ */
+export function useUrlChoice<T extends string>(
+  key: string,
+  allowed: readonly T[],
+  fallback: T,
+) {
+  const sp = useSearchParams();
+  const [value, setValue] = useState<T>(() => {
+    const raw = sp.get(key) as T | null;
+    return raw && allowed.includes(raw) ? raw : fallback;
+  });
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (value === fallback) q.delete(key);
+    else q.set(key, value);
+    const qs = q.toString();
+    window.history.replaceState(
+      null,
+      "",
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+    );
+  }, [key, value, fallback]);
+
+  return [value, setValue] as const;
+}
+
 const CHIP: Record<Tone, { on: string; off: string }> = {
   light: {
     on: "bg-navy-950 border-navy-950 text-white font-semibold",
