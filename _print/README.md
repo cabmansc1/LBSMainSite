@@ -37,3 +37,18 @@ order value and the sheet says so. That is the calculator working, not a bug —
 small reorders are exactly the jobs that cost more attention than they earn, and
 the right answer is usually to roll them into the customer's next mailing
 invoice.
+
+## Google Business Profile
+
+`google-business-profile.md` is the setup pack for the profile — the
+decisions, the categories, and paste-ready copy. It exists because for
+local print searches the map pack outranks the website, so the profile
+matters more than any page.
+
+It is the one item here that cannot be done from this repo: editing a
+Business Profile needs a signed-in Google account and verified
+ownership. The pack takes it as far as it can go without that.
+
+Two things in it are load-bearing and easy to get wrong — the PO Box
+address will be rejected, and a second profile for printing risks
+suspending the one that already exists.

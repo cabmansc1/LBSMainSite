@@ -31,6 +31,7 @@ export type BlockDef = {
 export const BLOCK_PAGES: { key: string; label: string; hint: string }[] = [
   { key: "home", label: "Homepage", hint: "Hero, sections and the closing band" },
   { key: "advertise", label: "Advertise", hint: "The postcard product page" },
+  { key: "printing", label: "Printing", hint: "The print services and quote page" },
   {
     key: "newsletter",
     label: "Advertiser update",
@@ -443,5 +444,258 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     kind: "text",
     fallback: "Andrew\nLowcountry Business Spotlight",
     hint: "Line breaks are kept.",
+  },
+
+  /*
+   * Printing.
+   *
+   * The advertise page keeps its FAQ answers in code and makes only the
+   * section headings editable. This page deliberately does not, and the
+   * reason is what the answers contain: turnaround, the minimum order,
+   * how many revisions are included, and who pays for a reprint. Those
+   * are operating terms that settle as the trade printer's quotes and
+   * schedule firm up, not marketing copy that holds still. Leaving them
+   * compiled in would mean a commit and a deploy to state a turnaround,
+   * which is the exact thing this table exists to stop.
+   *
+   * They are also the wording customers are held to, so the page and
+   * the proof terms in _print/ have to agree. Editing one is a prompt
+   * to check the other.
+   *
+   * Product names, specs and quantities stay in print-products.ts. They
+   * are structured data feeding the offer catalogue in JSON-LD, not
+   * prose, and a text box is the wrong shape for them.
+   */
+  {
+    page: "printing",
+    key: "hero.eyebrow",
+    label: "Hero eyebrow",
+    kind: "text",
+    fallback: "Printing",
+  },
+  {
+    page: "printing",
+    key: "hero.headline",
+    label: "Hero headline",
+    kind: "text",
+    fallback: "Business card and flyer printing in the Lowcountry",
+    hint: "Carries the two searches asked about most. Worth keeping both in it.",
+  },
+  {
+    page: "printing",
+    key: "hero.sub",
+    label: "Hero subheading",
+    kind: "text",
+    fallback:
+      "Cards, flyers, postcards and magnets for Charleston-area businesses — with the design handled, not left to you. Send us what you need and we will come back with a price.",
+  },
+  {
+    page: "printing",
+    key: "hero.cta",
+    label: "Hero button",
+    kind: "text",
+    fallback: "Get a quote",
+  },
+  {
+    page: "printing",
+    key: "pitch.title",
+    label: "Opening section heading",
+    kind: "text",
+    fallback: "The part most printers make you do yourself",
+  },
+  {
+    page: "printing",
+    key: "pitch.body",
+    label: "Opening section paragraphs",
+    kind: "list",
+    fallback: [
+      "Order business cards from a national printer and the first thing you are asked for is a print-ready file — 300 DPI, CMYK, correct bleed. For most small businesses that request is where the whole project stops. The cards never get ordered, because the artwork was never the easy part.",
+      "If we have designed anything for you before, we already have your logo, your colours, your photographs and your offer sitting in a file. Putting them on a business card is our job, not yours, and it does not cost extra. If we have never worked together, send whatever you have and we will tell you straight away whether it can be used.",
+      "The printing itself is competitively priced. The design being handled is the part you cannot get anywhere else.",
+    ],
+    hint: "One paragraph per line. This is the argument the page rests on.",
+  },
+  {
+    page: "printing",
+    key: "products.eyebrow",
+    label: "Product list eyebrow",
+    kind: "text",
+    fallback: "What we print",
+  },
+  {
+    page: "printing",
+    key: "products.title",
+    label: "Product list heading",
+    kind: "text",
+    fallback: "The list",
+  },
+  {
+    page: "printing",
+    key: "products.sub",
+    label: "Product list subheading",
+    kind: "text",
+    fallback:
+      "Quantities shown are the ones worth quoting. Ask for something not on here and we will tell you honestly whether we are the right people for it.",
+  },
+  {
+    page: "printing",
+    key: "products.footnote",
+    label: "Note under the product list",
+    kind: "text",
+    fallback:
+      "Banners, yard signs and vehicle wraps go through a local sign shop we work with. You still deal with us — we take the brief and the artwork, they produce it.",
+  },
+  {
+    page: "printing",
+    key: "steps.eyebrow",
+    label: "How it works eyebrow",
+    kind: "text",
+    fallback: "How it works",
+  },
+  {
+    page: "printing",
+    key: "steps.title",
+    label: "How it works heading",
+    kind: "text",
+    fallback: "Four steps, and one of them is yours",
+  },
+  {
+    page: "printing",
+    key: "quote.title",
+    label: "Quote form heading",
+    kind: "text",
+    fallback: "Get a quote",
+  },
+  {
+    page: "printing",
+    key: "quote.sub",
+    label: "Quote form subheading",
+    kind: "text",
+    fallback:
+      "Tell us the product and roughly how many. You do not need to know the stock or the finish — that is what the quote is for. No payment now, and nothing gets printed until you have seen a proof and said yes to it.",
+  },
+  {
+    page: "printing",
+    key: "faq.eyebrow",
+    label: "FAQ eyebrow",
+    kind: "text",
+    fallback: "Questions",
+  },
+  {
+    page: "printing",
+    key: "faq.title",
+    label: "FAQ heading",
+    kind: "text",
+    fallback: "Before you ask",
+  },
+  {
+    page: "printing",
+    key: "faq.1.q",
+    label: "FAQ 1 — question",
+    kind: "text",
+    fallback: "Do I have to supply artwork?",
+  },
+  {
+    page: "printing",
+    key: "faq.1.a",
+    label: "FAQ 1 — answer",
+    kind: "text",
+    fallback:
+      "No. If we have designed anything for you before — a postcard ad, a flyer, anything — we already hold your logo, colours and photography, and adapting it to another product costs you nothing. If we have never worked together, send whatever you have and we will tell you honestly whether it can be used or needs rebuilding, and what that would cost, before starting.",
+  },
+  {
+    page: "printing",
+    key: "faq.2.q",
+    label: "FAQ 2 — question",
+    kind: "text",
+    fallback: "Do you print for businesses that don't advertise with you?",
+  },
+  {
+    page: "printing",
+    key: "faq.2.a",
+    label: "FAQ 2 — answer",
+    kind: "text",
+    fallback:
+      "Yes. Most of this work comes from businesses already on our postcards, but there is no requirement. If you just need cards printed, that is a perfectly good reason to get in touch.",
+    hint: "This is what opens print up beyond existing advertisers. Worth keeping.",
+  },
+  {
+    page: "printing",
+    key: "faq.3.q",
+    label: "FAQ 3 — question",
+    kind: "text",
+    fallback: "How fast is it?",
+  },
+  {
+    page: "printing",
+    key: "faq.3.a",
+    label: "FAQ 3 — answer",
+    kind: "text",
+    fallback:
+      "Turnaround starts when you approve the proof, not when you ask for a quote, and the exact number of days is confirmed on your quote because it depends on the product and the print schedule. If you have a hard deadline — an event, an opening, a mailing date — say so up front and we will work backwards from it.",
+    hint: "Name real days here once the printer confirms them. Specific beats vague.",
+  },
+  {
+    page: "printing",
+    key: "faq.4.q",
+    label: "FAQ 4 — question",
+    kind: "text",
+    fallback: "How many revisions do I get?",
+  },
+  {
+    page: "printing",
+    key: "faq.4.a",
+    label: "FAQ 4 — answer",
+    kind: "text",
+    fallback:
+      "One round is included, meaning all your changes sent together rather than one at a time. Further rounds are chargeable, and we will always tell you before a request crosses that line rather than afterwards.",
+    hint: "Must match the proof terms in _print/. Change both together.",
+  },
+  {
+    page: "printing",
+    key: "faq.5.q",
+    label: "FAQ 5 — question",
+    kind: "text",
+    fallback: "What happens if something is printed wrong?",
+  },
+  {
+    page: "printing",
+    key: "faq.5.a",
+    label: "FAQ 5 — answer",
+    kind: "text",
+    fallback:
+      "If the printer makes an error, or we do, it is reprinted at no cost to you. If a mistake makes it through onto a proof you approved, a reprint is chargeable at cost — we make nothing on it. That is why the proof stage matters and why it is worth taking an extra day over it.",
+    hint: "The one customers test. Saying it here is what keeps it a conversation.",
+  },
+  {
+    page: "printing",
+    key: "faq.6.q",
+    label: "FAQ 6 — question",
+    kind: "text",
+    fallback: "Is there a minimum order?",
+  },
+  {
+    page: "printing",
+    key: "faq.6.a",
+    label: "FAQ 6 — answer",
+    kind: "text",
+    fallback:
+      "There is a minimum order value, mostly so a very small reorder does not end up costing more in handling than it is worth. If you are an existing advertiser and the job falls under it, we will usually add it to your next mailing invoice instead, which is less hassle for everybody.",
+    hint: "Name the figure once it is settled on the rate sheet.",
+  },
+  {
+    page: "printing",
+    key: "faq.7.q",
+    label: "FAQ 7 — question",
+    kind: "text",
+    fallback: "Do you do banners and signs?",
+  },
+  {
+    page: "printing",
+    key: "faq.7.a",
+    label: "FAQ 7 — answer",
+    kind: "text",
+    fallback:
+      "Not in house. We work with a local sign shop for anything outdoor or large format — you deal with us, we handle the brief and the artwork, and they produce it. It means you get one point of contact without us pretending to be a sign company.",
   },
 ];
