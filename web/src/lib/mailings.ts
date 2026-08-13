@@ -94,10 +94,10 @@ export const UPCOMING_MAILINGS: UpcomingMailing[] = [
   { zoneSlug: "goose-creek", zoneName: "Goose Creek", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 4, status: "open" },
   { zoneSlug: "mount-pleasant", zoneName: "Mount Pleasant", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "10,000+", spotsTotal: 11, spotsTaken: 6, status: "open" },
   { zoneSlug: "moncks-corner", zoneName: "Moncks Corner", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 2, status: "open" },
-  { zoneSlug: "north-charleston", zoneName: "North Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 23", households: "10,000+", spotsTotal: 11, spotsTaken: 3, status: "open" },
-  { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 23", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open" },
-  { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", artworkDeadline: "Nov 20", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open" },
-  { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", artworkDeadline: "Nov 20", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open" },
+  { zoneSlug: "north-charleston", zoneName: "North Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 3, status: "open" },
+  { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open" },
+  { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open" },
+  { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open" },
   // One row, because it is one card: 3,590 mailboxes on Isle of Palms and
   // 1,325 on Sullivan's, 4,915 across the two. Two rows at 5,000+ each
   // offered a choice that does not exist and about twice the reach that
