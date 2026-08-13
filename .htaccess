@@ -60,6 +60,20 @@ RewriteRule ^ https://%{HTTP_HOST}/directory/location/%1? [R=301,L]
 RewriteCond %{THE_REQUEST} \s/directory\.php[\s?] [NC]
 RewriteRule ^ https://%{HTTP_HOST}/directory? [R=301,L]
 
+# category.php was the category browser before /directory/category/{slug}.
+# The file is gone; these keep its old links working.
+#
+# Its ?category= value was fed straight to WHERE category = ?, and that
+# column holds the same slugs the new URLs use, so the value maps across
+# unchanged. Deliberately case-sensitive: an uppercase capture would
+# build a URL the rewrite below cannot match and turn a redirect into a
+# 404. Anything not slug-shaped falls through to the directory root.
+RewriteCond %{THE_REQUEST} \s/category\.php\?category=([a-z0-9-]+)[\s&]
+RewriteRule ^ https://%{HTTP_HOST}/directory/category/%1? [R=301,L]
+
+RewriteCond %{THE_REQUEST} \s/category\.php[\s?] [NC]
+RewriteRule ^ https://%{HTTP_HOST}/directory? [R=301,L]
+
 # Internal rewrites (only for non-existing files/dirs)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

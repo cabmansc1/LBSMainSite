@@ -224,7 +224,32 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        // Redirected to a categories.php that no longer exists.
+        /**
+         * The old category page, deleted in favour of
+         * /directory/category/{slug}.
+         *
+         * It took ?category={slug} and queried businesses.category
+         * directly, and that column holds the same slugs the new URLs
+         * use — so an old link carries enough to land on the matching
+         * category rather than the directory root. Sending them all to
+         * /directory would throw that away and make every old link a
+         * slightly wrong answer.
+         *
+         * The value is restricted to slug shape on purpose. Anything
+         * else never matched a row on the old page either, and mapping
+         * it through would only manufacture a 404 further down.
+         */
+        source: "/category.php",
+        has: [
+          { type: "query", key: "category", value: "(?<slug>[a-z0-9-]+)" },
+        ],
+        destination: "/directory/category/:slug",
+        permanent: true,
+      },
+      {
+        // No category, or one that was never a real slug. The old page
+        // redirected these to a categories.php that has not existed for
+        // a long time, so they have been 404ing rather than redirecting.
         source: "/category.php",
         destination: "/directory",
         permanent: true,
