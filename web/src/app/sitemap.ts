@@ -10,6 +10,8 @@ import { getPosts } from "@/lib/blog";
 import { listActivePlaces } from "@/lib/places";
 import { publishedStories } from "@/lib/stories";
 import { activeSpecials } from "@/lib/specials";
+import { GUIDES } from "@/lib/guides";
+import { SUB_AREAS } from "@/lib/sub-areas";
 import { STORY_KINDS } from "@/lib/stories-types";
 import { getPastCards } from "@/lib/past-cards";
 
@@ -36,6 +38,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/contact", priority: 0.6 },
     { path: "/directory-signup", priority: 0.6 },
     { path: "/blog", priority: 0.6 },
+    // The pillar page every zone page and guide hangs off. High, because
+    // it is the page we most want treated as the subject authority.
+    { path: "/direct-mail-marketing", priority: 0.9 },
+    { path: "/guides", priority: 0.6 },
+    // A commercial page with local intent behind it, so priority sits
+    // with the money pages rather than the supporting ones.
+    { path: "/printing", priority: 0.8 },
     { path: "/privacy", priority: 0.2 },
     { path: "/terms", priority: 0.2 },
   ];
@@ -117,6 +126,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       : []),
     ...stories.map((s) => ({
       url: `${SITE_URL}/stories/${s.slug}`,
+      priority: 0.7,
+    })),
+    // Long-form guides. Static pages in the codebase rather than rows,
+    // so they are always listed rather than gated on a count.
+    ...GUIDES.map((g) => ({
+      url: `${SITE_URL}/guides/${g.slug}`,
+      lastModified: g.updated,
+      priority: 0.7,
+    })),
+    // Neighbourhoods inside a zone. Same priority as a zone page: the
+    // search that finds them is just as commercial.
+    ...SUB_AREAS.map((a) => ({
+      url: `${SITE_URL}/direct-mail-marketing/${a.slug}`,
       priority: 0.7,
     })),
     // One index per neighborhood with cards in it.

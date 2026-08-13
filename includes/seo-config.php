@@ -75,12 +75,34 @@ return [
         'priority'    => 0.7,
     ],
 
+    /*
+     * Superseded and orphaned, so noindex rather than a page to improve.
+     *
+     * Category browsing lives at /directory/category/{slug}, served by
+     * directory.php and rewritten in .htaccess. This file is the version
+     * that came before it: nothing on the site links to it, its own
+     * "Back to Categories" link points at a categories.php that does not
+     * exist, and it renders a bare list with "Description:" labels.
+     *
+     * Left in place rather than deleted because a live file with an
+     * unknown inbound link is not worth removing blind — but it should
+     * not be competing with the real category pages in the index. The
+     * tidier end state is a 301 to /directory/ and deletion; that is a
+     * decision to take deliberately, not a side effect of an SEO pass.
+     */
     'category.php' => [
         'title'       => 'Category - Lowcountry Business Spotlight',
         'description' => 'Browse local Charleston-area businesses by category in the Lowcountry Business Spotlight directory — find restaurants, contractors, health providers and more near you.', // fallback; page should append the category name dynamically
         'canonical'   => SITE_URL . '/category',
+        'robots'      => 'noindex,follow',
         'h1'          => null, // dynamic — uses category name
-        'priority'    => 0.6,
+        // Null because there is no sitemap priority to express, not
+        // because it excludes anything: sitemap.php hardcodes its URL
+        // list rather than reading this file. category.php was never in
+        // it, and the real category URLs it does emit are the
+        // /directory/category/{slug} ones. The robots value above is
+        // what actually keeps this page out of the index.
+        'priority'    => null,
     ],
 
     'blog.php' => [
