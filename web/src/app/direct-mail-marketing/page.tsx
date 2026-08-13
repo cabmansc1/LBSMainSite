@@ -4,6 +4,7 @@ import { Card, CtaBand, SectionHeading } from "@/components/sections";
 import { GUIDES } from "@/lib/guides";
 import { CORE_SIZES, FLAGSHIP_REACH, formatPrice, isOffered } from "@/lib/pricing";
 import { getLivePricing } from "@/lib/pricing-store";
+import { SUB_AREAS } from "@/lib/sub-areas";
 import { ZONES } from "@/lib/zones";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -317,7 +318,29 @@ export default async function DirectMailMarketingPage() {
               );
             })}
           </div>
-          <p className="text-[13.5px] text-muted mt-4">
+          <div className="mt-6 grid gap-2.5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted">
+              Neighbourhoods within a zone
+            </h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {SUB_AREAS.map((a) => (
+                <Link
+                  key={a.slug}
+                  href={`/direct-mail-marketing/${a.slug}`}
+                  className="border border-line rounded-(--radius-card) bg-white p-5 hover:border-navy-950 transition-colors"
+                >
+                  <b className="text-[15.5px] font-semibold tracking-tight block">
+                    {a.name}
+                  </b>
+                  <span className="block text-[12.5px] text-muted mt-1">
+                    On the {a.cardName} card · {a.zipCodes.join(" · ")}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[13.5px] text-muted mt-6">
             Not sure which zone covers you? The{" "}
             <Link href="/coverage-map" className="text-brand-deep font-semibold">
               coverage map

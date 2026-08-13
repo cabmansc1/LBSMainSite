@@ -11,6 +11,7 @@ import { listActivePlaces } from "@/lib/places";
 import { publishedStories } from "@/lib/stories";
 import { activeSpecials } from "@/lib/specials";
 import { GUIDES } from "@/lib/guides";
+import { SUB_AREAS } from "@/lib/sub-areas";
 import { STORY_KINDS } from "@/lib/stories-types";
 import { getPastCards } from "@/lib/past-cards";
 
@@ -129,6 +130,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...GUIDES.map((g) => ({
       url: `${SITE_URL}/guides/${g.slug}`,
       lastModified: g.updated,
+      priority: 0.7,
+    })),
+    // Neighbourhoods inside a zone. Same priority as a zone page: the
+    // search that finds them is just as commercial.
+    ...SUB_AREAS.map((a) => ({
+      url: `${SITE_URL}/direct-mail-marketing/${a.slug}`,
       priority: 0.7,
     })),
     // One index per neighborhood with cards in it.
