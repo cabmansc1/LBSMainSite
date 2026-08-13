@@ -2,6 +2,28 @@
 
 This directory holds audit notes and reference artifacts for the SEO project on Lowcountry Business Spotlight. **Nothing in this folder is part of the live site** — all files here are for reference only.
 
+## Status check — 2026-08-13
+
+Re-verified every open item listed below against the current tree. **The Phase 0
+and Phase 2 backlog is closed.** Specifically:
+
+| Item as written below | Actual state |
+|---|---|
+| Sitewide duplicate `<h1>` from `header.php` | Fixed — no brand `h1` in the include. Two hand-rolled pages still had one; both demoted. |
+| 19 `TODO: Andrew to write` markers | All filled. The single remaining match is the doc comment explaining the marker. |
+| 38 pages hand-rolling `<head>` | Wired — 47 public pages now include `seo_head.php`. |
+| Missing `noindex` on auth/thank-you pages | Set in the config and read through `seo_head.php`. |
+| Sitemap missing james-island / johns-island / coming-soon | All three present. |
+| Pages with empty `description` tags | None remain. |
+| Test/legacy artifacts to delete | All four gone. |
+
+The lists further down are kept as a record of what was found in April, not as a
+to-do list. **Read this table first.** Anything below it that contradicts the
+table is history.
+
+Next phase is no longer remediation — it is content. See the keyword plan and the
+`/direct-mail-marketing` hub in the Next app for where new pages should go.
+
 ## Phase 2 — Per-page SEO data (2026-04-29)
 
 Centralised SEO data into `includes/seo-config.php` (the only Phase 2 deliverable that ships to the live site) and audited the remaining structural problems for Andrew to drive.

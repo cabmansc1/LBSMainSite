@@ -429,11 +429,15 @@ include __DIR__ . '/seo_head.php';
     <!-- Logo Header -->
     <div class="logo-header">
         <div class="logo-container">
-            <h1 class="brand-wordmark">
+            <!-- The wordmark is branding, not this page's subject. It was an
+                 h1, which gave the page two and made the first one say the
+                 company name instead of what the page is for. Styling is on
+                 the class, so this renders identically. -->
+            <div class="brand-wordmark">
                 <span class="lowcountry">Lowcountry</span>
                 <span class="business">Business</span>
                 <span class="spotlight">Spotlight</span>
-            </h1>
+            </div>
             <p class="brand-tagline">Bringing Local Businesses Together To Share The Cost of Advertising</p>
         </div>
     </div>

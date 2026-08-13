@@ -160,7 +160,8 @@ include __DIR__ . '/seo_head.php';
 
         .logo-container { max-width: 1200px; margin: 0 auto; padding: 0 40px; text-align: center; }
 
-        .brand-wordmark { font-weight: 800; font-size: clamp(2.5rem, 5vw, 3.5rem); line-height: 1.2; }
+        /* margin was the browser's h1 default until this stopped being an h1 */
+        .brand-wordmark { font-weight: 800; font-size: clamp(2.5rem, 5vw, 3.5rem); line-height: 1.2; margin: 0.67em 0; }
         .brand-wordmark .lowcountry { color: #38b6ff; }
         .brand-wordmark .business { color: #fff; margin: 0 8px; }
         .brand-wordmark .spotlight { color: #38b6ff; }
@@ -280,11 +281,14 @@ include __DIR__ . '/seo_head.php';
 <body>
     <div class="logo-header">
         <div class="logo-container">
-            <h1 class="brand-wordmark">
+            <!-- The wordmark is branding, not this page's subject. It was an
+                 h1, which gave the page two and made the first one say the
+                 company name instead of "Enter to Win!". -->
+            <div class="brand-wordmark">
                 <span class="lowcountry">Lowcountry</span>
                 <span class="business">Business</span>
                 <span class="spotlight">Spotlight</span>
-            </h1>
+            </div>
             <p class="brand-tagline">Bringing Local Businesses Together To Share The Cost of Advertising</p>
         </div>
     </div>
