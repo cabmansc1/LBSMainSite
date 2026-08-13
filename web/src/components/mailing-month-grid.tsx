@@ -8,9 +8,9 @@ import { zoneBySlug } from "@/lib/zones";
  * The schedule as months, with the areas mailing in each as pills.
  *
  * The question this answers is "who is mailing in October", so it shows
- * exactly that and stops. The table is still there for the row of
- * detail — spots, reach, deadline per card — and repeating any of it
- * here would only make the thing you came for harder to find.
+ * exactly that and stops. No artwork deadline: it belongs to a card
+ * rather than to a month, and printing one per month invites reading it
+ * as the month's deadline. The table has a column for it.
  *
  * A month grid rather than a day grid because the date that reaches
  * this component is a month string: the Mission Control adapter formats
@@ -62,14 +62,11 @@ function AreaPill({ m }: { m: UpcomingMailing }) {
   );
 }
 
-/** The one deadline a month's cards share, or undefined if they differ. */
-const sharedDeadline = (cards: UpcomingMailing[]) => {
-  const first = cards[0]?.artworkDeadline;
-  if (!first) return undefined;
-  return cards.every((c) => c.artworkDeadline === first) ? first : undefined;
-};
-
-export function MailingMonthGrid({ mailings }: { mailings: UpcomingMailing[] }) {
+export function MailingMonthGrid({
+  mailings,
+}: {
+  mailings: UpcomingMailing[];
+}) {
   /* Insertion order, not sorted. The value is a display string, so
      sorting puts December before September and cannot place a season at
      all. The source list is chronological. */
@@ -89,36 +86,30 @@ export function MailingMonthGrid({ mailings }: { mailings: UpcomingMailing[] }) 
 
   return (
     <div className="border border-line rounded-(--radius-card) bg-white divide-y divide-line">
-      {dated.map(([month, cards]) => {
-        const deadline = sharedDeadline(cards);
-        return (
-          <section key={month} className="p-5">
-            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
-              <h3 className="text-[15px] font-bold tracking-tight">{month}</h3>
-              <span className="text-[12.5px] text-muted">
-                {deadline ? (
-                  <>
-                    Artwork due <span className="num">{deadline}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="num">{cards.length}</span>{" "}
-                    {cards.length === 1 ? "card" : "cards"}
-                  </>
-                )}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {cards.map((m) => (
-                <AreaPill
-                  key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`}
-                  m={m}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      {dated.map(([month, cards]) => (
+        <section key={month} className="p-5">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+            <h3 className="text-[15px] font-bold tracking-tight">{month}</h3>
+            {/* No artwork deadline here on purpose. This view is for
+                  seeing which areas mail when; the deadline is a detail
+                  of a specific card and lives in the table, where it has
+                  its own column and cannot be mistaken for applying to
+                  the whole month. */}
+            <span className="text-[12.5px] text-muted">
+              <span className="num">{cards.length}</span>{" "}
+              {cards.length === 1 ? "area" : "areas"}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {cards.map((m) => (
+              <AreaPill
+                key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`}
+                m={m}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
 
       {undated.length > 0 && (
         <section className="p-5 bg-surface">
@@ -132,7 +123,10 @@ export function MailingMonthGrid({ mailings }: { mailings: UpcomingMailing[] }) 
           </div>
           <div className="flex flex-wrap gap-2">
             {undated.map((m) => (
-              <AreaPill key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`} m={m} />
+              <AreaPill
+                key={m.cardId ?? `${m.zoneSlug}-${m.mailMonth}`}
+                m={m}
+              />
             ))}
           </div>
         </section>
