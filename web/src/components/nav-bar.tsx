@@ -20,14 +20,18 @@ import { usePathname } from "next/navigation";
    the pillar page a sitewide internal link, which is the thing a pillar
    page most needs and the one it did not have.
 
-   Blog is not here on purpose. The footer already carries it, and a nav
-   item costs more than a footer one: it spends width on every page and
-   competes with the two things being sold.
+   Blog, Printing and Resources are all deliberately absent. A flat bar
+   has no room to grow — every item added shortens the rest and makes
+   the whole thing harder to scan — and none of these three is what
+   somebody arrives to do. All three are in the footer, which renders on
+   every page too, so nothing here is unreachable.
 
-   Resources took that slot. It sits after the mailing run and before
-   Printing because it is what somebody reads while deciding, not what
-   they buy — and until now the calculator and the guides were reachable
-   only from the footer and one link on the hub page. */
+   Printing is the one this costs something. It is a page written to
+   rank, and a nav link is a stronger internal signal than a footer one.
+   The trade was made knowingly: a crowded bar hurts every page, and the
+   footer link plus the one on the direct mail hub carry it. If a
+   dropdown ever lands, Printing and Resources are the two that should
+   come back first. */
 const LINKS = [
   { href: "/direct-mail-marketing", label: "Advertise" },
   { href: "/coverage-map", label: "Service Areas" },
@@ -40,8 +44,6 @@ const LINKS = [
      than not having it at all. Both go back the moment there is a first
      story and a first event to land on. */
   { href: "/directory", label: "Directory" },
-  { href: "/resources", label: "Resources" },
-  { href: "/printing", label: "Printing" },
 ];
 
 export function NavBar() {
