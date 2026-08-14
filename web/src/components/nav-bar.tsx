@@ -71,7 +71,12 @@ export function NavBar() {
             loading="eager"
             className="h-10 w-auto"
           />
-          <span className="font-bold text-[15px] tracking-tight whitespace-nowrap max-[380px]:hidden">
+          {/* Hidden between md and lg. The wordmark is 218px and the link
+              row switches on at md, which together need about 808px of a
+              772px container — so every page scrolled sideways on a
+              tablet. It stays on a phone, where the row is a hamburger
+              and there is room, and returns at lg. */}
+          <span className="font-bold text-[15px] tracking-tight whitespace-nowrap max-[380px]:hidden md:hidden lg:inline">
             Lowcountry Business Spotlight
           </span>
         </Link>
