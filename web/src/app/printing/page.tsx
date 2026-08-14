@@ -4,7 +4,6 @@ import { ContactForm } from "@/components/contact-form";
 import { Card, SectionHeading } from "@/components/sections";
 import { pageCopy } from "@/lib/blocks";
 import { PRINT_PRODUCTS, PRINTING_LIVE } from "@/lib/print-products";
-import { formatPrice } from "@/lib/pricing";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 /**
@@ -125,15 +124,12 @@ export default async function PrintingPage() {
         hasOfferCatalog: {
           "@type": "OfferCatalog",
           name: "Print products",
+          /* No price on the offers. Print is quoted, and an Offer
+             asserting a price we do not publish would be the one part
+             of this page a rich result could contradict. */
           itemListElement: PRINT_PRODUCTS.map((p) => ({
             "@type": "Offer",
             itemOffered: { "@type": "Service", name: p.name },
-            ...(p.fromCents
-              ? {
-                  price: (p.fromCents / 100).toFixed(2),
-                  priceCurrency: "USD",
-                }
-              : {}),
           })),
         },
       },
@@ -209,16 +205,9 @@ export default async function PrintingPage() {
           <div className="grid sm:grid-cols-2 gap-3.5">
             {PRINT_PRODUCTS.map((p) => (
               <Card key={p.slug} className="p-6 grid gap-2.5 content-start">
-                <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                  <b className="text-[17px] font-semibold tracking-tight">
-                    {p.name}
-                  </b>
-                  {p.fromCents ? (
-                    <span className="text-[13px] font-semibold text-brand-deep num">
-                      from {formatPrice(p.fromCents)}
-                    </span>
-                  ) : null}
-                </div>
+                <b className="text-[17px] font-semibold tracking-tight">
+                  {p.name}
+                </b>
                 <span className="text-[12.5px] text-muted num">{p.spec}</span>
                 <p className="text-[14px] text-body leading-relaxed">
                   {p.blurb}

@@ -131,12 +131,15 @@ for "business card printing" style searches.
 
 ---
 
-## Products
+## Products — skip this section
 
-Leave this until the rate sheet has real numbers in it. Products display
-a price, and a wrong or placeholder price is worse than an empty
-section. Once the sheet is filled, add business cards and flyers at the
-250 and 500 tiers first — those are what people search for.
+Print is quoted rather than listed, and the profile's Products section
+exists to display a price. Filling it in would put on Google exactly the
+number the site deliberately does not publish, in the one place a
+competitor checks first.
+
+Services, above, carries the same products without a price and is the
+section that helps for "business card printing" searches anyway.
 
 ---
 
