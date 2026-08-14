@@ -5,20 +5,23 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
-/* Ordered so the mailing business reads as one run — advertise it, see
-   where it goes, see what it looked like, browse who is on it — with
-   Printing after that as the separate thing it is, rather than wedged
-   into the middle of a sequence it has nothing to do with.
+/* Service Areas leads because it answers the question people actually
+   arrive with — do you reach my neighbourhood — and nothing else on the
+   site matters to them until it is answered. The rest then reads as one
+   run: what the product is, what it looked like, who is on it.
 
    No "Home" item: the logo to the left is a link home on every page and
-   is the convention everywhere, so the slot buys back the width Printing
-   needs rather than spending it twice.
+   is the convention everywhere, so the slot buys back width rather than
+   spending it twice.
 
    Advertise points at the hub, not /pricing. The Reserve a Spot button
    already goes to /pricing, and two nav elements aimed at one URL is a
    wasted slot — so the link browses and the button buys. It also gives
    the pillar page a sitewide internal link, which is the thing a pillar
-   page most needs and the one it did not have.
+   page most needs and the one it did not have; the footer carries the
+   same link, but a footer link is the weaker of the two and this is the
+   page that can least afford the weaker one. That is why Advertise
+   stays here rather than moving to the footer alone.
 
    Blog, Printing and Resources are all deliberately absent. A flat bar
    has no room to grow — every item added shortens the rest and makes
@@ -33,8 +36,8 @@ import { usePathname } from "next/navigation";
    dropdown ever lands, Printing and Resources are the two that should
    come back first. */
 const LINKS = [
-  { href: "/direct-mail-marketing", label: "Advertise" },
   { href: "/coverage-map", label: "Service Areas" },
+  { href: "/direct-mail-marketing", label: "Advertise" },
   // The archive of mailed cards is the strongest proof the product is
   // real, so it belongs in the nav rather than buried in the footer.
   { href: "/gallery", label: "Past Cards" },
