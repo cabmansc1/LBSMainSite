@@ -5,11 +5,15 @@
  * change without touching the page — and so the same list can feed a
  * quote form later if this ever stops being handled by email.
  *
- * Two fields are deliberately left unset: `fromCents` and
- * `leadTimeDays`. Both depend on the trade printer's actual quotes and
- * schedule, and a made-up number on a public page is worse than no
- * number. The page renders correctly without them and starts showing
- * them the moment they are filled in.
+ * No price field. Print is quoted rather than listed: the number
+ * depends on quantity, stock and finish, and a "from" figure that four
+ * callers out of five then beat or miss is worse than asking. There was
+ * an optional fromCents here waiting to be filled in — it never was,
+ * and leaving it in the type kept implying a price list was coming.
+ *
+ * `leadTimeDays` is still unset, and still deliberately: turnaround is
+ * confirmed on the quote because it moves with the product and the
+ * print schedule, and the FAQ says so rather than naming days.
  */
 
 /**
@@ -46,8 +50,6 @@ export type PrintProduct = {
    * quoted separately rather than absorbed.
    */
   artwork: "onFile" | "rebuild";
-  /** Lowest price, in cents. Unset until the rate sheet is filled in. */
-  fromCents?: number;
   /** Production days after proof approval. Unset until confirmed. */
   leadTimeDays?: number;
   /** Shown under the name when there is something worth saying. */
@@ -114,6 +116,3 @@ export const PRINT_PRODUCTS: PrintProduct[] = [
 
 export const printProductBySlug = (slug: string) =>
   PRINT_PRODUCTS.find((p) => p.slug === slug);
-
-/** Anything with a price set, so the page can show a "from" line honestly. */
-export const anyPriced = () => PRINT_PRODUCTS.some((p) => p.fromCents);
