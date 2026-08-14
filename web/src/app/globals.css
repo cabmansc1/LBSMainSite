@@ -25,6 +25,11 @@
   --color-line: #e7ebf0;
   --color-line-strong: #d5dce4;
   --color-surface: #fafbfc;
+  /* A band you can actually see. surface is #fafbfc — a one percent
+     step off white, which is right for a card sitting on white and
+     useless for alternating whole sections, where it reads as one
+     undifferentiated column. */
+  --color-band: #eef2f7;
 
   --color-ok: #12a150;
   --color-warn: #c77e10;

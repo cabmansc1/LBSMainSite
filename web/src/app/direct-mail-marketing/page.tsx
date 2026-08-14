@@ -165,13 +165,20 @@ export default async function DirectMailMarketingPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1120px] px-6 py-14 grid gap-16">
+      {/* [&>*]:min-w-0 because grid children default to min-width:auto and
+          so refuse to shrink below their content. The cost table carries
+          min-w-[420px] for its own scroll container; without this, that
+          one item sets the width of the single column and drags every
+          other section off the side of a phone with it. */}
+      <div className="mx-auto max-w-[1120px] px-6 py-14 grid gap-12 [&>*]:min-w-0">
 
         <section className="grid gap-4 max-w-[68ch]">
           <h2 className="text-[24px] font-bold tracking-[-0.025em]">
             Why the mailbox still works here
           </h2>
-          <p className="text-[16px] leading-relaxed text-body">
+          {/* Lead paragraph, set larger. Three equal paragraphs gave the
+              eye nowhere to land. */}
+          <p className="text-[17.5px] leading-relaxed text-ink">
             Almost every other channel a local business can buy has got
             noisier. A Facebook ad competes with everything else in the feed,
             a search ad competes with whoever is willing to bid more, and both
@@ -193,7 +200,7 @@ export default async function DirectMailMarketingPage() {
           </p>
         </section>
 
-        <section>
+        <section className="bg-band rounded-(--radius-card) p-6 md:p-9">
           <SectionHeading
             eyebrow="The product"
             title="One card, several businesses, no competitors"
@@ -282,7 +289,7 @@ export default async function DirectMailMarketingPage() {
           </Card>
         </section>
 
-        <section>
+        <section className="bg-band rounded-(--radius-card) p-6 md:p-9">
           <SectionHeading
             eyebrow="Coverage"
             title="Where the cards go"
@@ -384,9 +391,11 @@ export default async function DirectMailMarketingPage() {
           </div>
         </section>
 
-        <section>
+        <section className="bg-band rounded-(--radius-card) p-6 md:p-9">
           <SectionHeading eyebrow="Questions" title="Common questions" />
-          <div className="grid gap-3">
+          {/* Two columns from md. Stacked, these five boxes ran nearly a
+              thousand pixels — a fifth of the page in one rhythm. */}
+          <div className="grid md:grid-cols-2 gap-3 items-start">
             {FAQS.map((f) => (
               <Card key={f.q} className="p-6 grid gap-2">
                 <b className="text-[16px] font-semibold tracking-tight">
