@@ -319,63 +319,109 @@ export function MailingFacets({
   tone: Tone;
 }) {
   const { facets, selected, onToggle, visible, activeCount, clearAll } = filter;
+
+  /* Collapsed by default, because ten area chips wrap to two rows and
+     the panel was 282px of chrome above the thing people came to read.
+     Open when something is already selected, so a link somebody was
+     sent shows what was filtered rather than a count they have to
+     expand a panel to explain. */
+  const [open, setOpen] = useState(activeCount > 0);
+
+  const dark = tone === "dark";
+
   return (
     <div
       className={
-        tone === "dark"
-          ? "border border-white/12 bg-white/4 rounded-2xl p-4 mb-3.5 grid gap-3"
-          : "border border-line rounded-(--radius-card) bg-surface p-4 mb-4 grid gap-3"
+        dark
+          ? "border border-white/12 bg-white/4 rounded-2xl px-4 py-3 mb-3.5"
+          : "border border-line rounded-(--radius-card) bg-surface px-4 py-3 mb-4"
       }
     >
-      <FacetGroup
-        label="Area"
-        options={facets.areas}
-        selected={selected.areas}
-        onToggle={onToggle.areas}
-        tone={tone}
-      />
-      <FacetGroup
-        label="Mails"
-        options={facets.months}
-        selected={selected.months}
-        onToggle={onToggle.months}
-        tone={tone}
-      />
-      <FacetGroup
-        label="Availability"
-        options={facets.statuses}
-        selected={selected.statuses}
-        onToggle={onToggle.statuses}
-        tone={tone}
-      />
+      {/* Always visible: the toggle, how many cards are showing, and the
+          way out. The count is the one thing worth keeping on screen
+          when the chips are away — a filtered list that does not say it
+          is filtered reads as a short list. */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className={`inline-flex items-center gap-1.5 text-[12.5px] font-semibold rounded-full border px-3 py-1.5 transition-colors ${
+            dark
+              ? "border-white/25 text-white hover:border-white/60"
+              : "border-line bg-white text-ink hover:border-navy-950"
+          }`}
+        >
+          Filters
+          {activeCount > 0 && (
+            <span
+              className={`num text-[11px] rounded-full px-1.5 ${
+                dark ? "bg-white text-navy-950" : "bg-navy-950 text-white"
+              }`}
+            >
+              {activeCount}
+            </span>
+          )}
+          <span aria-hidden className={dark ? "text-[#93A5B8]" : "text-muted"}>
+            {open ? "\u2013" : "+"}
+          </span>
+        </button>
 
-      <div
-        className="flex items-center gap-3 flex-wrap"
-        role="status"
-        aria-live="polite"
-      >
         <span
-          className={`text-[13px] ${tone === "dark" ? "text-[#C6D3E0]" : "text-body"}`}
+          className={`text-[12.5px] ${dark ? "text-[#C6D3E0]" : "text-body"}`}
+          role="status"
+          aria-live="polite"
         >
           Showing{" "}
-          <strong className={tone === "dark" ? "num text-white" : "num text-ink"}>
+          <strong className={dark ? "num text-white" : "num text-ink"}>
             {visible.length}
           </strong>{" "}
           of <span className="num">{total}</span>{" "}
           {total === 1 ? "card" : "cards"}
         </span>
+
         {activeCount > 0 && (
           <button
             type="button"
             onClick={clearAll}
-            className={`text-[13px] font-semibold hover:underline ${
-              tone === "dark" ? "text-brand" : "text-brand-deep"
+            className={`text-[12.5px] font-semibold hover:underline ${
+              dark ? "text-brand" : "text-brand-deep"
             }`}
           >
             Clear {activeCount === 1 ? "filter" : "all filters"}
           </button>
         )}
       </div>
+
+      {open && (
+        <div
+          className={`grid gap-3 mt-3 pt-3 border-t ${
+            dark ? "border-white/12" : "border-line"
+          }`}
+        >
+          <FacetGroup
+            label="Area"
+            options={facets.areas}
+            selected={selected.areas}
+            onToggle={onToggle.areas}
+            tone={tone}
+          />
+          <FacetGroup
+            label="Mails"
+            options={facets.months}
+            selected={selected.months}
+            onToggle={onToggle.months}
+            tone={tone}
+          />
+          <FacetGroup
+            label="Availability"
+            options={facets.statuses}
+            selected={selected.statuses}
+            onToggle={onToggle.statuses}
+            tone={tone}
+          />
+        </div>
+      )}
     </div>
   );
 }
