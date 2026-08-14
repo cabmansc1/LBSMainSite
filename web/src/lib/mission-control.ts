@@ -682,10 +682,30 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
       return a.mailDateIso.localeCompare(b.mailDateIso);
     });
   if (upcoming.length === 0) return mcEnabled() ? [] : UPCOMING_MAILINGS;
+  /* Holds for every card in one read rather than one per card. The
+     store is the same cached response getTakenCategoriesForCard would
+     fetch, so this costs nothing extra, but doing it here keeps the
+     schedule a single pass instead of a lookup inside a map. */
+  const store = await fetchStore();
+  const heldByCard = new Map<string, string[]>();
+  for (const h of store?.spotlightHolds ?? []) {
+    const key = String(h.cardId ?? "");
+    const category = (h.category ?? "").trim();
+    if (!key || !category) continue;
+    heldByCard.set(key, [...(heldByCard.get(key) ?? []), category]);
+  }
   return upcoming.map((c) => ({
     cardId: String(c.id),
     cardName: c.cardName || undefined,
     routes: c.routes.length ? c.routes : undefined,
+    /* Sold plus held, the same union getTakenCategoriesForCard reports,
+       because both close a category to a new buyer. Always an array
+       here — we reached Mission Control to build this row at all, so an
+       empty one means the card is genuinely open rather than unasked. */
+    takenCategories: uniqueCategories([
+      ...c.advertisers.map(advertiserCategory).filter((x): x is string => !!x),
+      ...(heldByCard.get(String(c.id)) ?? []),
+    ]),
     zoneSlug: c.zoneSlug,
     zoneName: c.zoneName,
     mailMonth: c.mailMonth,

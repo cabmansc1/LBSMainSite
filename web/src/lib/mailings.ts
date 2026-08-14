@@ -34,6 +34,20 @@ export type UpcomingMailing = {
   cardName?: string;
   /** Carrier routes the card mails to, when MC has the route table. */
   routes?: CardRoute[];
+  /**
+   * Categories already locked on this card — sold to an advertiser or
+   * held by an admin mid-conversation. One business per category per
+   * card is the product, so this is the list of trades that can no
+   * longer buy onto it.
+   *
+   * Undefined means unknown, which is not the same as empty. An empty
+   * array is Mission Control telling us the card is wide open;
+   * undefined is us not having been able to ask, and the difference
+   * matters because "nothing is taken" is exactly the wrong thing to
+   * tell somebody during an outage. Surfaces that filter on this show
+   * the control only when at least one card knows its answer.
+   */
+  takenCategories?: string[];
   zoneSlug: string;
   zoneName: string;
   mailMonth: string;
@@ -89,20 +103,20 @@ export const isBookable = (status: UpcomingMailing["status"]) =>
   status === "open" || status === "almost-full" || status === "planned";
 
 export const UPCOMING_MAILINGS: UpcomingMailing[] = [
-  { zoneSlug: "summerville", zoneName: "Summerville", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 9, status: "almost-full" },
-  { zoneSlug: "daniel-island", zoneName: "Daniel Island & Clements Ferry", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 10, status: "almost-full" },
-  { zoneSlug: "goose-creek", zoneName: "Goose Creek", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 4, status: "open" },
-  { zoneSlug: "mount-pleasant", zoneName: "Mount Pleasant", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "10,000+", spotsTotal: 11, spotsTaken: 6, status: "open" },
-  { zoneSlug: "moncks-corner", zoneName: "Moncks Corner", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 2, status: "open" },
-  { zoneSlug: "north-charleston", zoneName: "North Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 3, status: "open" },
-  { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open" },
-  { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open" },
-  { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open" },
+  { zoneSlug: "summerville", zoneName: "Summerville", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 9, status: "almost-full", takenCategories: ["Plumbing", "HVAC", "Roofing", "Dental", "Restaurants", "Landscaping", "Automotive", "Insurance", "Fitness"] },
+  { zoneSlug: "daniel-island", zoneName: "Daniel Island & Clements Ferry", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 10, status: "almost-full", takenCategories: ["Plumbing", "HVAC", "Roofing", "Dental", "Restaurants", "Landscaping", "Real Estate", "Insurance", "Fitness", "Med Spa"] },
+  { zoneSlug: "goose-creek", zoneName: "Goose Creek", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 4, status: "open", takenCategories: ["Plumbing", "Roofing", "Automotive", "Pest Control"] },
+  { zoneSlug: "mount-pleasant", zoneName: "Mount Pleasant", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "10,000+", spotsTotal: 11, spotsTaken: 6, status: "open", takenCategories: ["HVAC", "Dental", "Restaurants", "Real Estate", "Med Spa", "Fitness"] },
+  { zoneSlug: "moncks-corner", zoneName: "Moncks Corner", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 2, status: "open", takenCategories: ["Plumbing", "Landscaping"] },
+  { zoneSlug: "north-charleston", zoneName: "North Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 3, status: "open", takenCategories: ["HVAC", "Roofing", "Automotive"] },
+  { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open", takenCategories: ["Dental", "Restaurants", "Real Estate", "Med Spa", "Fitness"] },
+  { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open", takenCategories: ["Plumbing"] },
+  { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open", takenCategories: [] },
   // One row, because it is one card: 3,590 mailboxes on Isle of Palms and
   // 1,325 on Sullivan's, 4,915 across the two. Two rows at 5,000+ each
   // offered a choice that does not exist and about twice the reach that
   // does. getZoneMailings resolves either island to this row.
-  { zoneSlug: "isle-of-palms", zoneName: "Isle of Palms & Sullivans Island", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "4,900+", spotsTotal: 11, spotsTaken: 0, status: "waitlist" },
+  { zoneSlug: "isle-of-palms", zoneName: "Isle of Palms & Sullivans Island", mailMonth: "Winter 2026", artworkDeadline: "TBD", households: "4,900+", spotsTotal: 11, spotsTaken: 0, status: "waitlist", takenCategories: [] },
 ];
 
 /**

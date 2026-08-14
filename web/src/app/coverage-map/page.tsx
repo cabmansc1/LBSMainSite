@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CoverageMapCards } from "@/components/coverage-map-cards";
 import { CoverageMap } from "@/components/coverage-map";
-import { getUpcomingMailings } from "@/lib/mission-control";
+import { getMcCategories, getUpcomingMailings } from "@/lib/mission-control";
 import { getCardDescriptions } from "@/lib/card-details";
 import { ZONES } from "@/lib/zones";
 import { getLiveMailingAreas } from "@/lib/zone-store";
@@ -51,11 +51,14 @@ export default async function CoverageMapPage() {
   // zone populations when they stopped being sized by them, and this
   // page is force-dynamic, so that was a database read on every render
   // feeding nothing. getLiveMailingAreas still reflects saved pairings.
-  const [mailings, descriptions, areas, pricing] = await Promise.all([
+  const [mailings, descriptions, areas, pricing, categoryOptions] = await Promise.all([
     getUpcomingMailings(),
     getCardDescriptions(),
     getLiveMailingAreas(),
     getLivePricing(),
+    // Never fatal: the category search falls back to the common trades
+    // when Mission Control has no vocabulary to give.
+    getMcCategories().catch(() => [] as string[]),
   ]);
   const positions = mapPositionsFrom(areas);
   return (
@@ -91,7 +94,11 @@ export default async function CoverageMapPage() {
                 Live from our production pipeline
               </span>
             </div>
-            <CoverageMapCards mailings={mailings} descriptions={descriptions} />
+            <CoverageMapCards
+              mailings={mailings}
+              descriptions={descriptions}
+              categoryOptions={categoryOptions}
+            />
             <p className="mt-4 text-[12.5px] text-[#67768A]">
               Availability updates automatically as spots sell.
             </p>

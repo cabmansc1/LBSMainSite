@@ -20,11 +20,14 @@ import { zoneBySlug } from "@/lib/zones";
 export function CoverageMapCards({
   mailings,
   descriptions,
+  categoryOptions = [],
 }: {
   mailings: UpcomingMailing[];
   descriptions: Record<string, string>;
+  /** Mission Control's category vocabulary, for the category search. */
+  categoryOptions?: string[];
 }) {
-  const filter = useMailingFilter(mailings);
+  const filter = useMailingFilter(mailings, categoryOptions);
   const { visible, clearAll } = filter;
 
   return (

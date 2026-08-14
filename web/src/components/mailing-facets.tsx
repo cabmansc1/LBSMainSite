@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { COMMON_CATEGORIES, categoryKey } from "@/lib/categories";
 import type { UpcomingMailing } from "@/lib/mailings";
 
 /**
@@ -46,7 +47,33 @@ const STATUS_ORDER: UpcomingMailing["status"][] = [
   "full",
 ];
 
-const PARAMS = { areas: "area", months: "month", statuses: "status" } as const;
+const PARAMS = {
+  areas: "area",
+  months: "month",
+  statuses: "status",
+  categories: "category",
+} as const;
+
+type FacetName = keyof typeof PARAMS;
+
+/**
+ * Whether this card still has room for a given trade.
+ *
+ * The category facet is the one that reads backwards. Area, month and
+ * status ask "is the card this?"; category asks "could I buy it?" — so
+ * a match is the category being *absent* from the card's locked list.
+ * Filtering to cards that already have a plumber would be the exact
+ * opposite of what somebody clicking Plumbing wants.
+ *
+ * Undefined takenCategories means Mission Control could not be asked,
+ * not that the card is empty, so an unknown card is never filtered out.
+ * That is deliberate on a browse page — hiding a card we simply could
+ * not check would lose a real sale — and it is safe because it is only
+ * ever a browse: checkout re-asks and refuses rather than guessing.
+ */
+const categoryOpen = (m: UpcomingMailing, category: string) =>
+  !m.takenCategories ||
+  !m.takenCategories.some((t) => categoryKey(t) === categoryKey(category));
 
 const readParam = (sp: URLSearchParams | ReadonlyURLSearchParamsLike, key: string) => {
   const raw = sp.get(key);
@@ -55,7 +82,17 @@ const readParam = (sp: URLSearchParams | ReadonlyURLSearchParamsLike, key: strin
 
 type ReadonlyURLSearchParamsLike = { get(name: string): string | null };
 
-export function useMailingFilter(mailings: UpcomingMailing[]) {
+/**
+ * @param categoryOptions Mission Control's full vocabulary, which runs
+ *   to a couple of hundred trades. Passed in rather than derived from
+ *   the cards, because the categories nobody has bought are exactly the
+ *   ones a browser most wants to hear are free, and deriving would drop
+ *   every one of them. Empty falls back to the common handful.
+ */
+export function useMailingFilter(
+  mailings: UpcomingMailing[],
+  categoryOptions: string[] = [],
+) {
   const sp = useSearchParams();
 
   // Read once, on the first render. After that the chips own the state
@@ -67,6 +104,9 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
   const [statuses, setStatuses] = useState<Set<string>>(() =>
     readParam(sp, PARAMS.statuses),
   );
+  const [categories, setCategories] = useState<Set<string>>(() =>
+    readParam(sp, PARAMS.categories),
+  );
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -74,6 +114,7 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
       [areas, PARAMS.areas],
       [months, PARAMS.months],
       [statuses, PARAMS.statuses],
+      [categories, PARAMS.categories],
     ] as const) {
       if (key.size) q.set(param, [...key].join(","));
       else q.delete(param);
@@ -86,7 +127,7 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
       "",
       qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
     );
-  }, [areas, months, statuses]);
+  }, [areas, months, statuses, categories]);
 
   /**
    * Whether a card survives every facet except one.
@@ -99,18 +140,22 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
    * you picked one, which is why this reads "except".
    */
   const survives = useCallback(
-    (m: UpcomingMailing, except: "areas" | "months" | "statuses" | null) =>
+    (m: UpcomingMailing, except: FacetName | null) =>
       (except === "areas" || areas.size === 0 || areas.has(m.zoneSlug)) &&
       (except === "months" || months.size === 0 || months.has(m.mailMonth)) &&
-      (except === "statuses" || statuses.size === 0 || statuses.has(m.status)),
-    [areas, months, statuses],
+      (except === "statuses" || statuses.size === 0 || statuses.has(m.status)) &&
+      /* OR within the facet, like the others: picking Plumbing and
+         Roofing shows the cards where either could still buy, not the
+         cards where both could. A business has one trade, so two picked
+         chips are somebody unsure which of two names theirs goes by. */
+      (except === "categories" ||
+        categories.size === 0 ||
+        [...categories].some((c) => categoryOpen(m, c))),
+    [areas, months, statuses, categories],
   );
 
   const facets = useMemo(() => {
-    const tally = <T,>(
-      pick: (m: UpcomingMailing) => T,
-      except: "areas" | "months" | "statuses",
-    ) => {
+    const tally = <T,>(pick: (m: UpcomingMailing) => T, except: FacetName) => {
       const map = new Map<T, number>();
       for (const m of mailings) {
         if (!survives(m, except)) continue;
@@ -135,6 +180,35 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
     const monthCounts = tally((m) => m.mailMonth, "months");
     const statusCounts = tally((m) => m.status, "statuses");
 
+    /* Mission Control's vocabulary, plus anything actually locked on a
+       card in case MC's list and its cards disagree, deduped case-
+       insensitively so a hand-typed "real estate" does not sit next to
+       "Real Estate". The common handful stands in only when MC gave us
+       nothing. */
+    const allCategories = new Map<string, string>();
+    for (const name of categoryOptions.length ? categoryOptions : COMMON_CATEGORIES) {
+      const key = categoryKey(name);
+      if (key) allCategories.set(key, name.trim());
+    }
+    for (const m of mailings) {
+      for (const t of m.takenCategories ?? []) {
+        const key = categoryKey(t);
+        if (key && !allCategories.has(key)) allCategories.set(key, t.trim());
+      }
+    }
+    /* Counted as "cards where this is still open", which is what the
+       row promises. Not tally(), because a card contributes to many
+       categories at once rather than falling into one bucket. */
+    const categoryCounts = new Map<string, number>();
+    for (const m of mailings) {
+      if (!survives(m, "categories")) continue;
+      for (const [key, name] of allCategories) {
+        if (categoryOpen(m, name)) {
+          categoryCounts.set(key, (categoryCounts.get(key) ?? 0) + 1);
+        }
+      }
+    }
+
     return {
       areas: [...allAreas.entries()]
         .map(([value, label]) => ({
@@ -157,8 +231,29 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
         label: STATUS_LABEL[s],
         count: statusCounts.get(s) ?? 0,
       })),
+      categories: [...allCategories.entries()]
+        .map(([key, label]) => ({
+          value: label,
+          label,
+          count: categoryCounts.get(key) ?? 0,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     };
-  }, [mailings, survives]);
+  }, [mailings, survives, categoryOptions]);
+
+  /**
+   * Whether any card could tell us what it has locked.
+   *
+   * With Mission Control unreachable every card comes back unknown, and
+   * a category filter over unknowns is a control that answers every
+   * question with "yes, available" — the one answer that costs a
+   * refund. Better to not offer it than to offer it wrong, so the whole
+   * group disappears until at least one card knows its own answer.
+   */
+  const categoriesKnown = useMemo(
+    () => mailings.some((m) => !!m.takenCategories),
+    [mailings],
+  );
 
   const visible = useMemo(
     () => mailings.filter((m) => survives(m, null)),
@@ -175,17 +270,20 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
   return {
     visible,
     facets,
-    selected: { areas, months, statuses },
+    categoriesKnown,
+    selected: { areas, months, statuses, categories },
     onToggle: {
       areas: (v: string) => setAreas((s) => toggle(s, v)),
       months: (v: string) => setMonths((s) => toggle(s, v)),
       statuses: (v: string) => setStatuses((s) => toggle(s, v)),
+      categories: (v: string) => setCategories((s) => toggle(s, v)),
     },
-    activeCount: areas.size + months.size + statuses.size,
+    activeCount: areas.size + months.size + statuses.size + categories.size,
     clearAll: () => {
       setAreas(new Set());
       setMonths(new Set());
       setStatuses(new Set());
+      setCategories(new Set());
     },
   };
 }
@@ -309,6 +407,219 @@ function FacetGroup({
   );
 }
 
+/** How many matches the list shows before asking for a narrower search. */
+const MAX_SUGGESTIONS = 8;
+
+/**
+ * Type-ahead for the category facet.
+ *
+ * The other three facets are chips because they have five to ten
+ * options each. Mission Control's category vocabulary runs past a
+ * hundred and eighty, and a hundred and eighty chips is not a filter —
+ * it is a wall, and it would be taller than the schedule underneath it.
+ * So this one is a search box: you type your trade, you pick it, it
+ * becomes a chip like everything else.
+ *
+ * Matching is substring rather than prefix, because somebody typing
+ * "clean" should find "Commercial Cleaning" — the useful word in a
+ * two-word trade is as often the second as the first.
+ *
+ * A match that is taken on every visible card is still listed, greyed
+ * and unselectable, with the reason next to it. That is the answer
+ * somebody came for and it is worth a dead row: leaving it out reads as
+ * though we do not sell to roofers at all.
+ */
+function CategorySearch({
+  options,
+  selected,
+  onToggle,
+  tone,
+}: {
+  options: FacetOption[];
+  selected: Set<string>;
+  onToggle: (value: string) => void;
+  tone: Tone;
+}) {
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const dark = tone === "dark";
+
+  const matches = useMemo(() => {
+    const q = categoryKey(query);
+    if (!q) return [];
+    return options
+      .filter((o) => !selected.has(o.value) && categoryKey(o.label).includes(q))
+      /* Relevance, in the order a person means it. An exact hit first,
+         then names that start with what was typed — "car" should offer
+         "Carpet Cleaning" before "Childcare" — then the shortest, so
+         typing "plumb" leads with "Plumbing" rather than "Plumbing
+         Services". Only after all that does availability break a tie. */
+      .sort((a, b) => {
+        const rank = (label: string) => {
+          const k = categoryKey(label);
+          return k === q ? 0 : k.startsWith(q) ? 1 : 2;
+        };
+        return (
+          rank(a.label) - rank(b.label) ||
+          a.label.length - b.label.length ||
+          b.count - a.count ||
+          a.label.localeCompare(b.label)
+        );
+      })
+      .slice(0, MAX_SUGGESTIONS);
+  }, [options, selected, query]);
+
+  const choose = (o: FacetOption) => {
+    if (o.count === 0) return;
+    onToggle(o.value);
+    setQuery("");
+    setActive(0);
+  };
+
+  const chosen = options.filter((o) => selected.has(o.value));
+
+  return (
+    <div className="grid gap-1.5">
+      <label
+        htmlFor="cat-search"
+        className={`text-[11px] font-semibold uppercase tracking-wider ${
+          dark ? "text-[#93A5B8]" : "text-muted"
+        }`}
+      >
+        Your category
+        <span
+          className={`ml-1.5 font-medium normal-case tracking-normal ${
+            dark ? "text-[#7C8FA3]" : "text-muted"
+          }`}
+        >
+          shows the cards it is still open on
+        </span>
+      </label>
+
+      <div className="relative max-w-[320px]">
+        <input
+          id="cat-search"
+          type="text"
+          role="combobox"
+          aria-expanded={matches.length > 0}
+          aria-controls="cat-suggestions"
+          aria-autocomplete="list"
+          autoComplete="off"
+          value={query}
+          /* The real number, not a round one. Mission Control's
+             vocabulary grows and shrinks, and a hardcoded "180+" turns
+             into a claim that is quietly wrong the day it changes. */
+          placeholder={`Search ${options.length} categories…`}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setActive(0);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setActive((i) => Math.min(i + 1, matches.length - 1));
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setActive((i) => Math.max(i - 1, 0));
+            } else if (e.key === "Enter" && matches[active]) {
+              e.preventDefault();
+              choose(matches[active]);
+            } else if (e.key === "Escape") {
+              setQuery("");
+            }
+          }}
+          className={`w-full text-[12.5px] rounded-full border px-3 py-1.5 outline-none transition-colors ${
+            dark
+              ? "bg-white/8 border-white/25 text-white placeholder:text-[#7C8FA3] focus:border-white/60"
+              : "bg-white border-line text-ink placeholder:text-muted focus:border-navy-950"
+          }`}
+        />
+
+        {query && (
+          <ul
+            id="cat-suggestions"
+            role="listbox"
+            className={`absolute z-20 mt-1 w-full max-h-[264px] overflow-y-auto rounded-xl border shadow-lg ${
+              dark ? "bg-navy-950 border-white/20" : "bg-white border-line"
+            }`}
+          >
+            {matches.length === 0 && (
+              <li
+                className={`text-[12.5px] px-3 py-2 ${
+                  dark ? "text-[#93A5B8]" : "text-muted"
+                }`}
+              >
+                No category matches “{query}”.
+              </li>
+            )}
+            {matches.map((o, i) => {
+              const dead = o.count === 0;
+              return (
+                <li key={o.value} role="option" aria-selected={i === active}>
+                  <button
+                    type="button"
+                    disabled={dead}
+                    onMouseEnter={() => setActive(i)}
+                    onClick={() => choose(o)}
+                    className={`w-full text-left text-[12.5px] px-3 py-2 flex items-baseline justify-between gap-3 ${
+                      dead
+                        ? dark
+                          ? "text-[#6B7C8E] cursor-default"
+                          : "text-muted cursor-default"
+                        : i === active
+                          ? dark
+                            ? "bg-white/12 text-white"
+                            : "bg-surface text-ink"
+                          : dark
+                            ? "text-[#C6D3E0]"
+                            : "text-body"
+                    }`}
+                  >
+                    <span className={dead ? "line-through" : undefined}>{o.label}</span>
+                    <span
+                      className={`num text-[11px] shrink-0 ${
+                        dark ? "text-[#93A5B8]" : "text-muted"
+                      }`}
+                    >
+                      {dead ? "taken on all" : `${o.count} open`}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {chosen.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-0.5">
+          {chosen.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => onToggle(o.value)}
+              aria-label={`Remove ${o.label}`}
+              className={`text-[12px] rounded-full border px-2.5 py-1 transition-colors ${CHIP[tone].on}`}
+            >
+              {o.label}
+              <span
+                className={`num ml-1 text-[10.5px] ${
+                  dark ? "text-navy-950/60" : "text-white/70"
+                }`}
+              >
+                {o.count}
+              </span>
+              <span aria-hidden className="ml-1.5 opacity-60">
+                ×
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MailingFacets({
   filter,
   total,
@@ -318,7 +629,8 @@ export function MailingFacets({
   total: number;
   tone: Tone;
 }) {
-  const { facets, selected, onToggle, visible, activeCount, clearAll } = filter;
+  const { facets, selected, onToggle, visible, activeCount, clearAll, categoriesKnown } =
+    filter;
 
   /* Collapsed by default, because ten area chips wrap to two rows and
      the panel was 282px of chrome above the thing people came to read.
@@ -420,6 +732,18 @@ export function MailingFacets({
             onToggle={onToggle.statuses}
             tone={tone}
           />
+          {/* Last, because it is the one that needs a sentence to read
+              right, and because the three above are the ones somebody
+              reaches for first. Only rendered when the schedule
+              actually knows what it has sold. */}
+          {categoriesKnown && (
+            <CategorySearch
+              options={facets.categories}
+              selected={selected.categories}
+              onToggle={onToggle.categories}
+              tone={tone}
+            />
+          )}
         </div>
       )}
     </div>

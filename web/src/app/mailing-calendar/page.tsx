@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { MailingFilter } from "@/components/mailing-filter";
 import { CtaBand } from "@/components/sections";
-import { getUpcomingMailings } from "@/lib/mission-control";
+import { getMcCategories, getUpcomingMailings } from "@/lib/mission-control";
 import { getCardDescriptions } from "@/lib/card-details";
 import { CONTACT_PHONE, CONTACT_PHONE_TEL, SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -24,9 +24,12 @@ export const metadata: Metadata = {
 };
 
 export default async function MailingCalendarPage() {
-  const [mailings, descriptions] = await Promise.all([
+  const [mailings, descriptions, categoryOptions] = await Promise.all([
     getUpcomingMailings(),
     getCardDescriptions(),
+    // Never fatal: the category search falls back to the common trades
+    // when Mission Control has no vocabulary to give.
+    getMcCategories().catch(() => [] as string[]),
   ]);
   return (
     <>
@@ -63,7 +66,11 @@ export default async function MailingCalendarPage() {
             </a>
           </div>
         ) : (
-        <MailingFilter mailings={mailings} descriptions={descriptions} />
+        <MailingFilter
+            mailings={mailings}
+            descriptions={descriptions}
+            categoryOptions={categoryOptions}
+          />
         )}
         {mailings.length > 0 && (
           <p className="text-[12.5px] text-muted mt-3">

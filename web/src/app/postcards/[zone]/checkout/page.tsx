@@ -23,24 +23,10 @@ import {
   getCardOrientation,
   type CardCapacity,
 } from "@/lib/card-capacity";
+import { COMMON_CATEGORIES } from "@/lib/categories";
 import { CONTACT_PHONE, CONTACT_PHONE_TEL, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-
-const CATEGORIES = [
-  "Plumbing",
-  "HVAC",
-  "Roofing",
-  "Dental",
-  "Restaurants",
-  "Landscaping",
-  "Automotive",
-  "Real Estate",
-  "Insurance",
-  "Fitness",
-  "Med Spa",
-  "Pest Control",
-];
 
 /** Spot counts derive from the mailing's remaining capacity. */
 /**
@@ -169,7 +155,8 @@ export default async function PostcardCheckoutPage({
   // Mission Control owns the category vocabulary; exclusivity is checked
   // against its names, so the picker has to offer the same ones.
   const mcCategories = await getMcCategories();
-  const categoryOptions = mcCategories.length > 0 ? mcCategories : CATEGORIES;
+  const categoryOptions =
+    mcCategories.length > 0 ? mcCategories : [...COMMON_CATEGORIES];
 
   // The directory stores a slug ("home-services"); Mission Control owns
   // the display names ("Home Services"). Matched by squashing both, so a
