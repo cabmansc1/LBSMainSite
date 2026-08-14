@@ -24,6 +24,8 @@ import { zoneBySlug } from "@/lib/zones";
 type Props = {
   mailings: UpcomingMailing[];
   descriptions: Record<string, string>;
+  /** Mission Control's category vocabulary, for the category search. */
+  categoryOptions?: string[];
 };
 
 const chipFor = (status: string, left: number) => {
@@ -36,8 +38,8 @@ const chipFor = (status: string, left: number) => {
   return <StatusChip tone="ok">Open</StatusChip>;
 };
 
-export function MailingFilter({ mailings, descriptions }: Props) {
-  const filter = useMailingFilter(mailings);
+export function MailingFilter({ mailings, descriptions, categoryOptions = [] }: Props) {
+  const filter = useMailingFilter(mailings, categoryOptions);
   const { visible, clearAll } = filter;
   /* Table first. It is the view that answers "when is my deadline" in
      one glance down a column, and it is what the page has always been.

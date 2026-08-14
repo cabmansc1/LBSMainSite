@@ -4,24 +4,10 @@ import { notFound } from "next/navigation";
 import { SpotGrid } from "@/components/spot-grid";
 import { StatusChip } from "@/components/sections";
 import { getCard, daysUntil } from "@/lib/cards";
+import { COMMON_CATEGORIES } from "@/lib/categories";
 import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-
-const CATEGORIES = [
-  "Plumbing",
-  "HVAC",
-  "Roofing",
-  "Dental",
-  "Restaurants",
-  "Landscaping",
-  "Automotive",
-  "Real Estate",
-  "Insurance",
-  "Fitness",
-  "Med Spa",
-  "Pest Control",
-];
 
 export async function generateMetadata({
   params,
@@ -87,7 +73,7 @@ export default async function NeighborhoodCardPage({
       </header>
 
       <div className="mx-auto max-w-[1120px] px-6 py-10">
-        <SpotGrid card={card} categories={CATEGORIES} />
+        <SpotGrid card={card} categories={[...COMMON_CATEGORIES]} />
       </div>
     </>
   );
