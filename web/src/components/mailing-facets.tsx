@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { UpcomingMailing } from "@/lib/mailings";
 
 /**
@@ -88,54 +88,81 @@ export function useMailingFilter(mailings: UpcomingMailing[]) {
     );
   }, [areas, months, statuses]);
 
+  /**
+   * Whether a card survives every facet except one.
+   *
+   * The exception is what makes the counts honest. A facet's options
+   * are counted against the results the *other* facets allow, so
+   * picking Daniel Island immediately narrows the month counts to
+   * Daniel Island's months. Counting a facet against its own selection
+   * instead would drive every unpicked option in it to zero the moment
+   * you picked one, which is why this reads "except".
+   */
+  const survives = useCallback(
+    (m: UpcomingMailing, except: "areas" | "months" | "statuses" | null) =>
+      (except === "areas" || areas.size === 0 || areas.has(m.zoneSlug)) &&
+      (except === "months" || months.size === 0 || months.has(m.mailMonth)) &&
+      (except === "statuses" || statuses.size === 0 || statuses.has(m.status)),
+    [areas, months, statuses],
+  );
+
   const facets = useMemo(() => {
-    const tally = <T,>(pick: (m: UpcomingMailing) => T) => {
+    const tally = <T,>(
+      pick: (m: UpcomingMailing) => T,
+      except: "areas" | "months" | "statuses",
+    ) => {
       const map = new Map<T, number>();
-      for (const m of mailings) map.set(pick(m), (map.get(pick(m)) ?? 0) + 1);
+      for (const m of mailings) {
+        if (!survives(m, except)) continue;
+        map.set(pick(m), (map.get(pick(m)) ?? 0) + 1);
+      }
       return map;
     };
-    // Keyed by slug so the URL reads /?area=goose-creek rather than a
-    // percent-encoded display name; labelled by the name people know.
-    const areaNames = new Map<string, string>();
-    for (const m of mailings) areaNames.set(m.zoneSlug, m.zoneName);
-    const areaCounts = tally((m) => m.zoneSlug);
-    const monthCounts = tally((m) => m.mailMonth);
-    const statusCounts = tally((m) => m.status);
+    /* The vocabulary comes from every card, the counts from the
+       cross-filtered set. Options that drop to zero stay on screen and
+       go dead rather than disappearing: chips vanishing and the rows
+       reflowing under the cursor is worse than a greyed-out one that
+       explains itself. */
+    const allAreas = new Map<string, string>();
+    const allMonths: string[] = [];
+    const allStatuses = new Set<UpcomingMailing["status"]>();
+    for (const m of mailings) {
+      allAreas.set(m.zoneSlug, m.zoneName);
+      if (!allMonths.includes(m.mailMonth)) allMonths.push(m.mailMonth);
+      allStatuses.add(m.status);
+    }
+    const areaCounts = tally((m) => m.zoneSlug, "areas");
+    const monthCounts = tally((m) => m.mailMonth, "months");
+    const statusCounts = tally((m) => m.status, "statuses");
 
     return {
-      areas: [...areaCounts.entries()]
-        .map(([value, count]) => ({
+      areas: [...allAreas.entries()]
+        .map(([value, label]) => ({
           value,
-          label: areaNames.get(value) ?? value,
-          count,
+          label,
+          count: areaCounts.get(value) ?? 0,
         }))
         .sort((a, b) => a.label.localeCompare(b.label)),
       /* First-appearance order, deliberately not sorted. The month is a
-         string like "September 2026" or "Winter 2026", so sorting it
-         alphabetically puts December before September and has nowhere
-         at all to put a season. The source list is chronological. */
-      months: [...monthCounts.entries()].map(([value, count]) => ({
+         display string like "September 2026" or "Winter 2026", so
+         sorting puts December before September and cannot place a
+         season at all. The source list is chronological. */
+      months: allMonths.map((value) => ({
         value,
         label: value,
-        count,
+        count: monthCounts.get(value) ?? 0,
       })),
-      statuses: STATUS_ORDER.filter((s) => statusCounts.has(s)).map((s) => ({
+      statuses: STATUS_ORDER.filter((s) => allStatuses.has(s)).map((s) => ({
         value: s,
         label: STATUS_LABEL[s],
         count: statusCounts.get(s) ?? 0,
       })),
     };
-  }, [mailings]);
+  }, [mailings, survives]);
 
   const visible = useMemo(
-    () =>
-      mailings.filter(
-        (m) =>
-          (areas.size === 0 || areas.has(m.zoneSlug)) &&
-          (months.size === 0 || months.has(m.mailMonth)) &&
-          (statuses.size === 0 || statuses.has(m.status)),
-      ),
-    [mailings, areas, months, statuses],
+    () => mailings.filter((m) => survives(m, null)),
+    [mailings, survives],
   );
 
   const toggle = (set: Set<string>, value: string) => {
@@ -233,7 +260,7 @@ function FacetGroup({
   // mislead about how much is on the schedule.
   if (options.length < 2) return null;
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-1.5">
       <span
         className={`text-[11px] font-semibold uppercase tracking-wider ${
           tone === "dark" ? "text-[#93A5B8]" : "text-muted"
@@ -241,8 +268,14 @@ function FacetGroup({
       >
         {label}
       </span>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((o) => {
+      <div className="flex flex-wrap gap-1">
+        {/* Zero means the other facets have ruled it out, so it goes
+            rather than greying out — the row is shorter for it, which
+            is the point. A selected chip stays whatever its count, or
+            the only way out of an empty result would be Clear all. */}
+        {options
+          .filter((o) => o.count > 0 || selected.has(o.value))
+          .map((o) => {
           const on = selected.has(o.value);
           return (
             <button
@@ -250,13 +283,13 @@ function FacetGroup({
               type="button"
               onClick={() => onToggle(o.value)}
               aria-pressed={on}
-              className={`text-[13px] rounded-full border px-3 py-1.5 transition-colors ${
+              className={`text-[12px] rounded-full border px-2.5 py-1 transition-colors ${
                 on ? CHIP[tone].on : CHIP[tone].off
               }`}
             >
               {o.label}
               <span
-                className={`num ml-1.5 text-[11.5px] ${
+                className={`num ml-1 text-[10.5px] ${
                   on
                     ? tone === "dark"
                       ? "text-navy-950/60"
@@ -290,8 +323,8 @@ export function MailingFacets({
     <div
       className={
         tone === "dark"
-          ? "border border-white/12 bg-white/4 rounded-2xl p-5 mb-3.5 grid gap-4"
-          : "border border-line rounded-(--radius-card) bg-surface p-5 mb-4 grid gap-4"
+          ? "border border-white/12 bg-white/4 rounded-2xl p-4 mb-3.5 grid gap-3"
+          : "border border-line rounded-(--radius-card) bg-surface p-4 mb-4 grid gap-3"
       }
     >
       <FacetGroup

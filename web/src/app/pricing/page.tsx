@@ -124,11 +124,14 @@ export default async function PricingPage({
           initialReach={sp.reach === "10k" ? "10k" : "5k"}
         />
 
+        {/* On the band rather than surface, which is a one percent step
+            off white and left these reading as four more outlined
+            paragraphs under the cards. */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
           {INCLUDED.map((item) => (
             <div
               key={item}
-              className="bg-surface border border-line rounded-[10px] px-4 py-3.5 text-[13.5px] font-medium text-body"
+              className="bg-band border border-line rounded-[10px] px-4 py-3.5 text-[13.5px] font-medium text-body"
             >
               {item}
             </div>
@@ -145,9 +148,14 @@ export default async function PricingPage({
           </section>
         )}
 
-        <section className="pb-22">
+        <section className="bg-band rounded-(--radius-card) p-6 md:p-9 mb-22">
           <SectionHeading eyebrow="Questions" title="Pricing FAQs" />
-          <div className="max-w-[720px] border border-line rounded-(--radius-card) bg-white overflow-hidden">
+          {/* Centred. At max-w-[720px] in an 1120px container this sat
+              hard left with four hundred pixels of empty white beside
+              it, which read as something failing to load rather than as
+              a margin. The measure is worth keeping — full-width Q&A is
+              a worse read — so it is centred instead of widened. */}
+          <div className="max-w-[760px] mx-auto border border-line rounded-(--radius-card) bg-white overflow-hidden">
             {FAQS.map((f, i) => (
               <details key={f.q} className="border-b border-line last:border-b-0 px-5.5 py-4.5 group" open={i === 0}>
                 <summary className="font-semibold text-[15px] cursor-pointer list-none flex justify-between items-center gap-3">
