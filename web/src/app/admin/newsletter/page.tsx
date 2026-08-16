@@ -56,6 +56,12 @@ export default async function AdminNewsletterPage() {
         >
           Change how a new issue starts
         </Link>
+        <Link
+          href="/admin/newsletter/optouts"
+          className="text-[13px] font-semibold px-4 py-2.5 rounded-[9px] border border-line-strong bg-white"
+        >
+          Off the list
+        </Link>
       </div>
       <p className="text-[12.5px] text-muted mb-5 max-w-[74ch]">
         Every issue can be reworded on its own page. Changing it there

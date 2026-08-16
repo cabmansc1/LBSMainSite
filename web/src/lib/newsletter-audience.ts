@@ -103,6 +103,125 @@ export async function optOut(email: string, source = "link"): Promise<boolean> {
   }
 }
 
+/**
+ * Suppresses several addresses at once, for the admin screen.
+ *
+ * Reports what happened to each rather than a total, because the three
+ * outcomes are not the same thing and collapsing them hides the one
+ * that matters. "Already suppressed" is reassurance; "not an email
+ * address" is a typo that would otherwise be silently dropped, and the
+ * pasted-in list is exactly where typos come from.
+ *
+ * Duplicates in the input are folded first. A list copied out of a
+ * spreadsheet routinely repeats an address several times, and reporting
+ * it as five additions when it is one person reads as a bigger action
+ * than it was.
+ */
+export type SuppressResult = {
+  added: string[];
+  already: string[];
+  invalid: string[];
+};
+
+export async function optOutMany(
+  emails: string[],
+  source = "admin",
+): Promise<SuppressResult> {
+  const out: SuppressResult = { added: [], already: [], invalid: [] };
+  const seen = new Set<string>();
+  const existing = await listOptOuts();
+
+  for (const raw of emails) {
+    const addr = lower(raw);
+    if (!addr || seen.has(addr)) continue;
+    seen.add(addr);
+    if (!looksLikeEmail(addr)) {
+      out.invalid.push(clean(raw));
+      continue;
+    }
+    if (existing.has(addr)) {
+      out.already.push(addr);
+      continue;
+    }
+    // Not batched into one INSERT. One address failing should not cost
+    // the other eight, and this runs at most a few dozen rows deep from
+    // a screen somebody is watching.
+    if (await optOut(addr, source)) out.added.push(addr);
+    else out.invalid.push(addr);
+  }
+  return out;
+}
+
+/**
+ * Splits whatever was pasted into addresses.
+ *
+ * Newlines, commas, semicolons and spaces all separate, because the
+ * list arrives from a spreadsheet column, a mail client's To field or a
+ * message somebody typed, and which one it was is not worth asking.
+ * Angle brackets are stripped so a pasted "Name <a@b.com>" works.
+ */
+export const parseEmailList = (text: string): string[] =>
+  String(text ?? "")
+    .split(/[\s,;]+/)
+    .map((s) => s.replace(/^</, "").replace(/>$/, "").trim())
+    .filter(Boolean);
+
+/** One suppressed address, for the admin list. */
+export type OptOutEntry = {
+  email: string;
+  optedOutAt: string | null;
+  /** "link" when they pressed unsubscribe, "admin" when we did it. */
+  source: string;
+};
+
+export async function listOptOutEntries(): Promise<OptOutEntry[]> {
+  try {
+    await ensureOptOutTable();
+    const { db } = await import("@/lib/db");
+    const rows = (await db.execute(
+      sql`SELECT email, opted_out_at, source
+            FROM lbs_newsletter_optouts
+           ORDER BY opted_out_at DESC, email ASC`,
+    )) as unknown as [
+      { email: string; opted_out_at: unknown; source: string }[],
+    ];
+    return (rows[0] ?? []).map((r) => ({
+      email: lower(r.email),
+      optedOutAt: r.opted_out_at ? new Date(r.opted_out_at as string).toISOString() : null,
+      source: clean(r.source) || "link",
+    }));
+  } catch (e) {
+    console.error("[newsletter] opt-out list failed:", e);
+    return [];
+  }
+}
+
+/**
+ * Puts an address back on the list.
+ *
+ * Here because the screen that adds addresses in bulk needs a way to
+ * undo one: suppressing the wrong customer is silent — they simply
+ * never hear from us again — and a mistake with no way back is worse
+ * than no screen at all.
+ *
+ * Deliberately not exposed publicly. Resubscribing somebody has to be
+ * something we do on their word, never something a link can do.
+ */
+export async function removeOptOut(email: string): Promise<boolean> {
+  const addr = lower(email);
+  if (!addr) return false;
+  try {
+    const { db } = await import("@/lib/db");
+    await db.execute(
+      sql`DELETE FROM lbs_newsletter_optouts WHERE email = ${addr}`,
+    );
+    return true;
+  } catch (e) {
+    console.error("[newsletter] opt-out removal failed:", e);
+    return false;
+  }
+}
+
 export async function listOptOuts(): Promise<Set<string>> {
   try {
     const { db } = await import("@/lib/db");
