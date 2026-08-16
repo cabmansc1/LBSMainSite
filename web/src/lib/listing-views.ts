@@ -103,7 +103,13 @@ export async function recordListingView(input: {
   }
 }
 
-/** Views per listing over the last N days, for a page of listings. */
+/**
+ * Views per listing over the last N days, for a page of listings.
+ *
+ * Days of 0 or less means everything ever counted, rather than nothing.
+ * Counting only began when traffic moved to this app, so "all time" is
+ * a short and honest window rather than a decade of history.
+ */
 export async function viewsFor(
   businessIds: number[],
   days = 30,
@@ -113,6 +119,12 @@ export async function viewsFor(
   try {
     await ensureTable();
     const { db } = await import("@/lib/db");
+    const since =
+      days > 0
+        ? sql`AND day >= DATE_SUB(CURDATE(), INTERVAL ${sql.raw(
+            String(Math.min(3650, Math.round(days))),
+          )} DAY)`
+        : sql``;
     const rows = (await db.execute(
       sql`SELECT business_id, COUNT(*) AS n
           FROM lbs_listing_views
@@ -120,9 +132,7 @@ export async function viewsFor(
             businessIds.map((id) => sql`${id}`),
             sql`, `,
           )})
-            AND day >= DATE_SUB(CURDATE(), INTERVAL ${sql.raw(
-              String(Math.max(1, Math.min(3650, days))),
-            )} DAY)
+            ${since}
           GROUP BY business_id`,
     )) as unknown as [{ business_id: number; n: number | string }[]];
     for (const r of rows[0] ?? []) {

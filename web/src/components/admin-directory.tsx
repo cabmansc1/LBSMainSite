@@ -1,11 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { DescriptionEditor } from "@/components/description-editor";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { AdminBusiness } from "@/lib/admin-data";
 import { SITE_TZ } from "@/lib/time";
+import {
+  VIEW_WINDOWS,
+  viewWindowLabel,
+  viewWindowPhrase,
+} from "@/lib/view-windows";
 
 const PLANS = ["basic", "featured", "elite"];
 
@@ -952,6 +958,7 @@ export function AdminDirectory({
   rejected = [],
   adsSetByHand = [],
   missionControlRead,
+  windowDays,
 }: {
   businesses: AdminBusiness[];
   categories: TaxonomyOption[];
@@ -966,6 +973,8 @@ export function AdminDirectory({
    *  not here follows the Featured rule. */
   adsSetByHand?: { id: number; showAds: boolean }[];
   missionControlRead: boolean;
+  /** How many days of views the numbers cover. 0 is all time. */
+  windowDays: number;
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -1002,6 +1011,10 @@ export function AdminDirectory({
     rejected: businesses.filter((b) => rejectedIds.has(b.id)).length,
   };
   const totalViews = businesses.reduce((n, b) => n + b.views, 0);
+  // The column heading has to name the window too, or a table of
+  // 12-month numbers still reads "Views 30d" above it.
+  const viewsHeading =
+    windowDays <= 0 ? "Views all time" : `Views ${windowDays}d`;
   const totalInquiries = businesses.reduce((n, b) => n + b.inquiries, 0);
   const topViewed = [...businesses].sort((a, b) => b.views - a.views).slice(0, 10);
 
@@ -1134,8 +1147,29 @@ export function AdminDirectory({
             {totalViews.toLocaleString("en-US")}
           </b>
           <span className="text-[12px] text-muted num">
-            views in 30 days · {totalInquiries} inquiries
+            {viewWindowPhrase(windowDays)} · {totalInquiries} inquiries
           </span>
+          {/* Links rather than a select, because the numbers are counted
+              on the server: the window has to reach the query, and a
+              client control could only relabel a total it cannot
+              recompute. Soft navigation keeps it quick. */}
+          <div className="flex gap-1 justify-end mt-1.5">
+            {VIEW_WINDOWS.map((d) => (
+              <Link
+                key={d}
+                href={`/admin/directory?days=${d}`}
+                scroll={false}
+                aria-current={d === windowDays ? "true" : undefined}
+                className={`text-[11.5px] rounded-full border px-2 py-0.5 transition-colors ${
+                  d === windowDays
+                    ? "bg-navy-950 border-navy-950 text-white font-semibold"
+                    : "border-line bg-white text-muted hover:border-navy-950"
+                }`}
+              >
+                {viewWindowLabel(d)}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -1280,7 +1314,7 @@ export function AdminDirectory({
                   }
                 />
               </th>
-              {["Business", "Category / area", "Status", "Views 30d", "Plan", "Added", "Actions"].map(
+              {["Business", "Category / area", "Status", viewsHeading, "Plan", "Added", "Actions"].map(
                 (h) => (
                   <th
                     key={h}

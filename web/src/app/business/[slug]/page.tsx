@@ -19,6 +19,7 @@ import { dealsForBusiness } from "@/lib/lowco-deals";
 import { advertiserAppearances } from "@/lib/mission-control";
 import { SITE_URL } from "@/lib/seo";
 import { RichText } from "@/components/rich-text";
+import { ListingView } from "@/components/analytics";
 import { richTextToPlain } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
@@ -351,6 +352,14 @@ export default async function BusinessPage({
 
   return (
     <>
+      {/* Named in GA the same way the server counts it: not on a
+          preview, which nobody found and nobody is reading. Admins are
+          excluded from the database count but not from this one — GA
+          has its own internal traffic filter for that, and applying it
+          twice in two places is how the two numbers quietly diverge. */}
+      {!preview && (
+        <ListingView slug={b.slug} name={b.name} category={b.category} />
+      )}
       {preview && (
         // Unmissable on purpose. This page is indistinguishable from the
         // live one otherwise, and mistaking a preview for a published
