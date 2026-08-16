@@ -324,6 +324,26 @@ const nextConfig: NextConfig = {
         destination: "/:zone-direct-mail-marketing",
         permanent: true,
       },
+      {
+        /**
+         * A listing added with "Outdorrs" in its name, which the slug
+         * was built from and then kept.
+         *
+         * The name is fixed in the directory admin, but the slug is not:
+         * updateBusiness writes a column whitelist and slug is not on
+         * it, so correcting the URL is a hand-run UPDATE against
+         * directory_businesses. This catches the old path afterwards.
+         *
+         * Order matters when applying it. Run the UPDATE first and
+         * deploy second: the corrected URL then works from the moment
+         * the row changes, and only the misspelled one is briefly dead.
+         * Deploying first sends the one URL that currently works to a
+         * path that does not exist yet.
+         */
+        source: "/business/quality-fence-custom-outdorrs",
+        destination: "/business/quality-fence-custom-outdoors",
+        permanent: true,
+      },
     ];
   },
 };
