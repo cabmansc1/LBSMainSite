@@ -139,7 +139,9 @@ export default async function Image({
               justifyContent: "center",
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* A plain img, not next/image: this tree is rendered by
+                Satori into a PNG, never into a DOM, so there is no
+                loader to optimise through. */}
             <img
               src={scan}
               alt=""
