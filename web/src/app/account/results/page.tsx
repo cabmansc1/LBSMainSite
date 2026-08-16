@@ -4,6 +4,11 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getPortalContext } from "@/lib/portal";
 import { Card } from "@/components/sections";
+import {
+  VIEW_WINDOWS,
+  parseViewWindow,
+  viewWindowLabel,
+} from "@/lib/view-windows";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -16,7 +21,15 @@ export const metadata: Metadata = {
  * homes reached, and inquiries. Scan tracking is reported per QR page,
  * so it is named as coming rather than faked.
  */
-export default async function AccountResultsPage() {
+export default async function AccountResultsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // In the URL so a refresh keeps the window, matching the admin
+  // screen. Validated against the list of choices, since ?days= is
+  // something anybody can type.
+  const windowDays = parseViewWindow((await searchParams).days);
   const session = await getSession();
   if (!session) redirect("/login");
   const { pastCards, currentCards, inquiries, listings } =
@@ -31,8 +44,8 @@ export default async function AccountResultsPage() {
   // legacy column, which stopped meaning anything when traffic moved and
   // is not a number to put in front of the person it describes.
   const { viewsFor } = await import("@/lib/listing-views");
-  const views = await viewsFor(listings.map((l) => l.id), 30);
-  const views30 = [...views.values()].reduce((n, v) => n + v, 0);
+  const views = await viewsFor(listings.map((l) => l.id), windowDays);
+  const viewsTotal = [...views.values()].reduce((n, v) => n + v, 0);
 
   const stats = [
     { label: "Cards mailed", value: String(pastCards.length) },
@@ -41,7 +54,12 @@ export default async function AccountResultsPage() {
       value: homesReached ? homesReached.toLocaleString("en-US") : "0",
     },
     ...(listings.length > 0
-      ? [{ label: "Listing views (30d)", value: views30.toLocaleString("en-US") }]
+      ? [
+          {
+            label: `Listing views (${viewWindowLabel(windowDays).toLowerCase()})`,
+            value: viewsTotal.toLocaleString("en-US"),
+          },
+        ]
       : []),
     { label: "Inquiries", value: String(inquiries.length) },
     { label: "Running now", value: String(currentCards.length) },
@@ -68,6 +86,40 @@ export default async function AccountResultsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Under the row rather than inside the views tile: five windows
+          will not fit across a quarter-width card without wrapping into
+          a mess, and putting them here keeps every tile the same shape.
+          The label says which figure they move, since they sit below
+          four numbers and only change one of them. */}
+      {listings.length > 0 && (
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <span className="text-[12px] text-muted">Listing views over</span>
+          {VIEW_WINDOWS.map((d) => (
+            <Link
+              key={d}
+              href={`/account/results?days=${d}`}
+              scroll={false}
+              aria-current={d === windowDays ? "true" : undefined}
+              className={`text-[12px] rounded-full border px-2.5 py-1 transition-colors ${
+                d === windowDays
+                  ? "bg-navy-950 border-navy-950 text-white font-semibold"
+                  : "border-line bg-white text-body hover:border-navy-950"
+              }`}
+            >
+              {viewWindowLabel(d)}
+            </Link>
+          ))}
+          {/* Said plainly, because it is the difference between this
+              number and the one an advertiser expects. Somebody who
+              refreshes their own listing all afternoon should not
+              believe they were found forty times. */}
+          <span className="text-[12px] text-muted basis-full">
+            Counted once per visitor per day, and only since the new site
+            started counting.
+          </span>
+        </div>
+      )}
 
       {pastCards.length > 0 && (
         <>
