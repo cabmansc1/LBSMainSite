@@ -149,6 +149,35 @@ export function AdminNewsletterEditor({
   }
 
   /**
+   * Changing the window saves straight away.
+   *
+   * Every other control here waits for Save, and this one cannot. The
+   * thing it changes is the card list in the preview beside it, and the
+   * preview is rendered on the server from the saved value — so picking
+   * a window and watching the email not move looked exactly like a
+   * broken dropdown. It was: the setting was real and nothing on screen
+   * said so until you happened to press Save.
+   *
+   * Everything else on the form goes with it, since a save writes the
+   * whole issue and posting only the window would discard whatever had
+   * been typed since the last one.
+   */
+  async function chooseCardMonths(next: number) {
+    setCardMonths(next);
+    await send(
+      {
+        action: "save",
+        content: form,
+        groups,
+        leadsMonths: months,
+        cardMonths: next,
+        zones,
+      },
+      "cardMonths",
+    );
+  }
+
+  /**
    * Saves first, then sends the test.
    *
    * The send path reads what is stored, not what is on screen, so a
@@ -368,8 +397,8 @@ export function AdminNewsletterEditor({
             <span className={label}>How far ahead to list cards</span>
             <select
               value={cardMonths}
-              disabled={locked}
-              onChange={(e) => setCardMonths(Number(e.target.value))}
+              disabled={locked || busy !== ""}
+              onChange={(e) => chooseCardMonths(Number(e.target.value))}
               className={field}
             >
               {CARD_MONTH_CHOICES.map((m) => (
@@ -379,9 +408,11 @@ export function AdminNewsletterEditor({
               ))}
             </select>
             <span className="text-[12px] text-muted">
-              {hiddenCards === 0
-                ? `All ${shownCards.length} ${shownCards.length === 1 ? "card goes" : "cards go"} in the email.`
-                : `${shownCards.length} of ${issue.content.cards.length} cards go in the email. ${hiddenCards} further out ${hiddenCards === 1 ? "is" : "are"} left off.`}
+              {busy === "cardMonths"
+                ? "Redrawing the preview…"
+                : hiddenCards === 0
+                  ? `All ${shownCards.length} ${shownCards.length === 1 ? "card goes" : "cards go"} in the email.`
+                  : `${shownCards.length} of ${issue.content.cards.length} cards go in the email. ${hiddenCards} further out ${hiddenCards === 1 ? "is" : "are"} left off.`}
             </span>
           </label>
         )}
