@@ -7,6 +7,7 @@ import { GHL_SURFACES } from "@/lib/ghl-sample";
 import { pushEnabled } from "@/lib/push";
 import { smsEnabled } from "@/lib/alerts-sms";
 import { slackEnabled } from "@/lib/alerts-slack";
+import { facebookEnabled } from "@/lib/facebook";
 import { AdminGhlTest } from "@/components/admin-ghl-test";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,13 @@ export default async function AdminIntegrationsPage() {
             note: slackEnabled()
               ? "Incoming webhook is set"
               : "No SLACK_WEBHOOK_URL",
+          },
+          {
+            label: "Facebook Page",
+            value: facebookEnabled() ? "Ready to post" : "Not configured",
+            note: facebookEnabled()
+              ? "Share a card from the gallery admin"
+              : "Needs FACEBOOK_PAGE_ID and FACEBOOK_PAGE_TOKEN",
           },
         ].map((s) => (
           <div

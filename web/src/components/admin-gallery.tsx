@@ -26,14 +26,23 @@ type McCard = {
 export function AdminGallery({
   cards,
   mcCards,
+  canShare,
 }: {
   cards: PastCard[];
   mcCards: McCard[];
+  /** False when the Page credentials are unset, which hides the button
+   *  rather than offering one that can only fail. */
+  canShare: boolean;
 }) {
   const [rows, setRows] = useState(cards);
   const [picked, setPicked] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  // The card whose share composer is open, and the caption in it. Held
+  // per card rather than globally so opening one does not discard an
+  // edit in another.
+  const [sharing, setSharing] = useState<string | null>(null);
+  const [caption, setCaption] = useState("");
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
   const [query, setQuery] = useState("");
   // Nothing is open until somebody chooses to edit it. Opening every
@@ -205,6 +214,66 @@ export function AdminGallery({
       }
       setRows((r) => r.filter((c) => c.slug !== card.slug));
       setMessage(`Deleted ${label}.`);
+    } catch (e) {
+      setMessage(String(e instanceof Error ? e.message : e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** The caption the composer opens with, matching lib/facebook.ts. */
+  function defaultCaption(card: PastCard) {
+    const name = card.cardName ?? card.zoneName;
+    return `The ${name} Spotlight Postcard is in mailboxes for ${card.mailMonth}. See the card and the local businesses on it.`;
+  }
+
+  function openComposer(card: PastCard) {
+    setCaption(defaultCaption(card));
+    setSharing(card.slug);
+    setMessage("");
+  }
+
+  /**
+   * Post the card to the Page.
+   *
+   * Confirmed even though a button was already pressed, because the two
+   * clicks are not the same question: the first opens a caption to read,
+   * the second publishes it to everyone who follows the Page.
+   */
+  async function shareCard(card: PastCard) {
+    const repost = !!card.fbPostId;
+    const ok = window.confirm(
+      repost
+        ? `This card was already shared. Post it to the Page again?`
+        : `Post this to the Facebook Page now?\n\nIt goes out publicly straight away.`,
+    );
+    if (!ok) return;
+
+    setBusy(card.slug);
+    setMessage("");
+    try {
+      const res = await fetch("/api/admin/card-share", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          slug: card.slug,
+          message: caption,
+          allowRepost: repost,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body?.ok) {
+        throw new Error(body?.error ?? "That did not post.");
+      }
+      setRows((r) =>
+        r.map((c) =>
+          c.slug === card.slug
+            ? { ...c, fbPostId: body.postId, fbPostedAt: new Date().toISOString() }
+            : c,
+        ),
+      );
+      setSharing(null);
+      setMessage(`Posted to the Page.`);
     } catch (e) {
       setMessage(String(e instanceof Error ? e.message : e));
     } finally {
@@ -424,6 +493,24 @@ export function AdminGallery({
                                 >
                                   {isOpen ? "Close" : "Edit"}
                                 </button>
+                                {/* Only for a published card: the post is
+                                    a link, and an unpublished card's link
+                                    404s for everyone who taps it. */}
+                                {canShare && c.published && (
+                                  <button
+                                    type="button"
+                                    aria-expanded={sharing === c.slug}
+                                    disabled={busy === c.slug}
+                                    onClick={() =>
+                                      sharing === c.slug
+                                        ? setSharing(null)
+                                        : openComposer(c)
+                                    }
+                                    className="text-[12.5px] font-semibold text-brand-deep hover:underline disabled:opacity-40"
+                                  >
+                                    {c.fbPostId ? "Shared" : "Share"}
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   disabled={busy === c.slug}
@@ -434,6 +521,74 @@ export function AdminGallery({
                                 </button>
                               </span>
                             </div>
+
+                            {sharing === c.slug && (
+                              <div className="border-t border-line p-5 grid gap-3 bg-surface">
+                                <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                                  <b className="text-[13px] font-semibold">
+                                    Post to the Facebook Page
+                                  </b>
+                                  {c.fbPostedAt && (
+                                    <span className="text-[12px] text-muted">
+                                      Already shared{" "}
+                                      {new Date(c.fbPostedAt).toLocaleDateString(
+                                        undefined,
+                                        { month: "short", day: "numeric", year: "numeric" },
+                                      )}
+                                    </span>
+                                  )}
+                                </div>
+                                <label className="grid gap-1.5">
+                                  <span className="text-[12px] text-muted">
+                                    Caption
+                                  </span>
+                                  <textarea
+                                    value={caption}
+                                    rows={3}
+                                    onChange={(e) => setCaption(e.target.value)}
+                                    className="w-full rounded-[8px] border border-line-strong px-3 py-2 text-[13px] leading-relaxed"
+                                  />
+                                </label>
+                                {/* What Facebook will actually fetch. The
+                                    picture comes from the page's own
+                                    og:image, so there is nothing to attach
+                                    here and nothing to keep in step. */}
+                                <p className="text-[12px] text-muted num break-all">
+                                  Links to /cards/{c.slug}
+                                </p>
+                                <div className="flex gap-2 items-center">
+                                  <button
+                                    type="button"
+                                    disabled={busy === c.slug || !caption.trim()}
+                                    onClick={() => shareCard(c)}
+                                    className="text-[12.5px] font-semibold px-3 py-1.5 rounded-[8px] bg-cta text-white hover:bg-cta-hover disabled:opacity-40"
+                                  >
+                                    {busy === c.slug
+                                      ? "Posting…"
+                                      : c.fbPostId
+                                        ? "Post again"
+                                        : "Post now"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSharing(null)}
+                                    className="text-[12.5px] font-semibold text-muted hover:underline"
+                                  >
+                                    Cancel
+                                  </button>
+                                  {c.fbPostId && (
+                                    <a
+                                      href={`https://www.facebook.com/${c.fbPostId}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="ml-auto text-[12.5px] font-semibold text-brand-deep hover:underline"
+                                    >
+                                      View the post
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
                             {isOpen && (
                               <div className="border-t border-line p-5 grid gap-4">
