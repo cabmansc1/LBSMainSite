@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin";
 import { getPastCards } from "@/lib/past-cards";
 import { findEditionCollisions } from "@/lib/card-editions";
 import { getAllMcCards } from "@/lib/mission-control";
+import { facebookEnabled } from "@/lib/facebook";
 import { AdminGallery } from "@/components/admin-gallery";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,11 @@ export default async function AdminGalleryPage() {
         </section>
       )}
 
-      <AdminGallery cards={cards} mcCards={mcCards} />
+      <AdminGallery
+        cards={cards}
+        mcCards={mcCards}
+        canShare={facebookEnabled()}
+      />
     </div>
   );
 }

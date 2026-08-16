@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { after } from "next/server";
 import { Card } from "@/components/sections";
 import { PhotoGrid } from "@/components/photo-lightbox";
@@ -84,6 +84,17 @@ export default async function BusinessPage({
       preview = !!b;
     }
   }
+
+  // A miss may be a listing that moved rather than one that never
+  // existed. Checked after the preview lookup so an admin still sees an
+  // unapproved submission at its own URL, and before notFound() because
+  // a renamed listing has a right answer to give.
+  if (!b) {
+    const { resolveSlugRedirect } = await import("@/lib/slug-redirects");
+    const moved = await resolveSlugRedirect(slug);
+    if (moved) permanentRedirect(`/business/${moved}`);
+  }
+
   if (!b) notFound();
 
   // The request data is read HERE and passed down, never inside an

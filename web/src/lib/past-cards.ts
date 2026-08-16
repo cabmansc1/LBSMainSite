@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { alreadyApplied } from "@/lib/db-errors";
 
 /**
  * The archive of cards we have already mailed.
@@ -30,6 +31,10 @@ export type PastCard = {
   mailDate?: string;
   description?: string;
   published: boolean;
+  /** The Graph API post id, once this card has been shared to the Page. */
+  fbPostId?: string;
+  /** ISO timestamp of that share, so the admin can say when. */
+  fbPostedAt?: string;
   images: CardImage[];
 };
 
@@ -88,6 +93,22 @@ async function ensureTables() {
       INDEX idx_card (card_slug, sort_order)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
+
+  // Which cards have been shared to the Facebook Page, and when. Kept on
+  // the card rather than in a posts table because there is one Page and
+  // one post per card: a log would be a table with a single row per card
+  // and nothing to join to. It also makes the guard cheap, since the
+  // admin already has the card in hand when it needs to know.
+  for (const column of [
+    "ADD COLUMN fb_post_id VARCHAR(64) NULL",
+    "ADD COLUMN fb_posted_at DATETIME NULL",
+  ]) {
+    try {
+      await db.execute(sql.raw(`ALTER TABLE lbs_past_cards ${column}`));
+    } catch (e) {
+      if (!alreadyApplied(e)) throw e;
+    }
+  }
   ensured = true;
 }
 
@@ -101,6 +122,8 @@ const rowToCard = (r: Record<string, unknown>): Omit<PastCard, "images"> => ({
   mailDate: r.mail_date ? String(r.mail_date).slice(0, 10) : undefined,
   description: r.description ? String(r.description) : undefined,
   published: Number(r.published) === 1,
+  fbPostId: r.fb_post_id ? String(r.fb_post_id) : undefined,
+  fbPostedAt: r.fb_posted_at ? new Date(String(r.fb_posted_at)).toISOString() : undefined,
 });
 
 const rowToImage = (r: Record<string, unknown>): CardImage => ({
@@ -190,6 +213,22 @@ export async function savePastCard(card: {
       mail_date = VALUES(mail_date),
       description = VALUES(description),
       published = VALUES(published)
+  `);
+}
+
+/**
+ * Remember that a card went out to the Page.
+ *
+ * Written after the Graph call succeeds rather than before, so a failed
+ * post leaves the card looking unshared and the button still armed.
+ */
+export async function recordCardShare(slug: string, postId: string) {
+  await ensureTables();
+  const { db } = await import("@/lib/db");
+  await db.execute(sql`
+    UPDATE lbs_past_cards
+       SET fb_post_id = ${postId}, fb_posted_at = NOW()
+     WHERE slug = ${slug}
   `);
 }
 

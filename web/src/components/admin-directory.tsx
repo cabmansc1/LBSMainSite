@@ -110,6 +110,11 @@ function EditPanel({
   const [form, setForm] = useState(business);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState("");
+  // The dialog stays open after a save, so the slug it was opened with
+  // stops being the slug on record the moment one succeeds. Tracked
+  // separately, or the notice would keep promising a redirect that has
+  // already been made.
+  const [savedSlug, setSavedSlug] = useState(business.slug);
   const [logo, setLogo] = useState<string | null>(business.logoUrl);
   const [logoId, setLogoId] = useState<number | null>(null);
   const [gallery, setGallery] = useState<number[]>([]);
@@ -207,6 +212,7 @@ function EditPanel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           id: business.id,
+          slug: form.slug,
           name: form.name,
           category: form.category,
           locationArea: form.locationArea,
@@ -230,6 +236,7 @@ function EditPanel({
         setState("error");
         return;
       }
+      setSavedSlug(form.slug);
       setError("");
       setState("saved");
     } catch {
@@ -370,6 +377,33 @@ function EditPanel({
               Business name
             </span>
             <input {...field("name")} />
+          </label>
+
+          {/* The slug is built from the name once, at creation, and then
+              kept, so a name typed wrong lives in the URL until someone
+              changes it here. Editing it leaves a redirect behind, which
+              is why the old address keeps working. */}
+          <label className="grid gap-1.5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+              Page URL
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-[13px] text-muted num shrink-0">/business/</span>
+              <input {...field("slug")} spellCheck={false} />
+            </span>
+            <span className="text-[12px] text-muted">
+              {form.slug !== savedSlug ? (
+                <>
+                  <b className="text-[#7a4a00]">
+                    /business/{savedSlug} will redirect here once saved.
+                  </b>{" "}
+                  Any QR code already printed with the old address keeps
+                  working.
+                </>
+              ) : (
+                "Lowercase letters, numbers and dashes. Changing it keeps the old address working."
+              )}
+            </span>
           </label>
           <div className="grid sm:grid-cols-2 gap-3.5">
             <label className="grid gap-1.5">
