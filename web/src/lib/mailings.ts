@@ -52,6 +52,18 @@ export type UpcomingMailing = {
   zoneName: string;
   mailMonth: string;
   /**
+   * The tentative mail date, when Mission Control has fixed one.
+   *
+   * mailMonth is a display string — "September 2026", sometimes
+   * "Winter 2026" — so it cannot be compared to anything or placed on a
+   * calendar. This is the same date the deadline is derived from, kept
+   * as a date so a surface can ask "is this within three months".
+   *
+   * Undefined for a planned card whose month nobody has committed to.
+   * Undefined means "cannot say", not "far away".
+   */
+  mailDateIso?: string;
+  /**
    * Undefined when Mission Control has not set one. It used to default
    * to the string "Ask us", which then printed on customer-facing pages
    * as "artwork deadline Ask us".
@@ -103,15 +115,15 @@ export const isBookable = (status: UpcomingMailing["status"]) =>
   status === "open" || status === "almost-full" || status === "planned";
 
 export const UPCOMING_MAILINGS: UpcomingMailing[] = [
-  { zoneSlug: "summerville", zoneName: "Summerville", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 9, status: "almost-full", takenCategories: ["Plumbing", "HVAC", "Roofing", "Dental", "Restaurants", "Landscaping", "Automotive", "Insurance", "Fitness"] },
-  { zoneSlug: "daniel-island", zoneName: "Daniel Island & Clements Ferry", mailMonth: "September 2026", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 10, status: "almost-full", takenCategories: ["Plumbing", "HVAC", "Roofing", "Dental", "Restaurants", "Landscaping", "Real Estate", "Insurance", "Fitness", "Med Spa"] },
-  { zoneSlug: "goose-creek", zoneName: "Goose Creek", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 4, status: "open", takenCategories: ["Plumbing", "Roofing", "Automotive", "Pest Control"] },
-  { zoneSlug: "mount-pleasant", zoneName: "Mount Pleasant", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "10,000+", spotsTotal: 11, spotsTaken: 6, status: "open", takenCategories: ["HVAC", "Dental", "Restaurants", "Real Estate", "Med Spa", "Fitness"] },
-  { zoneSlug: "moncks-corner", zoneName: "Moncks Corner", mailMonth: "October 2026", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 2, status: "open", takenCategories: ["Plumbing", "Landscaping"] },
-  { zoneSlug: "north-charleston", zoneName: "North Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 3, status: "open", takenCategories: ["HVAC", "Roofing", "Automotive"] },
-  { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open", takenCategories: ["Dental", "Restaurants", "Real Estate", "Med Spa", "Fitness"] },
-  { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open", takenCategories: ["Plumbing"] },
-  { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open", takenCategories: [] },
+  { zoneSlug: "summerville", zoneName: "Summerville", mailMonth: "September 2026", mailDateIso: "2026-09-04", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 9, status: "almost-full", takenCategories: ["Plumbing", "HVAC", "Roofing", "Dental", "Restaurants", "Landscaping", "Automotive", "Insurance", "Fitness"] },
+  { zoneSlug: "daniel-island", zoneName: "Daniel Island & Clements Ferry", mailMonth: "September 2026", mailDateIso: "2026-09-04", artworkDeadline: "Aug 28", households: "5,000+", spotsTotal: 11, spotsTaken: 10, status: "almost-full", takenCategories: ["Plumbing", "HVAC", "Roofing", "Dental", "Restaurants", "Landscaping", "Real Estate", "Insurance", "Fitness", "Med Spa"] },
+  { zoneSlug: "goose-creek", zoneName: "Goose Creek", mailMonth: "October 2026", mailDateIso: "2026-10-02", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 4, status: "open", takenCategories: ["Plumbing", "Roofing", "Automotive", "Pest Control"] },
+  { zoneSlug: "mount-pleasant", zoneName: "Mount Pleasant", mailMonth: "October 2026", mailDateIso: "2026-10-02", artworkDeadline: "Sept 25", households: "10,000+", spotsTotal: 11, spotsTaken: 6, status: "open", takenCategories: ["HVAC", "Dental", "Restaurants", "Real Estate", "Med Spa", "Fitness"] },
+  { zoneSlug: "moncks-corner", zoneName: "Moncks Corner", mailMonth: "October 2026", mailDateIso: "2026-10-02", artworkDeadline: "Sept 25", households: "5,000+", spotsTotal: 11, spotsTaken: 2, status: "open", takenCategories: ["Plumbing", "Landscaping"] },
+  { zoneSlug: "north-charleston", zoneName: "North Charleston", mailMonth: "November 2026", mailDateIso: "2026-11-06", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 3, status: "open", takenCategories: ["HVAC", "Roofing", "Automotive"] },
+  { zoneSlug: "charleston", zoneName: "Charleston", mailMonth: "November 2026", mailDateIso: "2026-11-06", artworkDeadline: "Oct 30", households: "10,000+", spotsTotal: 11, spotsTaken: 5, status: "open", takenCategories: ["Dental", "Restaurants", "Real Estate", "Med Spa", "Fitness"] },
+  { zoneSlug: "james-island", zoneName: "James Island", mailMonth: "December 2026", mailDateIso: "2026-12-04", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 1, status: "open", takenCategories: ["Plumbing"] },
+  { zoneSlug: "johns-island", zoneName: "Johns Island", mailMonth: "December 2026", mailDateIso: "2026-12-04", artworkDeadline: "Nov 27", households: "5,000+", spotsTotal: 11, spotsTaken: 0, status: "open", takenCategories: [] },
   // One row, because it is one card: 3,590 mailboxes on Isle of Palms and
   // 1,325 on Sullivan's, 4,915 across the two. Two rows at 5,000+ each
   // offered a choice that does not exist and about twice the reach that

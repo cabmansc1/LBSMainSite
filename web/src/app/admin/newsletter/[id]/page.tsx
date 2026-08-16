@@ -55,7 +55,14 @@ export default async function AdminNewsletterIssuePage({
     audience.recipients[0];
 
   const preview = chosen
-    ? renderIssue(issue.content, chosen, personal.get(chosen.email) ?? [])
+    ? renderIssue(
+        issue.content,
+        chosen,
+        personal.get(chosen.email) ?? [],
+        // Same window the send uses. A preview listing cards the email
+        // will not carry is a preview of a different email.
+        issue.cardMonths,
+      )
     : undefined;
 
   // Enough to choose from without rendering a select box with a thousand

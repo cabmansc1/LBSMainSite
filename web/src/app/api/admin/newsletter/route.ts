@@ -118,6 +118,7 @@ export async function POST(req: Request) {
           .filter((g): g is AudienceGroup => GROUPS.has(g as AudienceGroup))
       : undefined;
     const months = Number(body.leadsMonths);
+    const cardMonths = Number(body.cardMonths);
     const zones = Array.isArray(body.zones)
       ? (body.zones as unknown[]).map((z) => String(z).trim()).filter(Boolean)
       : undefined;
@@ -128,6 +129,13 @@ export async function POST(req: Request) {
       leadsMonths:
         Number.isFinite(months) && months >= 1 && months <= 120
           ? Math.round(months)
+          : undefined,
+      // Zero is a real value here — it means every card — so the floor
+      // is 0 rather than 1, and only a non-number falls through to
+      // leaving the setting alone.
+      cardMonths:
+        Number.isFinite(cardMonths) && cardMonths >= 0 && cardMonths <= 120
+          ? Math.round(cardMonths)
           : undefined,
       zones,
     });

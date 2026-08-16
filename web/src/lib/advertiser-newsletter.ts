@@ -10,6 +10,10 @@ import {
   getUpcomingMailings,
 } from "@/lib/mission-control";
 import { hasMailDate, isBookable } from "@/lib/mailings";
+import {
+  DEFAULT_CARD_MONTHS,
+  cardsWithin,
+} from "@/lib/newsletter-window";
 import { ZONES } from "@/lib/zones";
 import { pageCopy } from "@/lib/blocks";
 import { SITE_TZ } from "@/lib/time";
@@ -125,6 +129,8 @@ export type Issue = {
   content: IssueContent;
   groups: AudienceGroup[];
   leadsMonths: number;
+  /** How far ahead cards are listed. 0 means every card. */
+  cardMonths: number;
   /**
    * Zone slugs this issue is for. An advertiser is kept when one of
    * their cards is in one of them, which is what keeps a Lowcountry
@@ -204,6 +210,18 @@ async function ensureTables() {
   } catch {
     /* already there */
   }
+  // Same story, and defaulted to 0 rather than DEFAULT_CARD_MONTHS on
+  // purpose: 0 is "every card", so an issue drafted before this setting
+  // existed keeps rendering exactly what it did when it was written.
+  // New drafts get the real default at INSERT.
+  try {
+    await db.execute(
+      sql`ALTER TABLE lbs_newsletter_issues
+          ADD COLUMN card_months INT NOT NULL DEFAULT 0`,
+    );
+  } catch {
+    /* already there */
+  }
   ready = true;
 }
 
@@ -263,7 +281,9 @@ export async function assembleContent(
       cardName: m.cardName || `${m.zoneName}, ${m.mailMonth}`,
       zoneName: m.zoneName,
       mailMonth: m.mailMonth,
-      mailDateIso: "",
+      // Was always "" here, which left the field on the type doing
+      // nothing. It is what the months window filters on.
+      mailDateIso: m.mailDateIso ?? "",
       spotsTotal: m.spotsTotal,
       spotsLeft: Math.max(0, m.spotsTotal - m.spotsTaken),
       artworkDeadline: m.artworkDeadline,
@@ -300,6 +320,7 @@ type IssueRow = {
   content: string;
   audience: string;
   leads_months: number;
+  card_months: number;
   zones?: string | null;
   built_for: string;
   send_count: number;
@@ -370,6 +391,7 @@ function toIssue(r: IssueRow): Issue | undefined {
         (DEFAULT_GROUPS as string[]).includes(s),
       ),
     leadsMonths: Number(r.leads_months ?? 12),
+    cardMonths: Number(r.card_months ?? 0),
     // An issue written before zones existed has none stored, and it
     // predates the Midlands problem being noticed. Defaulting it to the
     // site's own zones is the answer it should have had.
@@ -438,10 +460,11 @@ export async function buildDraftFor(
     const content = await assembleContent(label);
     await db.execute(
       sql`INSERT INTO lbs_newsletter_issues
-            (kind, status, content, audience, leads_months, built_for, zones)
+            (kind, status, content, audience, leads_months, card_months,
+             built_for, zones)
           VALUES ('advertiser', 'draft', ${JSON.stringify(content)},
-                  ${DEFAULT_GROUPS.join(",")}, 12, ${label},
-                  ${SITE_ZONE_SLUGS.join(",")})`,
+                  ${DEFAULT_GROUPS.join(",")}, 12, ${DEFAULT_CARD_MONTHS},
+                  ${label}, ${SITE_ZONE_SLUGS.join(",")})`,
     );
     const row = (await db.execute(
       sql`SELECT id FROM lbs_newsletter_issues
@@ -460,6 +483,7 @@ export type IssuePatch = {
   content?: Partial<IssueContent>;
   groups?: AudienceGroup[];
   leadsMonths?: number;
+  cardMonths?: number;
   zones?: string[];
   status?: IssueStatus;
 };
@@ -481,6 +505,7 @@ export async function saveIssue(
              SET content = ${JSON.stringify(content)},
                  audience = ${(patch.groups ?? issue.groups).join(",")},
                  leads_months = ${patch.leadsMonths ?? issue.leadsMonths},
+                 card_months = ${patch.cardMonths ?? issue.cardMonths},
                  zones = ${(patch.zones ?? issue.zones).join(",")},
                  status = ${patch.status ?? issue.status}
            WHERE id = ${id}`,
@@ -602,8 +627,18 @@ export function renderIssue(
   content: IssueContent,
   to: Recipient,
   personal: PersonalCard[],
+  /**
+   * How far ahead to list open cards. Defaults to every card, so a
+   * caller that does not care — and every issue written before the
+   * setting existed — renders what it always did.
+   */
+  cardMonths = 0,
 ): RenderedIssue {
   const origin = siteOrigin();
+  /* Applied once, here, rather than in each of the two renderers. The
+     plain text and the HTML listing different cards would be one
+     person reading one email and seeing two schedules. */
+  const openCards = cardsWithin(content.cards, cardMonths);
   const unsub = `${origin}/unsubscribe?e=${encodeURIComponent(to.email)}&t=${unsubscribeToken(to.email)}`;
 
   const greeting = to.contactName
@@ -634,9 +669,9 @@ export function renderIssue(
     }
   }
 
-  if (content.cards.length) {
+  if (openCards.length) {
     lines.push("OPEN NOW", "");
-    for (const [month, group] of cardsByMonth(content.cards)) {
+    for (const [month, group] of cardsByMonth(openCards)) {
       lines.push(`  ${month}`);
       for (const c of group) {
         lines.push(
@@ -745,14 +780,14 @@ export function renderIssue(
     }
   }
 
-  if (content.cards.length) {
+  if (openCards.length) {
     h.push(heading("Open now"));
     /* Grouped by month, with the month as the line above rather than
        repeated on every card, and no artwork deadline: this section is
        what is still available, and a deadline belongs to a card
        somebody has already bought. That is the "Your cards" block
        above, where it is still the most useful line in the email. */
-    for (const [month, group] of cardsByMonth(content.cards)) {
+    for (const [month, group] of cardsByMonth(openCards)) {
       h.push(
         `<p style="margin:18px 0 8px;font-size:15px;font-weight:700;color:#22323f">${esc(
           month,
@@ -862,7 +897,7 @@ export async function sendTestIssue(
   };
   const cards = borrowed ? (personal.get(borrowed.email) ?? []) : [];
 
-  const mail = renderIssue(issue.content, asRecipient, cards);
+  const mail = renderIssue(issue.content, asRecipient, cards, issue.cardMonths);
   const res = await sendEmail({
     to,
     // Marked, so a test can never be mistaken for the real thing sitting
@@ -987,7 +1022,12 @@ export async function sendIssue(id: number): Promise<SendReport> {
     if (report.attempted >= MAX_PER_RUN) break;
     report.attempted += 1;
 
-    const mail = renderIssue(issue.content, to, personal.get(to.email) ?? []);
+    const mail = renderIssue(
+      issue.content,
+      to,
+      personal.get(to.email) ?? [],
+      issue.cardMonths,
+    );
     let ok = false;
     try {
       const res = await sendEmail({
