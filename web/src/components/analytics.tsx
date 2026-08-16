@@ -81,6 +81,50 @@ export function trackQuizComplete(businessType: string, goal: string) {
 }
 
 /**
+ * A view of one directory listing, named.
+ *
+ * GA4 already counts the page view for /business/[slug]; what it cannot
+ * do is tell you which business that was without reading slugs out of
+ * URLs. This sends the name and slug as parameters so a report can be
+ * grouped by listing the way the admin screen is.
+ *
+ * It is not the same number as the admin screen and is not meant to be.
+ * lbs_listing_views records one row per visitor per listing per day;
+ * this fires on every view, so a reader who opens a listing three times
+ * is three events here and one there. Both are honest, and they answer
+ * different questions: how much traffic, and how many people.
+ *
+ * Fires per page view rather than per mount. Strict Mode runs an effect
+ * twice and client side navigation between two listings remounts this
+ * with new props, so the guard is the slug rather than a bare ref.
+ */
+export function ListingView({
+  slug,
+  name,
+  category,
+}: {
+  slug: string;
+  name: string;
+  category?: string;
+}) {
+  const reported = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (reported.current === slug) return;
+    reported.current = slug;
+    return whenTagsReady(() => {
+      window.gtag?.("event", "listing_view", {
+        business_slug: slug,
+        business_name: name,
+        ...(category ? { business_category: category } : {}),
+      });
+    });
+  }, [slug, name, category]);
+
+  return null;
+}
+
+/**
  * The post-purchase conversion, from thank_you.php lines 13 to 21.
  *
  * The PHP guarded the Google Ads conversion behind a session flag it

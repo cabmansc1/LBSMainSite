@@ -4,6 +4,7 @@ import { getAdminBusinesses } from "@/lib/admin-data";
 import { getFilterOptions } from "@/lib/directory";
 import { getAdvertiserIndex } from "@/lib/customer-type";
 import { AdminDirectory } from "@/components/admin-directory";
+import { parseViewWindow } from "@/lib/view-windows";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -12,8 +13,17 @@ export const metadata: Metadata = {
 };
 
 /** Successor to admin/manage_directory.php: same tables, same effects. */
-export default async function AdminDirectoryPage() {
+export default async function AdminDirectoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireAdmin();
+  // In the URL rather than in component state, so the window survives a
+  // refresh and can be sent to somebody. Validated against the list of
+  // choices: ?days= is something anybody can type, and a free-form
+  // window would put a number on screen that no label accounts for.
+  const windowDays = parseViewWindow((await searchParams).days);
   // The same taxonomy the public filters and the advertiser portal use.
   // Category and location area are stored as slugs and filtered on as
   // slugs, so typing them by hand produced listings that rendered
@@ -22,11 +32,11 @@ export default async function AdminDirectoryPage() {
     getAdminBusinesses(),
     getFilterOptions(),
   ]);
-  // Real views over the last 30 days. The legacy column stopped moving
+  // Real views over the chosen window. The legacy column stopped moving
   // when traffic came here, so a small number now is correct rather than
   // broken: counting started when this did.
   const { viewsFor } = await import("@/lib/listing-views");
-  const views = await viewsFor(businesses.map((b) => b.id), 30);
+  const views = await viewsFor(businesses.map((b) => b.id), windowDays);
   for (const b of businesses) b.views = views.get(b.id) ?? 0;
 
   // Needs the listings themselves, because an advertiser is matched to
@@ -86,6 +96,7 @@ export default async function AdminDirectoryPage() {
         </div>
       </div>
       <AdminDirectory
+        windowDays={windowDays}
         businesses={businesses}
         categories={options.categories}
         locations={options.locations}
