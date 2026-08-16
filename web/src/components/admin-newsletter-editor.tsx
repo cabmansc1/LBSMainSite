@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import {
+  CARD_MONTH_CHOICES,
+  cardsWithin,
+} from "@/lib/newsletter-window";
 import { useRouter } from "next/navigation";
 import type { AudienceGroup } from "@/lib/newsletter-audience";
 
@@ -12,6 +16,7 @@ export type EditorIssue = {
   sentAt?: string;
   groups: AudienceGroup[];
   leadsMonths: number;
+  cardMonths: number;
   zones: string[];
   content: {
     subject: string;
@@ -25,6 +30,8 @@ export type EditorIssue = {
     cards: {
       cardName: string;
       mailMonth: string;
+      /** What the months window filters on. Empty on an undated card. */
+      mailDateIso?: string;
       spotsLeft: number;
       spotsTotal: number;
       artworkDeadline?: string;
@@ -80,6 +87,14 @@ export function AdminNewsletterEditor({
   const [form, setForm] = useState(issue.content);
   const [groups, setGroups] = useState<AudienceGroup[]>(issue.groups);
   const [months, setMonths] = useState(issue.leadsMonths);
+  const [cardMonths, setCardMonths] = useState(issue.cardMonths);
+
+  /* Recomputed as the dropdown moves rather than waiting for a save, so
+     the count under it and the dimming in the list below both answer
+     the question being asked — what would go out if I picked this. */
+  const shownCards = cardsWithin(issue.content.cards, cardMonths);
+  const inWindow = new Set(shownCards);
+  const hiddenCards = issue.content.cards.length - shownCards.length;
   const [zones, setZones] = useState<string[]>(issue.zones);
   const [confirming, setConfirming] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -144,7 +159,14 @@ export function AdminNewsletterEditor({
   async function sendTest() {
     if (!locked) {
       const saved = await send(
-        { action: "save", content: form, groups, leadsMonths: months, zones },
+        {
+          action: "save",
+          content: form,
+          groups,
+          leadsMonths: months,
+          cardMonths,
+          zones,
+        },
         "test",
       );
       if (!saved) return;
@@ -341,6 +363,28 @@ export function AdminNewsletterEditor({
             what went out stays what went out.
           </p>
         </div>
+        {issue.content.cards.length > 0 && (
+          <label className="grid gap-1.5 max-w-[280px]">
+            <span className={label}>How far ahead to list cards</span>
+            <select
+              value={cardMonths}
+              disabled={locked}
+              onChange={(e) => setCardMonths(Number(e.target.value))}
+              className={field}
+            >
+              {CARD_MONTH_CHOICES.map((m) => (
+                <option key={m} value={m}>
+                  {m === 0 ? "Every card" : `Next ${m} months`}
+                </option>
+              ))}
+            </select>
+            <span className="text-[12px] text-muted">
+              {hiddenCards === 0
+                ? `All ${shownCards.length} ${shownCards.length === 1 ? "card goes" : "cards go"} in the email.`
+                : `${shownCards.length} of ${issue.content.cards.length} cards go in the email. ${hiddenCards} further out ${hiddenCards === 1 ? "is" : "are"} left off.`}
+            </span>
+          </label>
+        )}
         {issue.content.cards.length === 0 ? (
           <p className="text-[13px] text-muted">
             No open cards were found when this was built, so the email has no
@@ -351,7 +395,14 @@ export function AdminNewsletterEditor({
             {issue.content.cards.map((c, i) => (
               <div
                 key={i}
-                className="border border-line rounded-[10px] px-3.5 py-3 text-[13.5px]"
+                className={`border rounded-[10px] px-3.5 py-3 text-[13.5px] ${
+                  /* Dimmed rather than dropped. The list is what the site
+                     found, and seeing which cards the window is holding
+                     back is the whole point of being able to change it. */
+                  inWindow.has(c)
+                    ? "border-line"
+                    : "border-line bg-surface opacity-55"
+                }`}
               >
                 <b>{c.cardName}</b>
                 <span className="text-muted">
@@ -558,7 +609,14 @@ export function AdminNewsletterEditor({
             disabled={busy !== ""}
             onClick={() =>
               send(
-                { action: "save", content: form, groups, leadsMonths: months, zones },
+                {
+          action: "save",
+          content: form,
+          groups,
+          leadsMonths: months,
+          cardMonths,
+          zones,
+        },
                 "save",
               )
             }

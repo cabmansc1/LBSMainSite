@@ -709,6 +709,10 @@ export async function getUpcomingMailings(): Promise<UpcomingMailing[]> {
     zoneSlug: c.zoneSlug,
     zoneName: c.zoneName,
     mailMonth: c.mailMonth,
+    // Empty on a card with no date fixed, which becomes undefined
+    // rather than "" so the difference between "not set" and a real
+    // date survives into anything that filters on it.
+    mailDateIso: c.mailDateIso || undefined,
     artworkDeadline: c.artworkDeadline,
     artworkDeadlineIso: c.artworkDeadlineIso,
     households: c.households,
