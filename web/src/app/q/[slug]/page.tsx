@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getBusiness } from "@/lib/directory";
 import { SITE_URL } from "@/lib/seo";
 
@@ -53,7 +53,21 @@ export default async function QrLandingPage({
 }) {
   const { slug } = await params;
   const b = await getBusiness(slug);
-  if (!b) notFound();
+
+  // This path is printed on cards that are already in mailboxes, so a
+  // renamed listing has to keep resolving here or the code on the paper
+  // stops working and there is no way to reissue it. The scan is
+  // recorded against the slug that was actually scanned, which is the
+  // one printed on the card, so a rename does not break the count.
+  if (!b) {
+    const { resolveSlugRedirect } = await import("@/lib/slug-redirects");
+    const moved = await resolveSlugRedirect(slug);
+    if (moved) {
+      await recordScan(slug);
+      permanentRedirect(`/q/${moved}`);
+    }
+    notFound();
+  }
 
   await recordScan(slug);
 

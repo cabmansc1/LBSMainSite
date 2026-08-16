@@ -100,6 +100,14 @@ export async function PATCH(req: Request) {
   const { id: _ignored, ...patch } = body;
   try {
     const result = await updateBusiness(id, patch);
+    // A rename changes which paths exist. The old one now serves a
+    // redirect and the new one a page, and neither is what the cache
+    // currently holds.
+    if (result.slug) {
+      revalidatePath("/directory");
+      revalidatePath(`/business/${result.slug}`);
+      if (typeof patch.slug === "string") revalidatePath(`/business/${patch.slug}`);
+    }
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     // A rejected address is the admin's typo, not a broken server, and

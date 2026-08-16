@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "drizzle-orm";
+import { SLUG_PATTERN } from "@/lib/slug-redirects";
 
 /**
  * Admin data layer. These read and write the same MySQL tables the
@@ -278,6 +279,12 @@ async function notifyListing(
 }
 
 export type BusinessPatch = {
+  /**
+   * The listing's URL. Editable, but not through COLUMNS: changing it
+   * has to validate against every other listing and leave a redirect
+   * behind, which a column whitelist has no way to express.
+   */
+  slug?: string;
   name?: string;
   category?: string;
   locationArea?: string;
@@ -301,8 +308,15 @@ export type BusinessPatch = {
   showHours?: boolean;
 };
 
-/** Column whitelist: patch keys can never reach SQL directly. */
-const COLUMNS: Record<keyof BusinessPatch, string> = {
+/**
+ * Column whitelist: patch keys can never reach SQL directly.
+ *
+ * slug is excluded by type rather than by omission. It is the one field
+ * whose write needs a uniqueness check and leaves a redirect behind, so
+ * applySlugChange owns it, and Exclude makes adding it here a compile
+ * error instead of a silent rename with no redirect recorded.
+ */
+const COLUMNS: Record<Exclude<keyof BusinessPatch, "slug">, string> = {
   name: "business_name",
   category: "category",
   locationArea: "location_area",
@@ -393,10 +407,61 @@ const URL_FIELDS = [
 
 export class InvalidPatch extends Error {}
 
+/**
+ * Move a listing to a new URL, leaving the old one working.
+ *
+ * Returns the slug actually written, or undefined when nothing changed.
+ * Validation is strict because the value becomes a public path and,
+ * through /q/:slug, the target of QR codes printed on mailed cards:
+ * a slug that collides silently takes over another listing's URL, and
+ * one with a stray character produces a link that cannot be typed.
+ */
+async function applySlugChange(id: number, requested: string) {
+  const { db } = await import("@/lib/db");
+  const slug = requested.trim().toLowerCase();
+
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new InvalidPatch(
+      "A URL can use lowercase letters, numbers and single dashes only.",
+    );
+  }
+  if (slug.length > 190) throw new InvalidPatch("That URL is too long.");
+
+  const currentRows = (await db.execute(
+    sql`SELECT slug FROM directory_businesses WHERE id = ${id} LIMIT 1`,
+  )) as unknown as [{ slug?: string }[]];
+  const current = (currentRows[0] ?? [])[0]?.slug;
+  if (!current) throw new InvalidPatch("That listing no longer exists.");
+  if (String(current) === slug) return undefined;
+
+  const taken = (await db.execute(
+    sql`SELECT id FROM directory_businesses WHERE slug = ${slug} AND id <> ${id} LIMIT 1`,
+  )) as unknown as [{ id?: number }[]];
+  if ((taken[0] ?? []).length > 0) {
+    throw new InvalidPatch("Another listing already uses that URL.");
+  }
+
+  // The row moves first. Recording the redirect before the rename would
+  // leave a pointer to a slug that does not exist yet if the update then
+  // failed, which is a live URL redirecting to a 404.
+  await db.execute(
+    sql`UPDATE directory_businesses SET slug = ${slug} WHERE id = ${id}`,
+  );
+  const { recordSlugChange } = await import("@/lib/slug-redirects");
+  await recordSlugChange(String(current), slug);
+  return slug;
+}
+
 export async function updateBusiness(id: number, patch: BusinessPatch) {
   const { db } = await import("@/lib/db");
   const { normalizeUrl } = await import("@/lib/listing-edits");
-  const clean: BusinessPatch = { ...patch };
+  const { slug: requestedSlug, ...rest } = patch;
+  const clean: BusinessPatch = { ...rest };
+
+  const movedTo =
+    typeof requestedSlug === "string" && requestedSlug.trim()
+      ? await applySlugChange(id, requestedSlug)
+      : undefined;
   for (const field of URL_FIELDS) {
     const raw = clean[field];
     if (typeof raw !== "string") continue;
@@ -414,11 +479,13 @@ export async function updateBusiness(id: number, patch: BusinessPatch) {
     const stored = typeof value === "boolean" ? (value ? 1 : 0) : value;
     sets.push(sql`${sql.raw(`\`${column}\``)} = ${stored}`);
   }
-  if (sets.length === 0) return { updated: 0 };
+  // A save that only moved the listing still changed something, so it
+  // reports as updated rather than as a no-op the form would shrug at.
+  if (sets.length === 0) return { updated: movedTo ? 1 : 0, slug: movedTo };
   await db.execute(
     sql`UPDATE directory_businesses SET ${sql.join(sets, sql`, `)} WHERE id = ${id}`,
   );
-  return { updated: 1 };
+  return { updated: 1, slug: movedTo };
 }
 
 /* ---------- homepage stats bar (site_stats) ---------- */
