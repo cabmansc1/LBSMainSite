@@ -1,8 +1,0 @@
-.git
-.gitignore
-uploads/
-vendor/
-_archived/
-*.log
-composer.phar
-composer-setup.php
