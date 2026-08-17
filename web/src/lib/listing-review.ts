@@ -107,3 +107,29 @@ export async function clearRejected(businessId: number): Promise<void> {
     sql`DELETE FROM lbs_listing_review WHERE business_id = ${businessId}`,
   );
 }
+
+/**
+ * How many listings are waiting for somebody to look at them.
+ *
+ * The same question /admin/directory answers in its "Pending review"
+ * chip, asked in SQL rather than by counting a list in the browser:
+ * unverified, and with no rejection recorded against it. Rejected has
+ * to be excluded here for the same reason it comes first in statusOf,
+ * or a denied listing would sit in the count forever looking like
+ * nobody had got to it.
+ *
+ * Errors are not swallowed into a zero. The dashboard renders a failed
+ * stat as a dash on purpose, because a 0 for an unreachable table is
+ * how a dashboard talks you out of checking something that is broken.
+ */
+export async function countAwaitingReview(): Promise<number> {
+  await ensureTable();
+  const { db } = await import("@/lib/db");
+  const rows = (await db.execute(
+    sql`SELECT COUNT(*) AS n
+          FROM directory_businesses b
+          LEFT JOIN lbs_listing_review r ON r.business_id = b.id
+         WHERE b.is_verified = 0 AND r.business_id IS NULL`,
+  )) as unknown as [{ n: number | string }[]];
+  return Number(rows[0]?.[0]?.n ?? 0);
+}
