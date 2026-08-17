@@ -91,13 +91,25 @@ export async function getDashboardStats(): Promise<DashboardStats> {
             WHERE created_at >= NOW() - INTERVAL 7 DAY`,
       ),
     ),
-    // Deliberately the same predicate as admin/dashboard.php, so the two
-    // admins cannot disagree about how many signups are waiting.
-    stat("signups pending", () =>
-      scalar(
-        sql`SELECT COUNT(*) AS n FROM directory_signups WHERE status = 'pending'`,
-      ),
-    ),
+    /**
+     * Listings waiting to be looked at, counted where they actually
+     * land.
+     *
+     * This used to read directory_signups, matching admin/dashboard.php
+     * so the two admins could not disagree. That was right until the
+     * signup itself moved: /directory-signup sends people to /register,
+     * and registerBusiness writes a row straight into
+     * directory_businesses with is_verified = 0. Nothing in this app has
+     * ever inserted into directory_signups, so the figure sat still
+     * while /admin/directory filled up and the email went out.
+     *
+     * Counted the way /admin/directory decides what is pending, so the
+     * dashboard and the queue it links to agree.
+     */
+    stat("signups pending", async () => {
+      const { countAwaitingReview } = await import("@/lib/listing-review");
+      return countAwaitingReview();
+    }),
     stat("waitlist", () => countWaitingEntries()),
     // Advertisers can edit most of their own listing now. What lands
     // here is only the part that waits on a person, so a number above

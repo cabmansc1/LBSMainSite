@@ -63,7 +63,10 @@ export default async function AdminDashboardPage() {
     {
       label: "Directory signups pending",
       value: num(s.signupsPending),
-      href: "/admin/signups",
+      // /admin/signups reads directory_signups, which is the legacy
+      // form's table and no longer where a signup arrives. The queue
+      // this number counts is the one on /admin/directory.
+      href: "/admin/directory",
     },
     {
       label: "Listing changes to approve",
