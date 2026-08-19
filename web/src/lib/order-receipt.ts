@@ -522,3 +522,76 @@ export async function sendRefundAlert(input: {
     console.error("[order-receipt] refund alert failed:", e);
   }
 }
+
+/**
+ * Tell us a card spot sold.
+ *
+ * Every other thing worth knowing about emails at its call site:
+ * inquiry, refund, listing_edit, signup, newsletter. An order did not,
+ * so a sale reached the dashboard feed, a push, an SMS and Slack, the
+ * buyer got a receipt, and the inbox heard nothing. The alerts admin
+ * builds its grid from CATEGORY_KINDS x CHANNELS, so Email x Orders was
+ * a box you could tick that nothing ever read.
+ *
+ * Deliberately separate from sendOrderReceipt rather than a bcc on it.
+ * The receipt is written to a customer and says what they bought; this
+ * is written to us and says what to do next, and a failure of one must
+ * not cost the other.
+ *
+ * Never throws, for the same reason the receipt does not: returning
+ * non-2xx to Stripe because Resend was down would retry the whole
+ * event, and the retry re-runs the placement to fix an email.
+ */
+export async function sendOrderAlert(input: {
+  sessionId: string;
+  email?: string;
+  amountCents?: number;
+  metadata?: Record<string, string>;
+}): Promise<void> {
+  try {
+    const md = input.metadata ?? {};
+    const { getOrderBySession } = await import("@/lib/orders");
+    const order = await getOrderBySession(input.sessionId);
+
+    const who = order?.businessName || md.businessName || input.email || md.email || "An advertiser";
+    const zoneSlug = order?.zoneSlug || md.zone || md.card || "";
+    const cardId = order?.cardId || md.cardId || "";
+    const schedule = await scheduleFor({ cardId, zoneSlug });
+    const amountCents = input.amountCents ?? order?.amountCents ?? 0;
+    const spot = order?.spot || md.spotSize || md.spotType || "";
+    const category = order?.category || md.category || "";
+
+    const lines = [
+      `${who} paid ${money(amountCents)}.`,
+      "",
+      category ? `Category: ${category}` : "",
+      zoneBySlug(zoneSlug)?.name ? `Zone: ${zoneBySlug(zoneSlug)!.name}` : "",
+      schedule.cardName ? `Card: ${schedule.cardName}` : "",
+      schedule.mailMonth ? `Mails: ${schedule.mailMonth}` : "",
+      spot ? `Spot: ${spot}` : "",
+      `Reference: ${order?.reference || md.reference || input.sessionId}`,
+      (input.email || order?.email || md.email)
+        ? `Email: ${input.email || order?.email || md.email}`
+        : "",
+      "",
+      // The one thing with a deadline attached. Everything else here is
+      // for the record; artwork is the part that stops the print run.
+      schedule.artworkDue
+        ? `Artwork is due ${schedule.artworkDue}. They have not sent any yet.`
+        : "They have not sent artwork yet.",
+      "",
+      `${SITE_URL}/admin/orders`,
+    ].filter((l) => l !== "");
+
+    await sendAlertEmail("order", {
+      subject: `Paid: ${who}${category ? ` (${category})` : ""}`,
+      text: lines.join("\n"),
+      // So a reply goes to the advertiser rather than into the void.
+      ...(input.email || order?.email || md.email
+        ? { replyTo: String(input.email || order?.email || md.email) }
+        : {}),
+    });
+  } catch (e) {
+    console.error("[order-receipt] order alert failed:", e);
+  }
+}

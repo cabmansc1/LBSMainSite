@@ -6,7 +6,7 @@ import { getStripe, stripeEnabled, webhookSecrets } from "@/lib/stripe";
 import { pushToMissionControl } from "@/lib/mission-control";
 import { markPaid, markRefunded } from "@/lib/orders";
 import { findOrCreatePortalUser } from "@/lib/auth";
-import { sendOrderReceipt } from "@/lib/order-receipt";
+import { sendOrderAlert, sendOrderReceipt } from "@/lib/order-receipt";
 import { pushOrderToGhl } from "@/lib/order-ghl";
 
 /**
@@ -257,6 +257,17 @@ export async function POST(req: Request) {
             amountCents: s.amount_total ?? undefined,
             metadata: md,
           }).catch((e) => console.error("[stripe] receipt failed:", e));
+
+          // And tell us. The buyer's receipt above is not a copy to us,
+          // and recordActivity only reaches push, SMS and Slack, so a
+          // sale never produced an email however the alerts admin was
+          // set. Inside the same guard as the rest: one sale, one email.
+          void sendOrderAlert({
+            sessionId: s.id,
+            email: s.customer_email ?? md.email,
+            amountCents: s.amount_total ?? undefined,
+            metadata: md,
+          }).catch((e) => console.error("[stripe] order alert failed:", e));
 
           // Same guard again. A purchase reached Mission Control, the
           // inbox and the database and never the CRM, so a contact who
