@@ -269,6 +269,24 @@ export async function POST(req: Request) {
             metadata: md,
           }).catch((e) => console.error("[stripe] order alert failed:", e));
 
+          // They waited for this category and now hold it, so the row
+          // has outlived its meaning. Left alone it reads as somebody
+          // still owed a spot and keeps counting on the dashboard.
+          //
+          // Only the row that matches all of email, zone and category:
+          // a second category they are still waiting on in the same
+          // zone is a different promise, and a waitlist row deleted by
+          // mistake is not recoverable from anywhere.
+          void import("@/lib/waitlist")
+            .then((m) =>
+              m.clearWaitlistForPurchase({
+                email: s.customer_email ?? md.email ?? "",
+                zoneSlug: md.zone ?? md.card ?? "",
+                category: md.category ?? "",
+              }),
+            )
+            .catch((e) => console.error("[stripe] waitlist clear failed:", e));
+
           // Same guard again. A purchase reached Mission Control, the
           // inbox and the database and never the CRM, so a contact who
           // paid stayed tagged a lead and kept receiving the pitch.

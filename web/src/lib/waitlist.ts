@@ -444,3 +444,59 @@ export async function reassignWaitlistCategory(
     return { ok: false, error: "That did not save." };
   }
 }
+
+/**
+ * Take somebody off the list once they have bought the thing they were
+ * waiting for.
+ *
+ * Nothing did this, so a person who joined the waitlist, got the notice
+ * and then paid stayed on the list looking like they were still owed
+ * something. It causes no wrong emails — they now hold the category, so
+ * the sweep reads it as taken and says nothing — but the row outlives
+ * its meaning and the dashboard counts it.
+ *
+ * Matched on all three of email, zone and category rather than any two.
+ * Deleting every row for an address in a zone would take a category
+ * they are still genuinely waiting on, and a wrongly deleted waitlist
+ * row cannot be recovered from anywhere: nobody finds out until the
+ * category frees up and the email that should have gone never does.
+ *
+ * The category comparison is categoryKey rather than a string match,
+ * because these names are typed by hand in Mission Control and at
+ * checkout, so "Mold Remediation" and "mold remediation" are one
+ * category and would otherwise leave the row behind.
+ */
+export async function clearWaitlistForPurchase(input: {
+  email: string;
+  zoneSlug: string;
+  category: string;
+}): Promise<number> {
+  const email = String(input.email ?? "").trim();
+  const zoneSlug = String(input.zoneSlug ?? "").trim();
+  const category = String(input.category ?? "").trim();
+  // All three or nothing. A purchase missing any of them cannot identify
+  // a row with enough confidence to delete it.
+  if (!email || !zoneSlug || !category) return 0;
+
+  try {
+    await ensureTable();
+    const { db } = await import("@/lib/db");
+    const { categoryKey } = await import("@/lib/categories");
+
+    const rows = (await db.execute(
+      sql`SELECT id, category FROM lbs_waitlist
+           WHERE zone_slug = ${zoneSlug} AND email = ${email}`,
+    )) as unknown as [{ id: number; category: string }[]];
+
+    const want = categoryKey(category);
+    const ids = (rows[0] ?? [])
+      .filter((r) => categoryKey(String(r.category ?? "")) === want)
+      .map((r) => Number(r.id));
+    if (ids.length === 0) return 0;
+
+    return await deleteWaitlistEntries(ids);
+  } catch (e) {
+    console.error("[waitlist] could not clear after purchase:", e);
+    return 0;
+  }
+}
