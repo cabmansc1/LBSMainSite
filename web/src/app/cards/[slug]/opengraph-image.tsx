@@ -1,5 +1,4 @@
 import { ImageResponse } from "next/og";
-import sharp from "sharp";
 import { getCardImageBytes, getPastCard } from "@/lib/past-cards";
 import { SITE_NAME } from "@/lib/seo";
 
@@ -27,6 +26,17 @@ export const contentType = "image/png";
 const NAVY = "#0e1d2e";
 const BRAND = "#38b6ff";
 
+/**
+ * The space the scan occupies in the composite, and therefore the most
+ * of it worth decoding. A landscape card fills the wider box, a portrait
+ * one the taller; sizing to the larger of each dimension covers both
+ * without branching before the image has been read.
+ */
+const SCAN_BOX = { wide: 470, tall: 514 };
+
+/** Roughly four times the size the box needs, as a backstop. */
+const MAX_SCAN_BYTES = 400_000;
+
 export default async function Image({
   params,
 }: {
@@ -44,12 +54,21 @@ export default async function Image({
   /**
    * Satori renders png, jpeg and svg. The scans are webp, because that
    * is what the upload route encodes, so handing one over unconverted
-   * produces a card with a hole where the postcard should be. sharp is
-   * already a dependency for that same upload route.
+   * produces a card with a hole where the postcard should be.
    *
-   * A failure here costs the picture, not the whole image, so it falls
-   * through to the wordmark rather than throwing: an ugly share preview
-   * beats a share preview that 500s.
+   * The first version of this resized to 900px and returned 502 for
+   * every card in production while working locally. Nothing here throws:
+   * sharp is fine, and Next's own optimizer proves it by converting the
+   * same webp on the same host. What broke was memory. A 1800px scan
+   * decodes to about ten megabytes, the 900px JPEG reaches Satori as a
+   * quarter-megabyte base64 string, and the 1200x630 raster is three
+   * more, all on top of a running Next server. The container was killed
+   * rather than the request failing, which is why the connection dropped
+   * instead of returning a 500, and why the catch below never ran.
+   *
+   * So the work is bounded to what the design actually draws. The scan
+   * occupies at most 470x514 in the composite, so anything larger was
+   * decoded, encoded and parsed to be thrown away.
    */
   let scan: string | undefined;
   let portrait = true;
@@ -57,12 +76,29 @@ export default async function Image({
     try {
       const stored = await getCardImageBytes(hero.id);
       if (stored) {
+        // Imported here rather than at the top so a failure to load it
+        // is caught. A static import would take the route down before
+        // this try block exists, which is the difference between a
+        // wordmark and a 502.
+        const sharp = (await import("sharp")).default;
+        // libvips keeps decoded tiles around to make repeat work fast.
+        // There is no repeat work here, and the cache is memory this
+        // process cannot spare.
+        sharp.cache(false);
+        sharp.concurrency(1);
+
         const jpeg = await sharp(stored.bytes)
-          .resize({ width: 900, height: 900, fit: "inside" })
-          .jpeg({ quality: 84 })
+          .resize({ width: SCAN_BOX.wide, height: SCAN_BOX.tall, fit: "inside" })
+          .jpeg({ quality: 72, mozjpeg: true })
           .toBuffer();
-        scan = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
-        if (hero.width && hero.height) portrait = hero.height >= hero.width;
+
+        // A scan far larger than the box implies something unexpected
+        // about the source. The wordmark is a fine answer; another OOM
+        // is not.
+        if (jpeg.length <= MAX_SCAN_BYTES) {
+          scan = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+          if (hero.width && hero.height) portrait = hero.height >= hero.width;
+        }
       }
     } catch {
       scan = undefined;
