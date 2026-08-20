@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { StatusChip } from "@/components/sections";
+import { COMMON_CATEGORIES } from "@/lib/categories";
 import type { WaitlistEntry, WaitlistSendOutcome } from "@/lib/waitlist";
 
 /**
@@ -35,6 +36,46 @@ export function AdminWaitlist({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [outcomes, setOutcomes] = useState<WaitlistSendOutcome[]>([]);
+  // Which row is being moved, and to what. One at a time: offering the
+  // category they can actually buy is a decision about one person.
+  const [moving, setMoving] = useState<number | null>(null);
+  const [nextCategory, setNextCategory] = useState("");
+
+  /**
+   * Move somebody to a category that is open.
+   *
+   * Separate from act() because it carries a value rather than acting on
+   * a selection, and because the result has something to say: moving
+   * onto a category they were already waiting on merges the two rows,
+   * and silently showing one row fewer would look like a delete.
+   */
+  async function reassign(id: number, category: string) {
+    setBusy(true);
+    setError("");
+    setOutcomes([]);
+    try {
+      const res = await fetch("/api/admin/waitlist", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids: [id], action: "reassign", category }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j.ok !== true) {
+        throw new Error(j.error ?? "That did not work. Try signing in again.");
+      }
+      if (j.merged) {
+        setError(
+          `They were already waiting on ${j.category} here, so the two entries are now one.`,
+        );
+      }
+      setMoving(null);
+      router.refresh();
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const toggle = (id: number) =>
     setSelected((prev) =>
@@ -250,7 +291,59 @@ export function AdminWaitlist({
                   </div>
                 </td>
                 <td className="px-4 py-3.5 border-b border-line text-[12.5px]">
-                  {e.category}
+                  {moving === e.id ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <input
+                        autoFocus
+                        list="lbs-waitlist-categories"
+                        value={nextCategory}
+                        disabled={busy}
+                        onChange={(ev) => setNextCategory(ev.target.value)}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter" && nextCategory.trim()) {
+                            reassign(e.id, nextCategory);
+                          }
+                          if (ev.key === "Escape") setMoving(null);
+                        }}
+                        className="w-[9.5rem] text-[12.5px] px-2 py-1 border border-line-strong rounded-[7px] bg-white focus:outline-none focus:border-navy-950"
+                      />
+                      <button
+                        type="button"
+                        disabled={busy || !nextCategory.trim()}
+                        onClick={() => reassign(e.id, nextCategory)}
+                        className="text-[12px] font-semibold text-brand-deep hover:underline disabled:opacity-40"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMoving(null)}
+                        className="text-[12px] text-muted hover:text-ink"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2">
+                      {e.category}
+                      {/* Moving them puts them back to Waiting, because
+                          the sweep only looks at rows it has not
+                          notified. Said on the button rather than
+                          discovered afterwards. */}
+                      <button
+                        type="button"
+                        disabled={busy}
+                        title="Move them to a category that is open. They go back to Waiting so the hourly sweep can tell them."
+                        onClick={() => {
+                          setNextCategory(e.category);
+                          setMoving(e.id);
+                        }}
+                        className="text-[11.5px] font-semibold text-muted hover:text-brand-deep disabled:opacity-40"
+                      >
+                        Move
+                      </button>
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3.5 border-b border-line text-[12.5px]">
                   {zoneNames[e.zoneSlug] ?? e.zoneSlug}
@@ -306,6 +399,23 @@ export function AdminWaitlist({
             ))}
           </tbody>
         </table>
+
+        {/* Suggestions, not a whitelist. Mission Control's categories
+            are typed by hand and go well beyond this handful, so the
+            field stays free text and this only saves typing the common
+            ones. The categories already on the list are offered too,
+            since a spelling that is in use is likelier to match than a
+            fresh one. */}
+        <datalist id="lbs-waitlist-categories">
+          {[
+            ...new Set([
+              ...entries.map((e) => e.category).filter(Boolean),
+              ...COMMON_CATEGORIES,
+            ]),
+          ].map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
       </div>
     </>
   );
