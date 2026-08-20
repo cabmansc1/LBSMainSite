@@ -363,3 +363,84 @@ export async function countLegacyWaitlistRows(): Promise<number> {
     return 0;
   }
 }
+
+export type ReassignResult =
+  | { ok: true; merged: boolean; category: string }
+  | { ok: false; error: string };
+
+/**
+ * Move somebody to the category you can actually sell them.
+ *
+ * "Your category is taken, but the one next to it is open" is an
+ * ordinary sales conversation, and until now there was nowhere to
+ * record the outcome: the row is keyed on zone, category and email, so
+ * a different category was a separate entry rather than an edit, and
+ * the only routes were asking them to re-join the public form or
+ * editing the table by hand.
+ *
+ * notified_at is cleared, and that is the part that matters rather than
+ * a nicety. The sweep only considers rows it has not notified, so a
+ * reassignment that kept the old flag would move somebody to a category
+ * they would never be told about — a worse outcome than leaving them
+ * where they were, because the screen would show it had worked.
+ */
+export async function reassignWaitlistCategory(
+  id: number,
+  category: string,
+): Promise<ReassignResult> {
+  const entryId = Number(id);
+  const next = String(category ?? "").trim();
+  if (!Number.isInteger(entryId) || entryId <= 0) {
+    return { ok: false, error: "That entry no longer exists." };
+  }
+  if (!next) return { ok: false, error: "Pick a category." };
+  if (next.length > 160) return { ok: false, error: "That category is too long." };
+
+  try {
+    await ensureTable();
+    const { db } = await import("@/lib/db");
+    const { categoryKey } = await import("@/lib/categories");
+
+    const rows = (await db.execute(
+      sql`SELECT zone_slug, category, email FROM lbs_waitlist WHERE id = ${entryId} LIMIT 1`,
+    )) as unknown as [{ zone_slug: string; category: string; email: string }[]];
+    const entry = rows[0]?.[0];
+    if (!entry) return { ok: false, error: "That entry no longer exists." };
+
+    // Same category typed differently is not a move. Compared on the key
+    // Mission Control's hand-typed names are compared on everywhere
+    // else, so "Real Estate" and "real estate" do not count as a change.
+    if (categoryKey(String(entry.category)) === categoryKey(next)) {
+      return { ok: true, merged: false, category: String(entry.category) };
+    }
+
+    // They may already be waiting on the category they are being moved
+    // to, which the unique key would refuse. Refusing is the wrong
+    // answer: the intent is that they end up waiting on it, and they
+    // already are. So the row being moved goes and the existing one
+    // stands, which is the same end state with one row instead of two.
+    const dupe = (await db.execute(
+      sql`SELECT id FROM lbs_waitlist
+           WHERE zone_slug = ${entry.zone_slug}
+             AND email = ${entry.email}
+             AND LOWER(category) = LOWER(${next})
+             AND id <> ${entryId}
+           LIMIT 1`,
+    )) as unknown as [{ id: number }[]];
+
+    if ((dupe[0] ?? []).length > 0) {
+      await db.execute(sql`DELETE FROM lbs_waitlist WHERE id = ${entryId}`);
+      return { ok: true, merged: true, category: next };
+    }
+
+    await db.execute(
+      sql`UPDATE lbs_waitlist
+             SET category = ${next}, notified_at = NULL
+           WHERE id = ${entryId}`,
+    );
+    return { ok: true, merged: false, category: next };
+  } catch (e) {
+    console.error("[waitlist] could not reassign:", e);
+    return { ok: false, error: "That did not save." };
+  }
+}

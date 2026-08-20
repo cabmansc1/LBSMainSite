@@ -4,6 +4,7 @@ import {
   setWaitlistNotified,
   deleteWaitlistEntries,
   notifyWaitlistEntries,
+  reassignWaitlistCategory,
 } from "@/lib/waitlist";
 
 /**
@@ -56,6 +57,24 @@ export async function POST(req: Request) {
   if (action === "delete") {
     const deleted = await deleteWaitlistEntries(ids);
     return NextResponse.json({ ok: true, deleted });
+  }
+
+  // One row, not a selection: moving somebody is a decision about that
+  // person and the category they were offered instead, and there is no
+  // version of it that is right for twenty rows at once.
+  if (action === "reassign") {
+    if (ids.length !== 1) {
+      return NextResponse.json(
+        { error: "Move one at a time." },
+        { status: 422 },
+      );
+    }
+    const result = await reassignWaitlistCategory(
+      ids[0],
+      String((body as { category?: unknown }).category ?? ""),
+    );
+    if (!result.ok) return NextResponse.json(result, { status: 422 });
+    return NextResponse.json(result);
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 422 });
