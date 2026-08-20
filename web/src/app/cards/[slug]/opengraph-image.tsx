@@ -128,7 +128,14 @@ export default async function Image({
                 color: BRAND,
               }}
             >
-              Mailed {card.mailMonth}
+              {/* One child, not two. Satori refuses a div with more
+                  than one child unless it declares a display, and
+                  "Mailed " plus the expression is two: a text node and
+                  a value. It cost every card page a 502, while the
+                  sitewide image was fine because every string in it is
+                  a lone expression. Interpolating into one string keeps
+                  it a single text run. */}
+              {`Mailed ${card.mailMonth}`}
             </div>
             <div
               style={{
